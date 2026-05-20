@@ -72,13 +72,37 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
   const fetchPartnerData = async () => {
     try {
-      const profRes = await axios.get('/vendor/profile').catch(() => ({ data: { data: { vendor: { companyName: 'Artisan Partner' }, stats: { totalOrders: 15, revenue: 24500 } } } }));
-      setProfile(profRes.data?.data?.vendor || { companyName: 'Artisan Partner' });
-      setStats(profRes.data?.data?.stats || { totalOrders: 15, revenue: 24500 });
+      // 1. Get or seed Vendor Profile & Stats
+      let localProfile = JSON.parse(localStorage.getItem('mockProfile') || 'null');
+      if (!localProfile) {
+        localProfile = {
+          _id: 'mock_vendor_id_123',
+          companyName: 'Artisan Workshop Ltd',
+          ownerName: 'Marcus Vance',
+          email: 'vendor@example.com',
+          phone: '+1 (555) 321-7654',
+          gstNumber: 'GSTIN29AAACA1234A1Z',
+          panNumber: 'ABCDE1234F',
+          address: '45 Artisan Way, Sector 5, Bangalore'
+        };
+        localStorage.setItem('mockProfile', JSON.stringify(localProfile));
+      }
+      setProfile(localProfile);
 
-      // Fetch KYC Details
-      const kycRes = await axios.get('/vendor/kyc').catch(() => ({ data: { data: { status: 'Not Submitted' } } }));
-      const currentKyc = kycRes.data?.data || { status: 'Not Submitted' };
+      // Seed stats if missing
+      let localStats = JSON.parse(localStorage.getItem('mockStats') || 'null');
+      if (!localStats) {
+        localStats = { totalOrders: 15, revenue: 24500 };
+        localStorage.setItem('mockStats', JSON.stringify(localStats));
+      }
+      setStats(localStats);
+
+      // 2. KYC Submission status lookup
+      let kycSubmissions = JSON.parse(localStorage.getItem('mockKycSubmissions') || '[]');
+      let currentKyc = kycSubmissions.find(k => k.email === (user?.email || 'vendor@example.com'));
+      if (!currentKyc) {
+        currentKyc = { status: 'Not Submitted' };
+      }
       setKycDetails(currentKyc);
       if (currentKyc && currentKyc.status !== 'Not Submitted') {
         setKycBusinessName(currentKyc.businessName || '');
@@ -94,20 +118,18 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         setKycBankName(currentKyc.bankDetails?.bankName || '');
       }
 
-      // Fetch Security Deposit
-      const depRes = await axios.get('/vendor/deposit').catch(() => ({ data: { data: { paymentStatus: 'Pending' } } }));
-      setDepositDetails(depRes.data?.data || { paymentStatus: 'Pending' });
+      // 3. Security Deposit Lookup
+      let depositSubmissions = JSON.parse(localStorage.getItem('mockDepositSubmissions') || '[]');
+      let currentDeposit = depositSubmissions.find(d => d.email === (user?.email || 'vendor@example.com'));
+      if (!currentDeposit) {
+        currentDeposit = { paymentStatus: 'Pending' };
+      }
+      setDepositDetails(currentDeposit);
 
-      // Load products for vendor role
-      if (user?.role === 'vendor') {
-        const prodRes = await axios.get(`/products?vendorId=${profRes.data?.data?.vendor?._id || 'mock'}`).catch(() => ({ data: { data: [] } }));
-        
-        // Read local mock products from localStorage
-        const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
-        const backendProducts = prodRes.data?.data || [];
-        
-        // Define a robust, standard default product list to display initially in mock/demo mode
-        const defaultProducts = [
+      // 4. Products list
+      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+      if (localProducts.length === 0) {
+        localProducts = [
           { 
             _id: 'prod_1', 
             title: 'Velvet Lounge Chair', 
@@ -117,49 +139,57 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             description: 'Luxurious velvet chair crafted with solid oak frames and high-density premium foam padding.',
             material: 'Velvet / Oak Wood',
             size: '32×32×30',
-            stockStatus: 'In Stock'
+            stockStatus: 'In Stock',
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+          },
+          { 
+            _id: 'prod_2', 
+            title: 'Modern Oak Dining Table', 
+            category: 'Dining Room', 
+            price: 1200, 
+            images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'], 
+            description: 'Solid oak dining table for 6 with matte oil finish.',
+            material: 'Solid Oak Wood',
+            size: '72×36×30',
+            stockStatus: 'In Stock',
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
           }
         ];
-
-        // Merge: localProducts first, then backendProducts
-        const mergedProducts = [...localProducts];
-        backendProducts.forEach(bp => {
-          if (!mergedProducts.find(lp => lp._id.toString() === bp._id.toString())) {
-            mergedProducts.push(bp);
-          }
-        });
-
-        if (mergedProducts.length === 0) {
-          setProducts(defaultProducts);
-          localStorage.setItem('mockProducts', JSON.stringify(defaultProducts));
-        } else {
-          setProducts(mergedProducts);
-        }
+        localStorage.setItem('mockProducts', JSON.stringify(localProducts));
       }
+      setProducts(localProducts);
 
-      // Always load custom design requests from localStorage + backend for all partner roles
-      const vendorRoles = ['vendor', 'manufacturer', 'delivery', 'installation', 'admin'];
-      if (vendorRoles.includes(user?.role)) {
-        const reqRes = await axios.get('/vendor/requests').catch(() => ({ data: { data: [] } }));
-        // localStorage is primary source — always read it first
-        const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-        const backendRequests = reqRes.data?.data || [];
-        // Merge: localStorage first, then any backend items not already present
-        const finalRequests = [...localManualRequests];
-        backendRequests.forEach(br => {
-          if (!finalRequests.find(lr => lr._id.toString() === br._id.toString())) {
-            finalRequests.push(br);
-          }
-        });
-        setCustomRequests(finalRequests);
-      }
+      // 5. Custom Requests
+      let localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      setCustomRequests(localManualRequests);
 
-      setManufacturingOrders([
-        { _id: 'mfg_1', orderId: 'ord_101', designDetails: 'Luxury Velvet Sofa Custom', measurements: '84" x 36" x 32"', materials: 'Teak Wood, Velvet', budget: 2400, status: 'Production Started', progressImages: [] }
-      ]);
-      setDeliveryOrders([
-        { _id: 'del_1', orderId: 'ord_102', shippingAddress: '742 Evergreen Terrace', status: 'Picked Up', trackingNotes: 'Dispatched from central hub' }
-      ]);
+      // 6. Orders (Manufacturing and Delivery)
+      let localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      
+      const mfgOrders = localOrders
+        .filter(o => o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .map(o => ({
+          _id: o._id,
+          orderId: o._id,
+          designDetails: o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+          measurements: o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+          materials: 'Wood, Premium Fabrics',
+          budget: o.totalAmount,
+          status: o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' ? 'Production Started' : o.orderStatus,
+          progressImages: o.progressImages || []
+        }));
+      setManufacturingOrders(mfgOrders);
+
+      const delOrders = localOrders
+        .filter(o => o.orderStatus === 'Delivery Assigned' || o.orderStatus === 'Picked Up' || o.orderStatus === 'Shipped' || o.orderStatus === 'Delivered')
+        .map(o => ({
+          _id: o._id,
+          orderId: o._id,
+          shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
+          status: o.orderStatus === 'Delivery Assigned' ? 'Picked Up' : o.orderStatus,
+          trackingNotes: o.trackingNotes || 'Dispatched from central hub'
+        }));
+      setDeliveryOrders(delOrders);
 
     } catch (error) {
       console.error('Error fetching vendor data', error);
@@ -169,35 +199,36 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Vendor Actions
   const handleCreateProduct = async (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        title: newTitle, description: newDesc, price: Number(newPrice), category: newCategory, 
-        material: newMaterial || 'Oak Wood', size: newSize || '32x32x30', 
-        images: [newImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
-        stockStatus: 'In Stock'
+    const payload = {
+      _id: 'prod_' + Date.now(),
+      title: newTitle, 
+      description: newDesc, 
+      price: Number(newPrice), 
+      category: newCategory, 
+      material: newMaterial || 'Oak Wood', 
+      size: newSize || '32x32x30', 
+      images: [newImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
+      stockStatus: 'In Stock',
+      vendorId: { _id: 'mock_vendor_id_123', companyName: profile?.companyName || 'Artisan Partner' }
+    };
+    
+    const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+    const updatedProducts = [payload, ...localProducts];
+    setProducts(updatedProducts);
+    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
+    alert('✅ Product listed successfully! It is now live in the Marketplace.');
+    setNewTitle(''); setNewDesc(''); setNewPrice(''); setNewMaterial(''); setNewSize(''); setNewImage('');
+  };
+
+  const handleProductImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewImage(reader.result);
       };
-      
-      let newProd;
-      try {
-        const res = await axios.post('/products', payload);
-        newProd = res.data.data;
-      } catch (err) {
-        // Fallback for mock mode
-        newProd = {
-          _id: 'prod_' + Date.now(),
-          ...payload,
-          vendorId: { _id: 'mock_vendor_id_123', companyName: profile?.companyName || 'Artisan Partner' }
-        };
-      }
-      
-      const updatedProducts = [newProd, ...products];
-      setProducts(updatedProducts);
-      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
-      
-      alert('✅ Product listed successfully! It is now live in the Marketplace.');
-      setNewTitle(''); setNewDesc(''); setNewPrice(''); setNewMaterial(''); setNewSize(''); setNewImage('');
-    } catch (error) {
-      alert('Error creating product');
+      reader.readAsDataURL(file);
     }
   };
 
@@ -206,36 +237,22 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     if (!updatedTitle) return;
     const updatedPrice = prompt('Enter new price ($):', p.price);
     if (!updatedPrice) return;
-    try {
-      try {
-        await axios.put(`/products/${p._id}`, { title: updatedTitle, price: Number(updatedPrice) });
-      } catch (_) {}
-      
-      const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
-      setProducts(updatedProducts);
-      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
-      
-      alert('✅ Product updated successfully!');
-    } catch (error) {
-      alert('Error updating product');
-    }
+    
+    const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
+    setProducts(updatedProducts);
+    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
+    alert('✅ Product updated successfully!');
   };
 
   const handleDeleteProduct = async (id) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
-    try {
-      try {
-        await axios.delete(`/products/${id}`);
-      } catch (_) {}
-      
-      const updatedProducts = products.filter(item => item._id !== id);
-      setProducts(updatedProducts);
-      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
-      
-      alert('✅ Product deleted successfully!');
-    } catch (error) {
-      alert('Error deleting product');
-    }
+    
+    const updatedProducts = products.filter(item => item._id !== id);
+    setProducts(updatedProducts);
+    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
+    alert('✅ Product deleted successfully!');
   };
 
   const handleViewInMarketplace = (id) => {
@@ -256,29 +273,29 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
   const handleSendQuotation = async (e, req) => {
     e.preventDefault();
-    try {
-      await axios.post('/vendor/quotations', {
-        userId: req.userId?._id || req.userId || 'mock_user',
-        designType: 'manual',
-        designRequestId: req._id,
-        budgetAmount: Number(quoteAmount),
-        materialsBreakdown: quoteMaterials,
-        estimatedTime: quoteTime
-      });
-    } catch (_) { /* backend may be offline in demo mode — continue */ }
-    // Always update UI + localStorage regardless of backend result
-    const quotationFields = { quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime };
+    const quotationFields = { 
+      quotationAmount: quoteAmount, 
+      quotationMaterials: quoteMaterials, 
+      quotationTime: quoteTime 
+    };
+    
     setCustomRequests(customRequests.map(r => r._id === req._id ? { ...r, status: 'Quotation Sent', ...quotationFields } : r));
     updateRequestStatusInStorage(req._id, 'Quotation Sent', quotationFields);
-    alert('✅ Quotation sent to customer successfully! User and Admin have been notified.');
+
+    // Send customer notification
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `Vendor has sent a quotation of $${quoteAmount} for your ${req.roomType} request.`,
+      type: 'success',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+
+    alert('✅ Quotation sent to customer successfully! User has been notified.');
     setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime('');
-    if (setActiveTab) setActiveTab('quotations');
   };
 
   const handleAcceptRequest = async (id) => {
-    try {
-      await axios.post(`/vendor/requests/${id}/accept`);
-    } catch (_) { /* offline fallback */ }
     setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Vendor Review' } : r));
     updateRequestStatusInStorage(id, 'Vendor Review');
     alert('✅ Design request accepted successfully! The user has been notified.');
@@ -286,9 +303,6 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
   const handleRejectRequest = async (id) => {
     if (!confirm('Are you sure you want to reject this design request?')) return;
-    try {
-      await axios.post(`/vendor/requests/${id}/reject`);
-    } catch (_) { /* offline fallback */ }
     setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Rejected' } : r));
     updateRequestStatusInStorage(id, 'Rejected');
     alert('❌ Design request rejected. The user has been notified.');
@@ -314,28 +328,67 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
   // Manufacturer Actions
   const handleMfgUpdate = async (id) => {
-    try {
-      await axios.put(`/orders/manufacturing/${id}`, {
-        status: mfgStatus[id] || 'In Progress', progressImage: progressImg[id] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60'
-      });
-      setManufacturingOrders(manufacturingOrders.map(o => o._id === id ? { ...o, status: mfgStatus[id] || o.status, progressImages: [...o.progressImages, progressImg[id]] } : o));
-      alert('Manufacturing stage updated successfully!');
-    } catch (error) {
-      alert('Error updating manufacturing status');
-    }
+    const updatedStatus = mfgStatus[id] || 'Production Started';
+    const newProgressImage = progressImg[id] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60';
+
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updatedOrders = localOrders.map(o => {
+      if (o._id === id) {
+        const currentImages = o.progressImages || [];
+        return {
+          ...o,
+          orderStatus: updatedStatus,
+          progressImages: [...currentImages, newProgressImage]
+        };
+      }
+      return o;
+    });
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+
+    setManufacturingOrders(manufacturingOrders.map(o => {
+      if (o._id === id) {
+        return {
+          ...o,
+          status: updatedStatus,
+          progressImages: [...o.progressImages, newProgressImage]
+        };
+      }
+      return o;
+    }));
+
+    alert('Manufacturing stage updated successfully!');
   };
 
   // Delivery Actions
   const handleDelUpdate = async (id) => {
-    try {
-      await axios.put(`/orders/delivery/${id}`, {
-        status: delStatus[id] || 'Out for Delivery', trackingNotes: trackingNote[id] || 'In transit'
-      });
-      setDeliveryOrders(deliveryOrders.map(o => o._id === id ? { ...o, status: delStatus[id] || o.status, trackingNotes: trackingNote[id] || o.trackingNotes } : o));
-      alert('Delivery status updated successfully!');
-    } catch (error) {
-      alert('Error updating delivery status');
-    }
+    const updatedStatus = delStatus[id] || 'Shipped';
+    const updatedNote = trackingNote[id] || 'In transit';
+
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updatedOrders = localOrders.map(o => {
+      if (o._id === id) {
+        return {
+          ...o,
+          orderStatus: updatedStatus,
+          trackingNotes: updatedNote
+        };
+      }
+      return o;
+    });
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+
+    setDeliveryOrders(deliveryOrders.map(o => {
+      if (o._id === id) {
+        return {
+          ...o,
+          status: updatedStatus,
+          trackingNotes: updatedNote
+        };
+      }
+      return o;
+    }));
+
+    alert('Delivery status updated successfully!');
   };
 
   // Payout Actions
@@ -351,29 +404,31 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // KYC and Deposit Handlers
   const handleSubmitKYC = async (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        businessName: kycBusinessName,
-        ownerName: kycOwnerName,
-        phone: kycPhone,
-        email: kycEmail,
-        gstNumber: kycGst,
-        panNumber: kycPan,
-        idProofUrl: kycIdProof || 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
-        addressProofUrl: kycAddressProof || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
-        bankDetails: {
-          accountNumber: kycBankAcc,
-          ifscCode: kycIfsc,
-          bankName: kycBankName
-        }
-      };
-      const res = await axios.post('/vendor/kyc', payload);
-      setKycDetails(res.data.data);
-      alert('✅ KYC details submitted successfully for review.');
-      fetchPartnerData();
-    } catch (error) {
-      alert('Error submitting KYC details');
-    }
+    const payload = {
+      _id: 'kyc_' + Date.now(),
+      businessName: kycBusinessName,
+      ownerName: kycOwnerName,
+      phone: kycPhone,
+      email: user?.email || kycEmail || 'vendor@example.com',
+      gstNumber: kycGst,
+      panNumber: kycPan,
+      idProofUrl: kycIdProof || 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
+      addressProofUrl: kycAddressProof || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
+      bankDetails: {
+        accountNumber: kycBankAcc,
+        ifscCode: kycIfsc,
+        bankName: kycBankName
+      },
+      status: 'Submitted',
+      createdAt: new Date().toISOString()
+    };
+
+    const localKyc = JSON.parse(localStorage.getItem('mockKycSubmissions') || '[]');
+    const filteredKyc = localKyc.filter(k => k.email !== payload.email);
+    localStorage.setItem('mockKycSubmissions', JSON.stringify([payload, ...filteredKyc]));
+
+    setKycDetails(payload);
+    alert('✅ KYC details submitted successfully for review.');
   };
 
   const handleSubmitDeposit = async (e) => {
@@ -382,15 +437,23 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       alert('Please enter a valid Transaction ID.');
       return;
     }
-    try {
-      const res = await axios.post('/vendor/deposit', { transactionId: depositTxnId });
-      setDepositDetails(res.data.data);
-      alert('✅ Security deposit payment transaction submitted for verification.');
-      setDepositTxnId('');
-      fetchPartnerData();
-    } catch (error) {
-      alert('Error submitting payment details');
-    }
+    const payload = {
+      _id: 'dep_' + Date.now(),
+      email: user?.email || 'vendor@example.com',
+      companyName: profile?.companyName || 'Artisan Workshop',
+      transactionId: depositTxnId,
+      amount: 1000,
+      paymentStatus: 'Paid',
+      createdAt: new Date().toISOString()
+    };
+
+    const localDeposits = JSON.parse(localStorage.getItem('mockDepositSubmissions') || '[]');
+    const filteredDeposits = localDeposits.filter(d => d.email !== payload.email);
+    localStorage.setItem('mockDepositSubmissions', JSON.stringify([payload, ...filteredDeposits]));
+
+    setDepositDetails(payload);
+    alert('✅ Security deposit payment transaction submitted for verification.');
+    setDepositTxnId('');
   };
 
   return (
@@ -427,101 +490,7 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
         return (
           <div className="space-y-8 animate-fadeIn">
-            {/* ONBOARDING PROGRESS BANNER — shown only for unverified partners */}
-            {(() => {
-              const kyc = kycDetails?.status || 'Not Submitted';
-              const deposit = depositDetails?.paymentStatus || 'Pending';
-              const isActive = kyc === 'Approved' && deposit === 'Verified';
-              
-              if (isActive) return null; // Hide once fully activated
 
-              const steps = [
-                { label: 'Registered', done: true, icon: '✓' },
-                { label: 'KYC Submitted', done: kyc !== 'Not Submitted' && kyc !== 'Pending', icon: kyc !== 'Not Submitted' ? '✓' : '2' },
-                { label: 'Deposit Paid', done: deposit === 'Paid' || deposit === 'Verified', icon: (deposit === 'Paid' || deposit === 'Verified') ? '✓' : '3' },
-                { label: 'Admin Approval', done: kyc === 'Approved', icon: kyc === 'Approved' ? '✓' : '4' },
-                { label: 'Account Active', done: isActive, icon: isActive ? '✓' : '5' },
-              ];
-
-              const currentStepIndex = steps.findIndex(s => !s.done);
-              const progressPct = Math.round(((currentStepIndex === -1 ? steps.length : currentStepIndex) / steps.length) * 100);
-
-              let alertMsg = null;
-              let alertAction = null;
-              let alertTab = null;
-              if (kyc === 'Not Submitted' || kyc === 'Pending') {
-                alertMsg = '⚠️ Your account is not yet active. Please submit your KYC documents to get started.';
-                alertAction = 'Submit KYC Now →';
-                alertTab = 'kyc';
-              } else if (kyc === 'Submitted') {
-                alertMsg = '🕐 KYC submitted & under review. While waiting, you can pay the security deposit.';
-                alertAction = 'Pay Security Deposit →';
-                alertTab = 'deposit';
-              } else if (kyc === 'Approved' && deposit === 'Pending') {
-                alertMsg = '💳 KYC Approved! Complete your security deposit to activate your account.';
-                alertAction = 'Pay Security Deposit →';
-                alertTab = 'deposit';
-              } else if (deposit === 'Paid') {
-                alertMsg = '🔍 Security deposit received. Admin is reviewing your full application.';
-                alertAction = null;
-                alertTab = null;
-              } else if (kyc === 'Rejected') {
-                alertMsg = '❌ Your KYC was rejected. Please re-submit with correct documents.';
-                alertAction = 'Re-submit KYC →';
-                alertTab = 'kyc';
-              }
-
-              return (
-                <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-[#8B5E3C] to-[#7a5133] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                      <p className="text-white font-bold text-sm">🚀 Partner Account Onboarding</p>
-                      <p className="text-white/70 text-xs mt-0.5">Complete all steps to start receiving orders and earning revenue.</p>
-                    </div>
-                    <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
-                      <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
-                        <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${progressPct}%` }}></div>
-                      </div>
-                      <span className="text-white text-xs font-bold">{progressPct}% Complete</span>
-                    </div>
-                  </div>
-
-                  <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    {/* Steps */}
-                    <div className="flex items-center gap-0 overflow-x-auto flex-1">
-                      {steps.map((s, i) => (
-                        <div key={i} className="flex items-center">
-                          <div className="flex flex-col items-center gap-1.5">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border-2 ${s.done ? 'bg-emerald-500 border-emerald-500 text-white' : i === currentStepIndex ? 'bg-white border-[#8B5E3C] text-[#8B5E3C]' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
-                              {s.icon}
-                            </div>
-                            <span className={`text-[9px] font-bold whitespace-nowrap ${s.done ? 'text-emerald-600' : i === currentStepIndex ? 'text-[#8B5E3C]' : 'text-gray-400'}`}>{s.label}</span>
-                          </div>
-                          {i < steps.length - 1 && (
-                            <div className={`h-0.5 w-6 sm:w-10 mx-1 mb-4 rounded-full ${s.done ? 'bg-emerald-400' : 'bg-gray-200'}`}></div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Alert Message + CTA */}
-                    {alertMsg && (
-                      <div className="flex-shrink-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 max-w-sm">
-                        <p className="text-xs font-medium text-amber-800 flex-1">{alertMsg}</p>
-                        {alertAction && (
-                          <button
-                            onClick={() => setActiveTab && setActiveTab(alertTab)}
-                            className="text-xs font-extrabold text-[#8B5E3C] whitespace-nowrap hover:underline"
-                          >
-                            {alertAction}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Welcome Banner */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#2A9D8F] via-[#21867a] to-[#1d7369] rounded-3xl p-8 text-white shadow-xl">
@@ -725,7 +694,29 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                 <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Material</label><input type="text" value={newMaterial} onChange={(e) => setNewMaterial(e.target.value)} placeholder="Oak Wood" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
                 <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Size</label><input type="text" value={newSize} onChange={(e) => setNewSize(e.target.value)} placeholder="32x32x30" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
               </div>
-              <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Image URL</label><input type="text" value={newImage} onChange={(e) => setNewImage(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Product Image</label>
+                <label className="border-2 border-dashed border-[#D4A373]/50 rounded-2xl p-4 text-center hover:border-[#2A9D8F] transition-all bg-[#F8F5F0]/50 block group cursor-pointer relative overflow-hidden">
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleProductImageUpload} 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" 
+                  />
+                  {newImage && newImage.startsWith('data:image') ? (
+                    <div className="space-y-2 pointer-events-none">
+                      <img src={newImage} alt="Product Preview" className="w-full h-32 object-cover rounded-xl shadow-inner mx-auto" />
+                      <p className="text-xs text-[#2A9D8F] font-bold">Click or drag to change image</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 py-4 pointer-events-none">
+                      <UploadCloud className="w-8 h-8 text-[#2A9D8F] mx-auto group-hover:scale-110 transition-transform" />
+                      <p className="text-sm font-bold text-[#1F2937]">Click to upload or drag & drop</p>
+                      <p className="text-xs text-gray-500">PNG, JPG, WEBP up to 10MB</p>
+                    </div>
+                  )}
+                </label>
+              </div>
               <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Description</label><textarea rows={3} required value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Premium artisan crafted..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
               <button type="submit" className="w-full py-4 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold shadow-md transition-all">List Product</button>
             </form>

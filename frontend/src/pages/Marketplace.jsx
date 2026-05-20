@@ -18,32 +18,52 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
 
   const fetchProducts = async () => {
     setLoading(true);
+    const localProds = JSON.parse(localStorage.getItem('mockProducts') || '[]');
     try {
       const res = await axios.get('/products');
       if (res.data && res.data.data && res.data.data.length > 0) {
-        setProducts(res.data.data);
+        const serverProds = res.data.data;
+        const mergedMap = new Map();
+        serverProds.forEach(p => mergedMap.set(p._id, p));
+        localProds.forEach(p => mergedMap.set(p._id, p));
+        
+        // Sort newest first: descending by _id (timestamps are alphabetical/numerical strings)
+        const sorted = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
+        setProducts(sorted);
       } else {
-        // Fallback mock data if API succeeds but returns empty
-        setProducts([
+        if (localProds.length > 0) {
+          const sorted = [...localProds].sort((a, b) => b._id.localeCompare(a._id));
+          setProducts(sorted);
+        } else {
+          const fallback = [
+            { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+            { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+            { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+            { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+            { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+            { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
+          ];
+          setProducts(fallback);
+          localStorage.setItem('mockProducts', JSON.stringify(fallback));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching products', error);
+      if (localProds.length > 0) {
+        const sorted = [...localProds].sort((a, b) => b._id.localeCompare(a._id));
+        setProducts(sorted);
+      } else {
+        const fallback = [
           { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
           { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
           { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
           { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
           { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
           { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
-        ]);
+        ];
+        setProducts(fallback);
+        localStorage.setItem('mockProducts', JSON.stringify(fallback));
       }
-    } catch (error) {
-      console.error('Error fetching products', error);
-      // Fallback mock data if API fails
-      setProducts([
-        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-        { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-        { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
-        { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -53,9 +73,20 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     e.stopPropagation();
     try {
       await axios.post('/cart', { productId, quantity: 1 });
-      alert('Added to cart!');
     } catch (error) {
-      alert('Added to cart (Demo mode)');
+      // ignore
+    }
+    const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+    const existingItem = localCart.find(item => item.productId === productId);
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      localCart.push({ productId, quantity: 1 });
+    }
+    localStorage.setItem('mockCart', JSON.stringify(localCart));
+    alert('🛒 Product added to your cart!');
+    if (onGoToCart) {
+      onGoToCart();
     }
   };
 

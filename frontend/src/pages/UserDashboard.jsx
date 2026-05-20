@@ -49,6 +49,7 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Orders & Quotations State
   const [orders, setOrders] = useState([]);
   const [pendingPaid, setPendingPaid] = useState(false);
+  const [cartItems, setCartItems] = useState([]);
 
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
@@ -61,29 +62,170 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     fetchUserData();
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'cart') {
+      const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+      setCartItems(localCart);
+    }
+  }, [activeTab]);
+
   const fetchUserData = async () => {
     try {
-      const [aiRes, manRes, prodRes, ordRes] = await Promise.all([
-        axios.get('/designs/ai').catch(() => ({ data: { data: [] } })),
-        axios.get('/designs/manual').catch(() => ({ data: { data: [] } })),
-        axios.get('/products').catch(() => ({ data: { data: [] } })),
-        axios.get('/orders/user').catch(() => ({ data: { data: [] } }))
-      ]);
+      // 1. AI Designs
+      let localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || 'null');
+      if (!localAi) {
+        localAi = [
+          { 
+            _id: 'ai_1', 
+            roomType: 'Living Room', 
+            generatedImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800', 
+            aiSuggestion: { 
+              furniture: ['Modern Sofa', 'Glass Coffee Table', 'Minimalist TV Stand'],
+              materials: ['Oak Wood', 'Beige Linen', 'Brushed Brass'],
+              colorPalette: ['Beige', 'Warm Oak', 'Emerald green accents'],
+              budgetEstimate: 3500 
+            }, 
+            status: 'accepted',
+            createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
+          }
+        ];
+        localStorage.setItem('mockAiDesigns', JSON.stringify(localAi));
+      }
 
-      const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const backendManualReqs = manRes.data?.data || [];
-      const mergedManualReqs = [...localManualRequests];
-      backendManualReqs.forEach(br => {
-        if (!mergedManualReqs.find(lr => lr._id === br._id)) mergedManualReqs.push(br);
-      });
+      // 2. Manual Requests
+      let localManual = JSON.parse(localStorage.getItem('mockManualRequests') || 'null');
+      if (!localManual) {
+        localManual = [
+          {
+            _id: 'man_1',
+            requestType: 'Manual Design',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: '+91 98765 43210' },
+            roomType: 'Bedroom',
+            style: 'Minimalist',
+            budget: '₹50,000 - ₹1,00,000',
+            size: 'Medium',
+            requirements: 'Cozy and dark theme with hidden lighting.',
+            materials: 'Oak wood paneling, beige linen fabrics',
+            timeline: 'Within 1 Month',
+            ownMaterialsAvailable: 'No',
+            status: 'Submitted',
+            createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
+          },
+          {
+            _id: 'man_2',
+            requestType: 'Interior Designer Help',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: '+91 98765 43210' },
+            roomType: 'Living Room',
+            style: 'Modern',
+            budget: 'Above ₹3,0,000',
+            size: 'Large',
+            requirements: 'Open layout consultation for family room.',
+            materials: 'Marble flooring, brass accents',
+            timeline: 'Flexible',
+            ownMaterialsAvailable: 'Yes',
+            materialDetails: 'Teak wood panels and white marble tiles',
+            materialQuantity: '40 sq ft teak, 120 sq ft marble',
+            materialPickupNeeded: 'Yes',
+            pickupAddress: 'Block 4B, Sector 62, Noida',
+            status: 'Submitted',
+            createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
+          }
+        ];
+        localStorage.setItem('mockManualRequests', JSON.stringify(localManual));
+      }
 
-      setAiDesigns(aiRes.data?.data || []);
-      setManualDesigns(mergedManualReqs);
-      setProducts(prodRes.data?.data || [
-        { _id: 'prod_1', title: 'Velvet Lounge Chair', category: 'Living Room', price: 450, images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], description: 'Luxurious velvet chair.' },
-        { _id: 'prod_2', title: 'Modern Oak Dining Table', category: 'Dining Room', price: 1200, images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'], description: 'Solid oak dining table for 6.' }
-      ]);
-      setOrders(ordRes.data?.data || []);
+      // 3. Products
+      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || 'null');
+      if (!localProducts) {
+        localProducts = [
+          { 
+            _id: 'prod_1', 
+            title: 'Velvet Lounge Chair', 
+            category: 'Living Room', 
+            price: 450, 
+            images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], 
+            description: 'Luxurious velvet chair crafted with solid oak frames and high-density premium foam padding.',
+            material: 'Velvet / Oak Wood',
+            size: '32×32×30',
+            stockStatus: 'In Stock',
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+          },
+          { 
+            _id: 'prod_2', 
+            title: 'Modern Oak Dining Table', 
+            category: 'Dining Room', 
+            price: 1200, 
+            images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'], 
+            description: 'Solid oak dining table for 6 with matte oil finish.',
+            material: 'Solid Oak Wood',
+            size: '72×36×30',
+            stockStatus: 'In Stock',
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+          }
+        ];
+        localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+      }
+
+      // 4. Orders
+      let localOrders = JSON.parse(localStorage.getItem('mockOrders') || 'null');
+      if (!localOrders) {
+        localOrders = [
+          {
+            _id: 'ord_d_9182',
+            orderType: 'AI Design',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 4500,
+            paymentStatus: 'paid',
+            orderStatus: 'Quotation Accepted',
+            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
+            createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
+            shippingAddress: '789 Designer Lane, New York, NY, USA'
+          },
+          {
+            _id: 'ord_m_2210',
+            orderType: 'Manual Design',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 8500,
+            paymentStatus: 'paid',
+            orderStatus: 'Manufacturer Assigned',
+            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 20).toISOString(),
+            createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
+            shippingAddress: '12, Mahatma Gandhi Road, Bangalore, India'
+          },
+          {
+            _id: 'ord_p_1044',
+            orderType: 'Marketplace Product',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: { _id: 'del_mock_1', companyName: 'Swift Logistics Solutions' },
+            installationPartnerId: null,
+            totalAmount: 1250,
+            paymentStatus: 'paid',
+            orderStatus: 'Delivery Assigned',
+            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 3).toISOString(),
+            createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
+            shippingAddress: '456 Cinema Road, Los Angeles, CA, USA'
+          }
+        ];
+        localStorage.setItem('mockOrders', JSON.stringify(localOrders));
+      }
+
+      const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+
+      setAiDesigns(localAi);
+      setManualDesigns(localManual);
+      setProducts(localProducts);
+      setOrders(localOrders);
+      setCartItems(localCart);
     } catch (error) {
       console.error('Error fetching user dashboard data', error);
     }
@@ -104,69 +246,85 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const handleAiSubmit = async (e) => {
     e.preventDefault();
     setLoadingAi(true);
-    try {
-      const mockImg = originalImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60';
-      const res = await axios.post('/designs/ai', { roomType, originalImage: mockImg });
-      setAiDesigns([res.data.data, ...aiDesigns]);
-      alert('AI Design Generated Successfully!');
-    } catch (error) {
-      alert(error.response?.data?.message || 'Error generating AI design');
-    } finally {
-      setLoadingAi(false);
-    }
+    
+    // Simulate generation delay
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const mockImg = originalImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60';
+    const newDesign = {
+      _id: 'ai_' + Date.now(),
+      userId: user?._id || 'u_local',
+      roomType,
+      originalImage: mockImg,
+      generatedImage: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=800',
+      aiSuggestion: {
+        furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
+        materials: ['Teak Wood', 'Linen', 'Brass'],
+        colorPalette: ['Teak Warmth', 'Beige Linen', 'Warm Brass Accent'],
+        budgetEstimate: 4200
+      },
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const updated = [newDesign, ...localAi];
+    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    setAiDesigns(updated);
+    setLoadingAi(false);
+    alert('AI Design Generated Successfully!');
   };
 
   const handleAiStatus = async (id, status) => {
-    try {
-      const res = await axios.put(`/designs/ai/${id}`, { status });
-      const updatedDesign = res.data?.data || aiDesigns.find(d => d._id === id);
-      setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
-      
-      if (status === 'accepted') {
-        try {
-          const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-          const aiCustomRequest = {
-            _id: 'man_from_ai_' + updatedDesign._id,
-            userId: updatedDesign.userId || { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            roomType: updatedDesign.roomType || 'Living Room',
-            style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
-            budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
-            size: 'Standard',
-            timeline: 'Flexible',
-            ownMaterialsAvailable: 'No',
-            materialDetails: '',
-            materialQuantity: '',
-            materialPickupNeeded: 'No',
-            pickupAddress: '',
-            materialImages: [],
-            requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
-            referenceImages: [updatedDesign.generatedImage],
-            status: 'Submitted',
-            createdAt: new Date().toISOString()
-          };
-          if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
-            localStorage.setItem('mockManualRequests', JSON.stringify([aiCustomRequest, ...localRequests]));
-          }
-          
-          const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-          localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-            _id: `notif_admin_${Date.now()}`,
-            message: `New AI Design Order Request requires vendor assignment.`,
-            type: 'warning',
-            createdAt: new Date().toISOString()
-          }, ...localAdminNotifs]));
-        } catch (err) {
-          console.error('Failed to forward AI request to vendor', err);
+    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const updated = localAi.map(d => d._id === id ? { ...d, status } : d);
+    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    setAiDesigns(updated);
+    
+    const updatedDesign = updated.find(d => d._id === id);
+
+    if (status === 'accepted') {
+      try {
+        const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const aiCustomRequest = {
+          _id: 'man_from_ai_' + updatedDesign._id,
+          userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+          roomType: updatedDesign.roomType || 'Living Room',
+          style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+          budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
+          size: 'Standard',
+          timeline: 'Flexible',
+          ownMaterialsAvailable: 'No',
+          materialDetails: '',
+          materialQuantity: '',
+          materialPickupNeeded: 'No',
+          pickupAddress: '',
+          materialImages: [],
+          requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
+          referenceImages: [updatedDesign.generatedImage],
+          status: 'Submitted',
+          createdAt: new Date().toISOString()
+        };
+        if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
+          localStorage.setItem('mockManualRequests', JSON.stringify([aiCustomRequest, ...localRequests]));
         }
-        alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+        
+        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+        localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+          _id: `notif_admin_${Date.now()}`,
+          message: `New AI Design Order Request requires vendor assignment.`,
+          type: 'warning',
+          createdAt: new Date().toISOString()
+        }, ...localAdminNotifs]));
+      } catch (err) {
+        console.error('Failed to forward AI request to vendor', err);
       }
-      
-      if (status === 'rejected') {
-        alert('AI Design rejected. You can now submit a manual design request.');
-        if (setActiveTab) setActiveTab('manual');
-      }
-    } catch (error) {
-      alert('Error updating AI design status');
+      alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+    }
+    
+    if (status === 'rejected') {
+      alert('AI Design rejected. You can now submit a manual design request.');
+      if (setActiveTab) setActiveTab('manual');
     }
   };
 
@@ -183,9 +341,12 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setManualSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-    const payload = {
+    const fallbackRequest = {
+      _id: 'man_local_' + Date.now(),
       requestType: 'Manual Design',
+      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
       roomType, style: manualStyle, budget: manualBudget, size: manualSize,
       materials: manualMaterials, requirements: manualRequirements,
       referenceImages,
@@ -196,57 +357,32 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       pickupAddress: ownMaterials === 'Yes' ? pickupAddress : '',
       materialPickupNeeded: ownMaterials === 'Yes' ? pickupNeeded : 'No',
       timeline, needDesignerHelp: needDesigner,
-      serviceAddress, vendorPreference: vendorPref, quotationType
+      serviceAddress, vendorPreference: vendorPref, quotationType,
+      status: 'Submitted',
+      createdAt: new Date().toISOString()
     };
 
-    // Helper to persist to localStorage and notify vendor/admin dashboards
-    const persistToLocalStorage = (requestObj) => {
-      try {
-        const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-        // Avoid duplicates
-        if (!localRequests.find(r => r._id === requestObj._id)) {
-          localStorage.setItem('mockManualRequests', JSON.stringify([requestObj, ...localRequests]));
-        }
-        const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-        localStorage.setItem('mockVendorNotifications', JSON.stringify([{
-          _id: `notif_${Date.now()}`,
-          message: `New custom design request from ${requestObj.userId?.name || 'Customer'}.`,
-          type: 'info',
-          createdAt: new Date().toISOString()
-        }, ...localVendorNotifs]));
-        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-        localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-          _id: `notif_admin_${Date.now()}`,
-          message: `New Manual Design Request ID: ${requestObj._id} requires review.`,
-          type: 'warning',
-          createdAt: new Date().toISOString()
-        }, ...localAdminNotifs]));
-      } catch (err) {
-        console.error('LocalStorage write failed', err);
-      }
-    };
+    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const updated = [fallbackRequest, ...localRequests];
+    localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+    setManualDesigns(updated);
 
-    try {
-      const res = await axios.post('/designs/manual', payload);
-      const newRequest = res.data.data;
-      setManualDesigns([newRequest, ...manualDesigns]);
-      // Always persist so vendor/admin can see it across sessions
-      persistToLocalStorage(newRequest);
-    } catch (error) {
-      // Backend failed (offline / 401 in demo mode) — create a client-side fallback request
-      const fallbackRequest = {
-        _id: 'man_local_' + Date.now(),
-        userId: { name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: '' },
-        ...payload,
-        style: payload.style,
-        status: 'Submitted',
-        createdAt: new Date().toISOString()
-      };
-      setManualDesigns([fallbackRequest, ...manualDesigns]);
-      persistToLocalStorage(fallbackRequest);
-    }
+    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `New custom design request from ${fallbackRequest.userId?.name || 'Customer'}.`,
+      type: 'info',
+      createdAt: new Date().toISOString()
+    }, ...localVendorNotifs]));
 
-    // Reset form regardless of success/failure
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_admin_${Date.now()}`,
+      message: `New Manual Design Request ID: ${fallbackRequest._id} requires review.`,
+      type: 'warning',
+      createdAt: new Date().toISOString()
+    }, ...localAdminNotifs]));
+
     alert('✅ Manual Design Request Submitted Successfully! Vendors have been notified.');
     setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
     setOwnMaterials('No'); setMaterialDetails(''); setMaterialQuantity(''); setMaterialImages([]); setPickupAddress('');
@@ -259,70 +395,51 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const handleDesignerSubmit = async (e) => {
     e.preventDefault();
     const budgetNum = Number(designerBudget);
-    const payload = { details: designerDetails, budget: budgetNum };
-
-    const persistDesignerToLocalStorage = (requestObj) => {
-      try {
-        const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
-        if (!localRequests.find(r => r._id === requestObj._id)) {
-          localStorage.setItem('mockDesignerRequests', JSON.stringify([requestObj, ...localRequests]));
-        }
-        
-        // Also map and persist to mockManualRequests so it shows up in Vendor Dashboard
-        const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-        const manualRequestFromDesigner = {
-          _id: 'man_from_des_' + requestObj._id,
-          requestType: 'Interior Designer Help',
-          userId: requestObj.userId || { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-          roomType: 'Interior Design',
-          style: 'Consultation',
-          budget: requestObj.budget || 500,
-          size: 'Full Space',
-          timeline: 'Flexible',
-          ownMaterialsAvailable: 'No',
-          materialDetails: '',
-          materialQuantity: '',
-          materialPickupNeeded: 'No',
-          pickupAddress: '',
-          materialImages: [],
-          requirements: requestObj.details || requestObj.requirements || '',
-          referenceImages: [],
-          status: 'Pending',
-          createdAt: requestObj.createdAt || new Date().toISOString()
-        };
-        if (!localManualRequests.find(r => r._id === manualRequestFromDesigner._id)) {
-          localStorage.setItem('mockManualRequests', JSON.stringify([manualRequestFromDesigner, ...localManualRequests]));
-        }
-
-        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-        localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-          _id: `notif_admin_${Date.now()}`,
-          message: `New Interior Designer Request ID: ${requestObj._id} requires review.`,
-          type: 'warning',
-          createdAt: new Date().toISOString()
-        }, ...localAdminNotifs]));
-      } catch (err) {
-        console.error('LocalStorage write failed', err);
-      }
+    const fallbackRequest = {
+      _id: 'des_req_local_' + Date.now(),
+      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+      details: designerDetails,
+      budget: budgetNum,
+      status: 'pending',
+      assignedDesignerId: null,
+      createdAt: new Date().toISOString()
     };
 
-    try {
-      const res = await axios.post('/designs/designer', payload);
-      const newRequest = res.data.data;
-      persistDesignerToLocalStorage(newRequest);
-    } catch (error) {
-      // Backend failed (offline / 401 in demo mode) — create a client-side fallback
-      const fallbackRequest = {
-        _id: 'des_req_local_' + Date.now(),
-        userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-        details: designerDetails,
-        budget: budgetNum,
-        status: 'pending',
-        assignedDesignerId: null,
-        createdAt: new Date().toISOString()
-      };
-      persistDesignerToLocalStorage(fallbackRequest);
-    }
+    const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+    const updatedDesigner = [fallbackRequest, ...localRequests];
+    localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
+
+    const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const manualRequestFromDesigner = {
+      _id: 'man_from_des_' + fallbackRequest._id,
+      requestType: 'Interior Designer Help',
+      userId: fallbackRequest.userId,
+      roomType: 'Interior Design',
+      style: 'Consultation',
+      budget: fallbackRequest.budget ? `₹${fallbackRequest.budget}` : '500',
+      size: 'Full Space',
+      timeline: 'Flexible',
+      ownMaterialsAvailable: 'No',
+      materialDetails: '',
+      materialQuantity: '',
+      materialPickupNeeded: 'No',
+      pickupAddress: '',
+      materialImages: [],
+      requirements: fallbackRequest.details || '',
+      referenceImages: [],
+      status: 'Pending',
+      createdAt: fallbackRequest.createdAt
+    };
+    localStorage.setItem('mockManualRequests', JSON.stringify([manualRequestFromDesigner, ...localManualRequests]));
+    setManualDesigns([manualRequestFromDesigner, ...manualDesigns]);
+
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_admin_${Date.now()}`,
+      message: `New Interior Designer Request ID: ${fallbackRequest._id} requires review.`,
+      type: 'warning',
+      createdAt: new Date().toISOString()
+    }, ...localAdminNotifs]));
 
     alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
     setDesignerDetails(''); setDesignerBudget('');
@@ -330,34 +447,76 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
   // Marketplace Order Action
   const handleProductOrder = async (product) => {
-    try {
-      const res = await axios.post('/orders', {
-        vendorId: product.vendorId?._id || product.vendorId || 'mock_vendor',
-        orderType: 'product',
-        referenceId: product._id,
-        totalAmount: product.price,
-        shippingAddress: user.address || '123 Default User St'
-      });
-      setOrders([res.data.data, ...orders]);
-      alert('Added to Cart! (Mock Order Placed)');
-      if (setActiveTab) setActiveTab('cart');
-    } catch (error) {
-      alert('Error placing order');
-    }
+    const newOrder = {
+      _id: 'ord_p_' + Date.now(),
+      orderType: 'Marketplace Product',
+      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+      vendorId: product.vendorId || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      manufacturerId: null,
+      deliveryPartnerId: null,
+      installationPartnerId: null,
+      totalAmount: product.price,
+      paymentStatus: 'paid',
+      orderStatus: 'Delivery Assigned',
+      expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
+      createdAt: new Date().toISOString(),
+      shippingAddress: user?.address || '123 Default User St',
+      productDetails: {
+        _id: product._id,
+        title: product.title,
+        price: product.price,
+        images: product.images
+      }
+    };
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = [newOrder, ...localOrders];
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    setOrders(updated);
+    alert('Added to Cart! (Mock Order Placed)');
+    if (setActiveTab) setActiveTab('orders');
   };
 
   // Budget Approval Action
   const handleBudgetApproval = async (quotationId) => {
-    try {
-      const res = await axios.post('/orders/approve-budget', {
-        quotationId, shippingAddress: user.address || '123 Default User St'
-      });
-      setOrders([res.data.data, ...orders]);
-      alert('Quotation approved! Order confirmed and moved to manufacturing.');
-      if (setActiveTab) setActiveTab('orders');
-    } catch (error) {
-      alert('Error approving budget');
+    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const reqIndex = localRequests.findIndex(r => r._id === quotationId);
+    let requestObj = null;
+    if (reqIndex !== -1) {
+      localRequests[reqIndex].status = 'Quotation Accepted';
+      localStorage.setItem('mockManualRequests', JSON.stringify(localRequests));
+      requestObj = localRequests[reqIndex];
     }
+
+    const orderAmount = requestObj ? Number(requestObj.quotationAmount || 3500) : 4500;
+
+    const newOrder = {
+      _id: 'ord_q_' + Date.now(),
+      orderType: requestObj?.requestType || 'Manual Design',
+      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+      vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
+      deliveryPartnerId: null,
+      installationPartnerId: null,
+      totalAmount: orderAmount,
+      paymentStatus: 'paid',
+      orderStatus: 'Quotation Accepted',
+      expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
+      createdAt: new Date().toISOString(),
+      shippingAddress: user?.address || '789 Designer Lane, New York, NY, USA',
+      designRequestId: quotationId
+    };
+
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = [newOrder, ...localOrders];
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    setOrders(updated);
+
+    if (requestObj) {
+      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Quotation Accepted' } : r));
+    }
+
+    alert('Quotation approved! Order confirmed and moved to manufacturing.');
+    if (setActiveTab) setActiveTab('orders');
   };
 
   // Support Ticket Action
@@ -367,44 +526,39 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       alert('Please fill in all fields.');
       return;
     }
-    try {
-      const res = await axios.post('/orders/ticket', {
-        subject: ticketSubject,
-        message: ticketMessage
-      });
-      if (res.data?.success) {
-        alert('Ticket Submitted Successfully!');
-        setTicketSubject('');
-        setTicketMessage('');
-      } else {
-        alert(res.data?.message || 'Failed to submit ticket.');
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Error submitting ticket. Please try again.');
-    }
+    const newTicket = {
+      _id: 'ticket_' + Date.now(),
+      subject: ticketSubject,
+      message: ticketMessage,
+      status: 'open',
+      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
+      createdAt: new Date().toISOString()
+    };
+    const localTickets = JSON.parse(localStorage.getItem('mockTickets') || '[]');
+    localStorage.setItem('mockTickets', JSON.stringify([newTicket, ...localTickets]));
+    alert('Ticket Submitted Successfully!');
+    setTicketSubject('');
+    setTicketMessage('');
   };
 
   // Review Action
   const handlePublishReview = async (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post('/orders/review', {
-        vendorId: 'mock_vendor_id_123',
-        productId: 'prod_1',
-        rating: reviewRating,
-        comment: reviewComment
-      });
-      if (res.data?.success) {
-        alert('Review published successfully!');
-        setReviewComment('');
-      } else {
-        alert('Failed to publish review.');
-      }
-    } catch (err) {
-      alert('Error publishing review.');
-    }
+    const newReview = {
+      _id: 'review_' + Date.now(),
+      vendorId: 'mock_vendor_id_123',
+      productId: 'prod_1',
+      rating: reviewRating,
+      comment: reviewComment,
+      userId: { name: user?.name || 'Customer Demo' },
+      createdAt: new Date().toISOString()
+    };
+    const localReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+    localStorage.setItem('mockReviews', JSON.stringify([newReview, ...localReviews]));
+    alert('Review published successfully!');
+    setReviewComment('');
   };
+
 
   return (
     <div className="space-y-10">
@@ -973,47 +1127,129 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       )}
 
       {/* TAB 6: MY CART */}
-      {activeTab === 'cart' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Shopping Cart</h2>
-            <div className="space-y-4">
-              {/* Mock Cart Item */}
-              <div className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl">
-                <img src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=150" alt="Item" className="w-20 h-20 object-cover rounded-xl" />
-                <div className="flex-1">
-                  <h4 className="font-bold text-[#1F2937]">Velvet Lounge Chair</h4>
-                  <p className="text-xs text-gray-500">Vendor: Artisan Furniture Co.</p>
-                  <div className="flex items-center gap-4 mt-2">
-                    <span className="font-extrabold text-[#8B5E3C]">$450.00</span>
-                    <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1">
-                      <button className="text-gray-400 hover:text-black">-</button>
-                      <span>1</span>
-                      <button className="text-gray-400 hover:text-black">+</button>
-                    </div>
+      {activeTab === 'cart' && (() => {
+        const resolvedItems = cartItems.map(item => {
+          const prod = products.find(p => p._id === item.productId);
+          return prod ? { ...prod, quantity: item.quantity } : null;
+        }).filter(Boolean);
+
+        const subtotal = resolvedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+        const shipping = subtotal > 0 ? 50 : 0;
+        const tax = Math.round(subtotal * 0.08);
+        const total = subtotal + shipping + tax;
+
+        const updateCartQuantity = (productId, delta) => {
+          const updated = cartItems.map(item => {
+            if (item.productId === productId) {
+              const newQty = item.quantity + delta;
+              return newQty > 0 ? { ...item, quantity: newQty } : null;
+            }
+            return item;
+          }).filter(Boolean);
+          setCartItems(updated);
+          localStorage.setItem('mockCart', JSON.stringify(updated));
+        };
+
+        const removeFromCart = (productId) => {
+          const updated = cartItems.filter(item => item.productId !== productId);
+          setCartItems(updated);
+          localStorage.setItem('mockCart', JSON.stringify(updated));
+        };
+
+        const handleCheckout = () => {
+          if (resolvedItems.length === 0) {
+            alert('Your cart is empty!');
+            return;
+          }
+
+          // Create mock orders for each vendor's products in the cart
+          const newOrders = resolvedItems.map(item => ({
+            _id: 'ord_p_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            orderType: 'Marketplace Product',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            vendorId: item.vendorId || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: item.price * item.quantity,
+            paymentStatus: 'paid',
+            orderStatus: 'Delivery Assigned',
+            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
+            createdAt: new Date().toISOString(),
+            shippingAddress: user?.address || '123 Default User St',
+            productDetails: {
+              _id: item._id,
+              title: item.title,
+              price: item.price,
+              images: item.images,
+              quantity: item.quantity
+            }
+          }));
+
+          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const updatedOrders = [...newOrders, ...localOrders];
+          localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+          setOrders(updatedOrders);
+
+          // Clear cart
+          setCartItems([]);
+          localStorage.setItem('mockCart', JSON.stringify([]));
+
+          alert('✅ Order placed successfully! Thank you for your purchase.');
+          if (setActiveTab) setActiveTab('orders');
+        };
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
+            <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Shopping Cart</h2>
+              <div className="space-y-4">
+                {resolvedItems.length === 0 ? (
+                  <div className="text-center py-12 space-y-4">
+                    <ShoppingCart className="w-12 h-12 text-[#D4A373] mx-auto" />
+                    <p className="text-gray-500 font-bold">Your shopping cart is empty.</p>
+                    <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Explore Marketplace</button>
                   </div>
-                </div>
-                <button className="p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
+                ) : (
+                  resolvedItems.map(item => (
+                    <div key={item._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-gray-100 rounded-2xl">
+                      <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-50" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
+                        <p className="text-xs text-gray-500 mt-0.5">Vendor: {item.vendorId?.companyName || 'Artisan Workshop'}</p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="font-extrabold text-[#8B5E3C]">${item.price}</span>
+                          <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1 bg-white">
+                            <button onClick={() => updateCartQuantity(item._id, -1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">-</button>
+                            <span className="w-4 text-center">{item.quantity}</span>
+                            <button onClick={() => updateCartQuantity(item._id, 1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">+</button>
+                          </div>
+                        </div>
+                      </div>
+                      <button onClick={() => removeFromCart(item._id)} className="self-end sm:self-center p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          </div>
-          <div className="lg:col-span-4 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
-            <h3 className="font-bold text-lg text-[#1F2937]">Order Summary</h3>
-            <div className="space-y-3 text-sm text-gray-600 border-b border-gray-100 pb-4">
-              <div className="flex justify-between"><span>Subtotal</span><span className="font-bold text-[#1F2937]">$450.00</span></div>
-              <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">$50.00</span></div>
-              <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">$36.00</span></div>
+            <div className="lg:col-span-4 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
+              <h3 className="font-bold text-lg text-[#1F2937]">Order Summary</h3>
+              <div className="space-y-3 text-sm text-gray-600 border-b border-gray-100 pb-4">
+                <div className="flex justify-between"><span>Subtotal</span><span className="font-bold text-[#1F2937]">${subtotal.toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">${shipping}</span></div>
+                <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">${tax}</span></div>
+              </div>
+              <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
+                <span>Total</span>
+                <span>${total.toLocaleString()}</span>
+              </div>
+              <button onClick={handleCheckout} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                Proceed to Checkout <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
-            <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
-              <span>Total</span>
-              <span>$536.00</span>
-            </div>
-            <button onClick={() => { alert('Proceeding to checkout...'); if(setActiveTab) setActiveTab('payments'); }} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-              Proceed to Checkout <ArrowRight className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TAB 7: MY ORDERS */}
       {activeTab === 'orders' && (

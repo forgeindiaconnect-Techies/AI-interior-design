@@ -13,6 +13,14 @@ const DashboardLayout = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   React.useEffect(() => {
+    const overrideTab = localStorage.getItem('activeDashboardTab');
+    if (overrideTab) {
+      setActiveTab(overrideTab);
+      localStorage.removeItem('activeDashboardTab');
+    }
+  }, []);
+
+  React.useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {

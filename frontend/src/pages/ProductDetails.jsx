@@ -18,6 +18,14 @@ const ProductDetails = () => {
   }, [id]);
 
   const fetchProductDetails = async () => {
+    const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+    const localProduct = localProducts.find(p => p._id === id);
+    if (localProduct) {
+      setProduct(localProduct);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await axios.get(`/products/${id}`);
       setProduct(res.data.data);
@@ -49,10 +57,18 @@ const ProductDetails = () => {
   const handleAddToCart = async () => {
     try {
       await axios.post('/cart', { productId: id, quantity: 1 });
-      alert('Product added to your cart!');
     } catch (error) {
-      alert('Product added to cart (Demo Mode)');
+      // ignore
     }
+    const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+    const existingItem = localCart.find(item => item.productId === id);
+    if (existingItem) {
+      existingItem.quantity += 1;
+    } else {
+      localCart.push({ productId: id, quantity: 1 });
+    }
+    localStorage.setItem('mockCart', JSON.stringify(localCart));
+    alert('🛒 Product added to your cart!');
   };
 
   const handleSaveItem = async () => {
@@ -65,10 +81,14 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = () => {
-    handleAddToCart();
-    // In a real app, this would redirect to checkout
-    // navigate('/checkout');
-    alert('Redirecting to checkout workflow...');
+    const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+    const existingItem = localCart.find(item => item.productId === id);
+    if (!existingItem) {
+      localCart.push({ productId: id, quantity: 1 });
+      localStorage.setItem('mockCart', JSON.stringify(localCart));
+    }
+    localStorage.setItem('activeDashboardTab', 'cart');
+    navigate('/dashboard/user');
   };
 
   if (loading || !product) {
