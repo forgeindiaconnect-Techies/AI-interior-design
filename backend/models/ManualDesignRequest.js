@@ -25,6 +25,7 @@ const ManualDesignRequestSchema = new mongoose.Schema({
     enum: ['Submitted', 'Vendor Review', 'Quotation Sent', 'User Approved', 'Manufacturing', 'Delivery', 'Installation', 'Completed'], 
     default: 'Submitted' 
   },
+  requestType: { type: String, enum: ['Manual Design', 'Interior Designer Help', 'AI Generated'], default: 'Manual Design' },
   assignedVendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   assignedDesignerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   createdAt: { type: Date, default: Date.now }

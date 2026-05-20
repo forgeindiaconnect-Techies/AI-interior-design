@@ -153,6 +153,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [manualDesignRoomFilter, setManualDesignRoomFilter] = useState('all');
   const [manualDesignStatusFilter, setManualDesignStatusFilter] = useState('all');
   const [manualDesignBudgetFilter, setManualDesignBudgetFilter] = useState('all');
+  const [manualRequestFilter, setManualRequestFilter] = useState('All');
 
   const [selectedManualDesignVendorId, setSelectedManualDesignVendorId] = useState('');
   const [selectedManualDesignDesignerId, setSelectedManualDesignDesignerId] = useState('');
@@ -452,6 +453,15 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         }
       });
       mockMgmtData.manualDesigns = finalManualRequests;
+
+      const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const finalDesignerRequests = [...localDesignerRequests];
+      (mockMgmtData.designerRequests || []).forEach(br => {
+        if (!finalDesignerRequests.find(lr => lr._id === br._id)) {
+          finalDesignerRequests.push(br);
+        }
+      });
+      mockMgmtData.designerRequests = finalDesignerRequests;
 
       setManagementData(mockMgmtData);
 
@@ -1347,8 +1357,77 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         ...prev,
         manualDesigns: (prev.manualDesigns || []).map(r => r._id === id ? { ...r, ...fields } : r)
       } : prev);
+
+      // If it is a mapped designer request, sync it back to designer request
+      if (id.startsWith('man_from_des_')) {
+        const desId = id.replace('man_from_des_', '');
+        try {
+          const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+          const updatedDes = localDesignerRequests.map(r => {
+            if (r._id === desId) {
+              const mappedFields = {};
+              if (fields.status) {
+                mappedFields.status = fields.status === 'Completed' ? 'completed' : (fields.status === 'Vendor Review' ? 'assigned' : 'pending');
+              }
+              if (fields.assignedVendorId) {
+                mappedFields.assignedDesignerId = fields.assignedVendorId;
+              }
+              return { ...r, ...mappedFields };
+            }
+            return r;
+          });
+          localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDes));
+          setManagementData(prev => prev ? {
+            ...prev,
+            designerRequests: (prev.designerRequests || []).map(r => r._id === desId ? { ...r, ...updatedDes.find(d => d._id === desId) } : r)
+          } : prev);
+        } catch (err) {
+          console.error('Failed to sync back designer request', err);
+        }
+      }
     } catch (err) {
       console.error('Failed to update manual design in localStorage', err);
+    }
+  };
+
+  // Helper: update a designer request in localStorage (admin actions persist across sessions)
+  const updateDesignerRequestInStorage = (id, fields = {}) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const updated = stored.map(r => r._id === id ? { ...r, ...fields } : r);
+      localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+      // Also update managementData state so UI reflects change immediately
+      setManagementData(prev => prev ? {
+        ...prev,
+        designerRequests: (prev.designerRequests || []).map(r => r._id === id ? { ...r, ...fields } : r)
+      } : prev);
+
+      // Keep mockManualRequests in sync if this designer request was also mapped to manual requests
+      try {
+        const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const updatedManuals = localManualRequests.map(r => {
+          if (r._id === `man_from_des_${id}`) {
+            const mappedFields = {};
+            if (fields.status) {
+              mappedFields.status = fields.status === 'completed' ? 'Completed' : (fields.status === 'assigned' ? 'Vendor Review' : 'Submitted');
+            }
+            if (fields.assignedDesignerId) {
+              mappedFields.assignedVendorId = fields.assignedDesignerId;
+            }
+            return { ...r, ...mappedFields };
+          }
+          return r;
+        });
+        localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
+        setManagementData(prev => prev ? {
+          ...prev,
+          manualDesigns: (prev.manualDesigns || []).map(r => r._id === `man_from_des_${id}` ? { ...r, ...updatedManuals.find(m => m._id === `man_from_des_${id}`) } : r)
+        } : prev);
+      } catch (err) {
+        console.error('Failed to sync manual requests', err);
+      }
+    } catch (err) {
+      console.error('Failed to update designer request in localStorage', err);
     }
   };
 
@@ -1418,26 +1497,32 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       alert('Please select an interior designer.');
       return;
     }
+
+    const chosenDesignerObj = (managementData?.vendors || []).find(v => v._id === selectedRequestDesignerId);
+    const companyName = chosenDesignerObj?.companyName || 'Assigned Designer';
+
     try {
       await axios.put(`/admin/designer-requests/${assignDesignerRequestObj._id}/assign`, { designerId: selectedRequestDesignerId });
-      alert('🎨 Interior Designer assigned successfully to consultation request!');
-      setAssignDesignerRequestObj(null);
-      setSelectedRequestDesignerId('');
-      fetchAdminData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Error assigning designer');
-    }
+    } catch (error) { /* offline fallback */ }
+
+    updateDesignerRequestInStorage(assignDesignerRequestObj._id, {
+      assignedDesignerId: { _id: selectedRequestDesignerId, companyName },
+      status: 'assigned'
+    });
+
+    alert('🎨 Interior Designer assigned successfully to consultation request!');
+    setAssignDesignerRequestObj(null);
+    setSelectedRequestDesignerId('');
   };
 
   const handleUpdateDesignerRequestStatus = async (id, status) => {
     try {
       await axios.put(`/admin/designer-requests/${id}/status`, { status });
-      alert(`✅ Status updated to ${status}!`);
-      setSelectedDesignerRequest(null);
-      fetchAdminData();
-    } catch (error) {
-      alert(error.response?.data?.message || 'Error updating status');
-    }
+    } catch (error) { /* offline fallback */ }
+
+    updateDesignerRequestInStorage(id, { status });
+    alert(`✅ Status updated to ${status}!`);
+    setSelectedDesignerRequest(null);
   };
 
   if (loading) {
@@ -3057,15 +3142,27 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           if (manualDesignBudgetFilter !== 'all') {
             const budStr = String(d.budget || '').toLowerCase();
             if (manualDesignBudgetFilter === 'low') {
-              matchesBudget = budStr.includes('1,00,000') || budStr.includes('2,00,000') || budStr.includes('1500') || budStr.includes('3,000') || budStr.includes('2,000') || budStr.includes('4,000');
+              matchesBudget = budStr.includes('1,0,000') || budStr.includes('2,0,000') || budStr.includes('1500') || budStr.includes('3,00,000') || budStr.includes('2,00,000') || budStr.includes('1500') || budStr.includes('3,000') || budStr.includes('2,000') || budStr.includes('4,000');
             } else if (manualDesignBudgetFilter === 'mid') {
-              matchesBudget = budStr.includes('5,000') || budStr.includes('8,000') || budStr.includes('5000') || budStr.includes('50,000') || budStr.includes('1,00,000');
+              matchesBudget = budStr.includes('5,000') || budStr.includes('8,000') || budStr.includes('5000') || budStr.includes('50,000') || budStr.includes('1,0,000') || budStr.includes('1,00,000');
             } else if (manualDesignBudgetFilter === 'high') {
-              matchesBudget = budStr.includes('10,000') || budStr.includes('15,000') || budStr.includes('2,50,000');
+              matchesBudget = budStr.includes('10,000') || budStr.includes('15,000') || budStr.includes('2,50,000') || budStr.includes('2,50,000');
             }
           }
 
-          return matchesSearch && matchesRoom && matchesStatus && matchesBudget;
+          let matchesRequestType = true;
+          const reqType = d.requestType || 
+            ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
+
+          if (manualRequestFilter === 'Manual Design') {
+            matchesRequestType = reqType === 'Manual Design';
+          } else if (manualRequestFilter === 'Interior Designer Help') {
+            matchesRequestType = reqType === 'Interior Designer Help';
+          } else if (manualRequestFilter === 'Own Materials') {
+            matchesRequestType = d.ownMaterialsAvailable === 'Yes';
+          }
+
+          return matchesSearch && matchesRoom && matchesStatus && matchesBudget && matchesRequestType;
         });
 
         return (
@@ -3133,6 +3230,22 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
             {/* Filter and Search Panel */}
             <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm space-y-4">
+              {/* Type Filter Buttons */}
+              <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
+                {['All', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
+                  <button
+                    key={filt}
+                    onClick={() => setManualRequestFilter(filt)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                      manualRequestFilter === filt
+                        ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white shadow-sm'
+                        : 'bg-[#F8F5F0] border-[#D4A373]/20 text-gray-600 hover:bg-[#EDE8DF]'
+                    }`}
+                  >
+                    {filt}
+                  </button>
+                ))}
+              </div>
               <div className="flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -3248,7 +3361,23 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                         return (
                           <tr key={d._id} className="hover:bg-[#F8F5F0]/15 transition-all">
                             <td className="py-4 px-6">
-                              <span className="font-mono text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-bold uppercase">#{d._id?.slice(-6) || 'N/A'}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-bold uppercase">#{d._id?.slice(-6) || 'N/A'}</span>
+                                {(() => {
+                                  const reqType = d.requestType || 
+                                    ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
+                                  const badgeClass = reqType === 'Interior Designer Help' 
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                                    : reqType === 'AI Generated'
+                                      ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200';
+                                  return (
+                                    <span className={`px-2 py-0.5 rounded border text-[9px] font-extrabold uppercase ${badgeClass}`}>
+                                      {reqType}
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                               <p className="font-bold text-[#1F2937] text-sm mt-1">{d.userId?.name || 'Customer'}</p>
                               <span className="text-[10px] text-gray-400 font-medium block">{d.userId?.email || 'N/A'}</span>
                             </td>

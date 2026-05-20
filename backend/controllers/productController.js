@@ -29,7 +29,17 @@ exports.getProducts = async (req, res) => {
     const { category, vendorId } = req.query;
     let query = {};
     if (category) query.category = category;
-    if (vendorId) query.vendorId = vendorId;
+    
+    if (vendorId && mongoose.Types.ObjectId.isValid(vendorId)) {
+      query.vendorId = vendorId;
+    } else if (vendorId) {
+      let list = [...mockProducts];
+      if (category && category !== 'All') list = list.filter(p => p.category === category);
+      if (vendorId !== 'mock') {
+        list = list.filter(p => p.vendorId?._id === vendorId || p.vendorId === vendorId || p.vendorId?._id === 'mock_vendor_id_123');
+      }
+      return res.status(200).json({ success: true, count: list.length, data: list });
+    }
 
     const products = await Product.find(query).populate('vendorId', 'companyName rating');
     

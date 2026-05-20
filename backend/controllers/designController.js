@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 let mockManualDesigns = [
   {
     _id: 'man_101',
+    requestType: 'Manual Design',
     userId: { name: 'Sarah Jenkins', email: 'sarah.j@example.com', phone: '+1 (555) 234-5678' },
     roomType: 'Living Room',
     style: 'Modern Minimalist',
@@ -22,6 +23,7 @@ let mockManualDesigns = [
   },
   {
     _id: 'man_102',
+    requestType: 'Manual Design',
     userId: { name: 'Michael Chang', email: 'm.chang@example.com', phone: '+1 (555) 987-6543' },
     roomType: 'Bedroom',
     style: 'Nordic Scandinavian',
@@ -193,7 +195,7 @@ exports.createManualDesign = async (req, res) => {
       return res.status(201).json({ success: true, data: newMan });
     }
 
-    const manualDesign = await ManualDesignRequest.create({ userId: req.user.id, ...req.body, status: 'Submitted' });
+    const manualDesign = await ManualDesignRequest.create({ userId: req.user.id, requestType: req.body.requestType || 'Manual Design', ...req.body, status: 'Submitted' });
     
     // Notify Admin
     await Notification.create({ isAdmin: true, message: `New manual design request submitted by ${req.user.name || 'User'}.` });
@@ -247,10 +249,52 @@ exports.getUserManualDesigns = async (req, res) => {
 exports.createDesignerRequest = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(201).json({ success: true, data: { _id: 'des_' + Date.now(), ...req.body } });
+      const designerRequest = {
+        _id: 'des_' + Date.now(),
+        userId: { _id: req.user?.id || 'mock_user_id_123', name: req.user?.name || 'Customer Demo', email: req.user?.email || 'user@example.com', phone: '+1 (555) 019-2834' },
+        ...req.body,
+        status: 'pending',
+        assignedDesignerId: null,
+        createdAt: new Date().toISOString()
+      };
+      
+      // Also add to mockManualDesigns so it shows up in vendor dashboard!
+      mockManualDesigns.unshift({
+        _id: 'man_from_des_' + designerRequest._id,
+        requestType: 'Interior Designer Help',
+        userId: designerRequest.userId,
+        roomType: 'Interior Design',
+        style: 'Consultation',
+        budget: req.body.budget || 500,
+        size: 'Full Space',
+        materials: 'Not applicable',
+        requirements: req.body.details || '',
+        referenceImages: [],
+        timeline: 'Flexible',
+        ownMaterialsAvailable: 'No',
+        status: 'Submitted',
+        createdAt: designerRequest.createdAt
+      });
+
+      return res.status(201).json({ success: true, data: designerRequest });
     }
 
     const request = await InteriorDesignerRequest.create({ userId: req.user.id, ...req.body });
+
+    // For non-mock database, let's ALSO create a ManualDesignRequest so it shows up in the Vendor Dashboard!
+    await ManualDesignRequest.create({
+      userId: req.user.id,
+      requestType: 'Interior Designer Help',
+      roomType: 'Interior Design',
+      style: 'Consultation',
+      budget: req.body.budget || 500,
+      size: 'Full Space',
+      timeline: 'Flexible',
+      ownMaterialsAvailable: 'No',
+      requirements: req.body.details || '',
+      status: 'Submitted'
+    });
+
     res.status(201).json({ success: true, data: request });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

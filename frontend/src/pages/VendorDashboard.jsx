@@ -15,6 +15,7 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Vendor/Seller State
   const [products, setProducts] = useState([]);
   const [customRequests, setCustomRequests] = useState([]);
+  const [customRequestFilter, setCustomRequestFilter] = useState('All');
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newPrice, setNewPrice] = useState('');
@@ -100,9 +101,40 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       // Load products for vendor role
       if (user?.role === 'vendor') {
         const prodRes = await axios.get(`/products?vendorId=${profRes.data?.data?.vendor?._id || 'mock'}`).catch(() => ({ data: { data: [] } }));
-        setProducts(prodRes.data?.data || [
-          { _id: 'prod_1', title: 'Velvet Lounge Chair', category: 'Living Room', price: 450, images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], description: 'Luxurious velvet chair.' }
-        ]);
+        
+        // Read local mock products from localStorage
+        const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+        const backendProducts = prodRes.data?.data || [];
+        
+        // Define a robust, standard default product list to display initially in mock/demo mode
+        const defaultProducts = [
+          { 
+            _id: 'prod_1', 
+            title: 'Velvet Lounge Chair', 
+            category: 'Living Room', 
+            price: 450, 
+            images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], 
+            description: 'Luxurious velvet chair crafted with solid oak frames and high-density premium foam padding.',
+            material: 'Velvet / Oak Wood',
+            size: '32×32×30',
+            stockStatus: 'In Stock'
+          }
+        ];
+
+        // Merge: localProducts first, then backendProducts
+        const mergedProducts = [...localProducts];
+        backendProducts.forEach(bp => {
+          if (!mergedProducts.find(lp => lp._id.toString() === bp._id.toString())) {
+            mergedProducts.push(bp);
+          }
+        });
+
+        if (mergedProducts.length === 0) {
+          setProducts(defaultProducts);
+          localStorage.setItem('mockProducts', JSON.stringify(defaultProducts));
+        } else {
+          setProducts(mergedProducts);
+        }
       }
 
       // Always load custom design requests from localStorage + backend for all partner roles
@@ -144,8 +176,24 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         images: [newImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
         stockStatus: 'In Stock'
       };
-      const res = await axios.post('/products', payload);
-      setProducts([res.data.data, ...products]);
+      
+      let newProd;
+      try {
+        const res = await axios.post('/products', payload);
+        newProd = res.data.data;
+      } catch (err) {
+        // Fallback for mock mode
+        newProd = {
+          _id: 'prod_' + Date.now(),
+          ...payload,
+          vendorId: { _id: 'mock_vendor_id_123', companyName: profile?.companyName || 'Artisan Partner' }
+        };
+      }
+      
+      const updatedProducts = [newProd, ...products];
+      setProducts(updatedProducts);
+      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+      
       alert('✅ Product listed successfully! It is now live in the Marketplace.');
       setNewTitle(''); setNewDesc(''); setNewPrice(''); setNewMaterial(''); setNewSize(''); setNewImage('');
     } catch (error) {
@@ -159,8 +207,14 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     const updatedPrice = prompt('Enter new price ($):', p.price);
     if (!updatedPrice) return;
     try {
-      await axios.put(`/products/${p._id}`, { title: updatedTitle, price: Number(updatedPrice) });
-      setProducts(products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item));
+      try {
+        await axios.put(`/products/${p._id}`, { title: updatedTitle, price: Number(updatedPrice) });
+      } catch (_) {}
+      
+      const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
+      setProducts(updatedProducts);
+      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+      
       alert('✅ Product updated successfully!');
     } catch (error) {
       alert('Error updating product');
@@ -170,8 +224,14 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const handleDeleteProduct = async (id) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
-      await axios.delete(`/products/${id}`);
-      setProducts(products.filter(item => item._id !== id));
+      try {
+        await axios.delete(`/products/${id}`);
+      } catch (_) {}
+      
+      const updatedProducts = products.filter(item => item._id !== id);
+      setProducts(updatedProducts);
+      localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+      
       alert('✅ Product deleted successfully!');
     } catch (error) {
       alert('Error deleting product');
@@ -336,102 +396,6 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   return (
     <div className="space-y-10">
 
-      {/* ONBOARDING PROGRESS BANNER — shown only for unverified partners */}
-      {(() => {
-        const kyc = kycDetails?.status || 'Not Submitted';
-        const deposit = depositDetails?.paymentStatus || 'Pending';
-        const isActive = kyc === 'Approved' && deposit === 'Verified';
-        
-        if (isActive) return null; // Hide once fully activated
-
-        const steps = [
-          { label: 'Registered', done: true, icon: '✓' },
-          { label: 'KYC Submitted', done: kyc !== 'Not Submitted' && kyc !== 'Pending', icon: kyc !== 'Not Submitted' ? '✓' : '2' },
-          { label: 'Deposit Paid', done: deposit === 'Paid' || deposit === 'Verified', icon: (deposit === 'Paid' || deposit === 'Verified') ? '✓' : '3' },
-          { label: 'Admin Approval', done: kyc === 'Approved', icon: kyc === 'Approved' ? '✓' : '4' },
-          { label: 'Account Active', done: isActive, icon: isActive ? '✓' : '5' },
-        ];
-
-        const currentStepIndex = steps.findIndex(s => !s.done);
-        const progressPct = Math.round(((currentStepIndex === -1 ? steps.length : currentStepIndex) / steps.length) * 100);
-
-        let alertMsg = null;
-        let alertAction = null;
-        let alertTab = null;
-        if (kyc === 'Not Submitted' || kyc === 'Pending') {
-          alertMsg = '⚠️ Your account is not yet active. Please submit your KYC documents to get started.';
-          alertAction = 'Submit KYC Now →';
-          alertTab = 'kyc';
-        } else if (kyc === 'Submitted') {
-          alertMsg = '🕐 KYC submitted & under review. While waiting, you can pay the security deposit.';
-          alertAction = 'Pay Security Deposit →';
-          alertTab = 'deposit';
-        } else if (kyc === 'Approved' && deposit === 'Pending') {
-          alertMsg = '💳 KYC Approved! Complete your security deposit to activate your account.';
-          alertAction = 'Pay Security Deposit →';
-          alertTab = 'deposit';
-        } else if (deposit === 'Paid') {
-          alertMsg = '🔍 Security deposit received. Admin is reviewing your full application.';
-          alertAction = null;
-          alertTab = null;
-        } else if (kyc === 'Rejected') {
-          alertMsg = '❌ Your KYC was rejected. Please re-submit with correct documents.';
-          alertAction = 'Re-submit KYC →';
-          alertTab = 'kyc';
-        }
-
-        return (
-          <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-[#8B5E3C] to-[#7a5133] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-white font-bold text-sm">🚀 Partner Account Onboarding</p>
-                <p className="text-white/70 text-xs mt-0.5">Complete all steps to start receiving orders and earning revenue.</p>
-              </div>
-              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
-                <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${progressPct}%` }}></div>
-                </div>
-                <span className="text-white text-xs font-bold">{progressPct}% Complete</span>
-              </div>
-            </div>
-
-            <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              {/* Steps */}
-              <div className="flex items-center gap-0 overflow-x-auto flex-1">
-                {steps.map((s, i) => (
-                  <div key={i} className="flex items-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border-2 ${s.done ? 'bg-emerald-500 border-emerald-500 text-white' : i === currentStepIndex ? 'bg-white border-[#8B5E3C] text-[#8B5E3C]' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
-                        {s.icon}
-                      </div>
-                      <span className={`text-[9px] font-bold whitespace-nowrap ${s.done ? 'text-emerald-600' : i === currentStepIndex ? 'text-[#8B5E3C]' : 'text-gray-400'}`}>{s.label}</span>
-                    </div>
-                    {i < steps.length - 1 && (
-                      <div className={`h-0.5 w-6 sm:w-10 mx-1 mb-4 rounded-full ${s.done ? 'bg-emerald-400' : 'bg-gray-200'}`}></div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Alert Message + CTA */}
-              {alertMsg && (
-                <div className="flex-shrink-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 max-w-sm">
-                  <p className="text-xs font-medium text-amber-800 flex-1">{alertMsg}</p>
-                  {alertAction && (
-                    <button
-                      onClick={() => setActiveTab && setActiveTab(alertTab)}
-                      className="text-xs font-extrabold text-[#8B5E3C] whitespace-nowrap hover:underline"
-                    >
-                      {alertAction}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-      })()}
-
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (() => {
         const earningsData = [
@@ -463,6 +427,102 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
         return (
           <div className="space-y-8 animate-fadeIn">
+            {/* ONBOARDING PROGRESS BANNER — shown only for unverified partners */}
+            {(() => {
+              const kyc = kycDetails?.status || 'Not Submitted';
+              const deposit = depositDetails?.paymentStatus || 'Pending';
+              const isActive = kyc === 'Approved' && deposit === 'Verified';
+              
+              if (isActive) return null; // Hide once fully activated
+
+              const steps = [
+                { label: 'Registered', done: true, icon: '✓' },
+                { label: 'KYC Submitted', done: kyc !== 'Not Submitted' && kyc !== 'Pending', icon: kyc !== 'Not Submitted' ? '✓' : '2' },
+                { label: 'Deposit Paid', done: deposit === 'Paid' || deposit === 'Verified', icon: (deposit === 'Paid' || deposit === 'Verified') ? '✓' : '3' },
+                { label: 'Admin Approval', done: kyc === 'Approved', icon: kyc === 'Approved' ? '✓' : '4' },
+                { label: 'Account Active', done: isActive, icon: isActive ? '✓' : '5' },
+              ];
+
+              const currentStepIndex = steps.findIndex(s => !s.done);
+              const progressPct = Math.round(((currentStepIndex === -1 ? steps.length : currentStepIndex) / steps.length) * 100);
+
+              let alertMsg = null;
+              let alertAction = null;
+              let alertTab = null;
+              if (kyc === 'Not Submitted' || kyc === 'Pending') {
+                alertMsg = '⚠️ Your account is not yet active. Please submit your KYC documents to get started.';
+                alertAction = 'Submit KYC Now →';
+                alertTab = 'kyc';
+              } else if (kyc === 'Submitted') {
+                alertMsg = '🕐 KYC submitted & under review. While waiting, you can pay the security deposit.';
+                alertAction = 'Pay Security Deposit →';
+                alertTab = 'deposit';
+              } else if (kyc === 'Approved' && deposit === 'Pending') {
+                alertMsg = '💳 KYC Approved! Complete your security deposit to activate your account.';
+                alertAction = 'Pay Security Deposit →';
+                alertTab = 'deposit';
+              } else if (deposit === 'Paid') {
+                alertMsg = '🔍 Security deposit received. Admin is reviewing your full application.';
+                alertAction = null;
+                alertTab = null;
+              } else if (kyc === 'Rejected') {
+                alertMsg = '❌ Your KYC was rejected. Please re-submit with correct documents.';
+                alertAction = 'Re-submit KYC →';
+                alertTab = 'kyc';
+              }
+
+              return (
+                <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
+                  <div className="bg-gradient-to-r from-[#8B5E3C] to-[#7a5133] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="text-white font-bold text-sm">🚀 Partner Account Onboarding</p>
+                      <p className="text-white/70 text-xs mt-0.5">Complete all steps to start receiving orders and earning revenue.</p>
+                    </div>
+                    <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
+                      <div className="w-20 h-2 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-white rounded-full transition-all duration-700" style={{ width: `${progressPct}%` }}></div>
+                      </div>
+                      <span className="text-white text-xs font-bold">{progressPct}% Complete</span>
+                    </div>
+                  </div>
+
+                  <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    {/* Steps */}
+                    <div className="flex items-center gap-0 overflow-x-auto flex-1">
+                      {steps.map((s, i) => (
+                        <div key={i} className="flex items-center">
+                          <div className="flex flex-col items-center gap-1.5">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border-2 ${s.done ? 'bg-emerald-500 border-emerald-500 text-white' : i === currentStepIndex ? 'bg-white border-[#8B5E3C] text-[#8B5E3C]' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                              {s.icon}
+                            </div>
+                            <span className={`text-[9px] font-bold whitespace-nowrap ${s.done ? 'text-emerald-600' : i === currentStepIndex ? 'text-[#8B5E3C]' : 'text-gray-400'}`}>{s.label}</span>
+                          </div>
+                          {i < steps.length - 1 && (
+                            <div className={`h-0.5 w-6 sm:w-10 mx-1 mb-4 rounded-full ${s.done ? 'bg-emerald-400' : 'bg-gray-200'}`}></div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Alert Message + CTA */}
+                    {alertMsg && (
+                      <div className="flex-shrink-0 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 max-w-sm">
+                        <p className="text-xs font-medium text-amber-800 flex-1">{alertMsg}</p>
+                        {alertAction && (
+                          <button
+                            onClick={() => setActiveTab && setActiveTab(alertTab)}
+                            className="text-xs font-extrabold text-[#8B5E3C] whitespace-nowrap hover:underline"
+                          >
+                            {alertAction}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Welcome Banner */}
             <div className="relative overflow-hidden bg-gradient-to-br from-[#2A9D8F] via-[#21867a] to-[#1d7369] rounded-3xl p-8 text-white shadow-xl">
               <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
@@ -762,6 +822,23 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             </span>
           </div>
 
+          {/* Filters Row */}
+          <div className="flex flex-wrap gap-3 pb-2">
+            {['All', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
+              <button
+                key={filt}
+                onClick={() => setCustomRequestFilter(filt)}
+                className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all border ${
+                  customRequestFilter === filt
+                    ? 'bg-[#1F2937] border-[#1F2937] text-white shadow-sm'
+                    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+                }`}
+              >
+                {filt}
+              </button>
+            ))}
+          </div>
+
           {customRequests.length === 0 ? (
             <div className="bg-white p-16 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center space-y-4">
               <ClipboardList className="w-16 h-16 text-gray-300 mx-auto" />
@@ -770,27 +847,63 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-8">
-              {customRequests.map((req) => {
-                const isDetailsOpen = viewDetailsId === req._id;
-                const isQuoteOpen = selectedRequestId === req._id;
-                const statusColor = 
-                  req.status === 'Accepted' || req.status === 'Vendor Review' ? 'bg-[#00A86B]/10 text-[#00A86B]' :
-                  req.status === 'Quotation Sent' || req.status === 'budget_shared' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-                  req.status === 'Rejected' ? 'bg-red-100 text-red-600' : 'bg-[#E9C46A]/20 text-[#8B5E3C]';
+              {(() => {
+                const filtered = customRequests.filter(req => {
+                  if (customRequestFilter === 'All') return true;
+                  if (customRequestFilter === 'Manual Design') {
+                    return req.requestType === 'Manual Design' || (!req.requestType && req.roomType !== 'Interior Design' && req.style !== 'Consultation' && req.style !== 'AI Generated');
+                  }
+                  if (customRequestFilter === 'Interior Designer Help') {
+                    return req.requestType === 'Interior Designer Help' || (req.roomType === 'Interior Design' && req.style === 'Consultation');
+                  }
+                  if (customRequestFilter === 'Own Materials') {
+                    return req.ownMaterialsAvailable === 'Yes';
+                  }
+                  return true;
+                });
 
-                return (
-                  <div key={req._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 hover:shadow-md transition-all">
-                    {/* Header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-6">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <span className="bg-[#1F2937] text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">{req.roomType}</span>
-                          <span className="text-xs font-bold text-gray-400">ID: {req._id}</span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}`}>
-                            {req.status === 'budget_shared' ? 'QUOTATION SENT' : req.status.toUpperCase()}
-                          </span>
-                        </div>
-                        <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] pt-1">Style Preference: {req.style}</h3>
+                if (filtered.length === 0) {
+                  return (
+                    <div className="bg-white p-16 rounded-3xl border border-[#D4A373]/30 text-center text-gray-400 font-medium">
+                      No requests match the selected filter.
+                    </div>
+                  );
+                }
+
+                return filtered.map((req) => {
+                  const isDetailsOpen = viewDetailsId === req._id;
+                  const isQuoteOpen = selectedRequestId === req._id;
+                  const statusColor = 
+                    req.status === 'Accepted' || req.status === 'Vendor Review' ? 'bg-[#00A86B]/10 text-[#00A86B]' :
+                    req.status === 'Quotation Sent' || req.status === 'budget_shared' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+                    req.status === 'Rejected' ? 'bg-red-100 text-red-600' : 'bg-[#E9C46A]/20 text-[#8B5E3C]';
+
+                  return (
+                    <div key={req._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 hover:shadow-md transition-all">
+                      {/* Header */}
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-6">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="bg-[#1F2937] text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">{req.roomType}</span>
+                            <span className="text-xs font-bold text-gray-400">ID: {req._id}</span>
+                            
+                            {/* Request Type Badge */}
+                            {(() => {
+                              const reqType = req.requestType || 
+                                ((req.roomType === 'Interior Design' && req.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
+                              const badgeColor = reqType === 'Interior Designer Help' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+                              return (
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border ${badgeColor}`}>
+                                  Request Type: {reqType}
+                                </span>
+                              );
+                            })()}
+
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusColor}`}>
+                              {req.status === 'budget_shared' ? 'QUOTATION SENT' : req.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] pt-1">Style Preference: {req.style}</h3>
                         <p className="text-xs text-[#6B7280] font-medium">
                           Submitted by: <strong className="text-[#1F2937]">{req.userId?.name || 'Sarah Jenkins'}</strong> • Email: {req.userId?.email || 'sarah.j@example.com'} • Phone: {req.userId?.phone || '+1 (555) 234-5678'}
                         </p>
@@ -966,7 +1079,8 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                     </div>
                   </div>
                 );
-              })}
+              });
+              })()} 
             </div>
           )}
         </div>

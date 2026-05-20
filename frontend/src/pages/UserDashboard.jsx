@@ -119,8 +119,48 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const handleAiStatus = async (id, status) => {
     try {
       const res = await axios.put(`/designs/ai/${id}`, { status });
-      setAiDesigns(aiDesigns.map(d => d._id === id ? res.data.data : d));
-      if (status === 'accepted') alert('AI Design accepted! Order request sent.');
+      const updatedDesign = res.data?.data || aiDesigns.find(d => d._id === id);
+      setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
+      
+      if (status === 'accepted') {
+        try {
+          const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+          const aiCustomRequest = {
+            _id: 'man_from_ai_' + updatedDesign._id,
+            userId: updatedDesign.userId || { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            roomType: updatedDesign.roomType || 'Living Room',
+            style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+            budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
+            size: 'Standard',
+            timeline: 'Flexible',
+            ownMaterialsAvailable: 'No',
+            materialDetails: '',
+            materialQuantity: '',
+            materialPickupNeeded: 'No',
+            pickupAddress: '',
+            materialImages: [],
+            requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
+            referenceImages: [updatedDesign.generatedImage],
+            status: 'Submitted',
+            createdAt: new Date().toISOString()
+          };
+          if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
+            localStorage.setItem('mockManualRequests', JSON.stringify([aiCustomRequest, ...localRequests]));
+          }
+          
+          const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+          localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+            _id: `notif_admin_${Date.now()}`,
+            message: `New AI Design Order Request requires vendor assignment.`,
+            type: 'warning',
+            createdAt: new Date().toISOString()
+          }, ...localAdminNotifs]));
+        } catch (err) {
+          console.error('Failed to forward AI request to vendor', err);
+        }
+        alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+      }
+      
       if (status === 'rejected') {
         alert('AI Design rejected. You can now submit a manual design request.');
         if (setActiveTab) setActiveTab('manual');
@@ -145,6 +185,7 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     setManualSubmitting(true);
 
     const payload = {
+      requestType: 'Manual Design',
       roomType, style: manualStyle, budget: manualBudget, size: manualSize,
       materials: manualMaterials, requirements: manualRequirements,
       referenceImages,
@@ -217,13 +258,74 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Designer Request Actions
   const handleDesignerSubmit = async (e) => {
     e.preventDefault();
+    const budgetNum = Number(designerBudget);
+    const payload = { details: designerDetails, budget: budgetNum };
+
+    const persistDesignerToLocalStorage = (requestObj) => {
+      try {
+        const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+        if (!localRequests.find(r => r._id === requestObj._id)) {
+          localStorage.setItem('mockDesignerRequests', JSON.stringify([requestObj, ...localRequests]));
+        }
+        
+        // Also map and persist to mockManualRequests so it shows up in Vendor Dashboard
+        const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const manualRequestFromDesigner = {
+          _id: 'man_from_des_' + requestObj._id,
+          requestType: 'Interior Designer Help',
+          userId: requestObj.userId || { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+          roomType: 'Interior Design',
+          style: 'Consultation',
+          budget: requestObj.budget || 500,
+          size: 'Full Space',
+          timeline: 'Flexible',
+          ownMaterialsAvailable: 'No',
+          materialDetails: '',
+          materialQuantity: '',
+          materialPickupNeeded: 'No',
+          pickupAddress: '',
+          materialImages: [],
+          requirements: requestObj.details || requestObj.requirements || '',
+          referenceImages: [],
+          status: 'Pending',
+          createdAt: requestObj.createdAt || new Date().toISOString()
+        };
+        if (!localManualRequests.find(r => r._id === manualRequestFromDesigner._id)) {
+          localStorage.setItem('mockManualRequests', JSON.stringify([manualRequestFromDesigner, ...localManualRequests]));
+        }
+
+        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+        localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+          _id: `notif_admin_${Date.now()}`,
+          message: `New Interior Designer Request ID: ${requestObj._id} requires review.`,
+          type: 'warning',
+          createdAt: new Date().toISOString()
+        }, ...localAdminNotifs]));
+      } catch (err) {
+        console.error('LocalStorage write failed', err);
+      }
+    };
+
     try {
-      await axios.post('/designs/designer', { details: designerDetails, budget: Number(designerBudget) });
-      alert('Interior Designer Request Submitted Successfully!');
-      setDesignerDetails(''); setDesignerBudget('');
+      const res = await axios.post('/designs/designer', payload);
+      const newRequest = res.data.data;
+      persistDesignerToLocalStorage(newRequest);
     } catch (error) {
-      alert('Error requesting designer');
+      // Backend failed (offline / 401 in demo mode) — create a client-side fallback
+      const fallbackRequest = {
+        _id: 'des_req_local_' + Date.now(),
+        userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+        details: designerDetails,
+        budget: budgetNum,
+        status: 'pending',
+        assignedDesignerId: null,
+        createdAt: new Date().toISOString()
+      };
+      persistDesignerToLocalStorage(fallbackRequest);
     }
+
+    alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
+    setDesignerDetails(''); setDesignerBudget('');
   };
 
   // Marketplace Order Action
