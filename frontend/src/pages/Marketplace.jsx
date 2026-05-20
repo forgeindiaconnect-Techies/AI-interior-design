@@ -1,0 +1,232 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Search, Filter, Star, ShoppingCart, Heart, Eye, ArrowRight, Truck } from 'lucide-react';
+import axios from 'axios';
+
+const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const categories = ['All', 'Living Room', 'Bedroom', 'Dining Room', 'Lighting', 'Decor', 'Outdoor'];
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('/products');
+      if (res.data && res.data.data && res.data.data.length > 0) {
+        setProducts(res.data.data);
+      } else {
+        // Fallback mock data if API succeeds but returns empty
+        setProducts([
+          { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+          { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+          { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+          { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching products', error);
+      // Fallback mock data if API fails
+      setProducts([
+        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+        { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddToCart = async (e, productId) => {
+    e.stopPropagation();
+    try {
+      await axios.post('/cart', { productId, quantity: 1 });
+      alert('Added to cart!');
+    } catch (error) {
+      alert('Added to cart (Demo mode)');
+    }
+  };
+
+  const handleSaveItem = async (e, productId) => {
+    e.stopPropagation();
+    try {
+      await axios.post('/wishlist/toggle', { productId });
+      alert('Saved to wishlist!');
+    } catch (error) {
+      alert('Saved to wishlist (Demo mode)');
+    }
+  };
+
+  const filteredProducts = products.filter(p => 
+    (activeCategory === 'All' || p.category === activeCategory) &&
+    p.title.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const ProductCard = ({ product }) => (
+    <div 
+      className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/30 hover:shadow-xl transition-all cursor-pointer group flex flex-col h-full"
+      onClick={() => navigate(`/marketplace/product/${product._id}`)}
+    >
+      <div className="relative h-64 overflow-hidden">
+        <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+        <div className="absolute top-4 right-4 flex flex-col gap-2">
+          <button onClick={(e) => handleSaveItem(e, product._id)} className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white transition-all shadow-sm">
+            <Heart className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="absolute bottom-4 left-4">
+          <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-[#1F2937] shadow-sm">
+            {product.category}
+          </span>
+        </div>
+      </div>
+      
+      <div className="p-6 flex flex-col flex-grow">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] line-clamp-1">{product.title}</h3>
+            <p className="text-xs text-[#6B7280] font-medium mt-1">by {product.vendorId?.companyName || 'Artisan Workshop'}</p>
+          </div>
+          <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">${product.price}</span>
+        </div>
+        
+        <div className="flex items-center gap-4 mt-2 mb-4">
+          <div className="flex items-center gap-1 text-[#E9C46A]">
+            <Star className="w-4 h-4 fill-current" />
+            <span className="text-sm font-bold text-[#1F2937]">{product.rating || 4.8}</span>
+            <span className="text-xs text-[#6B7280]">({product.reviewsCount || 0})</span>
+          </div>
+          <div className="flex items-center gap-1 text-[#2A9D8F]">
+            <Truck className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">3-5 Days</span>
+          </div>
+        </div>
+        
+        <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
+          <button onClick={(e) => handleAddToCart(e, product._id)} className="flex-1 bg-[#1F2937] hover:bg-black text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
+            <ShoppingCart className="w-4 h-4" /> Add to Cart
+          </button>
+          <button className="px-4 py-3 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl transition-colors shadow-inner flex items-center justify-center">
+            <Eye className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const content = (
+    <>
+      {/* Marketplace Header */}
+      {!isEmbedded && (
+        <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <h1 className="font-['Playfair_Display'] font-extrabold text-5xl text-[#1F2937]">Explore Marketplace</h1>
+          <p className="text-[#6B7280] text-lg">Curated luxury furniture and decor directly from our verified artisans and premium manufacturers.</p>
+        </div>
+      )}
+
+      {/* Embedded Header */}
+      {isEmbedded && (
+        <div className="flex justify-between items-end border-b border-gray-100 pb-6">
+          <div>
+            <h2 className="font-['Playfair_Display'] font-extrabold text-3xl text-[#1F2937]">Ready-Made Furniture Marketplace</h2>
+            <p className="text-sm text-gray-500 mt-1">Discover and purchase premium furniture directly from verified vendors.</p>
+          </div>
+          {onGoToCart && (
+            <button onClick={onGoToCart} className="flex items-center gap-2 bg-[#F8F5F0] hover:bg-white border border-gray-200 px-4 py-2 rounded-xl font-bold text-sm text-[#1F2937] transition-all whitespace-nowrap">
+              <ShoppingCart className="w-4 h-4" /> Go to Cart
+            </button>
+          )}
+        </div>
+      )}
+      {/* Search & Filters */}
+        <div className="bg-white p-4 rounded-full shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-center gap-4 max-w-4xl mx-auto">
+          <div className="flex-1 flex items-center gap-3 px-4 w-full border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0">
+            <Search className="w-5 h-5 text-gray-400" />
+            <input 
+              type="text" 
+              placeholder="Search for sofas, tables, lighting..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full focus:outline-none text-sm bg-transparent"
+            />
+          </div>
+          <div className="flex items-center gap-2 px-2 overflow-x-auto w-full md:w-auto hide-scrollbar">
+            {categories.slice(0,4).map(cat => (
+              <button 
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all ${activeCategory === cat ? 'bg-[#8B5E3C] text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                {cat}
+              </button>
+            ))}
+            <button className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 ml-auto md:ml-2"><Filter className="w-4 h-4" /></button>
+          </div>
+        </div>
+
+        {/* AI Suggested Section (If user has AI design requests) */}
+        {activeCategory === 'All' && !searchQuery && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-end">
+              <div>
+                <span className="text-[#E76F51] font-bold text-xs uppercase tracking-wider">Personalized</span>
+                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">AI Suggested For Your Room</h2>
+              </div>
+              <button className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1 hover:underline">View All <ArrowRight className="w-4 h-4" /></button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.slice(0, 3).map(p => <ProductCard key={p._id} product={p} />)}
+            </div>
+          </div>
+        )}
+
+        {/* Main Grid */}
+        <div className="space-y-6 pt-8 border-t border-gray-200">
+          <div className="flex justify-between items-end">
+            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">
+              {searchQuery ? 'Search Results' : activeCategory === 'All' ? 'Trending Collection' : `${activeCategory} Collection`}
+            </h2>
+          </div>
+          
+          {loading ? (
+            <div className="h-64 flex items-center justify-center font-bold text-[#8B5E3C]">Loading collection...</div>
+          ) : filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map(p => <ProductCard key={p._id} product={p} />)}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
+              <p className="text-gray-500 font-bold">No products found matching your search.</p>
+            </div>
+          )}
+        </div>
+
+    </>
+  );
+
+  if (isEmbedded) {
+    return <div className="space-y-8">{content}</div>;
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F8F5F0] pt-24 pb-20 px-6">
+      <div className="max-w-7xl mx-auto space-y-12">
+        {content}
+      </div>
+    </div>
+  );
+};
+
+export default Marketplace;

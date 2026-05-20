@@ -1,0 +1,100 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import UserDashboard from './pages/UserDashboard';
+import VendorDashboard from './pages/VendorDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import DashboardLayout from './components/DashboardLayout';
+import Marketplace from './pages/Marketplace';
+import ProductDetails from './pages/ProductDetails';
+
+// Protected Route Wrapper
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#F8F5F0] flex items-center justify-center font-bold text-lg text-[#8B5E3C]">Loading System...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect to appropriate dashboard if role mismatch
+    if (user.role === 'admin') return <Navigate to="/dashboard/admin" replace />;
+    if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) return <Navigate to="/dashboard/vendor" replace />;
+    return <Navigate to="/dashboard/user" replace />;
+  }
+
+  return children;
+};
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      {/* Public Routes with Standard Navbar & Footer */}
+      <Route path="/" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><LandingPage /></main><Footer /></div>} />
+      <Route path="/login" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><LoginPage /></main><Footer /></div>} />
+      <Route path="/register" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><RegisterPage /></main><Footer /></div>} />
+      
+      {/* Marketplace Routes with Standard Navbar & Footer */}
+      <Route path="/marketplace" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><Marketplace /></main><Footer /></div>} />
+      <Route path="/marketplace/product/:id" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><ProductDetails /></main><Footer /></div>} />
+      
+      {/* Dashboard Routes with Full-Height Sidebar Layout */}
+      <Route 
+        path="/dashboard/user" 
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <DashboardLayout>
+              <UserDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/dashboard/vendor" 
+        element={
+          <ProtectedRoute allowedRoles={['vendor', 'manufacturer', 'delivery', 'installation']}>
+            <DashboardLayout>
+              <VendorDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } 
+      />
+
+      <Route 
+        path="/dashboard/admin" 
+        element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <DashboardLayout>
+              <AdminDashboard />
+            </DashboardLayout>
+          </ProtectedRoute>
+        } 
+      />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
+  );
+}
+
+export default App;
