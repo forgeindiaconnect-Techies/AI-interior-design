@@ -1,11 +1,12 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Palette, LogOut, LayoutDashboard } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -19,24 +20,50 @@ const Navbar = () => {
     return '/dashboard/user';
   };
 
+  // Navigate to home and scroll to top
+  const handleHomeNav = (e) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      navigate('/');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Scroll to a section on the landing page; if not on home, navigate there first
+  const handleSectionNav = (sectionId) => (e) => {
+    e.preventDefault();
+    if (location.pathname === '/') {
+      const el = document.getElementById(sectionId);
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/');
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  };
+
   return (
     <nav className="bg-[#F8F5F0] border-b border-[#D4A373]/30 sticky top-0 z-50 px-6 py-4 shadow-sm">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
+        <a href="/" onClick={handleHomeNav} className="flex items-center gap-3 group cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-[#8B5E3C] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
             <Palette className="w-6 h-6" />
           </div>
-          <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-[#1F2937]">
+          <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-[#1F2937] group-hover:text-[#8B5E3C] transition-colors">
             Artisan<span className="text-[#8B5E3C]">Studio</span>
           </span>
-        </Link>
+        </a>
 
-        <div className="hidden md:flex items-center gap-8 font-medium text-[#6B7280]">
-          <Link to="/" className="hover:text-[#8B5E3C] transition-colors">Home</Link>
-          <a href="/#ai-design" className="hover:text-[#8B5E3C] transition-colors">AI Studio</a>
-          <a href="/#marketplace" className="hover:text-[#8B5E3C] transition-colors">Marketplace</a>
-          <a href="/#how-it-works" className="hover:text-[#8B5E3C] transition-colors">How It Works</a>
-          <a href="/#pricing" className="hover:text-[#8B5E3C] transition-colors">Pricing</a>
+        <div className="flex items-center gap-8 font-medium text-[#6B7280]">
+          <a href="/" onClick={handleHomeNav} className="hover:text-[#8B5E3C] transition-colors font-semibold cursor-pointer">Home</a>
+          <a href="/#ai-design" onClick={handleSectionNav('ai-design')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">AI Studio</a>
+          <Link to="/marketplace" className="hidden md:inline hover:text-[#8B5E3C] transition-colors">Marketplace</Link>
+          <a href="/#how-it-works" onClick={handleSectionNav('how-it-works')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">How It Works</a>
+          <a href="/#pricing" onClick={handleSectionNav('pricing')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">Pricing</a>
         </div>
 
         <div className="flex items-center gap-4">
@@ -63,13 +90,13 @@ const Navbar = () => {
                 to="/login" 
                 className="text-[#8B5E3C] hover:text-[#8B5E3C]/80 font-medium px-4 py-2 transition-colors"
               >
-                Sign In
+                Login
               </Link>
               <Link 
                 to="/register" 
                 className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-6 py-2.5 rounded-full font-medium shadow-md hover:shadow-lg transition-all"
               >
-                Get Started
+                Sign Up
               </Link>
             </div>
           )}

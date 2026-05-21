@@ -12,6 +12,11 @@ import AdminDashboard from './pages/AdminDashboard';
 import DashboardLayout from './components/DashboardLayout';
 import Marketplace from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import PlanEssential from './pages/PlanEssential';
+import PlanPremium from './pages/PlanPremium';
+import PlanEnterprise from './pages/PlanEnterprise';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -46,6 +51,13 @@ const AppRoutes = () => {
       {/* Marketplace Routes with Standard Navbar & Footer */}
       <Route path="/marketplace" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><Marketplace /></main><Footer /></div>} />
       <Route path="/marketplace/product/:id" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><ProductDetails /></main><Footer /></div>} />
+      <Route path="/privacy-policy" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><PrivacyPolicy /></main><Footer /></div>} />
+      <Route path="/terms-of-service" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><TermsOfService /></main><Footer /></div>} />
+
+      {/* Pricing Plan Pages */}
+      <Route path="/plans/essential" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><PlanEssential /></main><Footer /></div>} />
+      <Route path="/plans/premium" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><PlanPremium /></main><Footer /></div>} />
+      <Route path="/plans/enterprise" element={<div className="flex flex-col min-h-screen"><Navbar /><main className="flex-grow"><PlanEnterprise /></main><Footer /></div>} />
       
       {/* Dashboard Routes with Full-Height Sidebar Layout */}
       <Route 

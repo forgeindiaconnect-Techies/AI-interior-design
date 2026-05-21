@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Palette, LogIn, ArrowLeft } from 'lucide-react';
 
@@ -10,6 +10,8 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const registeredSuccess = location.state?.registeredSuccess || false;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,6 +56,12 @@ const LoginPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 shadow-xl rounded-3xl border border-[#D4A373]/30 sm:px-10">
+          {registeredSuccess && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-sm font-semibold text-center flex items-center justify-center gap-2">
+              <span>✅</span>
+              <span>Account created successfully! Please log in to continue.</span>
+            </div>
+          )}
           {error && (
             <div className="mb-6 p-4 bg-[#E76F51]/10 border border-[#E76F51]/30 text-[#E76F51] rounded-2xl text-sm font-semibold text-center">
               {error}

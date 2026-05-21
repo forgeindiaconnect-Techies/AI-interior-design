@@ -62,6 +62,26 @@ const AdminDashboard = ({
   const [loadingTickets, setLoadingTickets] = useState(false);
   const [ticketStatusFilter, setTicketStatusFilter] = useState('all');
 
+  // Contact Messages from Landing Page
+  const [contactMessages, setContactMessages] = useState([]);
+
+  const loadContactMessages = () => {
+    const msgs = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
+    setContactMessages(msgs);
+  };
+
+  const handleDismissContactMessage = (id) => {
+    const updated = contactMessages.filter(m => m._id !== id);
+    setContactMessages(updated);
+    localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+  };
+
+  const handleMarkContactReplied = (id) => {
+    const updated = contactMessages.map(m => m._id === id ? { ...m, status: 'replied' } : m);
+    setContactMessages(updated);
+    localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+  };
+
   // Roles & Permissions State
   const [subAdmins, setSubAdmins] = useState([]);
   const [loadingSubAdmins, setLoadingSubAdmins] = useState(false);
@@ -184,6 +204,9 @@ const AdminDashboard = ({
 
   useEffect(() => {
     fetchAdminData();
+    loadContactMessages();
+    const interval = setInterval(loadContactMessages, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchAdminData = async () => {
@@ -4475,6 +4498,84 @@ const AdminDashboard = ({
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* ── CONTACT MESSAGES FROM LANDING PAGE ── */}
+          {contactMessages.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">
+                    📩 Contact Form Messages
+                    <span className="ml-2 px-2 py-0.5 bg-[#E76F51]/10 text-[#E76F51] rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      {contactMessages.filter(m => m.status === 'open').length} New
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Messages submitted via the landing page "Get In Touch" form.</p>
+                </div>
+                <button
+                  onClick={() => { setContactMessages([]); localStorage.removeItem('mockContactMessages'); }}
+                  className="text-[10px] font-bold text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {contactMessages.map((msg) => (
+                  <div key={msg._id} className={`bg-white rounded-3xl border shadow-sm p-6 space-y-3 transition-all hover:shadow-md ${msg.status === 'replied' ? 'border-emerald-200 opacity-70' : 'border-[#D4A373]/30'}`}>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[#8B5E3C] text-white flex items-center justify-center font-bold text-sm flex-shrink-0">
+                          {msg.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm text-gray-800">{msg.name}</p>
+                          <p className="text-xs text-[#8B5E3C]">{msg.email}</p>
+                        </div>
+                        <span className={`ml-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${msg.status === 'replied' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                          {msg.status === 'replied' ? '✓ Replied' : 'New'}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap mt-1">
+                        {new Date(msg.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+
+                    <div className="bg-[#F8F5F0] p-4 rounded-2xl border border-[#D4A373]/20 text-sm text-gray-700 leading-relaxed">
+                      {msg.message}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      {msg.status !== 'replied' && (
+                        <button
+                          onClick={() => handleMarkContactReplied(msg._id)}
+                          className="px-4 py-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
+                        >
+                          Mark as Replied
+                        </button>
+                      )}
+                      <a
+                        href={`mailto:${msg.email}?subject=Re: Your ArtisanStudio Inquiry&body=Hi ${msg.name},%0A%0AThank you for reaching out to ArtisanStudio.%0A%0A`}
+                        className="px-4 py-2 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 text-[#8B5E3C] rounded-xl text-xs font-bold transition-all"
+                      >
+                        Reply via Email
+                      </a>
+                      <button
+                        onClick={() => handleDismissContactMessage(msg._id)}
+                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl text-xs font-bold transition-all ml-auto"
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="border-t border-dashed border-gray-200 pt-6">
+            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] mb-4">🎫 Support Tickets</h3>
           </div>
 
           {loadingTickets ? (

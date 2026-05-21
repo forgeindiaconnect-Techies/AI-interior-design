@@ -50,7 +50,8 @@ const RegisterPage = () => {
     const res = await register(userData);
     if (res.success) {
       if (finalRole === 'user' || finalRole === 'admin') {
-        navigate(finalRole === 'admin' ? '/dashboard/admin' : '/dashboard/user', { state: { showSuccessPopup: true } });
+        // Redirect to login after successful sign-up (user/admin roles)
+        navigate('/login', { state: { registeredSuccess: true, registeredRole: finalRole } });
       } else {
         setRegisteredRole(finalRole);
         setIsRegistered(true);

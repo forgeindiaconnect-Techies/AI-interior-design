@@ -22,6 +22,39 @@ const LandingPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Contact form state
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+  const [contactSuccess, setContactSuccess] = useState(false);
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    const newMsg = {
+      _id: `contact_${Date.now()}`,
+      name: contactForm.name,
+      email: contactForm.email,
+      message: contactForm.message,
+      status: 'open',
+      createdAt: new Date().toISOString()
+    };
+
+    // Save to contact messages store (for admin inbox)
+    const existing = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
+    localStorage.setItem('mockContactMessages', JSON.stringify([newMsg, ...existing]));
+
+    // Push a notification to admin notifications feed
+    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    const notif = {
+      _id: `notif_contact_${Date.now()}`,
+      message: `📩 New contact message from ${contactForm.name} (${contactForm.email}): "${contactForm.message.slice(0, 60)}${contactForm.message.length > 60 ? '...' : ''}"`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([notif, ...adminNotifs]));
+
+    setContactSuccess(true);
+  };
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -572,23 +605,60 @@ const LandingPage = () => {
             </p>
           </div>
 
-          <form onSubmit={(e) => { e.preventDefault(); alert('Message sent successfully!'); }} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
-              <input type="text" required placeholder="John Doe" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]" />
+          {contactSuccess ? (
+            <div className="flex flex-col items-center justify-center text-center space-y-4 py-8">
+              <div className="w-16 h-16 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
+                <CheckCircle className="w-8 h-8 text-[#2A9D8F]" />
+              </div>
+              <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#1F2937]">Message Sent!</h3>
+              <p className="text-[#6B7280] text-sm">Your message has been received. Our support team will get back to you shortly.</p>
+              <button
+                onClick={() => { setContactSuccess(false); setContactForm({ name: '', email: '', message: '' }); }}
+                className="mt-2 px-6 py-3 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all"
+              >
+                Send Another Message
+              </button>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Email Address</label>
-              <input type="email" required placeholder="john@example.com" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]" />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
-              <textarea required rows={4} placeholder="How can we help you?" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]" />
-            </div>
-            <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
-              Send Message
-            </button>
-          </form>
+          ) : (
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                  placeholder="John Doe"
+                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                  placeholder="john@example.com"
+                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
+                <textarea
+                  required
+                  rows={4}
+                  value={contactForm.message}
+                  onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
+                  placeholder="How can we help you?"
+                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C]"
+                />
+              </div>
+              <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">
+                Send Message
+              </button>
+            </form>
+          )}
         </div>
       </section>
     </div>
