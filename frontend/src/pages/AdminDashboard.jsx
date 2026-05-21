@@ -6,7 +6,7 @@ import {
   DollarSign, Bell, AlertCircle, RefreshCw, Eye, Send, BarChart2, ShieldCheck,
   LayoutDashboard, Key, HelpCircle, FileText, Sparkles, UserCheck, CheckSquare,
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
-  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush
+  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight
 } from 'lucide-react';
 
 const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
@@ -445,6 +445,15 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         ];
       }
 
+      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const finalOrders = [...localOrders];
+      (mockMgmtData.orders || []).forEach(bo => {
+        if (!finalOrders.find(lo => lo._id === bo._id)) {
+          finalOrders.push(bo);
+        }
+      });
+      mockMgmtData.orders = finalOrders;
+
       const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
       const finalManualRequests = [...localManualRequests];
       (mockMgmtData.manualDesigns || []).forEach(br => {
@@ -797,6 +806,30 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     if (activeTab === 'roles') {
       fetchSubAdmins();
     }
+    // Live-refresh orders from localStorage whenever admin switches to orders-related tabs
+    if (activeTab === 'orders' || activeTab === 'manual' || activeTab === 'ai-designs') {
+      if (managementData) {
+        const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+        const existingOrders = managementData.orders || [];
+        const merged = [...localOrders];
+        existingOrders.forEach(eo => {
+          if (!merged.find(lo => lo._id === eo._id)) {
+            merged.push(eo);
+          }
+        });
+
+        const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const existingManual = managementData.manualDesigns || [];
+        const mergedManual = [...localManual];
+        existingManual.forEach(em => {
+          if (!mergedManual.find(lm => lm._id === em._id)) {
+            mergedManual.push(em);
+          }
+        });
+
+        setManagementData(prev => prev ? { ...prev, orders: merged, manualDesigns: mergedManual } : prev);
+      }
+    }
   }, [activeTab]);
 
   const handleExportCSV = (reportType) => {
@@ -965,6 +998,17 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     }
   };
 
+  // Helper to persist order changes locally in mock/offline mode
+  const updateLocalOrderInStorage = (orderId, fields = {}) => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const updated = stored.map(o => o._id === orderId ? { ...o, ...fields } : o);
+      localStorage.setItem('mockOrders', JSON.stringify(updated));
+    } catch (err) {
+      console.error('Failed to update local order in storage', err);
+    }
+  };
+
   // Assign Partner Action
   const handleAssignPartnerSubmit = async (e) => {
     e.preventDefault();
@@ -981,29 +1025,37 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       // Fallback update in state if mock/offline
       if (managementData && managementData.orders) {
         const partner = managementData.vendors?.find(v => v._id === selectedPartnerId);
+        const updateField = 
+          selectedPartnerType === 'vendor' ? 'vendorId' :
+          selectedPartnerType === 'manufacturer' ? 'manufacturerId' :
+          selectedPartnerType === 'delivery' ? 'deliveryPartnerId' :
+          selectedPartnerType === 'installation' ? 'installationPartnerId' : null;
+        
+        let nextStatus = 'Request Submitted';
+        if (assignmentOrder) {
+          nextStatus = 
+            selectedPartnerType === 'vendor' ? 'Quotation Accepted' :
+            selectedPartnerType === 'manufacturer' ? 'Manufacturer Assigned' :
+            selectedPartnerType === 'delivery' ? 'Delivery Assigned' :
+            selectedPartnerType === 'installation' ? 'Installation Assigned' : assignmentOrder.orderStatus;
+        }
+
+        const updatedFields = {
+          [updateField]: partner ? { _id: partner._id, companyName: partner.companyName } : null,
+          orderStatus: nextStatus
+        };
+
         const updated = managementData.orders.map(o => {
           if (o._id === assignmentOrder._id) {
-            const updateField = 
-              selectedPartnerType === 'vendor' ? 'vendorId' :
-              selectedPartnerType === 'manufacturer' ? 'manufacturerId' :
-              selectedPartnerType === 'delivery' ? 'deliveryPartnerId' :
-              selectedPartnerType === 'installation' ? 'installationPartnerId' : null;
-            
-            const nextStatus = 
-              selectedPartnerType === 'vendor' ? 'Quotation Accepted' :
-              selectedPartnerType === 'manufacturer' ? 'Manufacturer Assigned' :
-              selectedPartnerType === 'delivery' ? 'Delivery Assigned' :
-              selectedPartnerType === 'installation' ? 'Installation Assigned' : o.orderStatus;
-            
             return {
               ...o,
-              [updateField]: partner ? { _id: partner._id, companyName: partner.companyName } : null,
-              orderStatus: nextStatus
+              ...updatedFields
             };
           }
           return o;
         });
         setManagementData({ ...managementData, orders: updated });
+        updateLocalOrderInStorage(assignmentOrder._id, updatedFields);
       }
       setAssignmentOrder(null);
       setSelectedPartnerId('');
@@ -1730,29 +1782,83 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               </div>
             </div>
 
-            {/* Quick Navigation Row */}
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm">
-              <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937] mb-4">Quick Navigation</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-                {[
-                  { label: 'Users', tab: 'users', icon: '👥' },
-                  { label: 'Vendors', tab: 'vendors', icon: '🏪' },
-                  { label: 'Manufacturers', tab: 'manufacturers', icon: '🏭' },
-                  { label: 'Orders', tab: 'orders', icon: '📦' },
-                  { label: 'KYC', tab: 'kyc', icon: '📋' },
-                  { label: 'Payments', tab: 'payments', icon: '💳' },
-                  { label: 'Tickets', tab: 'tickets', icon: '🎫' },
-                  { label: 'Analytics', tab: 'analytics', icon: '📊' },
-                ].map((item) => (
-                  <button
-                    key={item.tab}
-                    onClick={() => setActiveTab && setActiveTab(item.tab)}
-                    className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-[#F8F5F0] hover:bg-[#EDE8DF] border border-[#D4A373]/20 transition-all group"
-                  >
-                    <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                    <span className="text-[10px] font-bold text-gray-600">{item.label}</span>
-                  </button>
-                ))}
+            {/* Quick Actions Grid (Premium Redesign) */}
+            <div className="space-y-4">
+              <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Quick Actions</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Pending Approvals Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('kyc')}
+                >
+                  <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
+                    <CheckSquare size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-amber-600 transition-colors">Pending Approvals</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Review and approve vendor KYC verification profiles and security deposits.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">KYC Center</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+                {/* Active Orders Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('orders')}
+                >
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-blue-600 transition-colors">Active Orders</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Manage manufacturing tasks, courier shipments, and installer bookings.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">Operations Hub</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+                {/* Revenue Summary Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('analytics')}
+                >
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
+                    <BarChart2 size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-emerald-600 transition-colors">Revenue Summary</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">View gross marketplace sales volume, payments, and platform commissions.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">View Analytics</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+                {/* AI Requests Queue Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('ai_designs')}
+                >
+                  <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                    <Sparkles size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-purple-600 transition-colors">AI Requests Queue</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Monitor neural network room suggestions and design conversions.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">AI Monitor</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>
@@ -3939,6 +4045,16 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                               }`}>
                                 {order.orderType}
                               </span>
+                              {order.orderType === 'Marketplace Product' && order.productDetails && (
+                                <div className="flex items-center gap-2 mt-2">
+                                  <img
+                                    src={order.productDetails.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=100&auto=format&fit=crop&q=60'}
+                                    alt={order.productDetails.title || 'Product'}
+                                    className="w-8 h-8 rounded-lg object-cover border border-gray-100 shrink-0"
+                                  />
+                                  <span className="text-[10px] text-gray-600 font-semibold truncate max-w-[100px]" title={order.productDetails.title}>{order.productDetails.title}</span>
+                                </div>
+                              )}
                               <span className="font-bold text-gray-800 block mt-1.5 font-mono">${order.totalAmount?.toLocaleString() || '0'}</span>
                             </td>
 

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle
 } from 'lucide-react';
 import Marketplace from './Marketplace';
 
@@ -457,7 +457,7 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       installationPartnerId: null,
       totalAmount: product.price,
       paymentStatus: 'paid',
-      orderStatus: 'Delivery Assigned',
+      orderStatus: 'Pending Confirmation',
       expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
       createdAt: new Date().toISOString(),
       shippingAddress: user?.address || '123 Default User St',
@@ -472,7 +472,24 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     const updated = [newOrder, ...localOrders];
     localStorage.setItem('mockOrders', JSON.stringify(updated));
     setOrders(updated);
-    alert('Added to Cart! (Mock Order Placed)');
+
+    // Trigger Notifications
+    const triggerNotif = (recipient, message) => {
+      const notifObj = {
+        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        message,
+        type: 'success',
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+    };
+    triggerNotif('vendor', `New marketplace order received for $${product.price}`);
+    triggerNotif('admin', `New marketplace purchase placed: Order #${newOrder._id.slice(-6)}`);
+
+    alert('✅ Order placed successfully! (Mock Order Placed)');
     if (setActiveTab) setActiveTab('orders');
   };
 
@@ -694,28 +711,83 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               </div>
             </div>
 
-            {/* Quick Actions Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-gradient-to-r from-[#F8F5F0] to-white p-6 rounded-3xl border border-[#D4A373]/30 flex items-center justify-between hover:shadow-md transition-all cursor-pointer group" onClick={() => setActiveTab && setActiveTab('marketplace')}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform text-[#8B5E3C]"><ShoppingBag size={24}/></div>
-                  <div>
-                    <h4 className="font-bold text-[#1F2937]">Explore Marketplace</h4>
-                    <p className="text-xs text-gray-500">Discover curated furniture pieces</p>
+            {/* Quick Actions Grid (Premium Redesign) */}
+            <div className="space-y-4">
+              <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Quick Actions</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Upload Room Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('ai_studio')}
+                >
+                  <div className="w-12 h-12 bg-[#8B5E3C]/10 rounded-2xl flex items-center justify-center text-[#8B5E3C] group-hover:scale-110 transition-transform">
+                    <UploadCloud size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-[#8B5E3C] transition-colors">Upload Room</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Upload a snapshot of your room and get it analyzed instantly.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">Launch Studio</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-                <ArrowRight className="text-gray-400 group-hover:text-[#8B5E3C] transition-colors"/>
-              </div>
-              
-              <div className="bg-gradient-to-r from-gray-50 to-white p-6 rounded-3xl border border-gray-200 flex items-center justify-between hover:shadow-md transition-all cursor-pointer group" onClick={() => setActiveTab && setActiveTab('manual_request')}>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform text-[#2A9D8F]"><Hammer size={24}/></div>
-                  <div>
-                    <h4 className="font-bold text-[#1F2937]">Custom Design Request</h4>
-                    <p className="text-xs text-gray-500">Get quotes from artisan partners</p>
+
+                {/* Generate AI Design Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('ai_studio')}
+                >
+                  <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 group-hover:scale-110 transition-transform">
+                    <Wand2 size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-purple-600 transition-colors">Generate AI Design</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Let our AI render beautiful, personalized styles automatically.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">Transform Space</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
-                <ArrowRight className="text-gray-400 group-hover:text-[#2A9D8F] transition-colors"/>
+
+                {/* Browse Marketplace Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('marketplace')}
+                >
+                  <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#2A9D8F] group-hover:scale-110 transition-transform">
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-[#2A9D8F] transition-colors">Browse Marketplace</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Shop high-end custom furniture crafted by top-tier artisans.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">Explore Catalog</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
+                {/* Track Orders Card */}
+                <div 
+                  className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
+                  onClick={() => setActiveTab && setActiveTab('tracking')}
+                >
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
+                    <Truck size={24} />
+                  </div>
+                  <div className="mt-4">
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-blue-600 transition-colors">Track Orders</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Get real-time tracking from workshop production to your door.</p>
+                  </div>
+                  <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
+                    <span className="text-[10px] font-bold text-gray-400">Check Status</span>
+                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+
               </div>
             </div>
 
@@ -1173,7 +1245,7 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             installationPartnerId: null,
             totalAmount: item.price * item.quantity,
             paymentStatus: 'paid',
-            orderStatus: 'Delivery Assigned',
+            orderStatus: 'Pending Confirmation',
             expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
             createdAt: new Date().toISOString(),
             shippingAddress: user?.address || '123 Default User St',
@@ -1190,6 +1262,25 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           const updatedOrders = [...newOrders, ...localOrders];
           localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
           setOrders(updatedOrders);
+
+          // Trigger Notifications for Vendor & Admin
+          const triggerNotif = (recipient, message) => {
+            const notifObj = {
+              _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              message,
+              type: 'success',
+              createdAt: new Date().toISOString(),
+              read: false
+            };
+            const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
+            const existing = JSON.parse(localStorage.getItem(key) || '[]');
+            localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+          };
+
+          newOrders.forEach(order => {
+            triggerNotif('vendor', `New marketplace order received for $${order.totalAmount}`);
+            triggerNotif('admin', `New marketplace purchase placed: Order #${order._id.slice(-6)}`);
+          });
 
           // Clear cart
           setCartItems([]);
@@ -1255,122 +1346,348 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       {activeTab === 'orders' && (
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Your Orders</h2>
-          
-          {/* Quotations Approval Box */}
+
+          {/* Quotations Approval Box — DYNAMIC from manualDesigns with Quotation Sent status */}
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-[#E9C46A]"></div>
             <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider mb-2">Pending Vendor Quotations (Action Required)</h3>
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30">
-              <div className="space-y-2">
-                <span className="bg-[#D4A373]/20 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold">Manual Design Quotation</span>
-                <h4 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Custom Living Room Set</h4>
-                <p className="text-xs text-[#6B7280]">Materials: Solid Teak Wood, Premium Linen • Est. Time: 3 Weeks</p>
+            {manualDesigns.filter(d => d.status === 'Quotation Sent').length === 0 ? (
+              <div className="p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30 text-center">
+                <p className="text-sm text-gray-400 font-medium">No pending quotations. Submit a custom design request to receive vendor quotes.</p>
               </div>
-              <div className="flex items-center gap-6">
-                <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">$4,850</span>
-                <button onClick={() => handleBudgetApproval('mock_quotation_id')} className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Approve Budget</button>
-              </div>
-            </div>
+            ) : (
+              manualDesigns.filter(d => d.status === 'Quotation Sent').map((req) => (
+                <div key={req._id} className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30">
+                  <div className="space-y-2">
+                    <span className="bg-[#D4A373]/20 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold">{req.requestType || 'Manual Design Quotation'}</span>
+                    <h4 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{req.roomType} — {req.style}</h4>
+                    <p className="text-xs text-[#6B7280]">Materials: {req.quotationMaterials || req.materials || 'Custom'} • Est. Time: {req.quotationTime || req.timeline || 'Flexible'}</p>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${req.quotationAmount || 0}</span>
+                    <button onClick={() => handleBudgetApproval(req._id)} className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Approve Budget</button>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
-          {/* Active Orders List */}
-          {orders.length === 0 ? (
+          {/* Marketplace Orders — with product thumbnail, name and status badge */}
+          {orders.filter(o => o.orderType === 'Marketplace Product').length > 0 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
+                <ShoppingBag className="w-4 h-4 text-[#8B5E3C]" /> Marketplace Product Orders
+              </h3>
+              {orders.filter(o => o.orderType === 'Marketplace Product').map((order) => {
+                const statusColors = {
+                  'Pending Confirmation': 'bg-amber-50 text-amber-700 border-amber-200',
+                  'Processing': 'bg-blue-50 text-blue-700 border-blue-200',
+                  'Pending Dispatch': 'bg-purple-50 text-purple-700 border-purple-200',
+                  'Dispatched': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                  'Out For Delivery': 'bg-orange-50 text-orange-700 border-orange-200',
+                  'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  'Completed': 'bg-teal-50 text-teal-700 border-teal-200',
+                  'Cancelled': 'bg-red-50 text-red-700 border-red-200',
+                };
+                const statusBadge = statusColors[order.orderStatus] || 'bg-gray-50 text-gray-700 border-gray-200';
+                const isPaid = order.paymentStatus === 'paid';
+                return (
+                  <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all">
+                    <div className="shrink-0">
+                      <img
+                        src={order.productDetails?.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&auto=format&fit=crop&q=60'}
+                        alt={order.productDetails?.title || 'Product'}
+                        className="w-24 h-24 object-cover rounded-2xl shadow-sm bg-gray-100"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Marketplace Product</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge}`}>{order.orderStatus || 'Pending Confirmation'}</span>
+                      </div>
+                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] truncate">{order.productDetails?.title || `Order #${order._id?.slice(-6)}`}</h3>
+                      <p className="text-xs text-[#6B7280] mt-0.5">Vendor: {order.vendorId?.companyName || 'Artisan Partner'} • Qty: {order.productDetails?.quantity || 1}</p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
+                        <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-0.5">
+                          Payment: <span className={isPaid ? 'text-[#2A9D8F]' : 'text-amber-600'}>{order.paymentStatus || 'pending'}</span>
+                        </p>
+                      </div>
+                      {!isPaid ? (
+                        <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all">Pay Now</button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            localStorage.setItem('activeTrackingOrderId', order._id);
+                            if(setActiveTab) setActiveTab('tracking');
+                          }}
+                          className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2"
+                        >
+                          <Truck className="w-4 h-4" /> Track Order
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Custom Design Orders */}
+          {orders.filter(o => o.orderType !== 'Marketplace Product').length > 0 && (
+            <div className="space-y-4">
+              <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
+                <Hammer className="w-4 h-4 text-[#2A9D8F]" /> Custom Design Orders
+              </h3>
+              {orders.filter(o => o.orderType !== 'Marketplace Product').map((order) => (
+                <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:shadow-md transition-all">
+                  <div>
+                    <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{order.orderType?.replace('_', ' ') || 'CUSTOM'}</span>
+                    <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-2">Order #{order._id?.slice(-6) || '10293'}</h3>
+                    <p className="text-xs text-[#6B7280] mt-1">Vendor: {order.vendorId?.companyName || 'Artisan Partner'} • Status: <span className="font-bold text-[#2A9D8F]">{order.orderStatus || 'In Progress'}</span></p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
+                      <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-1">Payment: <span className="text-[#2A9D8F]">{order.paymentStatus || 'pending'}</span></p>
+                    </div>
+                    {(!order.paymentStatus || order.paymentStatus === 'pending') ? (
+                      <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Pay Now</button>
+                    ) : (
+                      <button onClick={() => { if(setActiveTab) setActiveTab('tracking'); }} className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                        <Truck className="w-4 h-4" /> Track Order
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {orders.length === 0 && (
             <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
               <ShoppingBag className="w-12 h-12 text-[#D4A373] mx-auto" />
               <p className="text-[#6B7280] font-medium">No active orders found.</p>
             </div>
-          ) : (
-            orders.map((order) => (
-              <div key={order._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                  <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{order.orderType?.replace('_', ' ') || 'PRODUCT'}</span>
-                  <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-2">Order #{order._id?.slice(-6) || '10293'}</h3>
-                  <p className="text-xs text-[#6B7280] mt-1">Vendor: {order.vendorId?.companyName || 'Artisan Partner'}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
-                    <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-1">Status: <span className="text-[#2A9D8F]">{order.paymentStatus || 'pending'}</span></p>
-                  </div>
-                  {(!order.paymentStatus || order.paymentStatus === 'pending') ? (
-                    <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Pay Now</button>
-                  ) : (
-                    <button onClick={() => { if(setActiveTab) setActiveTab('tracking'); }} className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2">
-                      <Truck className="w-4 h-4" /> Track Order
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
           )}
         </div>
       )}
 
       {/* TAB 8: ORDER TRACKING */}
-      {activeTab === 'tracking' && (
-        <div className="space-y-8">
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-gray-100 pb-6">
-              <div>
-                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Live Order Tracking</h2>
-                <p className="text-sm text-gray-500 mt-1">Order #ORD-882910 • Placed on Oct 12, 2026</p>
-              </div>
-              <div className="px-4 py-2 bg-[#00A86B]/10 text-[#00A86B] font-bold rounded-lg text-sm border border-[#00A86B]/20">
-                Estimated Delivery: Oct 20, 2026
-              </div>
-            </div>
+      {activeTab === 'tracking' && (() => {
+        const trackingId = localStorage.getItem('activeTrackingOrderId');
+        const marketplaceOrders = orders.filter(o => o.orderType === 'Marketplace Product');
+        const activeOrder = orders.find(o => o._id === trackingId) || marketplaceOrders[0];
 
-            {/* Tracking Timeline */}
-            <div className="relative py-4">
-              <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -translate-y-1/2 rounded-full hidden md:block"></div>
-              <div className="absolute top-1/2 left-0 w-1/2 h-1 bg-[#8B5E3C] -translate-y-1/2 rounded-full hidden md:block transition-all"></div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
-                {/* Step 1 */}
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-[#8B5E3C] text-white flex items-center justify-center shadow-md ring-4 ring-white"><CheckCircle className="w-5 h-5" /></div>
-                  <div>
-                    <p className="font-bold text-sm text-[#1F2937]">Order Confirmed</p>
-                    <p className="text-xs text-gray-500 mt-1">Oct 12, 10:00 AM</p>
-                  </div>
-                </div>
-                {/* Step 2 */}
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-[#8B5E3C] text-white flex items-center justify-center shadow-md ring-4 ring-white"><Hammer className="w-5 h-5" /></div>
-                  <div>
-                    <p className="font-bold text-sm text-[#1F2937]">Manufacturing</p>
-                    <p className="text-xs text-gray-500 mt-1">Oct 14, 2:30 PM</p>
-                  </div>
-                </div>
-                {/* Step 3 */}
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-white text-gray-400 border-2 border-gray-300 flex items-center justify-center shadow-sm ring-4 ring-white"><Truck className="w-5 h-5" /></div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-400">Shipped</p>
-                    <p className="text-xs text-gray-400 mt-1">Pending</p>
-                  </div>
-                </div>
-                {/* Step 4 */}
-                <div className="flex flex-col items-center text-center space-y-3">
-                  <div className="w-10 h-10 rounded-full bg-white text-gray-400 border-2 border-gray-300 flex items-center justify-center shadow-sm ring-4 ring-white"><Star className="w-5 h-5" /></div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-400">Delivered</p>
-                    <p className="text-xs text-gray-400 mt-1">Pending</p>
-                  </div>
-                </div>
-              </div>
+        if (!activeOrder) {
+          return (
+            <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center space-y-4">
+              <Truck className="w-16 h-16 text-gray-300 mx-auto" />
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">No Active Deliveries</h2>
+              <p className="text-sm text-gray-400 max-w-sm mx-auto">You haven't ordered any marketplace products yet or don't have any active shipments.</p>
+              <button onClick={() => { if(setActiveTab) setActiveTab('marketplace'); }} className="px-6 py-3 bg-[#8B5E3C] text-white rounded-xl font-bold text-xs shadow-md">Browse Marketplace</button>
             </div>
+          );
+        }
 
-            <div className="bg-[#F8F5F0] p-6 rounded-2xl flex items-center gap-4">
-              <Truck className="w-8 h-8 text-[#8B5E3C]" />
-              <div>
-                <h4 className="font-bold text-[#1F2937]">Current Status: Vendor has started crafting your furniture.</h4>
-                <p className="text-sm text-gray-500">The manufacturing process typically takes 3-5 business days. You will be notified when it ships.</p>
+        const status = activeOrder.orderStatus || 'Pending Confirmation';
+        const expectedDate = activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase';
+        
+        // Dynamic status descriptions
+        const getStatusMessage = () => {
+          switch (status) {
+            case 'Pending Confirmation':
+              return { title: 'Awaiting Confirmation', desc: 'The vendor is currently checking stock availability for your order.' };
+            case 'Processing':
+              return { title: 'Processing Order', desc: 'Your order has been confirmed by the vendor and is currently in production/packaging.' };
+            case 'Pending Dispatch':
+              return { title: 'Packed & Awaiting Dispatch', desc: 'Your product has been packed and is awaiting pickup by the logistics provider.' };
+            case 'Dispatched':
+              return { title: 'Dispatched & In Transit', desc: `Your package is in transit via ${activeOrder.deliveryPartnerId?.companyName || 'our delivery partner'}. Tracking ID: ${activeOrder.trackingId || 'N/A'}` };
+            case 'Out For Delivery':
+              return { title: 'Out for Delivery', desc: 'Your package is out for delivery with the local courier. Prepare to receive it today!' };
+            case 'Delivered':
+              return { title: 'Delivered', desc: 'Your order has been successfully delivered. Please confirm receipt and request installation if needed.' };
+            case 'Completed':
+              return { title: 'Completed', desc: 'The order lifecycle is completed. We hope you enjoy your purchase!' };
+            case 'Cancelled':
+              return { title: 'Cancelled', desc: 'This order was cancelled.' };
+            default:
+              return { title: status, desc: 'Current order status is updated.' };
+          }
+        };
+
+        const currentMsg = getStatusMessage();
+
+        // 7 Stages
+        const stagesList = [
+          { key: 'Pending Confirmation', label: 'Placed', isDone: true },
+          { key: 'Processing', label: 'Accepted', isDone: ['Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
+          { key: 'Pending Dispatch', label: 'Packed', isDone: ['Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
+          { key: 'Dispatched', label: 'Dispatched', isDone: ['Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
+          { key: 'Out For Delivery', label: 'Out For Delivery', isDone: ['Out For Delivery', 'Delivered', 'Completed'].includes(status) },
+          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Completed'].includes(status) },
+          { key: 'Completed', label: activeOrder.installationRequired ? 'Installation Done' : 'Completed', isDone: status === 'Completed' }
+        ];
+
+        const handleReturnRequest = (e) => {
+          e.preventDefault();
+          const reason = e.target.reason.value;
+          if (!reason.trim()) {
+            alert('Please provide a return reason.');
+            return;
+          }
+          
+          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const updated = localOrders.map(o => {
+            if (o._id === activeOrder._id) {
+              return {
+                ...o,
+                hasReturnRequest: true,
+                returnReason: reason,
+                returnStatus: 'Pending Review'
+              };
+            }
+            return o;
+          });
+          
+          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          setOrders(updated);
+
+          // Notifications
+          const triggerNotif = (recipient, message) => {
+            const notifObj = {
+              _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              message,
+              type: 'warning',
+              createdAt: new Date().toISOString(),
+              read: false
+            };
+            const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
+            const existing = JSON.parse(localStorage.getItem(key) || '[]');
+            localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+          };
+          triggerNotif('vendor', `Customer requested a return for order #${activeOrder._id.slice(-6)}`);
+          triggerNotif('admin', `Return request filed for order #${activeOrder._id.slice(-6)}`);
+          
+          alert('✅ Return request submitted successfully to the vendor.');
+        };
+
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            {/* Quick Switch Dropdown */}
+            {marketplaceOrders.length > 1 && (
+              <div className="bg-white p-4 rounded-2xl border border-[#D4A373]/30 flex items-center justify-between gap-4">
+                <span className="text-xs font-bold text-gray-500 uppercase">Track a different order:</span>
+                <select 
+                  value={activeOrder._id}
+                  onChange={(e) => {
+                    localStorage.setItem('activeTrackingOrderId', e.target.value);
+                    // Force state update by reloading activeOrder
+                    setOrders(JSON.parse(localStorage.getItem('mockOrders') || '[]'));
+                  }}
+                  className="text-xs p-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none"
+                >
+                  {marketplaceOrders.map(o => (
+                    <option key={o._id} value={o._id}>{o.productDetails?.title} (#{o._id.slice(-6)})</option>
+                  ))}
+                </select>
               </div>
+            )}
+
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+                <div>
+                  <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Live Order Tracking</h2>
+                  <p className="text-xs text-gray-400 mt-1">Product: <strong>{activeOrder.productDetails?.title}</strong> • Order #{activeOrder._id?.slice(-6)} • Date: {new Date(activeOrder.createdAt).toLocaleDateString()}</p>
+                </div>
+                <div className="px-4 py-2 bg-[#00A86B]/10 text-[#00A86B] font-bold rounded-lg text-xs border border-[#00A86B]/20">
+                  Expected: {expectedDate}
+                </div>
+              </div>
+
+              {/* Progress Timeline */}
+              <div className="relative py-6">
+                {/* Horizontal Progress Line for MD and larger */}
+                <div className="absolute top-[28px] left-0 w-full h-1 bg-gray-100 -translate-y-1/2 rounded-full hidden md:block"></div>
+                <div 
+                  className="absolute top-[28px] left-0 h-1 bg-[#2A9D8F] -translate-y-1/2 rounded-full hidden md:block transition-all duration-500"
+                  style={{
+                    width: `${(stagesList.filter(s => s.isDone).length - 1) / (stagesList.length - 1) * 100}%`
+                  }}
+                ></div>
+
+                {/* Timeline Nodes */}
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-6 relative z-10">
+                  {stagesList.map((stage, index) => {
+                    const isPassed = stage.isDone;
+                    const isCurrent = (index === stagesList.filter(s => s.isDone).length - 1) || (index === 0 && !stagesList[1].isDone);
+                    
+                    return (
+                      <div key={stage.key} className="flex md:flex-col items-center md:text-center gap-4 md:gap-3">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-md transition-all duration-300 ring-4 ring-white ${
+                            isPassed 
+                              ? 'bg-[#2A9D8F] text-white' 
+                              : 'bg-white text-gray-400 border-2 border-gray-200'
+                          } ${isCurrent ? 'scale-110 ring-emerald-200' : ''}`}
+                        >
+                          {isPassed ? '✓' : index + 1}
+                        </div>
+                        <div className="text-left md:text-center">
+                          <p className={`font-bold text-xs ${isPassed ? 'text-[#1F2937]' : 'text-gray-400'}`}>
+                            {stage.label}
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-medium">
+                            {isCurrent ? 'Current Stage' : (isPassed ? 'Completed' : 'Pending')}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Status Details Bar */}
+              <div className="bg-[#F8F5F0] p-6 rounded-2xl flex items-center gap-4 border border-[#D4A373]/10">
+                <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl">🚚</div>
+                <div>
+                  <h4 className="font-bold text-sm text-[#1F2937]">{currentMsg.title}</h4>
+                  <p className="text-xs text-gray-500 mt-1">{currentMsg.desc}</p>
+                </div>
+              </div>
+
+              {/* Return Request panel */}
+              {(status === 'Delivered' || status === 'Completed') && !activeOrder.hasReturnRequest && (
+                <div className="bg-red-50/50 p-6 rounded-2xl border border-red-200 mt-6 space-y-4">
+                  <h3 className="font-['Playfair_Display'] font-bold text-lg text-red-800 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" /> Request a Return or Refund
+                  </h3>
+                  <p className="text-xs text-red-600">If you are unsatisfied with your product, you can request a return. The vendor will review your request.</p>
+                  <form onSubmit={handleReturnRequest} className="space-y-4">
+                    <textarea name="reason" placeholder="Explain the reason for return/refund (e.g., damaged product, wrong shade...)" rows={3} required className="w-full p-4 rounded-xl border border-red-200 focus:outline-none focus:border-red-500 text-sm bg-white" />
+                    <button type="submit" className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs shadow-md transition-all">Submit Return Request</button>
+                  </form>
+                </div>
+              )}
+
+              {activeOrder.hasReturnRequest && (
+                <div className="bg-orange-50/50 p-6 rounded-2xl border border-orange-200 mt-6">
+                  <h3 className="font-['Playfair_Display'] font-bold text-lg text-orange-800 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-600" /> Return Request Filed
+                  </h3>
+                  <p className="text-xs text-orange-600 mt-1">Status: <strong>{activeOrder.returnStatus || 'Pending Review'}</strong></p>
+                  <p className="text-xs text-gray-500 mt-2"><strong>Reason:</strong> {activeOrder.returnReason}</p>
+                </div>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* TAB 9: PAYMENTS */}
       {activeTab === 'payments' && (
@@ -1424,49 +1741,51 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
-      {/* TAB 10: REVIEWS & SUPPORT */}
+      {/* TAB 10: HELP CENTER (SUPPORT) */}
       {activeTab === 'support' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-6 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-              <AlertCircle className="w-6 h-6 text-[#E76F51]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Raise Support Ticket</h2>
-            </div>
-            <form onSubmit={handleRaiseTicket} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Subject</label>
-                <input type="text" required value={ticketSubject} onChange={(e) => setTicketSubject(e.target.value)} placeholder="Issue with delivery schedule..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
-                <textarea rows={4} required value={ticketMessage} onChange={(e) => setTicketMessage(e.target.value)} placeholder="Please explain your issue in detail..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-              </div>
-              <button type="submit" className="w-full py-4 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Submit Support Ticket</button>
-            </form>
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+            <AlertCircle className="w-6 h-6 text-[#E76F51]" />
+            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Raise Support Ticket</h2>
           </div>
-          <div className="lg:col-span-6 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
-            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-              <Star className="w-6 h-6 text-[#E9C46A] fill-[#E9C46A]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Submit Review</h2>
+          <form onSubmit={handleRaiseTicket} className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Subject</label>
+              <input type="text" required value={ticketSubject} onChange={(e) => setTicketSubject(e.target.value)} placeholder="Issue with delivery schedule..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
             </div>
-            <form onSubmit={handlePublishReview} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product / Service</label>
-                <select className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
-                  <option>Velvet Lounge Chair (Delivered)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
-                <input type="number" min={1} max={5} required value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-              </div>
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Review Comment</label>
-                <textarea rows={3} required value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Absolutely loved the craftsmanship..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-              </div>
-              <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Publish Review</button>
-            </form>
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
+              <textarea rows={4} required value={ticketMessage} onChange={(e) => setTicketMessage(e.target.value)} placeholder="Please explain your issue in detail..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+            </div>
+            <button type="submit" className="w-full py-4 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Submit Support Ticket</button>
+          </form>
+        </div>
+      )}
+
+      {/* NEW TAB: SUBMIT REVIEW */}
+      {activeTab === 'reviews' && (
+        <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+            <Star className="w-6 h-6 text-[#E9C46A] fill-[#E9C46A]" />
+            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Submit Review</h2>
           </div>
+          <form onSubmit={handlePublishReview} className="space-y-6">
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product / Service</label>
+              <select className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
+                <option>Velvet Lounge Chair (Delivered)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
+              <input type="number" min={1} max={5} required value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Review Comment</label>
+              <textarea rows={3} required value={reviewComment} onChange={(e) => setReviewComment(e.target.value)} placeholder="Absolutely loved the craftsmanship..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+            </div>
+            <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Publish Review</button>
+          </form>
         </div>
       )}
 
