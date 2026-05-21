@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Moon, Sun, Bell, Search, User as UserIcon, LogOut, Settings, CreditCard, HelpCircle, Check, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Bell, Search, User as UserIcon, LogOut, Settings, CreditCard, HelpCircle, Check, ChevronRight, CheckCircle, X } from 'lucide-react';
 import UserSidebar from './UserSidebar';
 import VendorSidebar from './VendorSidebar';
 import AdminSidebar from './AdminSidebar';
@@ -15,6 +15,7 @@ const DashboardLayout = ({ children }) => {
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedNotif, setSelectedNotif] = useState(null);
 
   const profileRef = useRef(null);
   const notifRef = useRef(null);
@@ -91,6 +92,15 @@ const DashboardLayout = ({ children }) => {
     setNotifications(updated);
   };
 
+  const handleNotifClick = (notif) => {
+    const key = getNotifKey();
+    const updated = notifications.map(n => n._id === notif._id ? { ...n, read: true } : n);
+    localStorage.setItem(key, JSON.stringify(updated));
+    setNotifications(updated);
+    setSelectedNotif({ ...notif, read: true });
+    setShowNotifDropdown(false);
+  };
+
   const handleClearNotifications = () => {
     const key = getNotifKey();
     localStorage.setItem(key, JSON.stringify([]));
@@ -103,9 +113,9 @@ const DashboardLayout = ({ children }) => {
   };
 
   const renderSidebar = () => {
-    if (isAdmin) return <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />;
-    if (isVendor) return <VendorSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />;
-    return <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} />;
+    if (isAdmin) return <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
+    if (isVendor) return <VendorSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
+    return <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
   };
 
   // Breadcrumbs Map
@@ -157,7 +167,13 @@ const DashboardLayout = ({ children }) => {
   // Inject props
   const childrenWithProps = React.Children.map(children, child => {
     if (React.isValidElement(child)) {
-      return React.cloneElement(child, { activeTab, setActiveTab });
+      return React.cloneElement(child, { 
+        activeTab, 
+        setActiveTab,
+        notifications,
+        onNotifClick: handleNotifClick,
+        onMarkAllRead: handleMarkAllRead
+      });
     }
     return child;
   });
@@ -248,7 +264,8 @@ const DashboardLayout = ({ children }) => {
                       notifications.map((notif) => (
                         <div 
                           key={notif._id} 
-                          className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50/50 flex gap-2 items-start ${!notif.read ? 'bg-[#8B5E3C]/5' : ''}`}
+                          onClick={() => handleNotifClick(notif)}
+                          className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50/50 flex gap-2 items-start cursor-pointer ${!notif.read ? 'bg-[#8B5E3C]/5' : ''}`}
                         >
                           <span className="mt-0.5 text-xs">🔔</span>
                           <div className="flex-1">
@@ -345,6 +362,86 @@ const DashboardLayout = ({ children }) => {
           {childrenWithProps}
         </main>
       </div>
+
+      {/* Notification Detail Modal */}
+      {selectedNotif && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden transform scale-100 transition-all duration-300">
+            {/* Modal Header */}
+            <div className={`p-6 text-white flex items-center justify-between ${
+              isAdmin ? 'bg-[#1D3557]' : isVendor ? 'bg-[#2A9D8F]' : 'bg-[#8B5E3C]'
+            }`}>
+              <div className="flex items-center gap-3">
+                <Bell className="w-5 h-5 animate-bounce" />
+                <span className="font-extrabold text-sm uppercase tracking-wider">Notification Detail</span>
+              </div>
+              <button 
+                onClick={() => setSelectedNotif(null)}
+                className="p-1 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div className="flex gap-3 items-start">
+                <div className={`p-2 rounded-xl mt-1 ${
+                  isAdmin ? 'bg-[#1D3557]/10 text-[#1D3557]' : isVendor ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#8B5E3C]/10 text-[#8B5E3C]'
+                }`}>
+                  <CheckCircle className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-800 text-sm leading-relaxed">
+                    {selectedNotif.message}
+                  </p>
+                  <p className="text-[10px] text-gray-400 mt-2 font-semibold">
+                    Received on: {selectedNotif.createdAt ? new Date(selectedNotif.createdAt).toLocaleString() : 'Just now'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              {(selectedNotif.message.toLowerCase().includes('quotation') || selectedNotif.message.toLowerCase().includes('quote')) && (
+                <button 
+                  onClick={() => {
+                    setActiveTab('orders');
+                    setSelectedNotif(null);
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 ${
+                    isAdmin ? 'bg-[#1D3557] hover:bg-[#1D3557]/90' : isVendor ? 'bg-[#2A9D8F] hover:bg-[#2A9D8F]/90' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'
+                  }`}
+                >
+                  Review Quotation
+                </button>
+              )}
+              
+              {(selectedNotif.message.toLowerCase().includes('request') || selectedNotif.message.toLowerCase().includes('custom')) && (
+                <button 
+                  onClick={() => {
+                    setActiveTab(isVendor ? 'custom_requests' : 'manual_designs');
+                    setSelectedNotif(null);
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 ${
+                    isAdmin ? 'bg-[#1D3557] hover:bg-[#1D3557]/90' : isVendor ? 'bg-[#2A9D8F] hover:bg-[#2A9D8F]/90' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'
+                  }`}
+                >
+                  View Request
+                </button>
+              )}
+
+              <button 
+                onClick={() => setSelectedNotif(null)}
+                className="px-4 py-2 border border-gray-200 hover:bg-gray-100 rounded-xl text-xs font-bold text-gray-500 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

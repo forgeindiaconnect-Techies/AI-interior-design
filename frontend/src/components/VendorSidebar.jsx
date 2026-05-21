@@ -5,7 +5,7 @@ import {
   Briefcase, CheckCircle, ShieldCheck, Bell, LogOut, ChevronDown, ChevronRight 
 } from 'lucide-react';
 
-const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     products: true,
@@ -244,14 +244,21 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
         <div className="space-y-1">
           <button 
             onClick={() => setActiveTab('notifications')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'notifications' 
                 ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' 
                 : 'text-gray-500 hover:bg-[#2A9D8F]/5 hover:text-[#2A9D8F]'
             }`}
           >
-            <Bell className="w-4 h-4 shrink-0" />
-            <span>Notifications</span>
+            <div className="flex items-center gap-3">
+              <Bell className="w-4 h-4 shrink-0" />
+              <span>Notifications</span>
+            </div>
+            {unreadNotifCount > 0 && (
+              <span className="bg-[#E76F51] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
+                {unreadNotifCount}
+              </span>
+            )}
           </button>
         </div>
       </div>

@@ -5,7 +5,7 @@ import {
   Star, User as UserIcon, Bell, LogOut, ChevronDown, ChevronRight 
 } from 'lucide-react';
 
-const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     design: true,
@@ -242,14 +242,21 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all ${
                       isActive 
                         ? 'bg-[#8B5E3C]/10 text-[#8B5E3C]' 
                         : 'text-gray-500 hover:text-gray-700 hover:bg-[#8B5E3C]/5'
                     }`}
                   >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
+                    <div className="flex items-center gap-3">
+                      <Icon className="w-3.5 h-3.5 shrink-0" />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.tab === 'notifications' && unreadNotifCount > 0 && (
+                      <span className="bg-[#E76F51] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
+                        {unreadNotifCount}
+                      </span>
+                    )}
                   </button>
                 );
               })}

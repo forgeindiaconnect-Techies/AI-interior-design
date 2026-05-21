@@ -9,7 +9,13 @@ import {
   Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight
 } from 'lucide-react';
 
-const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
+const AdminDashboard = ({ 
+  activeTab = 'overview', 
+  setActiveTab,
+  notifications = [],
+  onNotifClick,
+  onMarkAllRead
+}) => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [managementData, setManagementData] = useState(null);
@@ -21,6 +27,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [notificationType, setNotificationType] = useState('info');
   const [targetUserName, setTargetUserName] = useState('');
   const [sentAlerts, setSentAlerts] = useState([]);
+  const [notifSubTab, setNotifSubTab] = useState('compose');
 
   // Partner Assignment State
   const [assignmentOrder, setAssignmentOrder] = useState(null);
@@ -5326,10 +5333,102 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       {activeTab === 'notifications' && (
         <div className="space-y-8 text-left animate-fadeIn">
           {/* Header */}
-          <div>
-            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">System Notifications</h2>
-            <p className="text-xs text-gray-500 mt-1">Broadcast platform-wide alerts or send targeted notifications to individual users.</p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">System Notifications</h2>
+              <p className="text-xs text-gray-500 mt-1">Broadcast platform-wide alerts or view received system events.</p>
+            </div>
+            {/* Sub-tab Toggle buttons */}
+            <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl self-start md:self-auto border border-gray-200">
+              <button 
+                onClick={() => setNotifSubTab('compose')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                  notifSubTab === 'compose' 
+                    ? 'bg-[#1D3557] text-white shadow-sm' 
+                    : 'text-gray-500 hover:text-[#1D3557] hover:bg-gray-50'
+                }`}
+              >
+                Compose & Broadcast
+              </button>
+              <button 
+                onClick={() => setNotifSubTab('received')}
+                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${
+                  notifSubTab === 'received' 
+                    ? 'bg-[#1D3557] text-white shadow-sm' 
+                    : 'text-gray-500 hover:text-[#1D3557] hover:bg-gray-50'
+                }`}
+              >
+                Received Platform Logs
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="bg-[#E76F51] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
+                    {notifications.filter(n => !n.read).length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
+
+          {notifSubTab === 'received' ? (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-3">
+                  <Bell className="w-6 h-6 text-[#1D3557]" /> Received Platform Logs
+                </h2>
+                {notifications.length > 0 && (
+                  <button onClick={onMarkAllRead} className="text-sm font-bold text-[#1D3557] hover:underline">
+                    Mark all as read
+                  </button>
+                )}
+              </div>
+              <div className="space-y-4">
+                {notifications.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400 font-medium">
+                    No received system notifications yet.
+                  </div>
+                ) : (
+                  notifications.map((notif) => {
+                    const isUnread = !notif.read;
+                    return (
+                      <div 
+                        key={notif._id} 
+                        onClick={() => onNotifClick && onNotifClick(notif)}
+                        className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-sm ${
+                          isUnread 
+                            ? 'bg-[#1D3557]/5 border-[#1D3557]/20' 
+                            : 'bg-gray-50 border-gray-100'
+                        }`}
+                      >
+                        <div className="mt-1 shrink-0">
+                          {isUnread ? (
+                            <div className="w-2 h-2 bg-[#1D3557] rounded-full mt-1.5"></div>
+                          ) : (
+                            <CheckCircle className="w-4 h-4 text-gray-400 mt-0.5" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
+                            {notif.message}
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1">
+                            {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                          </p>
+                          {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('manual')) && (
+                            <button 
+                              onClick={() => { if (setActiveTab) setActiveTab('manual_designs'); }} 
+                              className="mt-2 text-xs font-bold text-[#1D3557] hover:underline block"
+                            >
+                              View Request
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          ) : (
+            <>
 
           {/* Metrics Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -5524,6 +5623,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               )}
             </div>
           </div>
+          </>
+          )}
         </div>
       )}
 

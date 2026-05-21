@@ -9,7 +9,13 @@ import {
 } from 'lucide-react';
 import Marketplace from './Marketplace';
 
-const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
+const UserDashboard = ({ 
+  activeTab = 'overview', 
+  setActiveTab,
+  notifications = [],
+  onNotifClick,
+  onMarkAllRead
+}) => {
   const { user } = useAuth();
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -70,6 +76,7 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewTargetId, setReviewTargetId] = useState('');
+
 
   useEffect(() => {
     fetchUserData();
@@ -1871,26 +1878,57 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-3">
               <Bell className="w-6 h-6 text-[#E76F51]" /> Notifications
             </h2>
-            <button className="text-sm font-bold text-[#8B5E3C] hover:underline">Mark all as read</button>
+            {notifications.length > 0 && (
+              <button onClick={onMarkAllRead} className="text-sm font-bold text-[#8B5E3C] hover:underline">
+                Mark all as read
+              </button>
+            )}
           </div>
           <div className="space-y-4">
-            {/* Unread Notification */}
-            <div className="flex gap-4 p-4 bg-[#E76F51]/5 rounded-2xl border border-[#E76F51]/20">
-              <div className="mt-1"><div className="w-2 h-2 bg-[#E76F51] rounded-full"></div></div>
-              <div>
-                <p className="font-bold text-[#1F2937] text-sm">Vendor has sent a quotation for your manual design.</p>
-                <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                <button onClick={() => { if(setActiveTab) setActiveTab('orders'); }} className="mt-2 text-xs font-bold text-[#8B5E3C] hover:underline">Review Quotation</button>
+            {notifications.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 font-medium">
+                No notifications yet.
               </div>
-            </div>
-            {/* Read Notification */}
-            <div className="flex gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-              <div className="mt-1"><CheckCircle className="w-4 h-4 text-gray-400" /></div>
-              <div>
-                <p className="font-bold text-gray-600 text-sm">Your AI Design generation is complete.</p>
-                <p className="text-xs text-gray-400 mt-1">Yesterday</p>
-              </div>
-            </div>
+            ) : (
+              notifications.map((notif) => {
+                const isUnread = !notif.read;
+                return (
+                  <div 
+                    key={notif._id} 
+                    onClick={() => onNotifClick && onNotifClick(notif)}
+                    className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-sm ${
+                      isUnread 
+                        ? 'bg-[#E76F51]/5 border-[#E76F51]/20' 
+                        : 'bg-gray-50 border-gray-100'
+                    }`}
+                  >
+                    <div className="mt-1 shrink-0">
+                      {isUnread ? (
+                        <div className="w-2 h-2 bg-[#E76F51] rounded-full mt-1.5"></div>
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-gray-400 mt-0.5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
+                        {notif.message}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                      </p>
+                      {(notif.message.toLowerCase().includes('quotation') || notif.message.toLowerCase().includes('quote')) && (
+                        <button 
+                          onClick={() => { if (setActiveTab) setActiveTab('orders'); }} 
+                          className="mt-2 text-xs font-bold text-[#8B5E3C] hover:underline block"
+                        >
+                          Review Quotation
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}

@@ -8,7 +8,13 @@ import {
   Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight
 } from 'lucide-react';
 
-const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
+const VendorDashboard = ({ 
+  activeTab = 'overview', 
+  setActiveTab,
+  notifications = [],
+  onNotifClick,
+  onMarkAllRead
+}) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
@@ -104,6 +110,7 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [reqAccount, setReqAccount] = useState('');
   const [reqNote, setReqNote] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
 
   useEffect(() => {
     fetchPartnerData();
@@ -2590,17 +2597,65 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-3">
               <Bell className="w-6 h-6 text-[#2A9D8F]" /> Partner Notifications
             </h2>
-            <button className="text-sm font-bold text-[#2A9D8F] hover:underline">Mark all as read</button>
+            {notifications.length > 0 && (
+              <button onClick={onMarkAllRead} className="text-sm font-bold text-[#2A9D8F] hover:underline">
+                Mark all as read
+              </button>
+            )}
           </div>
           <div className="space-y-4">
-            <div className="flex gap-4 p-4 bg-[#2A9D8F]/5 rounded-2xl border border-[#2A9D8F]/20">
-              <div className="mt-1"><div className="w-2 h-2 bg-[#2A9D8F] rounded-full"></div></div>
-              <div>
-                <p className="font-bold text-[#1F2937] text-sm">You have a new custom design request.</p>
-                <p className="text-xs text-gray-500 mt-1">1 hour ago</p>
-                <button onClick={() => { if(setActiveTab) setActiveTab('custom_requests'); }} className="mt-2 text-xs font-bold text-[#2A9D8F] hover:underline">View Request</button>
+            {notifications.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 font-medium">
+                No notifications yet.
               </div>
-            </div>
+            ) : (
+              notifications.map((notif) => {
+                const isUnread = !notif.read;
+                return (
+                  <div 
+                    key={notif._id} 
+                    onClick={() => onNotifClick && onNotifClick(notif)}
+                    className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-sm ${
+                      isUnread 
+                        ? 'bg-[#2A9D8F]/5 border-[#2A9D8F]/20' 
+                        : 'bg-gray-50 border-gray-100'
+                    }`}
+                  >
+                    <div className="mt-1 shrink-0">
+                      {isUnread ? (
+                        <div className="w-2 h-2 bg-[#2A9D8F] rounded-full mt-1.5"></div>
+                      ) : (
+                        <CheckCircle className="w-4 h-4 text-gray-400 mt-0.5" />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
+                        {notif.message}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-1">
+                        {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                      </p>
+                      {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('custom')) && (
+                        <button 
+                          onClick={() => { if (setActiveTab) setActiveTab('custom_requests'); }} 
+                          className="mt-2 text-xs font-bold text-[#2A9D8F] hover:underline block"
+                        >
+                          View Request
+                        </button>
+                      )}
+                      {notif.message.toLowerCase().includes('order') && !notif.message.toLowerCase().includes('request') && (
+                        <button 
+                          onClick={() => { if (setActiveTab) setActiveTab('orders'); }} 
+                          className="mt-2 text-xs font-bold text-[#2A9D8F] hover:underline block"
+                        >
+                          View Order
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
