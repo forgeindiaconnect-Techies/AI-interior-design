@@ -127,7 +127,9 @@ const DashboardLayout = ({ children }) => {
     // Vendor specific
     products: ['Home', 'Products', 'Product Catalog'],
     custom_requests: ['Home', 'Orders', 'Custom Orders'],
-    manufacturing: ['Home', 'Orders', 'Manufacturing Requests'],
+    manufacturing: ['Home', 'Operations', 'Manufacturing'],
+    installation: ['Home', 'Operations', 'Installation'],
+    platform_settings: ['Home', 'System Settings', 'Platform Settings'],
     logistics: ['Home', 'Orders', 'Logistics & Dispatch'],
     earnings: ['Home', 'Earnings', 'Revenue & Payments'],
     messages: ['Home', 'Inbox', 'Customer Chat'],

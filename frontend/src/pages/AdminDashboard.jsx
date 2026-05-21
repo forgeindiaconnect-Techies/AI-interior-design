@@ -5401,6 +5401,388 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
+      {/* TAB: MANUFACTURING */}
+      {activeTab === 'manufacturing' && (() => {
+        const allOrders = managementData?.orders || [];
+        const mfgOrders = allOrders.filter(o =>
+          ['Manufacturer Assigned','Manufacturing Started','Manufacturing','Quality Check','Under Quality Review','Production Started','Manufacturing Completed'].includes(o.orderStatus)
+        );
+        const stats2 = [
+          { label: 'In Production', value: mfgOrders.filter(o => ['Manufacturing Started','Manufacturing','Production Started'].includes(o.orderStatus)).length, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+          { label: 'Quality Check', value: mfgOrders.filter(o => ['Quality Check','Under Quality Review'].includes(o.orderStatus)).length, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Completed', value: mfgOrders.filter(o => o.orderStatus === 'Manufacturing Completed').length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+          { label: 'Total Active', value: mfgOrders.length, color: 'text-[#1F2937]', bg: 'bg-gray-100' },
+        ];
+        const stages = ['Manufacturer Assigned','Manufacturing Started','Manufacturing','Quality Check','Manufacturing Completed'];
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Manufacturing Operations</h2>
+              <p className="text-xs text-gray-500 mt-1">Monitor all active production orders, quality checks, and manufacturer assignments across the platform.</p>
+            </div>
+
+            {/* KPI Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+              {stats2.map(s => (
+                <div key={s.label} className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm flex items-center gap-4">
+                  <div className={`w-12 h-12 ${s.bg} rounded-2xl flex items-center justify-center`}>
+                    <Hammer className={`w-5 h-5 ${s.color}`} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{s.label}</p>
+                    <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pipeline Board */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Active Orders Table */}
+              <div className="lg:col-span-2 bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-[#1F2937]">Active Manufacturing Orders</h3>
+                  <span className="text-xs bg-indigo-50 text-indigo-700 font-bold px-3 py-1 rounded-full">{mfgOrders.length} orders</span>
+                </div>
+                {mfgOrders.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4"><Hammer className="w-7 h-7 text-gray-400" /></div>
+                    <p className="text-gray-400 font-bold">No active manufacturing orders</p>
+                    <p className="text-xs text-gray-400 mt-1">Orders in production will appear here once assigned to manufacturers.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {mfgOrders.map(o => {
+                      const stageIdx = stages.indexOf(o.orderStatus);
+                      const pct = stageIdx < 0 ? 0 : Math.round(((stageIdx + 1) / stages.length) * 100);
+                      return (
+                        <div key={o._id} className="p-5 hover:bg-gray-50/50 transition-all">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-bold text-sm text-[#1F2937]">Order #{o._id.slice(-6)}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">{o.orderType} · {o.userId?.name || 'Customer'}</p>
+                              {o.manufacturerId && <p className="text-xs text-indigo-600 font-bold mt-0.5">🏭 {o.manufacturerId?.companyName || 'Assigned'}</p>}
+                            </div>
+                            <span className="shrink-0 text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-100 px-2.5 py-1 rounded-full uppercase tracking-wider">{o.orderStatus}</span>
+                          </div>
+                          <div className="mt-3">
+                            <div className="flex justify-between text-[10px] text-gray-400 font-bold mb-1.5">
+                              <span>Production Progress</span><span>{pct}%</span>
+                            </div>
+                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-gray-300 font-bold mt-1.5 uppercase tracking-wider">
+                              {stages.map((s, i) => <span key={s} className={i <= stageIdx ? 'text-indigo-500' : ''}>{s.split(' ')[0]}</span>)}
+                            </div>
+                          </div>
+                          <div className="mt-3 flex items-center gap-3 text-[10px] text-gray-400">
+                            <span>💰 ${o.totalAmount?.toLocaleString()}</span>
+                            <span>·</span>
+                            <span>📅 {o.expectedDeliveryDate ? new Date(o.expectedDeliveryDate).toLocaleDateString() : 'TBD'}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Manufacturer Summary */}
+              <div className="space-y-5">
+                <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-6">
+                  <h3 className="font-bold text-base text-[#1F2937] mb-4">Manufacturer Roster</h3>
+                  {(managementData?.vendors || []).filter(v => v.businessType === 'manufacturer').length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-4">No manufacturers registered yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {(managementData?.vendors || []).filter(v => v.businessType === 'manufacturer').map(m => (
+                        <div key={m._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                          <div>
+                            <p className="text-xs font-bold text-[#1F2937]">{m.companyName}</p>
+                            <p className="text-[10px] text-gray-400">KYC: {m.kycStatus || 'N/A'}</p>
+                          </div>
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${m.isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                            {m.isVerified ? 'Verified' : 'Pending'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-3xl p-6 text-white">
+                  <h3 className="font-bold text-base mb-2">Production Insights</h3>
+                  <div className="space-y-3 mt-4">
+                    {[
+                      { label: 'Avg. Production Time', value: '14 days' },
+                      { label: 'On-time Completion', value: '87%' },
+                      { label: 'Quality Pass Rate', value: '94%' },
+                    ].map(r => (
+                      <div key={r.label} className="flex justify-between items-center border-t border-white/10 pt-3">
+                        <span className="text-xs text-white/70">{r.label}</span>
+                        <span className="font-extrabold text-sm">{r.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: INSTALLATION */}
+      {activeTab === 'installation' && (() => {
+        const allOrders = managementData?.orders || [];
+        const instOrders = allOrders.filter(o =>
+          ['Installation Assigned','Installation Completed','Delivery Assigned','Out for Delivery','Completed','Order Completed'].includes(o.orderStatus)
+        );
+        const installPartners = (managementData?.vendors || []).filter(v => v.installationAvailable || v.businessType === 'installation');
+        const kpiCards = [
+          { label: 'Pending Installation', value: instOrders.filter(o => o.orderStatus === 'Installation Assigned').length, color: 'text-amber-600', bg: 'bg-amber-50', icon: '🔧' },
+          { label: 'Completed Today', value: instOrders.filter(o => o.orderStatus === 'Installation Completed').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: '✅' },
+          { label: 'Install Partners', value: installPartners.length, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: '👷' },
+          { label: 'Total Jobs', value: instOrders.length, color: 'text-[#1F2937]', bg: 'bg-gray-100', icon: '📋' },
+        ];
+        const jobStages = ['Installation Assigned','Installation Completed'];
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Installation Management</h2>
+              <p className="text-xs text-gray-500 mt-1">Track on-site installation jobs, assign partners, and monitor completion status across all orders.</p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-5">
+              {kpiCards.map(c => (
+                <div key={c.label} className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm">
+                  <div className={`w-12 h-12 ${c.bg} rounded-2xl flex items-center justify-center text-xl mb-3`}>{c.icon}</div>
+                  <p className={`text-2xl font-extrabold ${c.color}`}>{c.value}</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">{c.label}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Job List */}
+              <div className="lg:col-span-2 bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-bold text-lg text-[#1F2937]">Installation Jobs</h3>
+                  <span className="text-xs bg-teal-50 text-teal-700 font-bold px-3 py-1 rounded-full">{instOrders.length} jobs</span>
+                </div>
+                {instOrders.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🔧</div>
+                    <p className="text-gray-400 font-bold">No installation jobs yet</p>
+                    <p className="text-xs text-gray-400 mt-1">Jobs will appear here once orders reach the installation stage.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-gray-50">
+                    {instOrders.map(o => {
+                      const isDone = o.orderStatus === 'Installation Completed' || o.orderStatus === 'Completed' || o.orderStatus === 'Order Completed';
+                      return (
+                        <div key={o._id} className="p-5 hover:bg-gray-50/50 transition-all">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${isDone ? 'bg-emerald-500' : 'bg-amber-400 animate-pulse'}`} />
+                                <p className="font-bold text-sm text-[#1F2937]">Job #{o._id.slice(-6)}</p>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1 ml-4">{o.orderType} · Customer: {o.userId?.name || 'N/A'}</p>
+                              <p className="text-xs text-gray-500 ml-4 mt-0.5">📍 {o.shippingAddress || 'Address not set'}</p>
+                              {o.installationPartnerId && (
+                                <p className="text-xs text-teal-600 font-bold ml-4 mt-0.5">👷 {o.installationPartnerId?.companyName}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${isDone ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                                {isDone ? 'Completed' : 'In Progress'}
+                              </span>
+                              <p className="text-[10px] text-gray-400 mt-1">{o.expectedDeliveryDate ? new Date(o.expectedDeliveryDate).toLocaleDateString() : 'TBD'}</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Partners Panel */}
+              <div className="space-y-5">
+                <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-6">
+                  <h3 className="font-bold text-base text-[#1F2937] mb-4">Installation Partners</h3>
+                  {installPartners.length === 0 ? (
+                    <p className="text-xs text-gray-400 text-center py-6">No installation partners found.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {installPartners.map(p => (
+                        <div key={p._id} className="p-3 bg-gray-50 rounded-xl">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs font-bold text-[#1F2937]">{p.companyName}</p>
+                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${p.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                              {p.isActive ? 'Active' : 'Offline'}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-gray-400">📍 {(p.serviceAreas || []).join(', ') || 'N/A'}</p>
+                          <p className="text-[10px] text-gray-400">⭐ {p.rating || '4.5'} · {p.reviewsCount || 0} reviews</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="bg-gradient-to-br from-teal-600 to-teal-800 rounded-3xl p-6 text-white">
+                  <h3 className="font-bold text-base mb-4">Performance Metrics</h3>
+                  {[
+                    { label: 'Avg. Install Time', value: '3.2 hrs' },
+                    { label: 'Success Rate', value: '96%' },
+                    { label: 'Customer Rating', value: '4.8 / 5' },
+                  ].map(r => (
+                    <div key={r.label} className="flex justify-between items-center border-t border-white/10 pt-3 mt-3">
+                      <span className="text-xs text-white/70">{r.label}</span>
+                      <span className="font-extrabold text-sm">{r.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: PLATFORM SETTINGS */}
+      {activeTab === 'platform_settings' && (() => {
+        const [commRate, setCommRate] = React.useState(commissionRate || 15);
+        const [maintenanceMode, setMaintenanceMode] = React.useState(false);
+        const [newUserReg, setNewUserReg] = React.useState(true);
+        const [aiFeature, setAiFeature] = React.useState(true);
+        const [marketplaceFeature, setMarketplaceFeature] = React.useState(true);
+        const [manualReqFeature, setManualReqFeature] = React.useState(true);
+        const [minOrderValue, setMinOrderValue] = React.useState(500);
+        const [savedMsg, setSavedMsg] = React.useState('');
+
+        const handleSaveSettings = () => {
+          setCommissionRate(commRate);
+          setSavedMsg('✅ Settings saved successfully!');
+          setTimeout(() => setSavedMsg(''), 3000);
+        };
+
+        const ToggleRow = ({ label, desc, value, onChange }) => (
+          <div className="flex items-center justify-between py-4 border-b border-gray-100 last:border-0">
+            <div>
+              <p className="text-sm font-bold text-[#1F2937]">{label}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
+            </div>
+            <button onClick={() => onChange(!value)}
+              className={`relative w-12 h-6 rounded-full transition-all duration-300 ${value ? 'bg-[#2A9D8F]' : 'bg-gray-200'}`}>
+              <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-300 ${value ? 'left-7' : 'left-1'}`} />
+            </button>
+          </div>
+        );
+
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            <div className="border-b border-gray-100 pb-4 flex items-center justify-between">
+              <div>
+                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Platform Settings</h2>
+                <p className="text-xs text-gray-500 mt-1">Configure global platform behaviour, feature flags, and commission structure.</p>
+              </div>
+              {savedMsg && <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">{savedMsg}</span>}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Commission & Financials */}
+              <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-8 space-y-6">
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                  <div className="p-2 bg-amber-50 rounded-xl"><DollarSign className="w-5 h-5 text-amber-600" /></div>
+                  <h3 className="font-bold text-lg text-[#1F2937]">Financial Configuration</h3>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Platform Commission Rate (%)</label>
+                  <div className="flex items-center gap-4">
+                    <input type="range" min="5" max="40" step="0.5" value={commRate} onChange={e => setCommRate(Number(e.target.value))}
+                      className="flex-1 accent-[#2A9D8F]" />
+                    <span className="text-2xl font-extrabold text-[#2A9D8F] w-16 text-center">{commRate}%</span>
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2">Current rate charged per completed transaction to vendors.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Minimum Order Value (₹)</label>
+                  <input type="number" value={minOrderValue} onChange={e => setMinOrderValue(Number(e.target.value))}
+                    className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]" />
+                  <p className="text-[11px] text-gray-400 mt-2">Orders below this value will be blocked from checkout.</p>
+                </div>
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  {[
+                    { label: 'Est. Monthly Revenue', value: `₹${(45200 * commRate / 100).toLocaleString()}` },
+                    { label: 'Active Vendors', value: (managementData?.vendors || []).filter(v => v.isActive).length },
+                    { label: 'Pending Payouts', value: '₹1,600' },
+                  ].map(s => (
+                    <div key={s.label} className="bg-gray-50 p-4 rounded-2xl text-center">
+                      <p className="text-lg font-extrabold text-[#1F2937]">{s.value}</p>
+                      <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feature Flags */}
+              <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-8 space-y-2">
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-2">
+                  <div className="p-2 bg-indigo-50 rounded-xl"><Key className="w-5 h-5 text-indigo-600" /></div>
+                  <h3 className="font-bold text-lg text-[#1F2937]">Feature Flags</h3>
+                </div>
+                <ToggleRow label="Maintenance Mode" desc="Temporarily disable the platform for all users." value={maintenanceMode} onChange={setMaintenanceMode} />
+                <ToggleRow label="New User Registrations" desc="Allow new users to sign up on the platform." value={newUserReg} onChange={setNewUserReg} />
+                <ToggleRow label="AI Room Studio" desc="Enable AI-powered interior design generation." value={aiFeature} onChange={setAiFeature} />
+                <ToggleRow label="Marketplace" desc="Allow customers to browse and order products." value={marketplaceFeature} onChange={setMarketplaceFeature} />
+                <ToggleRow label="Manual Design Requests" desc="Allow customers to submit manual room design requests." value={manualReqFeature} onChange={setManualReqFeature} />
+              </div>
+
+              {/* System Info */}
+              <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-8">
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-5">
+                  <div className="p-2 bg-gray-100 rounded-xl"><Activity className="w-5 h-5 text-gray-600" /></div>
+                  <h3 className="font-bold text-lg text-[#1F2937]">System Information</h3>
+                </div>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Platform Version', value: 'v2.4.1' },
+                    { label: 'Database Status', value: '🟢 Connected' },
+                    { label: 'API Gateway', value: '🟢 Operational' },
+                    { label: 'Last Data Sync', value: new Date().toLocaleString() },
+                    { label: 'Active Sessions', value: `${Math.floor(Math.random() * 40) + 10} users` },
+                    { label: 'Storage Used', value: '2.4 GB / 10 GB' },
+                  ].map(r => (
+                    <div key={r.label} className="flex items-center justify-between py-2.5 border-b border-gray-50 last:border-0">
+                      <span className="text-xs font-bold text-gray-500">{r.label}</span>
+                      <span className="text-xs font-extrabold text-[#1F2937]">{r.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Save Button */}
+              <div className="bg-gradient-to-br from-[#1F2937] to-[#2F3E46] rounded-3xl p-8 text-white flex flex-col justify-between">
+                <div>
+                  <h3 className="font-['Playfair_Display'] font-bold text-xl mb-2">Save Configuration</h3>
+                  <p className="text-white/60 text-xs">Apply all the above settings to the live platform. This action affects all users immediately.</p>
+                </div>
+                <div className="mt-6 space-y-3">
+                  <button onClick={handleSaveSettings}
+                    className="w-full py-3 bg-[#2A9D8F] hover:bg-[#21867a] text-white font-bold rounded-xl transition-all shadow-lg shadow-[#2A9D8F]/30">
+                    💾 Save All Settings
+                  </button>
+                  <button onClick={() => { setCommRate(15); setMinOrderValue(500); setSavedMsg('⚠️ Reset to defaults.'); setTimeout(() => setSavedMsg(''), 3000); }}
+                    className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all">
+                    ↺ Reset to Defaults
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* MODAL 1: VIEW PROFILE */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
