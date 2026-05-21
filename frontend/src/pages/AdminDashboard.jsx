@@ -44,9 +44,10 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [transactionFilterType, setTransactionFilterType] = useState('all');
   const [transactionFilterStatus, setTransactionFilterStatus] = useState('all');
 
-  // KYC & Security Deposit States
-  const [kycSubmissions, setKycSubmissions] = useState([]);
-  const [depositSubmissions, setDepositSubmissions] = useState([]);
+  // Verification, Store Setup & Product Quality Review States
+  const [verificationSubmissions, setVerificationSubmissions] = useState([]);
+  const [storeSetupSubmissions, setStoreSetupSubmissions] = useState([]);
+  const [productReviewSubmissions, setProductReviewSubmissions] = useState([]);
   const [remarks, setRemarks] = useState({});
 
   // Support Tickets State
@@ -62,7 +63,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [newSubAdminRole, setNewSubAdminRole] = useState('Moderator');
   const [newSubAdminPermissions, setNewSubAdminPermissions] = useState({
     userManagement: false,
-    vendorKYC: false,
+    vendorVerification: false,
     ordersWorkflow: false,
     supportTickets: false,
     analytics: false,
@@ -100,7 +101,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Upgraded Manufacturer Management States
   const [mfgSearch, setMfgSearch] = useState('');
   const [mfgSpecializationFilter, setMfgSpecializationFilter] = useState('all');
-  const [mfgKycFilter, setMfgKycFilter] = useState('all');
+  const [mfgVerificationFilter, setMfgVerificationFilter] = useState('all');
   const [mfgStatusFilter, setMfgStatusFilter] = useState('all');
   const [mfgWorkloadFilter, setMfgWorkloadFilter] = useState('all');
 
@@ -126,7 +127,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [deliveryStatusFilter, setDeliveryStatusFilter] = useState('all');
   const [deliveryAreaFilter, setDeliveryAreaFilter] = useState('all');
   const [deliveryTypeFilter, setDeliveryTypeFilter] = useState('all');
-  const [deliveryKycFilter, setDeliveryKycFilter] = useState('all');
+  const [deliveryVerificationFilter, setDeliveryVerificationFilter] = useState('all');
 
   const [selectedDeliveryProfile, setSelectedDeliveryProfile] = useState(null);
   const [assignDeliveryOrderPartner, setAssignDeliveryOrderPartner] = useState(null);
@@ -269,8 +270,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       }
       if (!mockMgmtData.vendors || mockMgmtData.vendors.length === 0) {
         mockMgmtData.vendors = [
-          { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, kycStatus: 'Submitted', depositStatus: 'Paid', isActive: false },
-          { _id: 'v2', companyName: 'Elite Woodworks', businessType: 'manufacturer', userId: { email: 'wood@example.com' }, isVerified: false, kycStatus: 'Pending', depositStatus: 'Pending', isActive: false },
+          { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, verificationStatus: 'Submitted', storeSetupStatus: 'Submitted', isActive: false },
+          { _id: 'v2', companyName: 'Elite Woodworks', businessType: 'manufacturer', userId: { email: 'wood@example.com' }, isVerified: false, verificationStatus: 'Pending', storeSetupStatus: 'Pending', isActive: false },
           {
             _id: 'del_mock_1',
             companyName: 'Swift Logistics Solutions',
@@ -279,8 +280,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             rating: 4.9,
             reviewsCount: 156,
             isVerified: true,
-            kycStatus: 'Approved',
-            depositStatus: 'Verified',
+            verificationStatus: 'Approved',
+            storeSetupStatus: 'Approved',
             isActive: true,
             serviceAreas: ['Bangalore', 'Mumbai'],
             vehicleType: 'Cargo Van',
@@ -297,8 +298,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             rating: 4.7,
             reviewsCount: 88,
             isVerified: true,
-            kycStatus: 'Approved',
-            depositStatus: 'Verified',
+            verificationStatus: 'Approved',
+            storeSetupStatus: 'Approved',
             isActive: true,
             serviceAreas: ['Noida', 'Delhi NCR'],
             vehicleType: 'Mini Truck',
@@ -315,8 +316,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             rating: 4.4,
             reviewsCount: 34,
             isVerified: true,
-            kycStatus: 'Submitted',
-            depositStatus: 'Pending',
+            verificationStatus: 'Submitted',
+            storeSetupStatus: 'Pending',
             isActive: true,
             serviceAreas: ['Mumbai'],
             vehicleType: 'Two-Wheeler',
@@ -333,8 +334,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             rating: 4.8,
             reviewsCount: 72,
             isVerified: true,
-            kycStatus: 'Approved',
-            depositStatus: 'Verified',
+            verificationStatus: 'Approved',
+            storeSetupStatus: 'Approved',
             isActive: false,
             serviceAreas: ['Detroit', 'Chicago'],
             vehicleType: 'Cargo Van',
@@ -482,49 +483,72 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
       setManagementData(mockMgmtData);
 
-      // Fetch KYC & Deposit Data
-      const kycRes = await axios.get('/admin/kyc').catch(() => ({ data: { data: [] } }));
-      const depRes = await axios.get('/admin/deposits').catch(() => ({ data: { data: [] } }));
+      // Fetch Verification, Store Setup & Product Quality Review Data
+      const verRes = await axios.get('/admin/verifications').catch(() => ({ data: { data: [] } }));
+      const storeRes = await axios.get('/admin/store-approvals').catch(() => ({ data: { data: [] } }));
+      const prodRes = await axios.get('/admin/product-reviews').catch(() => ({ data: { data: [] } }));
 
-      const currentKyc = kycRes.data?.data || [];
-      const currentDep = depRes.data?.data || [];
+      const currentVer = verRes.data?.data || [];
+      const currentStore = storeRes.data?.data || [];
+      const currentProd = prodRes.data?.data || [];
 
-      if (currentKyc.length === 0) {
-        setKycSubmissions([
+      if (currentVer.length === 0) {
+        setVerificationSubmissions([
           {
-            _id: 'kyc_mock_1',
+            _id: 'verification_mock_1',
             vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
             businessName: 'Artisan Workshop Private Limited',
             ownerName: 'Rajesh Kumar',
             phone: '+91 98765 43210',
-            email: 'rajesh@artisanworkshop.com',
+            email: 'vendor@example.com',
             gstNumber: '27AAAAA1111A1Z1',
             panNumber: 'ABCDE1234F',
             idProofUrl: 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
             addressProofUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
-            bankDetails: { accountNumber: '987654321098', ifscCode: 'HDFC0000123', bankName: 'HDFC Bank' },
             status: 'Pending',
-            adminRemarks: ''
+            adminRemarks: '',
+            submittedAt: new Date(Date.now() - 3600000 * 2).toISOString()
           }
         ]);
       } else {
-        setKycSubmissions(currentKyc);
+        setVerificationSubmissions(currentVer);
       }
 
-      if (currentDep.length === 0) {
-        setDepositSubmissions([
+      if (currentStore.length === 0) {
+        setStoreSetupSubmissions([
           {
-            _id: 'dep_mock_1',
+            _id: 'store_mock_1',
             vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            amount: 25000,
-            paymentStatus: 'Paid',
-            transactionId: 'TXN_98234710293',
-            paymentDate: new Date(),
-            adminRemarks: ''
+            description: 'Expert hand-crafted wooden furniture workshops specialized in mid-century tables.',
+            specialization: 'Woodworks',
+            monthlyCapacity: 40,
+            serviceAreas: 'Bangalore, Noida, Mumbai',
+            status: 'Pending',
+            adminRemarks: '',
+            submittedAt: new Date(Date.now() - 3600000).toISOString()
           }
         ]);
       } else {
-        setDepositSubmissions(currentDep);
+        setStoreSetupSubmissions(currentStore);
+      }
+
+      if (currentProd.length === 0) {
+        setProductReviewSubmissions([
+          {
+            _id: 'prod_rev_mock_1',
+            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            title: 'Vintage Oak Coffee Table',
+            description: 'Beautiful hand-polished coffee table made of sustainably sourced oak.',
+            price: 349,
+            images: ['https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600'],
+            category: 'Tables',
+            material: 'Oak Wood',
+            status: 'Pending',
+            createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+          }
+        ]);
+      } else {
+        setProductReviewSubmissions(currentProd);
       }
     } catch (error) {
       console.error('Error fetching admin data', error);
@@ -705,7 +729,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           roleName: 'Support Agent',
           permissions: {
             userManagement: false,
-            vendorKYC: false,
+            vendorVerification: false,
             ordersWorkflow: false,
             supportTickets: true,
             analytics: false,
@@ -719,7 +743,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           roleName: 'Operations Lead',
           permissions: {
             userManagement: true,
-            vendorKYC: true,
+            vendorVerification: true,
             ordersWorkflow: true,
             supportTickets: false,
             analytics: true,
@@ -751,7 +775,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       setNewSubAdminRole('Moderator');
       setNewSubAdminPermissions({
         userManagement: false,
-        vendorKYC: false,
+        vendorVerification: false,
         ordersWorkflow: false,
         supportTickets: false,
         analytics: false,
@@ -1172,26 +1196,36 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     }
   };
 
-  // KYC Admin Actions
-  const handleVerifyKYC = async (id, status) => {
+  // Verification & Review Admin Actions
+  const handleVerifyBusiness = async (id, status) => {
     try {
       const currentRemarks = remarks[id] || '';
-      await axios.put(`/admin/kyc/${id}`, { status, adminRemarks: currentRemarks }).catch(() => console.log('mock kyc verify'));
-      setKycSubmissions(kycSubmissions.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k));
-      alert(`✅ KYC Submission ${status} successfully!`);
+      await axios.put(`/admin/verifications/${id}`, { status, adminRemarks: currentRemarks }).catch(() => console.log('mock verification verify'));
+      setVerificationSubmissions(verificationSubmissions.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k));
+      alert(`✅ Business Verification status set to ${status} successfully!`);
     } catch (error) {
-      alert('Error updating KYC Status');
+      alert('Error updating Business Verification status');
     }
   };
 
-  const handleVerifyDeposit = async (id, paymentStatus) => {
+  const handleApproveStore = async (id, status) => {
     try {
       const currentRemarks = remarks[id] || '';
-      await axios.put(`/admin/deposits/${id}`, { paymentStatus, adminRemarks: currentRemarks }).catch(() => console.log('mock dep verify'));
-      setDepositSubmissions(depositSubmissions.map(d => d._id === id ? { ...d, paymentStatus, adminRemarks: currentRemarks } : d));
-      alert(`✅ Security Deposit Verification status updated to: ${paymentStatus}!`);
+      await axios.put(`/admin/store-approvals/${id}`, { status, adminRemarks: currentRemarks }).catch(() => console.log('mock store setup verify'));
+      setStoreSetupSubmissions(storeSetupSubmissions.map(d => d._id === id ? { ...d, status, adminRemarks: currentRemarks } : d));
+      alert(`✅ Store/Profile Setup status set to ${status} successfully!`);
     } catch (error) {
-      alert('Error updating Security Deposit verification status');
+      alert('Error updating Store Setup status');
+    }
+  };
+
+  const handleReviewProduct = async (id, approvalStatus) => {
+    try {
+      await axios.put(`/admin/product-reviews/${id}`, { approvalStatus }).catch(() => console.log('mock product review'));
+      setProductReviewSubmissions(productReviewSubmissions.map(p => p._id === id ? { ...p, approvalStatus } : p));
+      alert(`✅ Product quality status set to ${approvalStatus} successfully!`);
+    } catch (error) {
+      alert('Error updating product quality status');
     }
   };
 
@@ -1602,8 +1636,9 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           { month: 'May', value: 32000, max: 50000 },
           { month: 'Jun', value: 45200, max: 50000 },
         ];
-        const pendingKyc = kycSubmissions?.filter(k => k.status === 'Pending' || k.status === 'pending')?.length || 3;
-        const pendingDeposits = depositSubmissions?.filter(d => d.status === 'Pending' || d.status === 'pending')?.length || 2;
+        const pendingVerifications = verificationSubmissions?.filter(v => v.status === 'Pending' || v.status === 'pending')?.length || 0;
+        const pendingStoreSetup = storeSetupSubmissions?.filter(s => s.status === 'Pending' || s.status === 'pending')?.length || 0;
+        const pendingProductReviews = productReviewSubmissions?.filter(p => p.status === 'Pending' || p.status === 'pending' || p.approvalStatus === 'Pending')?.length || 0;
         const openTickets = tickets?.filter(t => t.status === 'open')?.length || 4;
         const pendingOrders = managementData?.orders?.filter(o => o.orderStatus === 'Request Submitted')?.length || 5;
 
@@ -1611,7 +1646,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           ...(managementData?.users?.slice(0, 2).map(u => ({ icon: '👤', label: `New user registered`, name: u.name || 'Unknown User', time: u.createdAt || new Date(Date.now() - 3600000 * 2).toISOString(), color: 'bg-indigo-50 text-indigo-600' })) || []),
           ...(managementData?.vendors?.slice(0, 2).map(v => ({ icon: '🏪', label: `Vendor joined the platform`, name: v.companyName || 'Vendor', time: v.createdAt || new Date(Date.now() - 3600000 * 5).toISOString(), color: 'bg-amber-50 text-amber-600' })) || []),
           ...(managementData?.orders?.slice(0, 2).map(o => ({ icon: '📦', label: `New order placed`, name: o.userId?.name || 'Customer', time: o.createdAt || new Date(Date.now() - 3600000 * 8).toISOString(), color: 'bg-emerald-50 text-emerald-600' })) || []),
-          ...(kycSubmissions?.slice(0, 1).map(k => ({ icon: '📋', label: `KYC submitted`, name: k.businessName || k.vendorId?.companyName || 'Vendor', time: k.createdAt || new Date(Date.now() - 3600000 * 12).toISOString(), color: 'bg-orange-50 text-orange-600' })) || []),
+          ...(verificationSubmissions?.slice(0, 1).map(k => ({ icon: '📋', label: `Verification submitted`, name: k.businessName || k.vendorId?.companyName || 'Vendor', time: k.createdAt || new Date(Date.now() - 3600000 * 12).toISOString(), color: 'bg-orange-50 text-orange-600' })) || []),
         ].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 6);
 
         const kpiCards = [
@@ -1632,7 +1667,11 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                 <div>
                   <p className="text-white/60 text-xs font-bold uppercase tracking-widest mb-1">System Administration Console</p>
                   <h1 className="font-['Playfair_Display'] font-extrabold text-3xl md:text-4xl">Welcome back, {user?.name?.split(' ')[0] || 'Admin'}! 👋</h1>
-                  <p className="text-white/70 text-sm mt-2">Platform is operating normally. {pendingKyc > 0 && `${pendingKyc} KYC approvals pending your review.`}</p>
+                  <p className="text-white/70 text-sm mt-2">
+                    Platform is operating normally. {pendingVerifications > 0 && `${pendingVerifications} Vendor Verifications pending review. `}
+                    {pendingStoreSetup > 0 && `${pendingStoreSetup} Store Setup submissions pending. `}
+                    {pendingProductReviews > 0 && `${pendingProductReviews} Product Quality Reviews pending.`}
+                  </p>
                 </div>
                 <div className="text-right bg-white/10 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20">
                   <p className="text-white/60 text-[10px] font-bold uppercase tracking-wider">Today</p>
@@ -1736,8 +1775,9 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                 </div>
                 <div className="space-y-3">
                   {[
-                    { label: 'Pending KYC Approvals', count: pendingKyc, tab: 'kyc', color: 'bg-orange-50 text-orange-600 border-orange-100', urgent: pendingKyc > 3 },
-                    { label: 'Unverified Security Deposits', count: pendingDeposits, tab: 'deposits', color: 'bg-amber-50 text-amber-600 border-amber-100', urgent: false },
+                    { label: 'Vendor Verifications', count: pendingVerifications, tab: 'verifications', color: 'bg-orange-50 text-orange-600 border-orange-100', urgent: pendingVerifications > 3 },
+                    { label: 'Store Setup Reviews', count: pendingStoreSetup, tab: 'store-approvals', color: 'bg-amber-50 text-amber-600 border-amber-100', urgent: pendingStoreSetup > 3 },
+                    { label: 'Product Quality Reviews', count: pendingProductReviews, tab: 'product-reviews', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', urgent: pendingProductReviews > 5 },
                     { label: 'Open Support Tickets', count: openTickets, tab: 'tickets', color: 'bg-rose-50 text-rose-600 border-rose-100', urgent: openTickets > 5 },
                     { label: 'Unassigned Orders', count: pendingOrders, tab: 'orders', color: 'bg-indigo-50 text-indigo-600 border-indigo-100', urgent: pendingOrders > 8 },
                   ].map((item) => (
@@ -1795,20 +1835,20 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Quick Actions</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
-                {/* Pending Approvals Card */}
+                 {/* Pending Approvals Card */}
                 <div 
                   className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 flex flex-col justify-between hover:shadow-md hover:-translate-y-0.5 transition-all cursor-pointer group" 
-                  onClick={() => setActiveTab && setActiveTab('kyc')}
+                  onClick={() => setActiveTab && setActiveTab('verifications')}
                 >
                   <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
                     <CheckSquare size={24} />
                   </div>
                   <div className="mt-4">
-                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-amber-600 transition-colors">Pending Approvals</h4>
-                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Review and approve vendor KYC verification profiles and security deposits.</p>
+                    <h4 className="font-bold text-[#1F2937] text-sm group-hover:text-amber-600 transition-colors">Vendor Approvals</h4>
+                    <p className="text-[11px] text-gray-400 mt-1 leading-snug">Review and approve vendor business verifications, store setups, and product reviews.</p>
                   </div>
                   <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-50">
-                    <span className="text-[10px] font-bold text-gray-400">KYC Center</span>
+                    <span className="text-[10px] font-bold text-gray-400">Approval Center</span>
                     <ArrowRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -2154,7 +2194,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         <div className="space-y-8">
           <div className="flex justify-between items-center border-b border-gray-100 pb-4">
             <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Partner & Vendor Management</h2>
-            <span className="text-xs text-gray-500 font-bold">Manage system logins, KYC status, and live marketplace activation.</span>
+            <span className="text-xs text-gray-500 font-bold">Manage system logins, business verification, and live marketplace activation.</span>
           </div>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden">
             <div className="overflow-x-auto">
@@ -2163,7 +2203,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                   <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-[#6B7280]">
                     <th className="py-4 px-4">Partner Name</th>
                     <th className="py-4 px-4">Role / Type</th>
-                    <th className="py-4 px-4">KYC & Deposit</th>
+                    <th className="py-4 px-4">Verification & Store Setup</th>
                     <th className="py-4 px-4">Platform Status</th>
                     <th className="py-4 px-4 text-right">Activation Controls</th>
                   </tr>
@@ -2182,15 +2222,15 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                       </td>
                       <td className="py-4 px-4 space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase">KYC:</span>
-                          <span className={`text-[10px] font-bold ${vendor.kycStatus === 'Approved' || vendor.isVerified ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
-                            {vendor.kycStatus || (vendor.isVerified ? 'Approved' : 'Pending')}
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">Verification:</span>
+                          <span className={`text-[10px] font-bold ${vendor.verificationStatus === 'Approved' || vendor.isVerified ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
+                            {vendor.verificationStatus || (vendor.isVerified ? 'Approved' : 'Pending')}
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase">Deposit:</span>
-                          <span className={`text-[10px] font-bold ${vendor.depositStatus === 'Verified' ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
-                            {vendor.depositStatus || 'Pending'}
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">Store Setup:</span>
+                          <span className={`text-[10px] font-bold ${vendor.storeSetupStatus === 'Approved' ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
+                            {vendor.storeSetupStatus || 'Pending'}
                           </span>
                         </div>
                       </td>
@@ -2201,8 +2241,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                       </td>
                       <td className="py-4 px-4 text-right">
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => alert(`Reviewing KYC/Deposit details for ${vendor.companyName}...`)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs transition-all">
-                            View Docs
+                          <button onClick={() => alert(`Reviewing Verification/Setup details for ${vendor.companyName}...`)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs transition-all">
+                            View Profile
                           </button>
                           <button 
                             onClick={() => handleVendorActivationToggle(vendor._id, !vendor.isActive)} 
@@ -2225,7 +2265,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
       {/* TAB 4: MANUFACTURER MANAGEMENT */}
       {activeTab === 'manufacturers' && (() => {
-        const stats = managementData?.manufacturerStats || { totalManufacturers: 0, activeManufacturers: 0, pendingKyc: 0, activeManufacturingOrders: 0, completedManufacturingOrders: 0 };
+        const stats = managementData?.manufacturerStats || { totalManufacturers: 0, activeManufacturers: 0, pendingVerification: 0, activeManufacturingOrders: 0, completedManufacturingOrders: 0 };
         const manufacturers = managementData?.vendors?.filter(v => v.businessType === 'manufacturer') || [];
 
         // Apply filters
@@ -2239,13 +2279,13 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             (mfg.serviceAreas || []).some(area => area.toLowerCase().includes(keyword));
 
           const matchesSpecialization = mfgSpecializationFilter === 'all' || mfg.specialization === mfgSpecializationFilter;
-          const matchesKyc = mfgKycFilter === 'all' || mfg.kycStatus === mfgKycFilter;
+          const matchesVerification = mfgVerificationFilter === 'all' || mfg.verificationStatus === mfgVerificationFilter;
           const matchesStatus = mfgStatusFilter === 'all' || 
             (mfgStatusFilter === 'active' && mfg.isActive) || 
             (mfgStatusFilter === 'suspended' && !mfg.isActive);
           const matchesWorkload = mfgWorkloadFilter === 'all' || mfg.workloadLevel === mfgWorkloadFilter;
 
-          return matchesSearch && matchesSpecialization && matchesKyc && matchesStatus && matchesWorkload;
+          return matchesSearch && matchesSpecialization && matchesVerification && matchesStatus && matchesWorkload;
         });
 
         return (
@@ -2280,8 +2320,8 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
               <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
                 <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending KYC</span>
-                  <p className="text-3xl font-extrabold text-[#E76F51]">{stats.pendingKyc}</p>
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Verification</span>
+                  <p className="text-3xl font-extrabold text-[#E76F51]">{stats.pendingVerification}</p>
                 </div>
                 <div className="p-3 bg-[#E76F51]/10 text-[#E76F51] rounded-xl">
                   <FileText size={24} />
@@ -2346,17 +2386,17 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                   </div>
                 </div>
 
-                {/* KYC Filter */}
+                {/* Verification Filter */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">KYC Status</label>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Verification Status</label>
                   <div className="relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B5E3C]" size={14} />
                     <select
-                      value={mfgKycFilter}
-                      onChange={(e) => setMfgKycFilter(e.target.value)}
+                      value={mfgVerificationFilter}
+                      onChange={(e) => setMfgVerificationFilter(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-[#F8F5F0]/50 hover:bg-[#F8F5F0] border border-[#D4A373]/20 rounded-xl font-bold text-xs text-gray-700 outline-none transition-all cursor-pointer appearance-none animate-fadeIn"
                     >
-                      <option value="all">All KYC Statuses</option>
+                      <option value="all">All Verification Statuses</option>
                       <option value="Pending">Pending</option>
                       <option value="Submitted">Submitted</option>
                       <option value="Approved">Approved</option>
@@ -2413,7 +2453,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                       <th className="py-4 px-4">Contact Person</th>
                       <th className="py-4 px-4">Location</th>
                       <th className="py-4 px-4">Workload / Capacity</th>
-                      <th className="py-4 px-4">KYC / Account Status</th>
+                      <th className="py-4 px-4">Verification / Account Status</th>
                       <th className="py-4 px-4">Rating</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
@@ -2470,12 +2510,12 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                               </p>
                             </td>
 
-                            {/* KYC / Account Status */}
+                            {/* Verification / Account Status */}
                             <td className="py-4 px-4 space-y-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">KYC:</span>
-                                <span className={`text-[10px] font-bold ${mfg.kycStatus === 'Approved' ? 'text-[#2A9D8F]' : mfg.kycStatus === 'Submitted' ? 'text-[#F4A261]' : 'text-[#E76F51]'}`}>
-                                  {mfg.kycStatus || 'Pending'}
+                                <span className="text-[10px] text-gray-400 font-bold uppercase">Verification:</span>
+                                <span className={`text-[10px] font-bold ${mfg.verificationStatus === 'Approved' ? 'text-[#2A9D8F]' : mfg.verificationStatus === 'Submitted' ? 'text-[#F4A261]' : 'text-[#E76F51]'}`}>
+                                  {mfg.verificationStatus || 'Pending'}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
@@ -2546,11 +2586,11 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                                   <CreditCard size={14} />
                                 </button>
 
-                                {/* Approve KYC / Activation Toggle */}
-                                {!mfg.isActive || mfg.kycStatus !== 'Approved' ? (
+                                {/* Verify Business & Activation Toggle */}
+                                {!mfg.isActive || mfg.verificationStatus !== 'Approved' ? (
                                   <button
                                     onClick={() => setMfgApproveConfirm(mfg)}
-                                    title="Approve KYC & Activate Account"
+                                    title="Verify Business & Activate Account"
                                     className="p-1.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/95 text-white rounded-lg transition-all"
                                   >
                                     <UserCheck size={14} />
@@ -2603,9 +2643,9 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             (deliveryTypeFilter === 'delivery' && partner.businessType === 'delivery') ||
             (deliveryTypeFilter === 'installation' && partner.businessType === 'installation');
 
-          const matchesKyc = deliveryKycFilter === 'all' || partner.kycStatus === deliveryKycFilter;
+          const matchesVerification = deliveryVerificationFilter === 'all' || partner.verificationStatus === deliveryVerificationFilter;
 
-          return matchesSearch && matchesStatus && matchesArea && matchesType && matchesKyc;
+          return matchesSearch && matchesStatus && matchesArea && matchesType && matchesVerification;
         });
 
         // Gather unique areas for the filter dropdown
@@ -2737,15 +2777,15 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">KYC Status</label>
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Verification Status</label>
                   <div className="relative">
                     <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B5E3C]" size={14} />
                     <select
-                      value={deliveryKycFilter}
-                      onChange={(e) => setDeliveryKycFilter(e.target.value)}
+                      value={deliveryVerificationFilter}
+                      onChange={(e) => setDeliveryVerificationFilter(e.target.value)}
                       className="w-full pl-9 pr-3 py-2 bg-[#F8F5F0]/50 border border-[#D4A373]/20 rounded-xl font-bold text-xs text-gray-700 outline-none transition-all appearance-none"
                     >
-                      <option value="all">All KYC Statuses</option>
+                      <option value="all">All Verification Statuses</option>
                       <option value="Pending">Pending</option>
                       <option value="Submitted">Submitted</option>
                       <option value="Approved">Approved</option>
@@ -2765,7 +2805,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                       <th className="py-4 px-6">Partner & Details</th>
                       <th className="py-4 px-4">Contact Info</th>
                       <th className="py-4 px-4">Logistics Details</th>
-                      <th className="py-4 px-4">KYC & Account</th>
+                      <th className="py-4 px-4">Verification & Account</th>
                       <th className="py-4 px-4 text-center">Rating</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
@@ -2819,9 +2859,9 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
                             <td className="py-4 px-4 space-y-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase">KYC:</span>
-                                <span className={`text-[10px] font-bold ${partner.kycStatus === 'Approved' ? 'text-[#2A9D8F]' : partner.kycStatus === 'Submitted' ? 'text-[#F4A261]' : 'text-[#E76F51]'}`}>
-                                  {partner.kycStatus || 'Pending'}
+                                <span className="text-[10px] text-gray-400 font-bold uppercase">Verification:</span>
+                                <span className={`text-[10px] font-bold ${partner.verificationStatus === 'Approved' ? 'text-[#2A9D8F]' : partner.verificationStatus === 'Submitted' ? 'text-[#F4A261]' : 'text-[#E76F51]'}`}>
+                                  {partner.verificationStatus || 'Pending'}
                                 </span>
                               </div>
                               <div className="flex items-center gap-1.5">
@@ -4801,17 +4841,24 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
-      {/* TAB 13: KYC APPROVALS */}
-      {activeTab === 'kyc' && (
-        <div className="space-y-8">
-          <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">KYC Document Approvals</h2>
+      {/* TAB 13: VENDOR VERIFICATION */}
+      {activeTab === 'verifications' && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Vendor Business Verifications</h2>
+              <p className="text-xs text-gray-500 font-bold mt-1">Review government registration papers, PAN, GST details, and corporate profile files.</p>
+            </div>
+            <span className="bg-amber-50 text-[#8B5E3C] px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#D4A373]/30">Step 2: Business Verification</span>
+          </div>
+
           <div className="space-y-6">
-            {kycSubmissions.length === 0 ? (
+            {verificationSubmissions.length === 0 ? (
               <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center text-gray-500 font-bold">
-                No KYC documents submitted yet.
+                No business verification documents submitted yet.
               </div>
             ) : (
-              kycSubmissions.map((sub) => (
+              verificationSubmissions.map((sub) => (
                 <div key={sub._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 gap-4">
                     <div>
@@ -4822,72 +4869,54 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                       sub.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
                       sub.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
                     }`}>
-                      Status: {sub.status}
+                      Verification Status: {sub.status}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#F8F5F0]/50 p-6 rounded-2xl border border-[#D4A373]/10 text-xs">
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">GSTIN Number</p>
-                      <p className="font-bold text-gray-800 mt-1 uppercase">{sub.gstNumber}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">GSTIN Number</p>
+                      <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.gstNumber}</p>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">PAN Number</p>
-                      <p className="font-bold text-gray-800 mt-1 uppercase">{sub.panNumber}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">PAN Number</p>
+                      <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.panNumber}</p>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">Phone Contact</p>
-                      <p className="font-bold text-gray-800 mt-1">{sub.phone}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Phone Contact</p>
+                      <p className="font-extrabold text-gray-800 mt-1">{sub.phone}</p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                      <p className="text-xs font-bold text-gray-500">ID Proof Document</p>
+                    <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Owner ID Proof (PAN/Aadhaar)</p>
                       <a href={sub.idProofUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                        <img src={sub.idProofUrl} alt="ID Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all" />
-                        <span className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">View Original URL</span>
+                        <img src={sub.idProofUrl} alt="ID Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open ID URL</div>
                       </a>
                     </div>
-                    <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                      <p className="text-xs font-bold text-gray-500">Address Proof Document</p>
+                    <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address Proof (GST/Utility Bill)</p>
                       <a href={sub.addressProofUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                        <img src={sub.addressProofUrl} alt="Address Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all" />
-                        <span className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">View Original URL</span>
+                        <img src={sub.addressProofUrl} alt="Address Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open Address URL</div>
                       </a>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <p className="text-xs font-bold text-gray-400 uppercase mb-3">Escrow Settlement Account Details</p>
-                    <div className="grid grid-cols-3 gap-6 text-xs">
-                      <div>
-                        <p className="text-gray-500">Account Number</p>
-                        <p className="font-bold text-gray-800">{sub.bankDetails?.accountNumber}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">IFSC Routing Code</p>
-                        <p className="font-bold text-gray-800 uppercase">{sub.bankDetails?.ifscCode}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Bank Institution</p>
-                        <p className="font-bold text-gray-800">{sub.bankDetails?.bankName}</p>
-                      </div>
                     </div>
                   </div>
 
                   {sub.adminRemarks && (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="p-4 bg-amber-50/50 rounded-xl border border-[#D4A373]/20">
                       <p className="text-xs font-bold text-gray-700">Existing Remarks: <span className="font-normal text-gray-600">{sub.adminRemarks}</span></p>
                     </div>
                   )}
 
                   <div className="pt-4 border-t border-gray-100 space-y-4">
                     <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Evaluation Remarks / Feedback</label>
-                    <textarea rows={2} placeholder="Enter remarks for the vendor regarding approval or rejection..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1F2937]" />
+                    <textarea rows={2} placeholder="Enter remarks regarding verification approval or rejection..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#8B5E3C]" />
                     <div className="flex gap-4">
-                      <button onClick={() => handleVerifyKYC(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] text-white rounded-xl font-bold text-xs shadow-md">Approve KYC</button>
-                      <button onClick={() => handleVerifyKYC(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] text-white rounded-xl font-bold text-xs shadow-md">Reject KYC Docs</button>
+                      <button onClick={() => handleVerifyBusiness(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Verification</button>
+                      <button onClick={() => handleVerifyBusiness(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject Verification</button>
                     </div>
                   </div>
                 </div>
@@ -4897,59 +4926,148 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
-      {/* TAB 13.5: SECURITY DEPOSIT VERIFICATION */}
-      {activeTab === 'deposit' && (
-        <div className="space-y-8">
-          <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Platform Security Deposit Ledger</h2>
+      {/* TAB 13.3: STORE APPROVAL */}
+      {activeTab === 'store-approvals' && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Store & Profile Approvals</h2>
+              <p className="text-xs text-gray-500 font-bold mt-1">Verify business descriptions, custom specializations, monthly output capacity, and service regions.</p>
+            </div>
+            <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3.5 py-1.5 rounded-full text-xs font-bold border border-[#2A9D8F]/20">Step 3: Store Setup</span>
+          </div>
+
           <div className="space-y-6">
-            {depositSubmissions.length === 0 ? (
+            {storeSetupSubmissions.length === 0 ? (
               <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center text-gray-500 font-bold">
-                No security deposit transactions submitted yet.
+                No store profile setups submitted yet.
               </div>
             ) : (
-              depositSubmissions.map((sub) => (
+              storeSetupSubmissions.map((sub) => (
                 <div key={sub._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 gap-4">
                     <div>
                       <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{sub.vendorId?.companyName || 'Artisan Workshop'}</h3>
-                      <p className="text-xs text-gray-500 mt-1">Transaction Ref: **{sub.transactionId}**</p>
+                      <p className="text-xs text-gray-500 mt-1">Profile configuration review</p>
                     </div>
                     <span className={`px-4 py-2 rounded-full font-bold text-xs ${
-                      sub.paymentStatus === 'Verified' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-                      sub.paymentStatus === 'Failed' ? 'bg-[#E76F51]/10 text-[#E76F51]' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
+                      sub.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+                      sub.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
                     }`}>
-                      Payment Status: {sub.paymentStatus}
+                      Store Status: {sub.status}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100 text-xs">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#F8F5F0]/50 p-6 rounded-2xl border border-[#D4A373]/10 text-xs">
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">Paid Amount</p>
-                      <p className="font-extrabold text-lg text-gray-800 mt-1">${sub.amount?.toLocaleString() || '25,000'}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Specialization</p>
+                      <p className="font-extrabold text-gray-800 mt-1">{sub.specialization || 'Furniture Maker'}</p>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">Payment UTR ID</p>
-                      <p className="font-bold text-gray-800 mt-1 break-all uppercase">{sub.transactionId}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Monthly Production Capacity</p>
+                      <p className="font-extrabold text-gray-800 mt-1">{sub.monthlyCapacity || 50} units/mo</p>
                     </div>
                     <div>
-                      <p className="font-bold text-gray-400 uppercase">Submission Date</p>
-                      <p className="font-bold text-gray-800 mt-1">{new Date(sub.paymentDate).toLocaleString()}</p>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Service Areas</p>
+                      <p className="font-extrabold text-gray-800 mt-1">{sub.serviceAreas || 'Bangalore, Mumbai'}</p>
                     </div>
                   </div>
 
+                  <div className="p-6 bg-white border border-gray-150 rounded-2xl space-y-2">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Store Description & Bio</p>
+                    <p className="text-sm text-gray-700 leading-relaxed font-serif italic">"{sub.description || 'No description provided.'}"</p>
+                  </div>
+
                   {sub.adminRemarks && (
-                    <div className="p-4 bg-gray-50 rounded-xl border border-[#D4A373]/30">
+                    <div className="p-4 bg-amber-50/50 rounded-xl border border-[#D4A373]/20">
                       <p className="text-xs font-bold text-gray-700">Remarks: <span className="font-normal text-gray-600">{sub.adminRemarks}</span></p>
                     </div>
                   )}
 
                   <div className="pt-4 border-t border-gray-100 space-y-4">
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Verification Remarks</label>
-                    <textarea rows={2} placeholder="Add remarks for transaction verification..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#1F2937]" />
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Remarks / Moderation Note</label>
+                    <textarea rows={2} placeholder="Add remarks for store setup approval or requested modifications..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#8B5E3C]" />
                     <div className="flex gap-4">
-                      <button onClick={() => handleVerifyDeposit(sub._id, 'Verified')} className="px-6 py-3 bg-[#2A9D8F] text-white rounded-xl font-bold text-xs shadow-md">Verify Payment</button>
-                      <button onClick={() => handleVerifyDeposit(sub._id, 'Failed')} className="px-6 py-3 bg-[#E76F51] text-white rounded-xl font-bold text-xs shadow-md">Reject/Mark Failed</button>
+                      <button onClick={() => handleApproveStore(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Store & Go Live</button>
+                      <button onClick={() => handleApproveStore(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject / Request Edits</button>
                     </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 13.5: PRODUCT QUALITY REVIEW */}
+      {activeTab === 'product-reviews' && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Product Quality Reviews</h2>
+              <p className="text-xs text-gray-500 font-bold mt-1">Approve or flag new vendor catalog listings before they are indexed in the public marketplace.</p>
+            </div>
+            <span className="bg-indigo-50 text-indigo-600 px-3.5 py-1.5 rounded-full text-xs font-bold border border-indigo-150">Catalog Audit</span>
+          </div>
+
+          <div className="space-y-6">
+            {productReviewSubmissions.length === 0 ? (
+              <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center text-gray-500 font-bold">
+                No products pending quality reviews.
+              </div>
+            ) : (
+              productReviewSubmissions.map((sub) => (
+                <div key={sub._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 gap-4">
+                    <div>
+                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{sub.title}</h3>
+                      <p className="text-xs text-gray-500 mt-1">Listed by {sub.vendorId?.companyName || 'Artisan Workshop'}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-emerald-50 text-emerald-600 font-extrabold text-sm px-4 py-1.5 rounded-full border border-emerald-100">
+                        ${sub.price}
+                      </span>
+                      <span className={`px-4 py-2 rounded-full font-bold text-xs ${
+                        sub.approvalStatus === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+                        sub.approvalStatus === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
+                      }`}>
+                        Review Status: {sub.approvalStatus || sub.status || 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6 bg-[#F8F5F0]/50 p-6 rounded-2xl border border-[#D4A373]/10 text-xs">
+                    <div>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Category</p>
+                      <p className="font-extrabold text-[#8B5E3C] mt-1 uppercase">{sub.category}</p>
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Materials Used</p>
+                      <p className="font-extrabold text-gray-800 mt-1">{sub.material || 'Solid Wood'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="font-bold text-gray-400 uppercase tracking-wider">Description</p>
+                      <p className="font-medium text-gray-700 mt-1 leading-relaxed">{sub.description}</p>
+                    </div>
+                  </div>
+
+                  {sub.images && sub.images.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Product Gallery ({sub.images.length})</p>
+                      <div className="flex gap-4 overflow-x-auto pb-2">
+                        {sub.images.map((img, idx) => (
+                          <a key={idx} href={img} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-150 shrink-0">
+                            <img src={img} alt={`Product ${idx}`} className="w-48 h-32 object-cover group-hover:scale-105 transition-all duration-300" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">View Image</div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-4 border-t border-gray-100 flex gap-4">
+                    <button onClick={() => handleReviewProduct(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Listing</button>
+                    <button onClick={() => handleReviewProduct(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject / Flag listing</button>
                   </div>
                 </div>
               ))
@@ -5055,7 +5173,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                     <div className="grid grid-cols-2 gap-4">
                       {[
                         { key: 'userManagement', label: 'User Management' },
-                        { key: 'vendorKYC', label: 'Vendor KYC' },
+                        { key: 'vendorVerification', label: 'Vendor Verification' },
                         { key: 'ordersWorkflow', label: 'Orders & Payouts' },
                         { key: 'supportTickets', label: 'Support Tickets' },
                         { key: 'analytics', label: 'Analytics' },
@@ -5158,7 +5276,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                             <div className="flex flex-wrap gap-2">
                               {[
                                 { key: 'userManagement', label: 'Users' },
-                                { key: 'vendorKYC', label: 'KYC' },
+                                { key: 'vendorVerification', label: 'Verification' },
                                 { key: 'ordersWorkflow', label: 'Orders' },
                                 { key: 'supportTickets', label: 'Tickets' },
                                 { key: 'analytics', label: 'Analytics' },
@@ -5508,7 +5626,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                         <div key={m._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                           <div>
                             <p className="text-xs font-bold text-[#1F2937]">{m.companyName}</p>
-                            <p className="text-[10px] text-gray-400">KYC: {m.kycStatus || 'N/A'}</p>
+                            <p className="text-[10px] text-gray-400">Verification: {m.verificationStatus || 'N/A'}</p>
                           </div>
                           <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${m.isVerified ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                             {m.isVerified ? 'Verified' : 'Pending'}
@@ -6232,7 +6350,7 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           <div className="bg-white max-w-lg w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
             <div className="bg-purple-700 p-6 text-white flex justify-between items-center">
               <div>
-                <h3 className="font-['Playfair_Display'] font-bold text-xl">KYC Verification Files</h3>
+                <h3 className="font-['Playfair_Display'] font-bold text-xl">Business Verification Files</h3>
                 <p className="text-xs text-purple-100 opacity-80 mt-1">{mfgDocsModal.companyName}</p>
               </div>
               <button onClick={() => setMfgDocsModal(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
@@ -6331,9 +6449,9 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               <div className="w-14 h-14 rounded-full mx-auto flex items-center justify-center bg-green-50 text-[#2A9D8F]">
                 <ShieldCheck className="w-7 h-7" />
               </div>
-              <h3 className="font-['Playfair_Display'] font-extrabold text-xl text-[#1F2937]">Approve KYC Credentials</h3>
+              <h3 className="font-['Playfair_Display'] font-extrabold text-xl text-[#1F2937]">Approve Verification Credentials</h3>
               <p className="text-xs text-gray-500 font-semibold leading-relaxed">
-                Are you sure you want to approve the KYC and live credentials for <span className="font-bold text-gray-700">{mfgApproveConfirm.companyName}</span>? They will immediately receive verification badges and go live for accepting orders.
+                Are you sure you want to approve the business verification and live credentials for <span className="font-bold text-gray-700">{mfgApproveConfirm.companyName}</span>? They will immediately receive verification badges and go live for accepting orders.
               </p>
             </div>
             

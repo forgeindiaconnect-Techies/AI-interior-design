@@ -216,8 +216,8 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-100 ml-3.5">
               {[
                 { name: 'Business Profile', icon: Briefcase, tab: 'profile' },
-                { name: 'KYC Status', icon: CheckCircle, tab: 'kyc' },
-                { name: 'Security Deposit', icon: ShieldCheck, tab: 'deposit' }
+                { name: 'Business Verification', icon: CheckCircle, tab: 'verification' },
+                { name: 'Store Setup', icon: ShieldCheck, tab: 'store_setup' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;

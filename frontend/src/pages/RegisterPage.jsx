@@ -86,7 +86,7 @@ const RegisterPage = () => {
               <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-[#8B5E3C] text-[#8B5E3C] flex items-center justify-center shrink-0"><FileText size={20}/></div>
                 <div>
-                  <h4 className="font-bold text-[#1F2937]">Step 2: Submit KYC Documents</h4>
+                  <h4 className="font-bold text-[#1F2937]">Step 2: Business Verification</h4>
                   <p className="text-sm text-gray-500">Verify your business identity via the dashboard to unlock platform features.</p>
                 </div>
               </div>
@@ -94,16 +94,16 @@ const RegisterPage = () => {
               <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center shrink-0"><CreditCard size={20}/></div>
                 <div>
-                  <h4 className="font-bold text-gray-400">Step 3: Security Deposit (If Applicable)</h4>
-                  <p className="text-sm text-gray-400">Complete the refundable security deposit to accept high-value orders.</p>
+                  <h4 className="font-bold text-gray-400">Step 3: Store/Profile Setup</h4>
+                  <p className="text-sm text-gray-400">Set up your brand profile, store information, and catalog details.</p>
                 </div>
               </div>
 
               <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
                 <div className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center shrink-0"><ShieldCheck size={20}/></div>
                 <div>
-                  <h4 className="font-bold text-gray-400">Step 4: Admin Approval</h4>
-                  <p className="text-sm text-gray-400">Our team will review your application. You will be notified once live.</p>
+                  <h4 className="font-bold text-gray-400">Step 4: Admin Review & Go Live</h4>
+                  <p className="text-sm text-gray-400">Our team will review your profile and verifications. You will go live shortly.</p>
                 </div>
               </div>
             </div>

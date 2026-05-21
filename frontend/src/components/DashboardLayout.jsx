@@ -134,8 +134,8 @@ const DashboardLayout = ({ children }) => {
     earnings: ['Home', 'Earnings', 'Revenue & Payments'],
     messages: ['Home', 'Inbox', 'Customer Chat'],
     reviews: user?.role === 'vendor' ? ['Home', 'Inbox', 'Store Reviews'] : ['Home', 'Help & Support', 'Submit Review'],
-    kyc: ['Home', 'Settings', 'KYC Verification'],
-    deposit: ['Home', 'Settings', 'Security Deposit'],
+    verification: ['Home', 'Settings', 'Business Verification'],
+    store_setup: ['Home', 'Settings', 'Store Setup'],
 
     // Admin specific
     users: ['Home', 'Management', 'Users'],
@@ -147,7 +147,10 @@ const DashboardLayout = ({ children }) => {
     manual_designs: ['Home', 'Operations', 'Manual Requests'],
     tickets: ['Home', 'Operations', 'Support Tickets'],
     analytics: ['Home', 'Reports & Analytics', 'Overview'],
-    roles: ['Home', 'Security', 'Role Permissions']
+    roles: ['Home', 'Security', 'Role Permissions'],
+    verifications: ['Home', 'Verification & Reviews', 'Vendor Verification'],
+    'store-approvals': ['Home', 'Verification & Reviews', 'Store Approval'],
+    'product-reviews': ['Home', 'Verification & Reviews', 'Product Quality Review']
   };
 
   const breadcrumbs = breadcrumbMap[activeTab] || ['Home', 'Dashboard'];
@@ -311,7 +314,7 @@ const DashboardLayout = ({ children }) => {
                     
                     <button 
                       onClick={() => {
-                        // Redirect to active settings page / security deposit / etc depending on role
+                        // Redirect to active settings page depending on role
                         setActiveTab(isAdmin ? 'roles' : isVendor ? 'profile' : 'saved');
                         setShowProfileDropdown(false);
                       }} 

@@ -61,25 +61,29 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [chatMessageInput, setChatMessageInput] = useState('');
   const [installationRequiredInput, setInstallationRequiredInput] = useState(false);
 
-  // KYC and Deposit States
-  const [kycDetails, setKycDetails] = useState(null);
-  const [depositDetails, setDepositDetails] = useState(null);
+  // Verification and Store Setup States
+  const [verificationDetails, setVerificationDetails] = useState(null);
+  const [storeSetupDetails, setStoreSetupDetails] = useState(null);
 
-  // KYC form states
-  const [kycBusinessName, setKycBusinessName] = useState('');
-  const [kycOwnerName, setKycOwnerName] = useState('');
-  const [kycPhone, setKycPhone] = useState('');
-  const [kycEmail, setKycEmail] = useState('');
-  const [kycGst, setKycGst] = useState('');
-  const [kycPan, setKycPan] = useState('');
-  const [kycIdProof, setKycIdProof] = useState('');
-  const [kycAddressProof, setKycAddressProof] = useState('');
-  const [kycBankAcc, setKycBankAcc] = useState('');
-  const [kycIfsc, setKycIfsc] = useState('');
-  const [kycBankName, setKycBankName] = useState('');
+  // Business Verification form states
+  const [verifyBusinessName, setVerifyBusinessName] = useState('');
+  const [verifyOwnerName, setVerifyOwnerName] = useState('');
+  const [verifyPhone, setVerifyPhone] = useState('');
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [verifyGst, setVerifyGst] = useState('');
+  const [verifyPan, setVerifyPan] = useState('');
+  const [verifyIdProof, setVerifyIdProof] = useState('');
+  const [verifyAddressProof, setVerifyAddressProof] = useState('');
 
-  // Deposit Form State
-  const [depositTxnId, setDepositTxnId] = useState('');
+  // Store Setup Form States
+  const [storeBrandName, setStoreBrandName] = useState('');
+  const [storeDescription, setStoreDescription] = useState('');
+  const [storeSupportEmail, setStoreSupportEmail] = useState('');
+  const [storeSupportPhone, setStoreSupportPhone] = useState('');
+  const [storeAddress, setStoreAddress] = useState('');
+  const [storeBankAcc, setStoreBankAcc] = useState('');
+  const [storeIfsc, setStoreIfsc] = useState('');
+  const [storeBankName, setStoreBankName] = useState('');
 
   // Lifted Inventory & Payout States
   const [inventoryProducts, setInventoryProducts] = useState(() => {
@@ -132,34 +136,41 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
       }
       setStats(localStats);
 
-      // 2. KYC Submission status lookup
-      let kycSubmissions = JSON.parse(localStorage.getItem('mockKycSubmissions') || '[]');
-      let currentKyc = kycSubmissions.find(k => k.email === (user?.email || 'vendor@example.com'));
-      if (!currentKyc) {
-        currentKyc = { status: 'Not Submitted' };
+      // 2. Verification Submission status lookup
+      let verificationSubmissions = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      let currentVerification = verificationSubmissions.find(k => k.email === (user?.email || 'vendor@example.com'));
+      if (!currentVerification) {
+        currentVerification = { status: 'Not Submitted' };
       }
-      setKycDetails(currentKyc);
-      if (currentKyc && currentKyc.status !== 'Not Submitted') {
-        setKycBusinessName(currentKyc.businessName || '');
-        setKycOwnerName(currentKyc.ownerName || '');
-        setKycPhone(currentKyc.phone || '');
-        setKycEmail(currentKyc.email || '');
-        setKycGst(currentKyc.gstNumber || '');
-        setKycPan(currentKyc.panNumber || '');
-        setKycIdProof(currentKyc.idProofUrl || '');
-        setKycAddressProof(currentKyc.addressProofUrl || '');
-        setKycBankAcc(currentKyc.bankDetails?.accountNumber || '');
-        setKycIfsc(currentKyc.bankDetails?.ifscCode || '');
-        setKycBankName(currentKyc.bankDetails?.bankName || '');
+      setVerificationDetails(currentVerification);
+      if (currentVerification && currentVerification.status !== 'Not Submitted') {
+        setVerifyBusinessName(currentVerification.businessName || '');
+        setVerifyOwnerName(currentVerification.ownerName || '');
+        setVerifyPhone(currentVerification.phone || '');
+        setVerifyEmail(currentVerification.email || '');
+        setVerifyGst(currentVerification.gstNumber || '');
+        setVerifyPan(currentVerification.panNumber || '');
+        setVerifyIdProof(currentVerification.idProofUrl || '');
+        setVerifyAddressProof(currentVerification.addressProofUrl || '');
       }
 
-      // 3. Security Deposit Lookup
-      let depositSubmissions = JSON.parse(localStorage.getItem('mockDepositSubmissions') || '[]');
-      let currentDeposit = depositSubmissions.find(d => d.email === (user?.email || 'vendor@example.com'));
-      if (!currentDeposit) {
-        currentDeposit = { paymentStatus: 'Pending' };
+      // 3. Store Setup Lookup
+      let storeSetupSubmissions = JSON.parse(localStorage.getItem('mockStoreSetupSubmissions') || '[]');
+      let currentStoreSetup = storeSetupSubmissions.find(d => d.email === (user?.email || 'vendor@example.com'));
+      if (!currentStoreSetup) {
+        currentStoreSetup = { status: 'Not Submitted' };
       }
-      setDepositDetails(currentDeposit);
+      setStoreSetupDetails(currentStoreSetup);
+      if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
+        setStoreBrandName(currentStoreSetup.brandName || '');
+        setStoreDescription(currentStoreSetup.description || '');
+        setStoreSupportEmail(currentStoreSetup.supportEmail || '');
+        setStoreSupportPhone(currentStoreSetup.supportPhone || '');
+        setStoreAddress(currentStoreSetup.address || '');
+        setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
+        setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
+        setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+      }
 
       // 4. Products list
       let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
@@ -895,59 +906,56 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
     alert('✅ Instant payout requested successfully! Your funds ($' + (stats?.revenue?.toLocaleString() || '24,500') + ') are being transferred to your registered bank account.');
   };
 
-  // KYC and Deposit Handlers
-  const handleSubmitKYC = async (e) => {
+  // Verification and Store Setup Handlers
+  const handleSubmitVerification = async (e) => {
     e.preventDefault();
     const payload = {
-      _id: 'kyc_' + Date.now(),
-      businessName: kycBusinessName,
-      ownerName: kycOwnerName,
-      phone: kycPhone,
-      email: user?.email || kycEmail || 'vendor@example.com',
-      gstNumber: kycGst,
-      panNumber: kycPan,
-      idProofUrl: kycIdProof || 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
-      addressProofUrl: kycAddressProof || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
+      _id: 'ver_' + Date.now(),
+      businessName: verifyBusinessName,
+      ownerName: verifyOwnerName,
+      phone: verifyPhone,
+      email: user?.email || verifyEmail || 'vendor@example.com',
+      gstNumber: verifyGst,
+      panNumber: verifyPan,
+      idProofUrl: verifyIdProof || 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
+      addressProofUrl: verifyAddressProof || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
+      status: 'Submitted',
+      createdAt: new Date().toISOString()
+    };
+
+    const localVerification = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+    const filteredVerification = localVerification.filter(k => k.email !== payload.email);
+    localStorage.setItem('mockVerificationSubmissions', JSON.stringify([payload, ...filteredVerification]));
+
+    setVerificationDetails(payload);
+    alert('✅ Business verification details submitted successfully for review.');
+  };
+
+  const handleSubmitStoreSetup = async (e) => {
+    e.preventDefault();
+    const payload = {
+      _id: 'store_' + Date.now(),
+      email: user?.email || 'vendor@example.com',
+      brandName: storeBrandName,
+      description: storeDescription,
+      supportEmail: storeSupportEmail,
+      supportPhone: storeSupportPhone,
+      address: storeAddress,
       bankDetails: {
-        accountNumber: kycBankAcc,
-        ifscCode: kycIfsc,
-        bankName: kycBankName
+        accountNumber: storeBankAcc,
+        ifscCode: storeIfsc,
+        bankName: storeBankName
       },
       status: 'Submitted',
       createdAt: new Date().toISOString()
     };
 
-    const localKyc = JSON.parse(localStorage.getItem('mockKycSubmissions') || '[]');
-    const filteredKyc = localKyc.filter(k => k.email !== payload.email);
-    localStorage.setItem('mockKycSubmissions', JSON.stringify([payload, ...filteredKyc]));
+    const localStoreSetup = JSON.parse(localStorage.getItem('mockStoreSetupSubmissions') || '[]');
+    const filteredStoreSetup = localStoreSetup.filter(d => d.email !== payload.email);
+    localStorage.setItem('mockStoreSetupSubmissions', JSON.stringify([payload, ...filteredStoreSetup]));
 
-    setKycDetails(payload);
-    alert('✅ KYC details submitted successfully for review.');
-  };
-
-  const handleSubmitDeposit = async (e) => {
-    e.preventDefault();
-    if (!depositTxnId.trim()) {
-      alert('Please enter a valid Transaction ID.');
-      return;
-    }
-    const payload = {
-      _id: 'dep_' + Date.now(),
-      email: user?.email || 'vendor@example.com',
-      companyName: profile?.companyName || 'Artisan Workshop',
-      transactionId: depositTxnId,
-      amount: 1000,
-      paymentStatus: 'Paid',
-      createdAt: new Date().toISOString()
-    };
-
-    const localDeposits = JSON.parse(localStorage.getItem('mockDepositSubmissions') || '[]');
-    const filteredDeposits = localDeposits.filter(d => d.email !== payload.email);
-    localStorage.setItem('mockDepositSubmissions', JSON.stringify([payload, ...filteredDeposits]));
-
-    setDepositDetails(payload);
-    alert('✅ Security deposit payment transaction submitted for verification.');
-    setDepositTxnId('');
+    setStoreSetupDetails(payload);
+    alert('✅ Store profile & settlement setup submitted successfully.');
   };
 
   return (
@@ -2351,52 +2359,52 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
-      {/* TAB 12: KYC STATUS */}
-      {activeTab === 'kyc' && (
+      {/* TAB 12: BUSINESS VERIFICATION */}
+      {activeTab === 'verification' && (
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-6 h-6 text-[#2A9D8F]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">KYC Verification</h2>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Business Verification</h2>
             </div>
             <div className={`px-4 py-2 rounded-full font-bold text-xs ${
-              kycDetails?.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-              kycDetails?.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' :
-              kycDetails?.status === 'Pending' ? 'bg-[#E9C46A]/10 text-[#8B5E3C]' : 'bg-gray-100 text-gray-500'
+              verificationDetails?.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+              verificationDetails?.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' :
+              verificationDetails?.status === 'Submitted' ? 'bg-[#E9C46A]/10 text-[#8B5E3C]' : 'bg-gray-100 text-gray-500'
             }`}>
-              Verification Status: {kycDetails?.status || 'Not Submitted'}
+              Verification Status: {verificationDetails?.status || 'Not Submitted'}
             </div>
           </div>
 
-          {kycDetails?.adminRemarks && (
+          {verificationDetails?.adminRemarks && (
             <div className="p-4 bg-gray-50 border-l-4 border-[#E76F51] rounded-r-xl">
               <p className="text-xs font-bold text-gray-700">Admin Remarks:</p>
-              <p className="text-xs text-gray-600 mt-1">{kycDetails.adminRemarks}</p>
+              <p className="text-xs text-gray-600 mt-1">{verificationDetails.adminRemarks}</p>
             </div>
           )}
 
-          {(!kycDetails || kycDetails.status === 'Not Submitted' || kycDetails.status === 'Rejected') ? (
-            <form onSubmit={handleSubmitKYC} className="space-y-6">
+          {(!verificationDetails || verificationDetails.status === 'Not Submitted' || verificationDetails.status === 'Rejected') ? (
+            <form onSubmit={handleSubmitVerification} className="space-y-6">
               <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Business & Owner Details</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Registered Business Name</label>
-                  <input type="text" required value={kycBusinessName} onChange={(e) => setKycBusinessName(e.target.value)} placeholder="Artisan Corp" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="text" required value={verifyBusinessName} onChange={(e) => setVerifyBusinessName(e.target.value)} placeholder="Artisan Corp" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Owner's Full Name</label>
-                  <input type="text" required value={kycOwnerName} onChange={(e) => setKycOwnerName(e.target.value)} placeholder="John Doe" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="text" required value={verifyOwnerName} onChange={(e) => setVerifyOwnerName(e.target.value)} placeholder="John Doe" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Phone Number</label>
-                  <input type="tel" required value={kycPhone} onChange={(e) => setKycPhone(e.target.value)} placeholder="+91 9876543210" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="tel" required value={verifyPhone} onChange={(e) => setVerifyPhone(e.target.value)} placeholder="+91 9876543210" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Email</label>
-                  <input type="email" required value={kycEmail} onChange={(e) => setKycEmail(e.target.value)} placeholder="vendor@example.com" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="email" required value={verifyEmail} onChange={(e) => setVerifyEmail(e.target.value)} placeholder="vendor@example.com" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
               </div>
 
@@ -2404,90 +2412,56 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">GSTIN Number</label>
-                  <input type="text" required value={kycGst} onChange={(e) => setKycGst(e.target.value)} placeholder="22AAAAA0000A1Z0" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+                  <input type="text" required value={verifyGst} onChange={(e) => setVerifyGst(e.target.value)} placeholder="22AAAAA0000A1Z0" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">PAN Number</label>
-                  <input type="text" required value={kycPan} onChange={(e) => setKycPan(e.target.value)} placeholder="ABCDE1234F" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+                  <input type="text" required value={verifyPan} onChange={(e) => setVerifyPan(e.target.value)} placeholder="ABCDE1234F" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Aadhaar / ID Proof Image URL</label>
-                  <input type="text" required value={kycIdProof} onChange={(e) => setKycIdProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="text" required value={verifyIdProof} onChange={(e) => setVerifyIdProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Address Proof Image URL</label>
-                  <input type="text" required value={kycAddressProof} onChange={(e) => setKycAddressProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <input type="text" required value={verifyAddressProof} onChange={(e) => setVerifyAddressProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
               </div>
 
-              <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800 pt-4">Bank Account Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Account Number</label>
-                  <input type="text" required value={kycBankAcc} onChange={(e) => setKycBankAcc(e.target.value)} placeholder="987654321098" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">IFSC Code</label>
-                  <input type="text" required value={kycIfsc} onChange={(e) => setKycIfsc(e.target.value)} placeholder="HDFC0000123" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Bank Name</label>
-                  <input type="text" required value={kycBankName} onChange={(e) => setKycBankName(e.target.value)} placeholder="HDFC Bank" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-              </div>
-
-              <button type="submit" className="px-8 py-4 bg-[#2A9D8F] text-white rounded-xl font-bold hover:bg-[#2A9D8F]/90 transition-all shadow-md mt-4">Submit KYC Documents</button>
+              <button type="submit" className="px-8 py-4 bg-[#2A9D8F] text-white rounded-xl font-bold hover:bg-[#2A9D8F]/90 transition-all shadow-md mt-4">Submit Business Verification</button>
             </form>
           ) : (
             <div className="space-y-6">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
                 <div>
                   <p className="text-xs text-gray-400 font-bold uppercase">Business Name</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{kycDetails.businessName}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{verificationDetails.businessName}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 font-bold uppercase">Owner Name</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{kycDetails.ownerName}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1">{verificationDetails.ownerName}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 font-bold uppercase">GSTIN Number</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{kycDetails.gstNumber}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{verificationDetails.gstNumber}</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400 font-bold uppercase">PAN Number</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{kycDetails.panNumber}</p>
+                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{verificationDetails.panNumber}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
                   <p className="text-xs font-bold text-gray-500">Aadhaar / ID Proof</p>
-                  <img src={kycDetails.idProofUrl} alt="ID Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
+                  <img src={verificationDetails.idProofUrl} alt="ID Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
                 </div>
                 <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
                   <p className="text-xs font-bold text-gray-500">Address Proof</p>
-                  <img src={kycDetails.addressProofUrl} alt="Address Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <p className="text-xs font-bold text-gray-400 uppercase mb-3">Linked Settlement Account</p>
-                <div className="grid grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-xs text-gray-500">Account Number</p>
-                    <p className="text-sm font-bold text-gray-800">{kycDetails.bankDetails?.accountNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">IFSC Code</p>
-                    <p className="text-sm font-bold text-gray-800 uppercase">{kycDetails.bankDetails?.ifscCode}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">Bank Name</p>
-                    <p className="text-sm font-bold text-gray-800">{kycDetails.bankDetails?.bankName}</p>
-                  </div>
+                  <img src={verificationDetails.addressProofUrl} alt="Address Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
                 </div>
               </div>
             </div>
@@ -2495,90 +2469,117 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         </div>
       )}
 
-      {/* TAB 13: SECURITY DEPOSIT */}
-      {activeTab === 'deposit' && (
+      {/* TAB 13: STORE SETUP */}
+      {activeTab === 'store_setup' && (
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
           <div className="flex items-center justify-between border-b border-gray-100 pb-4">
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-6 h-6 text-[#2A9D8F]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Platform Security Deposit</h2>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Store & Profile Setup</h2>
             </div>
             <div className={`px-4 py-2 rounded-full font-bold text-xs ${
-              depositDetails?.paymentStatus === 'Verified' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-              depositDetails?.paymentStatus === 'Paid' ? 'bg-[#E9C46A]/10 text-[#8B5E3C]' : 'bg-[#E76F51]/10 text-[#E76F51]'
+              storeSetupDetails?.status === 'Submitted' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+              storeSetupDetails?.status === 'Approved' ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'
             }`}>
-              Verification: {depositDetails?.paymentStatus || 'Pending'}
+              Setup Status: {storeSetupDetails?.status || 'Not Submitted'}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col justify-center space-y-1">
-              <p className="text-xs text-gray-400 font-bold uppercase">Required Deposit Amount</p>
-              <h3 className="font-['Playfair_Display'] font-extrabold text-3xl text-[#1F2937]">$25,000</h3>
-              <p className="text-[10px] text-gray-500 mt-2">Refundable upon active off-boarding as per policy</p>
-            </div>
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col justify-center space-y-1">
-              <p className="text-xs text-gray-400 font-bold uppercase">Transaction Reference ID</p>
-              <h3 className="font-bold text-lg text-[#1F2937] mt-1 break-all">{depositDetails?.transactionId || 'None'}</h3>
-              <p className="text-[10px] text-gray-500 mt-2">Submitted on {depositDetails?.paymentDate ? new Date(depositDetails.paymentDate).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col justify-center space-y-3">
-              <p className="text-xs text-gray-400 font-bold uppercase">Actions</p>
-              {depositDetails?.paymentStatus === 'Verified' ? (
-                <button onClick={() => alert('📥 Downloding standard payment receipt pdf...')} className="w-full py-3 bg-[#1F2937] hover:bg-black text-white font-bold text-xs rounded-xl shadow-md transition-all">Download Receipt</button>
-              ) : (
-                <p className="text-xs text-gray-500 italic">No receipt available until verification.</p>
-              )}
-            </div>
-          </div>
-
-          {depositDetails?.adminRemarks && (
-            <div className="p-4 bg-gray-50 border-l-4 border-[#E76F51] rounded-r-xl">
-              <p className="text-xs font-bold text-gray-700">Admin Remarks:</p>
-              <p className="text-xs text-gray-600 mt-1">{depositDetails.adminRemarks}</p>
-            </div>
-          )}
-
-          {(!depositDetails || depositDetails.paymentStatus === 'Pending' || depositDetails.paymentStatus === 'Failed') ? (
-            <form onSubmit={handleSubmitDeposit} className="space-y-6 bg-gray-50/50 p-8 rounded-2xl border border-gray-100">
-              <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Submit Deposit Payment Details</h3>
-              <p className="text-xs text-gray-500">Please initiate a bank wire transfer of **$25,000** to the platform clearing escrow account listed below, then enter the unique transaction ID to verify.</p>
+          {(!storeSetupDetails || storeSetupDetails.status === 'Not Submitted') ? (
+            <form onSubmit={handleSubmitStoreSetup} className="space-y-6">
+              <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Store Profile Settings</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-4 rounded-xl border border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">Platform Bank Escrow</p>
-                  <p className="text-xs font-bold text-gray-700 mt-1">Artisan Escrow Inc.</p>
-                  <p className="text-xs text-gray-600">A/C: 99912003881</p>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Brand / Store Display Name</label>
+                  <input type="text" required value={storeBrandName} onChange={(e) => setStoreBrandName(e.target.value)} placeholder="Artisan Workshop" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase">IFSC / Wire Routing</p>
-                  <p className="text-xs font-bold text-gray-700 mt-1">ICIC0000109</p>
-                  <p className="text-xs text-gray-600">Branch: Nariman Point, Mumbai</p>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Store Support Email</label>
+                  <input type="email" required value={storeSupportEmail} onChange={(e) => setStoreSupportEmail(e.target.value)} placeholder="support@artisanworkshop.com" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Store Support Phone</label>
+                  <input type="tel" required value={storeSupportPhone} onChange={(e) => setStoreSupportPhone(e.target.value)} placeholder="+91 9999988888" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Address / Warehouse Location</label>
+                  <input type="text" required value={storeAddress} onChange={(e) => setStoreAddress(e.target.value)} placeholder="45 Artisan Way, Sector 5, Bangalore" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Wire Transaction Reference ID / UTR</label>
-                <input type="text" required value={depositTxnId} onChange={(e) => setDepositTxnId(e.target.value)} placeholder="TXN_987654321" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Store Bio / Brand Description</label>
+                <textarea required value={storeDescription} onChange={(e) => setStoreDescription(e.target.value)} placeholder="Tell customers about your craftsmanship, materials, and design philosophy..." rows={4} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]"></textarea>
               </div>
 
-              <button type="submit" className="px-8 py-4 bg-[#2A9D8F] text-white rounded-xl font-bold hover:bg-[#2A9D8F]/90 transition-all shadow-md">Submit Transaction Proof</button>
+              <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800 pt-4">Linked Settlement Account (For Customer Payouts)</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Account Number</label>
+                  <input type="text" required value={storeBankAcc} onChange={(e) => setStoreBankAcc(e.target.value)} placeholder="987654321098" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">IFSC Code</label>
+                  <input type="text" required value={storeIfsc} onChange={(e) => setStoreIfsc(e.target.value)} placeholder="HDFC0000123" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Bank Name</label>
+                  <input type="text" required value={storeBankName} onChange={(e) => setStoreBankName(e.target.value)} placeholder="HDFC Bank" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                </div>
+              </div>
+
+              <button type="submit" className="px-8 py-4 bg-[#2A9D8F] text-white rounded-xl font-bold hover:bg-[#2A9D8F]/90 transition-all shadow-md mt-4">Save Store & Profile Settings</button>
             </form>
           ) : (
-            <div className="p-6 bg-[#2A9D8F]/10 rounded-2xl border border-[#2A9D8F]/20 text-center space-y-2">
-              <p className="font-bold text-[#2A9D8F]">✅ Your Platform Security Deposit is active.</p>
-              <p className="text-xs text-gray-600 max-w-lg mx-auto">Verified reference ID: **{depositDetails.transactionId}**. Safe and secured inside the escrow clearing module.</p>
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-400 font-bold uppercase">Store Name</p>
+                    <p className="text-sm font-bold text-gray-800 mt-1">{storeSetupDetails.brandName}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-bold uppercase">Support Email</p>
+                    <p className="text-sm font-bold text-gray-800 mt-1">{storeSetupDetails.supportEmail}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-bold uppercase">Support Phone</p>
+                    <p className="text-sm font-bold text-gray-800 mt-1">{storeSetupDetails.supportPhone}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400 font-bold uppercase">Location</p>
+                    <p className="text-sm font-bold text-gray-800 mt-1">{storeSetupDetails.address}</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-bold uppercase">Brand Description</p>
+                  <p className="text-xs text-gray-600 mt-1 leading-relaxed">{storeSetupDetails.description}</p>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <p className="text-xs font-bold text-gray-400 uppercase mb-3">Settlements & Payout Destination Account</p>
+                <div className="grid grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-xs text-gray-500">Account Number</p>
+                    <p className="text-sm font-bold text-gray-800">{storeSetupDetails.bankDetails?.accountNumber}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">IFSC Code</p>
+                    <p className="text-sm font-bold text-gray-800 uppercase">{storeSetupDetails.bankDetails?.ifscCode}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Bank Name</p>
+                    <p className="text-sm font-bold text-gray-800">{storeSetupDetails.bankDetails?.bankName}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
-
-          <div className="border-t border-gray-100 pt-6 space-y-4">
-            <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Standard Refund Policy</h3>
-            <ul className="text-xs text-gray-500 space-y-2 list-disc pl-5">
-              <li>The deposit amount is 100% refundable upon exit clearance of the partner from the Artisan marketplace.</li>
-              <li>A mandatory notice period of 30 days is required prior to initiating voluntary off-boarding.</li>
-              <li>Any outstanding customer grievances, unpaid orders, or system penalties will be adjusted against the refund.</li>
-            </ul>
-          </div>
         </div>
       )}
 
