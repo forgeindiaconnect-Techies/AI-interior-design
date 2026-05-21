@@ -12,8 +12,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
     users: true,
     operations: true,
     design: true,
-    verification: false,
-    settings: false
+    verification: false
   });
 
   const toggleGroup = (group) => {
@@ -238,41 +237,19 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
           )}
         </div>
 
-        {/* Section: System Settings */}
+        {/* Section: Notifications */}
         <div className="space-y-1">
           <button 
-            onClick={() => toggleGroup('settings')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
+            onClick={() => setActiveTab('notifications')}
+            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              activeTab === 'notifications' 
+                ? 'bg-white/10 text-white shadow-sm' 
+                : 'text-gray-400 hover:bg-white/5 hover:text-white'
+            }`}
           >
-            <span>System Settings</span>
-            {openGroups.settings ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            <Bell className="w-4 h-4 shrink-0" />
+            <span>Notifications</span>
           </button>
-          
-          {openGroups.settings && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Notifications', icon: Bell, tab: 'notifications' },
-                { name: 'Platform Settings', icon: Key, tab: 'platform_settings' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
 
