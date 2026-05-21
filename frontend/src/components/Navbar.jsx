@@ -27,7 +27,7 @@ const Navbar = () => {
             <Palette className="w-6 h-6" />
           </div>
           <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-[#1F2937]">
-            Artisan<span className="text-[#8B5E3C]">AI</span>
+            Artisan<span className="text-[#8B5E3C]">Studio</span>
           </span>
         </Link>
 

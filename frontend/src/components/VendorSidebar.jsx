@@ -30,7 +30,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
           <Palette className="w-4.5 h-4.5" />
         </div>
         <span className="font-['Outfit'] font-bold text-lg tracking-tight text-[#1F2937]">
-          Artisan<span className="text-[#2A9D8F]">Partner</span>
+          Artisan<span className="text-[#2A9D8F]">Studio</span>
         </span>
       </div>
 

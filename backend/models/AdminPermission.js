@@ -5,7 +5,7 @@ const AdminPermissionSchema = new mongoose.Schema({
   roleName: { type: String, default: 'Moderator' },
   permissions: {
     userManagement: { type: Boolean, default: false },
-    vendorKYC: { type: Boolean, default: false },
+    vendorVerification: { type: Boolean, default: false },
     ordersWorkflow: { type: Boolean, default: false },
     supportTickets: { type: Boolean, default: false },
     analytics: { type: Boolean, default: false },

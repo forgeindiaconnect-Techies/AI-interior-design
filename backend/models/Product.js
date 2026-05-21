@@ -12,6 +12,7 @@ const ProductSchema = new mongoose.Schema({
   stock: { type: Number, default: 10 },
   rating: { type: Number, default: 0 },
   reviewsCount: { type: Number, default: 0 },
+  approvalStatus: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
   createdAt: { type: Date, default: Date.now }
 });
 

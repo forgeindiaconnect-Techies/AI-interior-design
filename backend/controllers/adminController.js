@@ -14,8 +14,7 @@ const SupportTicket = require('../models/SupportTicket');
 const Notification = require('../models/Notification');
 const AdminLog = require('../models/AdminLog');
 const mongoose = require('mongoose');
-const VendorKYC = require('../models/VendorKYC');
-const SecurityDeposit = require('../models/SecurityDeposit');
+const VendorVerification = require('../models/VendorVerification');
 const MarketplaceOrder = require('../models/MarketplaceOrder');
 const AdminPermission = require('../models/AdminPermission');
 const { mockManualDesigns: controllerMockManualDesigns } = require('./designController');
@@ -168,8 +167,8 @@ let mockVendors = [
     rating: 4.8,
     reviewsCount: 34,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Bangalore', 'Noida', 'Mumbai'],
     specialization: 'Woodworks',
@@ -186,8 +185,8 @@ let mockVendors = [
     rating: 4.9,
     reviewsCount: 88,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Detroit', 'Chicago', 'New York'],
     specialization: 'Woodworks',
@@ -204,8 +203,8 @@ let mockVendors = [
     rating: 4.5,
     reviewsCount: 15,
     isVerified: true,
-    kycStatus: 'Submitted',
-    depositStatus: 'Pending',
+    verificationStatus: 'Submitted',
+    storeSetupStatus: 'Pending',
     isActive: true,
     serviceAreas: ['Noida', 'Delhi NCR', 'Gurugram'],
     specialization: 'Metal Fabrications',
@@ -222,8 +221,8 @@ let mockVendors = [
     rating: 4.2,
     reviewsCount: 29,
     isVerified: false,
-    kycStatus: 'Pending',
-    depositStatus: 'Pending',
+    verificationStatus: 'Pending',
+    storeSetupStatus: 'Pending',
     isActive: false,
     serviceAreas: ['Los Angeles', 'San Diego'],
     specialization: 'Upholstery',
@@ -240,8 +239,8 @@ let mockVendors = [
     rating: 4.7,
     reviewsCount: 42,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: false,
     serviceAreas: ['Munich', 'Berlin'],
     specialization: 'Modular Cabinets',
@@ -258,8 +257,8 @@ let mockVendors = [
     rating: 4.9,
     reviewsCount: 156,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Bangalore', 'Mumbai'],
     vehicleType: 'Cargo Van',
@@ -276,8 +275,8 @@ let mockVendors = [
     rating: 4.7,
     reviewsCount: 88,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Noida', 'Delhi NCR'],
     vehicleType: 'Mini Truck',
@@ -294,8 +293,8 @@ let mockVendors = [
     rating: 4.4,
     reviewsCount: 34,
     isVerified: true,
-    kycStatus: 'Submitted',
-    depositStatus: 'Pending',
+    verificationStatus: 'Submitted',
+    storeSetupStatus: 'Pending',
     isActive: true,
     serviceAreas: ['Mumbai'],
     vehicleType: 'Two-Wheeler',
@@ -312,8 +311,8 @@ let mockVendors = [
     rating: 4.8,
     reviewsCount: 72,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: false,
     serviceAreas: ['Detroit', 'Chicago'],
     vehicleType: 'Cargo Van',
@@ -330,8 +329,8 @@ let mockVendors = [
     rating: 4.9,
     reviewsCount: 45,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Bangalore', 'Mumbai', 'New York'],
     specialization: 'Woodworks',
@@ -346,8 +345,8 @@ let mockVendors = [
     rating: 4.7,
     reviewsCount: 31,
     isVerified: true,
-    kycStatus: 'Approved',
-    depositStatus: 'Verified',
+    verificationStatus: 'Approved',
+    storeSetupStatus: 'Approved',
     isActive: true,
     serviceAreas: ['Noida', 'Delhi NCR', 'Los Angeles'],
     specialization: 'Modular Cabinets',
@@ -526,14 +525,14 @@ let mockManufacturingOrders = [
   }
 ];
 
-let mockKYCList = [
+let mockVerificationList = [
   {
-    _id: 'kyc_mock_1',
+    _id: 'verification_mock_1',
     vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
     businessName: 'Artisan Workshop Private Limited',
     ownerName: 'Rajesh Kumar',
     phone: '+91 98765 43210',
-    email: 'rajesh@artisanworkshop.com',
+    email: 'vendor@example.com',
     gstNumber: '27AAAAA1111A1Z1',
     panNumber: 'ABCDE1234F',
     idProofUrl: 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
@@ -545,15 +544,48 @@ let mockKYCList = [
   }
 ];
 
-let mockDepositList = [
+let mockStoreSetupList = [
   {
-    _id: 'dep_mock_1',
+    _id: 'store_mock_1',
     vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-    amount: 25000,
-    paymentStatus: 'Paid',
-    transactionId: 'TXN_98234710293',
-    paymentDate: new Date(Date.now() - 3600000),
-    adminRemarks: ''
+    description: 'Expert hand-crafted wooden furniture workshops specialized in mid-century tables.',
+    specialization: 'Woodworks',
+    monthlyCapacity: 40,
+    serviceAreas: 'Bangalore, Noida, Mumbai',
+    status: 'Pending',
+    adminRemarks: '',
+    submittedAt: new Date(Date.now() - 3600000)
+  }
+];
+
+let mockProductsForReview = [
+  {
+    _id: 'prod_rev_1',
+    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    title: 'Vintage Oak Coffee Table',
+    description: 'Beautiful hand-polished coffee table made of sustainably sourced oak.',
+    price: 349,
+    images: ['https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=600'],
+    category: 'Tables',
+    material: 'Oak Wood',
+    size: '120x60x45cm',
+    stock: 5,
+    approvalStatus: 'Pending',
+    createdAt: new Date(Date.now() - 3600000 * 5)
+  },
+  {
+    _id: 'prod_rev_2',
+    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    title: 'Minimalist Walnut Bookshelf',
+    description: 'Multi-tiered storage rack for books and decor.',
+    price: 599,
+    images: ['https://images.unsplash.com/photo-1594620302200-9a762244a156?w=600'],
+    category: 'Shelves',
+    material: 'Walnut Wood',
+    size: '180x80x30cm',
+    stock: 3,
+    approvalStatus: 'Pending',
+    createdAt: new Date(Date.now() - 3600000 * 10)
   }
 ];
 
@@ -1284,7 +1316,7 @@ exports.getManagementData = async (req, res) => {
       const mockManufacturers = mockVendors.filter(v => v.businessType === 'manufacturer');
       const mockTotalManufacturers = mockManufacturers.length;
       const mockActiveManufacturers = mockManufacturers.filter(v => v.isActive).length;
-      const mockPendingKyc = mockManufacturers.filter(v => v.kycStatus === 'Pending' || v.kycStatus === 'Submitted').length;
+      const mockPendingVerification = mockManufacturers.filter(v => v.verificationStatus === 'Pending' || v.verificationStatus === 'Submitted').length;
       const mockActiveMfgOrders = mockManufacturingOrders.filter(o => o.status !== 'Ready for Delivery').length;
       const mockCompletedMfgOrders = mockManufacturingOrders.filter(o => o.status === 'Ready for Delivery').length;
 
@@ -1315,7 +1347,7 @@ exports.getManagementData = async (req, res) => {
           manufacturerStats: {
             totalManufacturers: mockTotalManufacturers,
             activeManufacturers: mockActiveManufacturers,
-            pendingKyc: mockPendingKyc,
+            pendingVerification: mockPendingVerification,
             activeManufacturingOrders: mockActiveMfgOrders,
             completedManufacturingOrders: mockCompletedMfgOrders
           },
@@ -1491,7 +1523,7 @@ exports.getManagementData = async (req, res) => {
     const dbManufacturers = vendors.filter(v => v.businessType === 'manufacturer');
     const totalManufacturers = dbManufacturers.length;
     const activeManufacturers = dbManufacturers.filter(v => v.isActive).length;
-    const pendingKyc = dbManufacturers.filter(v => v.kycStatus === 'Pending' || v.kycStatus === 'Submitted').length;
+    const pendingVerification = dbManufacturers.filter(v => v.verificationStatus === 'Pending' || v.verificationStatus === 'Submitted').length;
     const activeMfgOrders = manufacturingOrders.filter(mo => mo.status !== 'Ready for Delivery').length;
     const completedMfgOrders = manufacturingOrders.filter(mo => mo.status === 'Ready for Delivery').length;
 
@@ -1526,7 +1558,7 @@ exports.getManagementData = async (req, res) => {
         manufacturerStats: {
           totalManufacturers,
           activeManufacturers,
-          pendingKyc,
+          pendingVerification,
           activeManufacturingOrders: activeMfgOrders,
           completedManufacturingOrders: completedMfgOrders
         },
@@ -1551,97 +1583,150 @@ exports.getManagementData = async (req, res) => {
   }
 };
 
-// @desc    Get all vendor KYC documents
-// @route   GET /api/admin/kyc
+// @desc    Get all vendor Business Verification documents
+// @route   GET /api/admin/verifications
 // @access  Private (Admin)
-exports.getAllKYC = async (req, res) => {
+exports.getAllVerifications = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: mockKYCList });
+      return res.status(200).json({ success: true, data: mockVerificationList });
     }
 
-    const kycList = await VendorKYC.find({}).populate('vendorId', 'companyName').sort('-submittedAt');
-    res.status(200).json({ success: true, data: kycList });
+    const verificationList = await VendorVerification.find({}).populate('vendorId', 'companyName').sort('-submittedAt');
+    res.status(200).json({ success: true, data: verificationList });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Approve or Reject KYC
-// @route   PUT /api/admin/kyc/:id
+// @desc    Approve or Reject Business Verification
+// @route   PUT /api/admin/verifications/:id
 // @access  Private (Admin)
-exports.updateKYCStatus = async (req, res) => {
+exports.updateVerificationStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
 
     if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const kyc = mockKYCList.find(k => k._id === req.params.id);
-      if (kyc) {
-        kyc.status = status;
-        kyc.adminRemarks = adminRemarks;
+      const ver = mockVerificationList.find(v => v._id === req.params.id);
+      if (ver) {
+        ver.status = status;
+        ver.adminRemarks = adminRemarks;
       }
-      return res.status(200).json({ success: true, message: 'KYC status updated successfully' });
+      return res.status(200).json({ success: true, message: 'Verification status updated successfully' });
     }
 
-    const kyc = await VendorKYC.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { new: true });
-    if (!kyc) return res.status(404).json({ success: false, message: 'KYC record not found' });
+    const verification = await VendorVerification.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { new: true });
+    if (!verification) return res.status(404).json({ success: false, message: 'Verification record not found' });
 
-    const vendor = await Vendor.findByIdAndUpdate(kyc.vendorId, { kycStatus: status }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(verification.vendorId, { verificationStatus: status }, { new: true });
     if (vendor) {
-      await Notification.create({ userId: vendor.userId, message: `Your KYC verification has been ${status.toUpperCase()}. Remarks: ${adminRemarks}` });
+      if (status === 'Approved') {
+        vendor.accountActivationStatus = 'Store Setup Pending';
+      } else {
+        vendor.accountActivationStatus = 'Rejected';
+      }
+      await vendor.save();
+      await Notification.create({ userId: vendor.userId, message: `Your business verification has been ${status.toUpperCase()}. Remarks: ${adminRemarks}` });
     }
 
-    await AdminLog.create({ adminId: req.user.id, action: `Updated KYC status to ${status} for vendor ${vendor?.companyName}` });
+    await AdminLog.create({ adminId: req.user.id, action: `Updated business verification status to ${status} for vendor ${vendor?.companyName}` });
 
-    res.status(200).json({ success: true, data: kyc });
+    res.status(200).json({ success: true, data: verification });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Get all vendor security deposits
-// @route   GET /api/admin/deposits
+// @desc    Get all vendor Store Setup details
+// @route   GET /api/admin/store-approvals
 // @access  Private (Admin)
-exports.getAllDeposits = async (req, res) => {
+exports.getAllStoreApprovals = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: mockDepositList });
+      return res.status(200).json({ success: true, data: mockStoreSetupList });
     }
 
-    const deposits = await SecurityDeposit.find({}).populate('vendorId', 'companyName').sort('-createdAt');
-    res.status(200).json({ success: true, data: deposits });
+    const storeApprovals = await Vendor.find({ storeSetupStatus: 'Submitted' }).select('companyName description specialization monthlyCapacity serviceAreas storeSetupStatus');
+    res.status(200).json({ success: true, data: storeApprovals });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Verify or Reject security deposit
-// @route   PUT /api/admin/deposits/:id
+// @desc    Approve or Reject Store Setup
+// @route   PUT /api/admin/store-approvals/:id
 // @access  Private (Admin)
-exports.verifyDepositStatus = async (req, res) => {
+exports.updateStoreApprovalStatus = async (req, res) => {
   try {
-    const { paymentStatus, adminRemarks } = req.body;
+    const { status, adminRemarks } = req.body;
 
     if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const deposit = mockDepositList.find(d => d._id === req.params.id);
-      if (deposit) {
-        deposit.paymentStatus = paymentStatus;
-        deposit.adminRemarks = adminRemarks;
+      const store = mockStoreSetupList.find(s => s._id === req.params.id);
+      if (store) {
+        store.status = status;
+        store.adminRemarks = adminRemarks;
       }
-      return res.status(200).json({ success: true, message: 'Deposit status updated successfully' });
+      return res.status(200).json({ success: true, message: 'Store Setup status updated successfully' });
     }
 
-    const deposit = await SecurityDeposit.findByIdAndUpdate(req.params.id, { paymentStatus, adminRemarks, updatedAt: new Date() }, { new: true });
-    if (!deposit) return res.status(404).json({ success: false, message: 'Deposit record not found' });
+    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { storeSetupStatus: status }, { new: true });
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor record not found' });
 
-    const vendor = await Vendor.findByIdAndUpdate(deposit.vendorId, { depositStatus: paymentStatus }, { new: true });
-    if (vendor) {
-      await Notification.create({ userId: vendor.userId, message: `Your security deposit verification has been marked as ${paymentStatus.toUpperCase()}. Remarks: ${adminRemarks}` });
+    if (status === 'Approved') {
+      vendor.accountActivationStatus = 'Active';
+      vendor.isActive = true;
+      vendor.isVerified = true;
+    } else {
+      vendor.accountActivationStatus = 'Rejected';
+      vendor.isActive = false;
+    }
+    await vendor.save();
+
+    await Notification.create({ userId: vendor.userId, message: `Your Store/Profile Setup verification has been marked as ${status.toUpperCase()}. Remarks: ${adminRemarks}` });
+
+    await AdminLog.create({ adminId: req.user.id, action: `Verified store setup status to ${status} for vendor ${vendor.companyName}` });
+
+    res.status(200).json({ success: true, data: vendor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all products pending quality review
+// @route   GET /api/admin/product-reviews
+// @access  Private (Admin)
+exports.getAllPendingProducts = async (req, res) => {
+  try {
+    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
+      return res.status(200).json({ success: true, data: mockProductsForReview });
     }
 
-    await AdminLog.create({ adminId: req.user.id, action: `Verified security deposit status to ${paymentStatus} for vendor ${vendor?.companyName}` });
+    const products = await Product.find({ approvalStatus: 'Pending' }).populate('vendorId', 'companyName');
+    res.status(200).json({ success: true, data: products });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 
-    res.status(200).json({ success: true, data: deposit });
+// @desc    Approve or Reject Product Quality
+// @route   PUT /api/admin/product-reviews/:id
+// @access  Private (Admin)
+exports.updateProductReviewStatus = async (req, res) => {
+  try {
+    const { approvalStatus } = req.body;
+
+    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
+      const prod = mockProductsForReview.find(p => p._id === req.params.id);
+      if (prod) {
+        prod.approvalStatus = approvalStatus;
+      }
+      return res.status(200).json({ success: true, message: 'Product approval status updated successfully' });
+    }
+
+    const product = await Product.findByIdAndUpdate(req.params.id, { approvalStatus }, { new: true });
+    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+
+    res.status(200).json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -1751,7 +1836,7 @@ exports.assignManufacturerOrder = async (req, res) => {
   }
 };
 
-// @desc    Approve Manufacturer KYC & Verification
+// @desc    Approve Manufacturer Verification & Store Setup
 // @route   PUT /api/admin/manufacturers/:id/approve
 // @access  Private (Admin)
 exports.approveManufacturer = async (req, res) => {
@@ -1762,29 +1847,31 @@ exports.approveManufacturer = async (req, res) => {
       const vendor = mockVendors.find(v => v._id === id);
       if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
-      vendor.kycStatus = 'Approved';
+      vendor.verificationStatus = 'Approved';
       vendor.isVerified = true;
       vendor.isActive = true;
-      vendor.depositStatus = 'Verified';
+      vendor.storeSetupStatus = 'Approved';
+      vendor.accountActivationStatus = 'Active';
 
-      // Update mock KYC if present
-      const kyc = mockKYCList.find(k => k.vendorId && k.vendorId._id === id);
-      if (kyc) kyc.status = 'Approved';
+      // Update mock verification if present
+      const ver = mockVerificationList.find(k => k.vendorId && k.vendorId._id === id);
+      if (ver) ver.status = 'Approved';
 
       return res.status(200).json({ success: true, message: 'Manufacturer approved successfully', data: vendor });
     }
 
     const vendor = await Vendor.findByIdAndUpdate(id, {
-      kycStatus: 'Approved',
+      verificationStatus: 'Approved',
       isVerified: true,
       isActive: true,
-      depositStatus: 'Verified'
+      storeSetupStatus: 'Approved',
+      accountActivationStatus: 'Active'
     }, { new: true });
 
     if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
-    // Also update associated KYC
-    await VendorKYC.findOneAndUpdate({ vendorId: id }, { status: 'Approved', adminRemarks: 'Approved by Administrator' });
+    // Also update associated Verification
+    await VendorVerification.findOneAndUpdate({ vendorId: id }, { status: 'Approved', adminRemarks: 'Approved by Administrator' });
 
     await Notification.create({
       userId: vendor.userId,
@@ -1795,7 +1882,7 @@ exports.approveManufacturer = async (req, res) => {
     await AdminLog.create({
       adminId: req.user.id,
       action: `Approved Manufacturer ${vendor.companyName}`,
-      details: 'KYC, verification status, and security deposits successfully approved.'
+      details: 'Business verification and store setup details successfully approved.'
     });
 
     res.status(200).json({ success: true, message: 'Manufacturer approved successfully', data: vendor });
@@ -1853,10 +1940,10 @@ exports.getManufacturerPayments = async (req, res) => {
       const payments = [
         {
           _id: 'pay_mock_1',
-          type: 'Security Deposit',
-          amount: 25000,
+          type: 'Registration Setup Fee',
+          amount: 5000,
           status: 'Paid & Verified',
-          reference: 'TXN_DEP_982347',
+          reference: 'TXN_REG_982347',
           date: new Date(Date.now() - 3600000 * 24 * 15)
         },
         {
@@ -1879,18 +1966,7 @@ exports.getManufacturerPayments = async (req, res) => {
       return res.status(200).json({ success: true, data: payments });
     }
 
-    const deposits = await SecurityDeposit.find({ vendorId: id });
     const orderPayments = await Payment.find({ vendorId: id });
-
-    // Map to a unified payments schema
-    const standardDeposits = deposits.map(d => ({
-      _id: d._id,
-      type: 'Security Deposit',
-      amount: d.amount,
-      status: d.paymentStatus === 'Paid' || d.paymentStatus === 'Verified' ? 'Paid & Verified' : d.paymentStatus,
-      reference: d.transactionId || 'N/A',
-      date: d.createdAt
-    }));
 
     const standardPayouts = orderPayments.map(p => ({
       _id: p._id,
@@ -1901,7 +1977,7 @@ exports.getManufacturerPayments = async (req, res) => {
       date: p.createdAt
     }));
 
-    const allPayments = [...standardDeposits, ...standardPayouts].sort(
+    const allPayments = [...standardPayouts].sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     );
 
@@ -2641,7 +2717,7 @@ exports.getSubAdmins = async (req, res) => {
           roleName: 'Support Agent',
           permissions: {
             userManagement: false,
-            vendorKYC: false,
+            vendorVerification: false,
             ordersWorkflow: false,
             supportTickets: true,
             analytics: false,
@@ -2655,7 +2731,7 @@ exports.getSubAdmins = async (req, res) => {
           roleName: 'Operations Lead',
           permissions: {
             userManagement: true,
-            vendorKYC: true,
+            vendorVerification: true,
             ordersWorkflow: true,
             supportTickets: false,
             analytics: true,
@@ -2699,7 +2775,7 @@ exports.addSubAdmin = async (req, res) => {
         roleName: roleName || 'Moderator',
         permissions: permissions || {
           userManagement: false,
-          vendorKYC: false,
+          vendorVerification: false,
           ordersWorkflow: false,
           supportTickets: false,
           analytics: false,

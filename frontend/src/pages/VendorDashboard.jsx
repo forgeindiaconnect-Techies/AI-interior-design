@@ -81,6 +81,26 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   // Deposit Form State
   const [depositTxnId, setDepositTxnId] = useState('');
 
+  // Lifted Inventory & Payout States
+  const [inventoryProducts, setInventoryProducts] = useState(() => {
+    return JSON.parse(localStorage.getItem('mockProducts') || '[]').map(p => ({
+      ...p,
+      stock: p.stock ?? Math.floor(Math.random() * 30) + 2,
+      lowStockThreshold: p.lowStockThreshold ?? 5
+    }));
+  });
+  const [invSearch, setInvSearch] = useState('');
+  const [invFilter, setInvFilter] = useState('All');
+
+  const [payoutHistory, setPayoutHistory] = useState(() =>
+    JSON.parse(localStorage.getItem('mockPayoutHistory') || '[]')
+  );
+  const [reqAmount, setReqAmount] = useState('');
+  const [reqMethod, setReqMethod] = useState('Bank Transfer');
+  const [reqAccount, setReqAccount] = useState('');
+  const [reqNote, setReqNote] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
   useEffect(() => {
     fetchPartnerData();
   }, []);
@@ -512,7 +532,7 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
           <div style="max-width: 800px; margin: auto;">
             <div class="header">
               <div>
-                <h1 class="invoice-title">ArtisanAI Marketplace</h1>
+                <h1 class="invoice-title">ArtisanStudio Marketplace</h1>
                 <p style="margin: 5px 0 0 0; color: #6B7280; font-size: 14px;">Order ID: ${order._id}</p>
                 <p style="margin: 2px 0 0 0; color: #6B7280; font-size: 14px;">Date: ${new Date(order.createdAt).toLocaleDateString()}</p>
               </div>
@@ -560,7 +580,7 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
             
             <div class="footer">
               Thank you for supporting independent artisans and craftsmen! <br/>
-              © ${new Date().getFullYear()} ArtisanAI Marketplace. All rights reserved.
+              © ${new Date().getFullYear()} ArtisanStudio Marketplace. All rights reserved.
             </div>
           </div>
           <script>
@@ -2586,16 +2606,6 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
       {/* TAB: INVENTORY MANAGEMENT */}
       {activeTab === 'inventory' && (() => {
-        const [inventoryProducts, setInventoryProducts] = React.useState(() => {
-          return JSON.parse(localStorage.getItem('mockProducts') || '[]').map(p => ({
-            ...p,
-            stock: p.stock ?? Math.floor(Math.random() * 30) + 2,
-            lowStockThreshold: p.lowStockThreshold ?? 5
-          }));
-        });
-        const [invSearch, setInvSearch] = React.useState('');
-        const [invFilter, setInvFilter] = React.useState('All');
-
         const updateStock = (id, delta) => {
           setInventoryProducts(prev => {
             const updated = prev.map(p => p._id === id ? { ...p, stock: Math.max(0, (p.stock || 0) + delta) } : p);
@@ -2724,15 +2734,6 @@ const VendorDashboard = ({ activeTab = 'overview', setActiveTab }) => {
         const cleared = Math.round(totalEarnings * 0.72);
         const pending = Math.round(totalEarnings * 0.18);
         const processing = Math.round(totalEarnings * 0.10);
-
-        const [payoutHistory, setPayoutHistory] = React.useState(() =>
-          JSON.parse(localStorage.getItem('mockPayoutHistory') || '[]')
-        );
-        const [reqAmount, setReqAmount] = React.useState('');
-        const [reqMethod, setReqMethod] = React.useState('Bank Transfer');
-        const [reqAccount, setReqAccount] = React.useState('');
-        const [reqNote, setReqNote] = React.useState('');
-        const [submitted, setSubmitted] = React.useState(false);
 
         const handlePayoutRequest = (e) => {
           e.preventDefault();

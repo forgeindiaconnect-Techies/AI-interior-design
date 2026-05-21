@@ -12,7 +12,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
     users: true,
     operations: true,
     design: true,
-    security: false,
+    verification: false,
     settings: false
   });
 
@@ -31,7 +31,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
           <Palette className="w-4.5 h-4.5" />
         </div>
         <span className="font-['Outfit'] font-bold text-lg tracking-tight text-white">
-          Artisan<span className="text-[#E76F51]">Admin</span>
+          Artisan<span className="text-[#E76F51]">Studio</span>
         </span>
       </div>
 
@@ -199,21 +199,22 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
           </button>
         </div>
 
-        {/* Section: KYC & Security */}
+        {/* Section: Verification & Reviews */}
         <div className="space-y-1">
           <button 
-            onClick={() => toggleGroup('security')}
+            onClick={() => toggleGroup('verification')}
             className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
           >
-            <span>KYC & Security</span>
-            {openGroups.security ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            <span>Verification & Reviews</span>
+            {openGroups.verification ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
           
-          {openGroups.security && (
+          {openGroups.verification && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
               {[
-                { name: 'KYC Approvals', icon: CheckSquare, tab: 'kyc' },
-                { name: 'Security Deposits', icon: ShieldCheck, tab: 'deposit' },
+                { name: 'Vendor Verification', icon: CheckSquare, tab: 'verifications' },
+                { name: 'Store Approval', icon: ShieldCheck, tab: 'store-approvals' },
+                { name: 'Product Quality Review', icon: HelpCircle, tab: 'product-reviews' },
                 { name: 'Role & Permissions', icon: Key, tab: 'roles' }
               ].map((item, index) => {
                 const Icon = item.icon;

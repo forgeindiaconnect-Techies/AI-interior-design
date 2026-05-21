@@ -9,10 +9,12 @@ const {
   getTickets, 
   updateTicketStatus,
   getManagementData,
-  getAllKYC,
-  updateKYCStatus,
-  getAllDeposits,
-  verifyDepositStatus,
+  getAllVerifications,
+  updateVerificationStatus,
+  getAllStoreApprovals,
+  updateStoreApprovalStatus,
+  getAllPendingProducts,
+  updateProductReviewStatus,
   updateVendorActivation,
   reactivateUser,
   blockUser,
@@ -73,13 +75,17 @@ router.put('/manufacturers/:id/approve', approveManufacturer);
 router.put('/manufacturers/:id/suspend', suspendManufacturer);
 router.get('/manufacturers/:id/payments', getManufacturerPayments);
 
-// KYC Approval Routes
-router.get('/kyc', getAllKYC);
-router.put('/kyc/:id', updateKYCStatus);
+// Vendor Verification Routes
+router.get('/verifications', getAllVerifications);
+router.put('/verifications/:id', updateVerificationStatus);
 
-// Security Deposit Routes
-router.get('/deposits', getAllDeposits);
-router.put('/deposits/:id', verifyDepositStatus);
+// Store Approval Routes
+router.get('/store-approvals', getAllStoreApprovals);
+router.put('/store-approvals/:id', updateStoreApprovalStatus);
+
+// Product Quality Review Routes
+router.get('/product-reviews', getAllPendingProducts);
+router.put('/product-reviews/:id', updateProductReviewStatus);
 
 // Vendor Activation Control Route
 router.put('/vendor-activation/:id', updateVendorActivation);

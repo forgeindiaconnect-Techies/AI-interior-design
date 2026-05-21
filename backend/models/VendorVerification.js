@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const VendorKYCSchema = new mongoose.Schema({
+const VendorVerificationSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
   businessName: { type: String, required: true },
   ownerName: { type: String, required: true },
@@ -21,4 +21,4 @@ const VendorKYCSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('VendorKYC', VendorKYCSchema);
+module.exports = mongoose.model('VendorVerification', VendorVerificationSchema);

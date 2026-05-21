@@ -50,7 +50,7 @@ const RegisterPage = () => {
     const res = await register(userData);
     if (res.success) {
       if (finalRole === 'user' || finalRole === 'admin') {
-        navigate(finalRole === 'admin' ? '/dashboard/admin' : '/dashboard/user');
+        navigate(finalRole === 'admin' ? '/dashboard/admin' : '/dashboard/user', { state: { showSuccessPopup: true } });
       } else {
         setRegisteredRole(finalRole);
         setIsRegistered(true);
@@ -69,7 +69,7 @@ const RegisterPage = () => {
             <CheckCircle className="w-10 h-10 text-emerald-600" />
           </div>
           <h2 className="font-['Playfair_Display'] text-4xl font-extrabold text-[#1F2937]">Account Created Successfully!</h2>
-          <p className="mt-3 text-lg text-[#6B7280]">Welcome to ArtisanAI, {name}. Let's get your business online.</p>
+          <p className="mt-3 text-lg text-[#6B7280]">Welcome to ArtisanStudio, {name}. Let's get your business online.</p>
           
           <div className="mt-10 bg-white p-8 rounded-3xl shadow-xl border border-[#D4A373]/30 text-left">
             <h3 className="font-bold text-xl text-[#1F2937] mb-6 border-b border-gray-100 pb-4">Your Onboarding Roadmap</h3>
@@ -125,7 +125,7 @@ const RegisterPage = () => {
             <Palette className="w-7 h-7" />
           </div>
           <span className="font-['Playfair_Display'] font-bold text-3xl tracking-wide text-[#1F2937]">
-            Artisan<span className="text-[#8B5E3C]">AI</span>
+            Artisan<span className="text-[#8B5E3C]">Studio</span>
           </span>
         </Link>
         <h2 className="font-['Playfair_Display'] text-4xl font-extrabold text-[#1F2937]">

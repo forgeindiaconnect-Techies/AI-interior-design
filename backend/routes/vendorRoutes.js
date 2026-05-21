@@ -8,10 +8,10 @@ const {
   forwardToManufacturer,
   acceptRequest,
   rejectRequest,
-  getKYCStatus,
-  submitKYC,
-  getDepositStatus,
-  paySecurityDeposit
+  getVerificationStatus,
+  submitVerification,
+  getStoreSetupStatus,
+  submitStoreSetup
 } = require('../controllers/vendorController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -26,12 +26,12 @@ router.post('/quotations', sendQuotation);
 router.post('/suggest-vendor', suggestVendor);
 router.post('/forward-manufacturer', forwardToManufacturer);
 
-// KYC routes
-router.get('/kyc', getKYCStatus);
-router.post('/kyc', submitKYC);
+// Verification routes
+router.get('/verification', getVerificationStatus);
+router.post('/verification', submitVerification);
 
-// Deposit routes
-router.get('/deposit', getDepositStatus);
-router.post('/deposit', paySecurityDeposit);
+// Store Setup routes
+router.get('/store-setup', getStoreSetupStatus);
+router.post('/store-setup', submitStoreSetup);
 
 module.exports = router;

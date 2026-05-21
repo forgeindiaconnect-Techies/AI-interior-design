@@ -14,11 +14,11 @@ const VendorSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   accountActivationStatus: { 
     type: String, 
-    enum: ['Pending KYC', 'KYC Submitted', 'Deposit Pending', 'Under Review', 'Active', 'Rejected'], 
-    default: 'Pending KYC' 
+    enum: ['Pending Verification', 'Verification Submitted', 'Store Setup Pending', 'Under Review', 'Active', 'Rejected'], 
+    default: 'Pending Verification' 
   },
-  kycStatus: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected'], default: 'Pending' },
-  depositStatus: { type: String, enum: ['Pending', 'Paid', 'Verified', 'Failed'], default: 'Pending' },
+  verificationStatus: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected'], default: 'Pending' },
+  storeSetupStatus: { type: String, enum: ['Pending', 'Submitted', 'Approved', 'Rejected'], default: 'Pending' },
   isActive: { type: Boolean, default: false },
   serviceAreas: [{ type: String }],
   specialization: { 

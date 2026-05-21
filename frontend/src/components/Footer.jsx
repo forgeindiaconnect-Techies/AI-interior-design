@@ -11,7 +11,7 @@ const Footer = () => {
               <Palette className="w-6 h-6" />
             </div>
             <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-white">
-              Artisan<span className="text-[#D4A373]">AI</span>
+              Artisan<span className="text-[#D4A373]">Studio</span>
             </span>
           </div>
           <p className="text-gray-300 text-sm leading-relaxed">
@@ -42,7 +42,7 @@ const Footer = () => {
         <div>
           <h4 className="font-['Playfair_Display'] text-lg font-semibold mb-4 text-[#D4A373]">Contact & Legal</h4>
           <ul className="space-y-2 text-sm text-gray-300">
-            <li>support@artisanai.com</li>
+            <li>support@artisanstudio.com</li>
             <li>+1 (555) 123-4567</li>
             <li>Privacy Policy</li>
             <li>Terms of Service</li>
@@ -51,7 +51,7 @@ const Footer = () => {
       </div>
 
       <div className="max-w-7xl mx-auto pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between text-sm text-gray-400 gap-4">
-        <p>© 2026 ArtisanAI Platform. All rights reserved.</p>
+        <p>© 2026 ArtisanStudio Platform. All rights reserved.</p>
         <p className="flex items-center gap-1">
           <span>Crafted with</span>
           <Heart className="w-4 h-4 text-[#E76F51] fill-[#E76F51]" />

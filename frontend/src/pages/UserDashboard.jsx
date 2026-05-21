@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -10,6 +11,18 @@ import Marketplace from './Marketplace';
 
 const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const { user } = useAuth();
+
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (location.state?.showSuccessPopup) {
+      setShowSuccessPopup(true);
+      // Clear location state to prevent popup from showing again on refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   // AI Studio State
   const [roomType, setRoomType] = useState('Living Room');
@@ -1878,6 +1891,48 @@ const UserDashboard = ({ activeTab = 'overview', setActiveTab }) => {
                 <p className="text-xs text-gray-400 mt-1">Yesterday</p>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Account Creation Success Modal */}
+      {showSuccessPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <style>{`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes scaleIn {
+              from { opacity: 0; transform: scale(0.95); }
+              to { opacity: 1; transform: scale(1); }
+            }
+            .animate-fadeIn {
+              animation: fadeIn 0.3s ease-out forwards;
+            }
+            .animate-scaleIn {
+              animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            }
+          `}</style>
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-8 border border-[#D4A373]/30 shadow-2xl text-center animate-scaleIn">
+            <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border-4 border-white">
+              <CheckCircle className="w-10 h-10 text-emerald-600" />
+            </div>
+            
+            <h3 className="font-['Playfair_Display'] text-3xl font-extrabold text-[#1F2937] mb-3">
+              Account Created!
+            </h3>
+            
+            <p className="text-gray-600 text-sm mb-8 leading-relaxed">
+              Your account has been created successfully. Welcome to ArtisanStudio! Start exploring our AI room studio and artisan marketplace to transform your home.
+            </p>
+            
+            <button
+              onClick={() => setShowSuccessPopup(false)}
+              className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all duration-300 transform active:scale-[0.98]"
+            >
+              Get Started
+            </button>
           </div>
         </div>
       )}

@@ -31,6 +31,14 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
   const [transactions, setTransactions] = useState([]);
   const [paymentStats, setPaymentStats] = useState(null);
   const [commissionRate, setCommissionRate] = useState(15);
+  const [commRate, setCommRate] = useState(15);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [newUserReg, setNewUserReg] = useState(true);
+  const [aiFeature, setAiFeature] = useState(true);
+  const [marketplaceFeature, setMarketplaceFeature] = useState(true);
+  const [manualReqFeature, setManualReqFeature] = useState(true);
+  const [minOrderValue, setMinOrderValue] = useState(500);
+  const [savedMsg, setSavedMsg] = useState('');
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [transactionSearch, setTransactionSearch] = useState('');
   const [transactionFilterType, setTransactionFilterType] = useState('all');
@@ -5651,15 +5659,6 @@ const AdminDashboard = ({ activeTab = 'overview', setActiveTab }) => {
 
       {/* TAB: PLATFORM SETTINGS */}
       {activeTab === 'platform_settings' && (() => {
-        const [commRate, setCommRate] = React.useState(commissionRate || 15);
-        const [maintenanceMode, setMaintenanceMode] = React.useState(false);
-        const [newUserReg, setNewUserReg] = React.useState(true);
-        const [aiFeature, setAiFeature] = React.useState(true);
-        const [marketplaceFeature, setMarketplaceFeature] = React.useState(true);
-        const [manualReqFeature, setManualReqFeature] = React.useState(true);
-        const [minOrderValue, setMinOrderValue] = React.useState(500);
-        const [savedMsg, setSavedMsg] = React.useState('');
-
         const handleSaveSettings = () => {
           setCommissionRate(commRate);
           setSavedMsg('✅ Settings saved successfully!');

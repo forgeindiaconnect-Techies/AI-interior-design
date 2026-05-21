@@ -41,7 +41,7 @@ const LoginPage = () => {
             <Palette className="w-7 h-7" />
           </div>
           <span className="font-['Playfair_Display'] font-bold text-3xl tracking-wide text-[#1F2937]">
-            Artisan<span className="text-[#8B5E3C]">AI</span>
+            Artisan<span className="text-[#8B5E3C]">Studio</span>
           </span>
         </Link>
         <h2 className="font-['Playfair_Display'] text-4xl font-extrabold text-[#1F2937]">

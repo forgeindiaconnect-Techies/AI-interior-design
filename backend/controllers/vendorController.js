@@ -6,12 +6,11 @@ const ManufacturingOrder = require('../models/ManufacturingOrder');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const { mockManualDesigns } = require('./designController');
-const VendorKYC = require('../models/VendorKYC');
-const SecurityDeposit = require('../models/SecurityDeposit');
+const VendorVerification = require('../models/VendorVerification');
 
 // In-memory mock states for Demo Mode
-let mockKYC = {};
-let mockDeposit = {};
+let mockVerification = {};
+let mockStoreSetup = {};
 
 // @desc    Get vendor profile & stats
 // @route   GET /api/vendor/profile
@@ -203,108 +202,112 @@ exports.rejectRequest = async (req, res) => {
   }
 };
 
-// @desc    Submit KYC details
-// @route   POST /api/vendor/kyc
+// @desc    Submit Business Verification details
+// @route   POST /api/vendor/verification
 // @access  Private (Vendor)
-exports.submitKYC = async (req, res) => {
+exports.submitVerification = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      mockKYC[req.user.id] = { ...req.body, status: 'Pending', submittedAt: new Date() };
-      return res.status(201).json({ success: true, message: 'KYC submitted successfully', data: mockKYC[req.user.id] });
+      mockVerification[req.user.id] = { ...req.body, status: 'Pending', submittedAt: new Date() };
+      return res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: mockVerification[req.user.id] });
     }
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
-    let kyc = await VendorKYC.findOne({ vendorId: vendor._id });
-    if (kyc) {
-      Object.assign(kyc, req.body);
-      kyc.status = 'Pending';
-      await kyc.save();
+    let verification = await VendorVerification.findOne({ vendorId: vendor._id });
+    if (verification) {
+      Object.assign(verification, req.body);
+      verification.status = 'Pending';
+      await verification.save();
     } else {
-      kyc = await VendorKYC.create({ vendorId: vendor._id, ...req.body, status: 'Pending' });
+      verification = await VendorVerification.create({ vendorId: vendor._id, ...req.body, status: 'Pending' });
     }
 
-    vendor.kycStatus = 'Submitted';
+    vendor.verificationStatus = 'Submitted';
+    vendor.accountActivationStatus = 'Verification Submitted';
     await vendor.save();
 
-    await Notification.create({ isAdmin: true, message: `Vendor ${vendor.companyName} submitted KYC for review.` });
+    await Notification.create({ isAdmin: true, message: `Vendor ${vendor.companyName} submitted business verification details.` });
 
-    res.status(201).json({ success: true, message: 'KYC submitted successfully', data: kyc });
+    res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: verification });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Get KYC status
-// @route   GET /api/vendor/kyc
+// @desc    Get Business Verification status
+// @route   GET /api/vendor/verification
 // @access  Private (Vendor)
-exports.getKYCStatus = async (req, res) => {
+exports.getVerificationStatus = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: mockKYC[req.user.id] || { status: 'Not Submitted' } });
+      return res.status(200).json({ success: true, data: mockVerification[req.user.id] || { status: 'Not Submitted' } });
     }
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
-    const kyc = await VendorKYC.findOne({ vendorId: vendor._id });
-    res.status(200).json({ success: true, data: kyc || { status: 'Not Submitted' } });
+    const verification = await VendorVerification.findOne({ vendorId: vendor._id });
+    res.status(200).json({ success: true, data: verification || { status: 'Not Submitted' } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Pay Security Deposit
-// @route   POST /api/vendor/deposit
+// @desc    Submit Store/Profile Setup details
+// @route   POST /api/vendor/store-setup
 // @access  Private (Vendor)
-exports.paySecurityDeposit = async (req, res) => {
+exports.submitStoreSetup = async (req, res) => {
   try {
-    const { transactionId } = req.body;
-    
+    const { description, specialization, monthlyCapacity, serviceAreas } = req.body;
+
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      mockDeposit[req.user.id] = { amount: 25000, transactionId, paymentStatus: 'Paid', paymentDate: new Date() };
-      return res.status(201).json({ success: true, message: 'Deposit payment submitted', data: mockDeposit[req.user.id] });
+      mockStoreSetup[req.user.id] = { description, specialization, monthlyCapacity, serviceAreas, status: 'Submitted', submittedAt: new Date() };
+      return res.status(201).json({ success: true, message: 'Store Setup details submitted successfully', data: mockStoreSetup[req.user.id] });
     }
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
-    let deposit = await SecurityDeposit.findOne({ vendorId: vendor._id });
-    if (deposit) {
-      deposit.transactionId = transactionId;
-      deposit.paymentStatus = 'Paid';
-      deposit.paymentDate = new Date();
-      await deposit.save();
-    } else {
-      deposit = await SecurityDeposit.create({ vendorId: vendor._id, transactionId, paymentStatus: 'Paid', paymentDate: new Date() });
-    }
-
-    vendor.depositStatus = 'Paid';
+    vendor.description = description || vendor.description;
+    vendor.specialization = specialization || vendor.specialization;
+    vendor.monthlyCapacity = monthlyCapacity || vendor.monthlyCapacity;
+    vendor.serviceAreas = serviceAreas || vendor.serviceAreas;
+    vendor.storeSetupStatus = 'Submitted';
+    vendor.accountActivationStatus = 'Under Review';
     await vendor.save();
 
-    await Notification.create({ isAdmin: true, message: `Vendor ${vendor.companyName} paid the security deposit.` });
+    await Notification.create({ isAdmin: true, message: `Vendor ${vendor.companyName} submitted store setup details for approval.` });
 
-    res.status(201).json({ success: true, message: 'Deposit payment submitted', data: deposit });
+    res.status(201).json({ success: true, message: 'Store Setup details submitted successfully', data: vendor });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Get Security Deposit status
-// @route   GET /api/vendor/deposit
+// @desc    Get Store/Profile Setup status
+// @route   GET /api/vendor/store-setup
 // @access  Private (Vendor)
-exports.getDepositStatus = async (req, res) => {
+exports.getStoreSetupStatus = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: mockDeposit[req.user.id] || { paymentStatus: 'Pending' } });
+      return res.status(200).json({ success: true, data: mockStoreSetup[req.user.id] || { status: 'Pending' } });
     }
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
-    const deposit = await SecurityDeposit.findOne({ vendorId: vendor._id });
-    res.status(200).json({ success: true, data: deposit || { paymentStatus: 'Pending' } });
+    res.status(200).json({ 
+      success: true, 
+      data: { 
+        status: vendor.storeSetupStatus || 'Pending', 
+        description: vendor.description, 
+        specialization: vendor.specialization, 
+        monthlyCapacity: vendor.monthlyCapacity, 
+        serviceAreas: vendor.serviceAreas 
+      } 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
