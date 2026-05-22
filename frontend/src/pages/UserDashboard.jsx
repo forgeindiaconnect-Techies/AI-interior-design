@@ -308,6 +308,7 @@ const UserDashboard = ({
         const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
         const aiCustomRequest = {
           _id: 'man_from_ai_' + updatedDesign._id,
+          requestType: 'AI Generated',
           userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
           roomType: updatedDesign.roomType || 'Living Room',
           style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
@@ -326,7 +327,9 @@ const UserDashboard = ({
           createdAt: new Date().toISOString()
         };
         if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
-          localStorage.setItem('mockManualRequests', JSON.stringify([aiCustomRequest, ...localRequests]));
+          const updatedManuals = [aiCustomRequest, ...localRequests];
+          localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
+          setManualDesigns(updatedManuals);
         }
         
         const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');

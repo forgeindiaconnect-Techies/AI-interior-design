@@ -630,7 +630,7 @@ const VendorDashboard = ({
     }
   }, [selectedOrder]);
 
-  // Live-refresh ready-made marketplace orders whenever vendor switches to the orders tab
+  // Live-refresh ready-made marketplace orders, custom requests and manufacturing orders whenever vendor switches tabs
   useEffect(() => {
     if (activeTab === 'orders') {
       const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -638,6 +638,26 @@ const VendorDashboard = ({
       if (mktOrders.length > 0) {
         setReadyMadeOrders(mktOrders);
       }
+    }
+    if (activeTab === 'custom_requests') {
+      const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      setCustomRequests(localManualRequests);
+    }
+    if (activeTab === 'manufacturing') {
+      const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const mfgOrders = freshOrders
+        .filter(o => o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .map(o => ({
+          _id: o._id,
+          orderId: o._id,
+          designDetails: o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+          measurements: o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+          materials: 'Wood, Premium Fabrics',
+          budget: o.totalAmount,
+          status: o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' ? 'Production Started' : o.orderStatus,
+          progressImages: o.progressImages || []
+        }));
+      setManufacturingOrders(mfgOrders);
     }
   }, [activeTab]);
 
@@ -1919,7 +1939,7 @@ const VendorDashboard = ({
 
           {/* Filters Row */}
           <div className="flex flex-wrap gap-3 pb-2">
-            {['All', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
+            {['All', 'AI Generated', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
               <button
                 key={filt}
                 onClick={() => setCustomRequestFilter(filt)}
@@ -1945,8 +1965,11 @@ const VendorDashboard = ({
               {(() => {
                 const filtered = customRequests.filter(req => {
                   if (customRequestFilter === 'All') return true;
+                  if (customRequestFilter === 'AI Generated') {
+                    return req.requestType === 'AI Generated' || req.style?.startsWith('AI Generated');
+                  }
                   if (customRequestFilter === 'Manual Design') {
-                    return req.requestType === 'Manual Design' || (!req.requestType && req.roomType !== 'Interior Design' && req.style !== 'Consultation' && req.style !== 'AI Generated');
+                    return req.requestType === 'Manual Design' || (!req.requestType && req.roomType !== 'Interior Design' && req.style !== 'Consultation' && !req.style?.startsWith('AI Generated'));
                   }
                   if (customRequestFilter === 'Interior Designer Help') {
                     return req.requestType === 'Interior Designer Help' || (req.roomType === 'Interior Design' && req.style === 'Consultation');
@@ -1985,8 +2008,12 @@ const VendorDashboard = ({
                             {/* Request Type Badge */}
                             {(() => {
                               const reqType = req.requestType || 
-                                ((req.roomType === 'Interior Design' && req.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
-                              const badgeColor = reqType === 'Interior Designer Help' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200';
+                                ((req.roomType === 'Interior Design' && req.style === 'Consultation') ? 'Interior Designer Help' : (req.style?.startsWith('AI Generated') ? 'AI Generated' : 'Manual Design'));
+                              const badgeColor = reqType === 'Interior Designer Help' 
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                                : reqType === 'AI Generated'
+                                  ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                  : 'bg-amber-50 text-amber-700 border-amber-200';
                               return (
                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border ${badgeColor}`}>
                                   Request Type: {reqType}

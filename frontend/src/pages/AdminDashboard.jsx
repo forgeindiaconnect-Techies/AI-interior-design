@@ -511,6 +511,15 @@ const AdminDashboard = ({
       });
       mockMgmtData.designerRequests = finalDesignerRequests;
 
+      const localAiDesigns = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const finalAiDesigns = [...localAiDesigns];
+      (mockMgmtData.aiDesigns || []).forEach(bd => {
+        if (!finalAiDesigns.find(ld => ld._id === bd._id)) {
+          finalAiDesigns.push(bd);
+        }
+      });
+      mockMgmtData.aiDesigns = finalAiDesigns;
+
       setManagementData(mockMgmtData);
 
       // Fetch Verification, Store Setup & Product Quality Review Data
@@ -869,7 +878,7 @@ const AdminDashboard = ({
       fetchSubAdmins();
     }
     // Live-refresh orders from localStorage whenever admin switches to orders-related tabs
-    if (activeTab === 'orders' || activeTab === 'manual' || activeTab === 'ai-designs') {
+    if (activeTab === 'orders' || activeTab === 'manual_designs' || activeTab === 'ai_designs') {
       if (managementData) {
         const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
         const existingOrders = managementData.orders || [];
@@ -889,7 +898,16 @@ const AdminDashboard = ({
           }
         });
 
-        setManagementData(prev => prev ? { ...prev, orders: merged, manualDesigns: mergedManual } : prev);
+        const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+        const existingAi = managementData.aiDesigns || [];
+        const mergedAi = [...localAi];
+        existingAi.forEach(ea => {
+          if (!mergedAi.find(la => la._id === ea._id)) {
+            mergedAi.push(ea);
+          }
+        });
+
+        setManagementData(prev => prev ? { ...prev, orders: merged, manualDesigns: mergedManual, aiDesigns: mergedAi } : prev);
       }
     }
   }, [activeTab]);
@@ -1449,7 +1467,29 @@ const AdminDashboard = ({
       setSelectedAIDesignVendorId('');
       fetchAdminData();
     } catch (error) {
-      alert(error.response?.data?.message || 'Error assigning vendor');
+      // offline fallback
+      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const updatedAi = localAi.map(d => d._id === assignVendorAIDesign._id ? {
+        ...d,
+        assignedVendor: { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' }
+      } : d);
+      localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+
+      // Update state immediately
+      setManagementData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          aiDesigns: (prev.aiDesigns || []).map(d => d._id === assignVendorAIDesign._id ? {
+            ...d,
+            assignedVendor: { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' }
+          } : d)
+        };
+      });
+
+      alert('✅ Vendor assigned to AI design request successfully! (Offline mode)');
+      setAssignVendorAIDesign(null);
+      setSelectedAIDesignVendorId('');
     }
   };
 
@@ -1466,7 +1506,51 @@ const AdminDashboard = ({
       setSelectedAIDesignManufacturerId('');
       fetchAdminData();
     } catch (error) {
-      alert(error.response?.data?.message || 'Error converting AI request to order');
+      // offline fallback
+      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const updatedAi = localAi.map(d => d._id === convertOrderAIDesign._id ? {
+        ...d,
+        orderStatus: 'Pending Manufacturing',
+        assignedVendor: d.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+      } : d);
+      localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+
+      const newOrder = {
+        _id: 'ord_ai_' + Date.now(),
+        orderType: 'AI Generated',
+        userId: convertOrderAIDesign.userId || { _id: 'u_local', name: 'Customer Demo', email: 'user@example.com' },
+        vendorId: convertOrderAIDesign.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+        manufacturerId: { _id: selectedAIDesignManufacturerId, companyName: 'Assigned Manufacturer' },
+        deliveryPartnerId: null,
+        installationPartnerId: null,
+        totalAmount: convertOrderAIDesign.aiSuggestion?.budgetEstimate || 3000,
+        paymentStatus: 'paid',
+        orderStatus: 'Production Started',
+        expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
+        createdAt: new Date().toISOString(),
+        designRequestId: convertOrderAIDesign._id
+      };
+
+      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      localStorage.setItem('mockOrders', JSON.stringify([newOrder, ...localOrders]));
+
+      // Update state immediately
+      setManagementData(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          aiDesigns: (prev.aiDesigns || []).map(d => d._id === convertOrderAIDesign._id ? {
+            ...d,
+            orderStatus: 'Pending Manufacturing',
+            assignedVendor: d.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+          } : d),
+          orders: [newOrder, ...localOrders]
+        };
+      });
+
+      alert('🎉 Success! AI Design converted to custom order and dispatched to manufacturer! (Offline mode)');
+      setConvertOrderAIDesign(null);
+      setSelectedAIDesignManufacturerId('');
     }
   };
 
@@ -3336,10 +3420,12 @@ const AdminDashboard = ({
 
           let matchesRequestType = true;
           const reqType = d.requestType || 
-            ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
+            ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : (d.style?.startsWith('AI Generated') ? 'AI Generated' : 'Manual Design'));
 
           if (manualRequestFilter === 'Manual Design') {
             matchesRequestType = reqType === 'Manual Design';
+          } else if (manualRequestFilter === 'AI Generated') {
+            matchesRequestType = reqType === 'AI Generated';
           } else if (manualRequestFilter === 'Interior Designer Help') {
             matchesRequestType = reqType === 'Interior Designer Help';
           } else if (manualRequestFilter === 'Own Materials') {
@@ -3416,7 +3502,7 @@ const AdminDashboard = ({
             <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm space-y-4">
               {/* Type Filter Buttons */}
               <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
-                {['All', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
+                {['All', 'AI Generated', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
                   <button
                     key={filt}
                     onClick={() => setManualRequestFilter(filt)}
