@@ -212,15 +212,17 @@ const VendorDashboard = ({
       }
       setProducts(localProducts);
 
+      let vendorId = localProfile?._id || 'mock_vendor_id_123';
+
       // 5. Custom Requests
       let localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      setCustomRequests(localManualRequests);
+      const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
+      setCustomRequests(assignedRequests);
 
       // 6. Orders (Manufacturing and Delivery)
       let localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
       
       // Let's filter or seed ready-made marketplace orders specifically for this vendor
-      let vendorId = localProfile?._id || 'mock_vendor_id_123';
       let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
       
       if (mktOrders.length === 0) {
@@ -641,7 +643,9 @@ const VendorDashboard = ({
     }
     if (activeTab === 'custom_requests') {
       const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      setCustomRequests(localManualRequests);
+      const vendorId = localProfile?._id || 'mock_vendor_id_123';
+      const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
+      setCustomRequests(assignedRequests);
     }
     if (activeTab === 'manufacturing') {
       const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -860,7 +864,7 @@ const VendorDashboard = ({
 
   // Manufacturer Actions
   const handleMfgUpdate = async (id) => {
-    const updatedStatus = mfgStatus[id] || 'Production Started';
+    const updatedStatus = mfgStatus[id] || 'Pending';
     const newProgressImage = progressImg[id] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60';
 
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -888,12 +892,29 @@ const VendorDashboard = ({
       return o;
     }));
 
+    // Send customer notification
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    let userMessage = `Order status update: ${updatedStatus} for your custom furniture.`;
+    if (updatedStatus === 'In Production') {
+      userMessage = `Order update: Production has started for your custom furniture.`;
+    } else if (updatedStatus === 'Completed') {
+      userMessage = `Order update: Manufacturing completed for your custom furniture.`;
+    } else if (updatedStatus === 'Ready for Delivery') {
+      userMessage = `Order update: Your order is ready for delivery.`;
+    }
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: userMessage,
+      type: 'info',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+
     alert('Manufacturing stage updated successfully!');
   };
 
   // Delivery Actions
   const handleDelUpdate = async (id) => {
-    const updatedStatus = delStatus[id] || 'Shipped';
+    const updatedStatus = delStatus[id] || 'Picked Up';
     const updatedNote = trackingNote[id] || 'In transit';
 
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -919,6 +940,23 @@ const VendorDashboard = ({
       }
       return o;
     }));
+
+    // Send customer notification
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    let userMessage = `Delivery update: ${updatedStatus}. Notes: ${updatedNote}`;
+    if (updatedStatus === 'Delivered') {
+      userMessage = `Delivery update: Your order has been delivered successfully!`;
+    } else if (updatedStatus === 'Installation Scheduled') {
+      userMessage = `Installation Scheduled: Technician will visit on ${new Date(Date.now() + 3600000 * 24 * 2).toLocaleDateString()}.`;
+    } else if (updatedStatus === 'Completed') {
+      userMessage = `Order update: Installation completed successfully!`;
+    }
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: userMessage,
+      type: 'info',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
 
     alert('Delivery status updated successfully!');
   };
@@ -2260,11 +2298,9 @@ const VendorDashboard = ({
                 <h4 className="font-bold text-sm text-[#1F2937]">Update Manufacturing Stage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={mfgStatus[mfg._id] || mfg.status} onChange={(e) => setMfgStatus({ ...mfgStatus, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
-                    <option value="Accepted">Accepted</option>
-                    <option value="Material Checking">Material Checking</option>
-                    <option value="Production Started">Production Started</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Quality Check">Quality Check</option>
+                    <option value="Pending">Pending</option>
+                    <option value="In Production">In Production</option>
+                    <option value="Completed">Completed</option>
                     <option value="Ready for Delivery">Ready for Delivery</option>
                   </select>
                   <input type="text" placeholder="Progress Image URL" value={progressImg[mfg._id] || ''} onChange={(e) => setProgressImg({ ...progressImg, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
@@ -2296,6 +2332,8 @@ const VendorDashboard = ({
                     <option value="Picked Up">Picked Up</option>
                     <option value="Out for Delivery">Out for Delivery</option>
                     <option value="Delivered">Delivered</option>
+                    <option value="Installation Scheduled">Installation Scheduled</option>
+                    <option value="Completed">Completed</option>
                   </select>
                   <input type="text" placeholder="Tracking Notes" value={trackingNote[del._id] || ''} onChange={(e) => setTrackingNote({ ...trackingNote, [del._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                   <button onClick={() => handleDelUpdate(del._id)} className="bg-[#2A9D8F] text-white rounded-xl font-bold text-sm shadow-md">Update Status</button>

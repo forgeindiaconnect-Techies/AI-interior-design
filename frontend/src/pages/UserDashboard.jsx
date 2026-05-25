@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
-  HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle
+  HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText
 } from 'lucide-react';
 import Marketplace from './Marketplace';
 
@@ -69,6 +69,7 @@ const UserDashboard = ({
   const [orders, setOrders] = useState([]);
   const [pendingPaid, setPendingPaid] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+  const [viewingQuotation, setViewingQuotation] = useState(null);
 
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
@@ -324,6 +325,7 @@ const UserDashboard = ({
           requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
           referenceImages: [updatedDesign.generatedImage],
           status: 'Submitted',
+          assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
           createdAt: new Date().toISOString()
         };
         if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
@@ -555,8 +557,58 @@ const UserDashboard = ({
       setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Quotation Accepted' } : r));
     }
 
+    // Real-time notifications simulation helper
+    const triggerNotif = (recipient, message, type = 'success') => {
+      const notifObj = {
+        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        message,
+        type,
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+    };
+
+    triggerNotif('user', 'Payment success! Order confirmed and moved to production.', 'success');
+    triggerNotif('vendor', `Quotation approved by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'info');
+    triggerNotif('admin', `Payment success for order: ${newOrder._id.slice(-6)}.`, 'success');
+
     alert('Quotation approved! Order confirmed and moved to manufacturing.');
     if (setActiveTab) setActiveTab('orders');
+  };
+
+  const handleBudgetRejection = async (quotationId) => {
+    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const reqIndex = localRequests.findIndex(r => r._id === quotationId);
+    let requestObj = null;
+    if (reqIndex !== -1) {
+      localRequests[reqIndex].status = 'Quotation Rejected';
+      localStorage.setItem('mockManualRequests', JSON.stringify(localRequests));
+      requestObj = localRequests[reqIndex];
+    }
+    
+    if (requestObj) {
+      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Quotation Rejected' } : r));
+    }
+
+    const triggerNotif = (recipient, message, type = 'warning') => {
+      const notifObj = {
+        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        message,
+        type,
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+    };
+
+    triggerNotif('vendor', `Quotation rejected by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'warning');
+    
+    alert('Quotation rejected successfully.');
   };
 
   // Support Ticket Action
@@ -1370,31 +1422,6 @@ const UserDashboard = ({
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Your Orders</h2>
 
-          {/* Quotations Approval Box — DYNAMIC from manualDesigns with Quotation Sent status */}
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-1 h-full bg-[#E9C46A]"></div>
-            <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider mb-2">Pending Vendor Quotations (Action Required)</h3>
-            {manualDesigns.filter(d => d.status === 'Quotation Sent').length === 0 ? (
-              <div className="p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30 text-center">
-                <p className="text-sm text-gray-400 font-medium">No pending quotations. Submit a custom design request to receive vendor quotes.</p>
-              </div>
-            ) : (
-              manualDesigns.filter(d => d.status === 'Quotation Sent').map((req) => (
-                <div key={req._id} className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30">
-                  <div className="space-y-2">
-                    <span className="bg-[#D4A373]/20 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold">{req.requestType || 'Manual Design Quotation'}</span>
-                    <h4 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{req.roomType} — {req.style}</h4>
-                    <p className="text-xs text-[#6B7280]">Materials: {req.quotationMaterials || req.materials || 'Custom'} • Est. Time: {req.quotationTime || req.timeline || 'Flexible'}</p>
-                  </div>
-                  <div className="flex items-center gap-6">
-                    <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${req.quotationAmount || 0}</span>
-                    <button onClick={() => handleBudgetApproval(req._id)} className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Approve Budget</button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-
           {/* Marketplace Orders — with product thumbnail, name and status badge */}
           {orders.filter(o => o.orderType === 'Marketplace Product').length > 0 && (
             <div className="space-y-4">
@@ -1500,6 +1527,143 @@ const UserDashboard = ({
         </div>
       )}
 
+      {/* TAB: QUOTATIONS WORKFLOW */}
+      {activeTab === 'quotations' && (
+        <div className="space-y-8 animate-fadeIn">
+          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Vendor & Designer Quotations</h2>
+              <p className="text-xs text-gray-500 mt-1 font-semibold">Review custom quotes, materials, and delivery timelines sent by our registered professionals.</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-6">
+            {manualDesigns.filter(d => ['Quotation Sent', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).length === 0 ? (
+              <div className="bg-white p-16 rounded-3xl border border-[#D4A373]/30 text-center space-y-4">
+                <FileText className="w-16 h-16 text-[#D4A373]/40 mx-auto" />
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">No Quotations Yet</h3>
+                <p className="text-sm text-gray-400 max-w-sm mx-auto">When vendors or designers submit quotations for your custom projects, they will show up here for your approval.</p>
+                <button onClick={() => setActiveTab('manual')} className="px-6 py-3 bg-[#8B5E3C] text-white rounded-xl font-bold text-xs shadow-md">Create Custom Request</button>
+              </div>
+            ) : (
+              manualDesigns.filter(d => ['Quotation Sent', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).map((req) => {
+                const statusColors = {
+                  'Quotation Sent': 'bg-amber-50 text-amber-700 border-amber-200',
+                  'Quotation Accepted': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                  'Quotation Rejected': 'bg-red-50 text-red-700 border-red-200'
+                };
+                const badgeClass = statusColors[req.status] || 'bg-gray-50 text-gray-700 border-gray-200';
+                
+                return (
+                  <div key={req._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 hover:shadow-md transition-all space-y-6">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">{req.requestType || 'Manual Design'}</span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${badgeClass}`}>{req.status}</span>
+                        </div>
+                        <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">{req.roomType} — {req.style}</h3>
+                        <p className="text-xs text-gray-400">Request ID: #{req._id.slice(-6)} • Submitted: {new Date(req.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C] block">${req.quotationAmount || '0'}</span>
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Budget Proposal</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Proposed Materials</span>
+                        <p className="font-bold text-gray-700">{req.quotationMaterials || req.materials || 'Standard Premium Wood & Fabric'}</p>
+                      </div>
+                      <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Time to Complete</span>
+                        <p className="font-bold text-gray-700">{req.quotationTime || req.timeline || '14-21 Days'}</p>
+                      </div>
+                      <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Assigned Vendor / Partner</span>
+                        <p className="font-bold text-gray-700">{req.assignedVendorId?.companyName || req.assignedDesignerId?.companyName || 'Artisan Workshop'}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap justify-between items-center gap-4 pt-2">
+                      <button onClick={() => setViewingQuotation(req)} className="text-xs font-bold text-[#8B5E3C] hover:underline flex items-center gap-1.5">
+                        <Eye className="w-4 h-4" /> View Full Specifications
+                      </button>
+                      
+                      {req.status === 'Quotation Sent' && (
+                        <div className="flex gap-3">
+                          <button onClick={() => handleBudgetRejection(req._id)} className="px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs shadow-sm transition-all border border-red-200">
+                            Reject Quote
+                          </button>
+                          <button onClick={() => handleBudgetApproval(req._id)} className="px-5 py-2.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                            <Check className="w-4 h-4" /> Accept & Pay
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Quotation Specification Detail Modal */}
+      {viewingQuotation && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white max-w-xl w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+            <div className="bg-[#8B5E3C] p-6 text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4A373]">Specification Sheet</span>
+                <h3 className="font-['Playfair_Display'] font-bold text-2xl mt-0.5">{viewingQuotation.roomType} — {viewingQuotation.style}</h3>
+              </div>
+              <button onClick={() => setViewingQuotation(null)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
+            </div>
+            <div className="p-8 space-y-6 text-left max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4 text-xs">
+                <div>
+                  <strong className="text-gray-400 font-bold uppercase block">Original Budget</strong>
+                  <p className="font-bold text-[#1F2937] text-sm mt-0.5">{viewingQuotation.budget}</p>
+                </div>
+                <div>
+                  <strong className="text-gray-400 font-bold uppercase block">Quoted Price</strong>
+                  <p className="font-bold text-[#8B5E3C] text-lg mt-0.5">${viewingQuotation.quotationAmount}</p>
+                </div>
+                <div>
+                  <strong className="text-gray-400 font-bold uppercase block">Estimated Delivery</strong>
+                  <p className="font-bold text-[#1F2937] text-sm mt-0.5">{viewingQuotation.quotationTime || viewingQuotation.timeline}</p>
+                </div>
+                <div>
+                  <strong className="text-gray-400 font-bold uppercase block">Materials Assigned</strong>
+                  <p className="font-bold text-[#1F2937] text-sm mt-0.5">{viewingQuotation.quotationMaterials || viewingQuotation.materials}</p>
+                </div>
+              </div>
+              
+              <div className="border-t border-gray-100 pt-4 space-y-2 text-xs">
+                <strong className="text-gray-400 font-bold uppercase block">Client Requirements & Notes</strong>
+                <p className="text-gray-600 bg-gray-50 p-4 rounded-xl leading-relaxed">{viewingQuotation.requirements || 'No special requirements provided.'}</p>
+              </div>
+
+              {viewingQuotation.quotationNotes && (
+                <div className="border-t border-gray-100 pt-4 space-y-2 text-xs">
+                  <strong className="text-gray-400 font-bold uppercase block">Vendor Explanation</strong>
+                  <p className="text-gray-600 bg-amber-50/40 p-4 rounded-xl border border-amber-100/50 leading-relaxed">{viewingQuotation.quotationNotes}</p>
+                </div>
+              )}
+
+              {viewingQuotation.status === 'Quotation Sent' && (
+                <div className="flex gap-4 pt-4 border-t border-gray-150">
+                  <button onClick={() => { handleBudgetRejection(viewingQuotation._id); setViewingQuotation(null); }} className="flex-1 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs shadow-sm transition-all border border-red-200">Reject Quotation</button>
+                  <button onClick={() => { handleBudgetApproval(viewingQuotation._id); setViewingQuotation(null); }} className="flex-1 py-3.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"><Check className="w-4 h-4" /> Accept & Confirm Pay</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB 8: ORDER TRACKING */}
       {activeTab === 'tracking' && (() => {
         const trackingId = localStorage.getItem('activeTrackingOrderId');
@@ -1517,24 +1681,26 @@ const UserDashboard = ({
           );
         }
 
-        const status = activeOrder.orderStatus || 'Pending Confirmation';
+        const status = activeOrder.orderStatus || 'Pending';
         const expectedDate = activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase';
         
         // Dynamic status descriptions
         const getStatusMessage = () => {
           switch (status) {
+            case 'Pending':
             case 'Pending Confirmation':
-              return { title: 'Awaiting Confirmation', desc: 'The vendor is currently checking stock availability for your order.' };
+              return { title: 'Pending Confirmation', desc: 'The order is awaiting vendor confirmation.' };
             case 'Processing':
               return { title: 'Processing Order', desc: 'Your order has been confirmed by the vendor and is currently in production/packaging.' };
-            case 'Pending Dispatch':
-              return { title: 'Packed & Awaiting Dispatch', desc: 'Your product has been packed and is awaiting pickup by the logistics provider.' };
-            case 'Dispatched':
-              return { title: 'Dispatched & In Transit', desc: `Your package is in transit via ${activeOrder.deliveryPartnerId?.companyName || 'our delivery partner'}. Tracking ID: ${activeOrder.trackingId || 'N/A'}` };
-            case 'Out For Delivery':
-              return { title: 'Out for Delivery', desc: 'Your package is out for delivery with the local courier. Prepare to receive it today!' };
+            case 'Manufacturing':
+            case 'In Production':
+              return { title: 'Manufacturing Progressing', desc: 'The vendor has started production of your custom design.' };
+            case 'Ready for Delivery':
+              return { title: 'Ready for Delivery', desc: 'Your custom design is manufactured and ready for delivery dispatch.' };
             case 'Delivered':
               return { title: 'Delivered', desc: 'Your order has been successfully delivered. Please confirm receipt and request installation if needed.' };
+            case 'Installation Scheduled':
+              return { title: 'Installation Scheduled', desc: 'An installation technician is scheduled to set up your design.' };
             case 'Completed':
               return { title: 'Completed', desc: 'The order lifecycle is completed. We hope you enjoy your purchase!' };
             case 'Cancelled':
@@ -1546,15 +1712,15 @@ const UserDashboard = ({
 
         const currentMsg = getStatusMessage();
 
-        // 7 Stages
+        // Exactly 7 Stages requested: Pending, Processing, Manufacturing, Ready for Delivery, Delivered, Installation Scheduled, Completed
         const stagesList = [
-          { key: 'Pending Confirmation', label: 'Placed', isDone: true },
-          { key: 'Processing', label: 'Accepted', isDone: ['Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
-          { key: 'Pending Dispatch', label: 'Packed', isDone: ['Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
-          { key: 'Dispatched', label: 'Dispatched', isDone: ['Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(status) },
-          { key: 'Out For Delivery', label: 'Out For Delivery', isDone: ['Out For Delivery', 'Delivered', 'Completed'].includes(status) },
-          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Completed'].includes(status) },
-          { key: 'Completed', label: activeOrder.installationRequired ? 'Installation Done' : 'Completed', isDone: status === 'Completed' }
+          { key: 'Pending', label: 'Pending', isDone: true },
+          { key: 'Processing', label: 'Processing', isDone: ['Processing', 'In Progress', 'Manufacturing', 'In Production', 'Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
+          { key: 'Manufacturing', label: 'Manufacturing', isDone: ['Manufacturing', 'In Production', 'Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
+          { key: 'Ready for Delivery', label: 'Ready for Delivery', isDone: ['Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
+          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
+          { key: 'Installation Scheduled', label: 'Installation Scheduled', isDone: ['Installation Scheduled', 'Completed'].includes(status) },
+          { key: 'Completed', label: 'Completed', isDone: status === 'Completed' }
         ];
 
         const handleReturnRequest = (e) => {
@@ -1853,23 +2019,22 @@ const UserDashboard = ({
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Saved Designs & Inspirations</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Mock Saved Item */}
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/20 group relative">
-              <img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500" alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-              <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700"><Bookmark className="w-5 h-5 fill-current" /></button>
-              <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
-                <p className="font-bold text-lg">Boho Living Room</p>
-                <p className="text-xs opacity-80">AI Generated</p>
+            {aiDesigns.filter(d => d.status === 'accepted').length === 0 ? (
+              <div className="col-span-full py-8 text-center text-gray-400 font-medium">
+                No saved designs yet. Accept an AI design to save it here.
               </div>
-            </div>
-            <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/20 group relative">
-              <img src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500" alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-              <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700"><Bookmark className="w-5 h-5 fill-current" /></button>
-              <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
-                <p className="font-bold text-lg">Velvet Lounge Chair</p>
-                <p className="text-xs opacity-80">Marketplace Product</p>
-              </div>
-            </div>
+            ) : (
+              aiDesigns.filter(d => d.status === 'accepted').map(design => (
+                <div key={design._id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/20 group relative">
+                  <img src={design.generatedImage || "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500"} alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700"><Bookmark className="w-5 h-5 fill-current" /></button>
+                  <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
+                    <p className="font-bold text-lg">{design.roomType || 'Living Room'}</p>
+                    <p className="text-xs opacity-80">AI Generated • ${design.aiSuggestion?.budgetEstimate || '4,500'}</p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       )}

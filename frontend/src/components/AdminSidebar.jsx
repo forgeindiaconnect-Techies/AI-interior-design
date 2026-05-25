@@ -12,7 +12,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
     users: true,
     operations: true,
     design: true,
-    verification: false
+    verification: false,
+    finance: true,
+    support: true
   });
 
   const toggleGroup = (group) => {
@@ -168,19 +170,81 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           )}
         </div>
 
-        {/* Section: Payments & Commission */}
+        {/* Section: Finance */}
         <div className="space-y-1">
           <button 
-            onClick={() => setActiveTab('payments')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'payments' 
-                ? 'bg-white/10 text-white' 
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-            }`}
+            onClick={() => toggleGroup('finance')}
+            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
           >
-            <DollarSign className="w-4 h-4 shrink-0" />
-            <span>Payments & Commission</span>
+            <span>Finance</span>
+            {openGroups.finance ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
+          
+          {openGroups.finance && (
+            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
+              {[
+                { name: 'Transactions', icon: DollarSign, tab: 'admin_transactions' },
+                { name: 'Vendor Payouts', icon: Key, tab: 'vendor_payouts' },
+                { name: 'Refunds', icon: ChevronRight, tab: 'refunds' },
+                { name: 'Platform Commission', icon: BarChart, tab: 'platform_commission' }
+              ].map((item, index) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.tab;
+                return (
+                  <button 
+                    key={index} 
+                    onClick={() => setActiveTab(item.tab)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-white/10 text-white' 
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Section: Support */}
+        <div className="space-y-1">
+          <button 
+            onClick={() => toggleGroup('support')}
+            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
+          >
+            <span>Support</span>
+            {openGroups.support ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          </button>
+          
+          {openGroups.support && (
+            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
+              {[
+                { name: 'Complaints', icon: HelpCircle, tab: 'complaints' },
+                { name: 'Support Tickets', icon: FileText, tab: 'tickets' },
+                { name: 'Disputes', icon: ShieldCheck, tab: 'disputes' }
+              ].map((item, index) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.tab;
+                return (
+                  <button 
+                    key={index} 
+                    onClick={() => setActiveTab(item.tab)}
+                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                      isActive
+                        ? 'bg-white/10 text-white' 
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Section: Reports & Analytics */}

@@ -69,7 +69,8 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
               {[
                 { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio' },
                 { name: 'Manual Design Request', icon: FileText, tab: 'manual' },
-                { name: 'Interior Designer Help', icon: HelpCircle, tab: 'designer' }
+                { name: 'Interior Designer Help', icon: HelpCircle, tab: 'designer' },
+                { name: 'Saved Designs', icon: Bookmark, tab: 'saved' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -143,6 +144,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-100 ml-3.5">
               {[
                 { name: 'My Cart', icon: ShoppingCart, tab: 'cart' },
+                { name: 'Quotations', icon: FileText, tab: 'quotations' },
                 { name: 'My Orders', icon: Package, tab: 'orders' },
                 { name: 'Order Tracking', icon: Truck, tab: 'tracking' },
                 { name: 'Payments', icon: DollarSign, tab: 'payments' }
@@ -166,21 +168,6 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
               })}
             </div>
           )}
-        </div>
-
-        {/* Section: Saved Designs */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => setActiveTab('saved')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'saved' 
-                ? 'bg-[#8B5E3C]/10 text-[#8B5E3C]' 
-                : 'text-gray-500 hover:bg-[#8B5E3C]/5 hover:text-[#8B5E3C]'
-            }`}
-          >
-            <Bookmark className="w-4 h-4 shrink-0" />
-            <span>Saved Designs</span>
-          </button>
         </div>
 
         {/* Section: Support */}

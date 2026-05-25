@@ -103,7 +103,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
               {[
                 { name: 'Ready-made Orders', icon: ShoppingCart, tab: 'orders' },
                 { name: 'Custom Orders', icon: FileText, tab: 'custom_requests' },
-                { name: 'Manufacturing Requests', icon: Wrench, tab: 'manufacturing' },
+                { name: 'Production Requests', icon: Wrench, tab: 'manufacturing' },
                 { name: 'Delivery & Installation', icon: Truck, tab: 'logistics' }
               ].map((item, index) => {
                 const Icon = item.icon;

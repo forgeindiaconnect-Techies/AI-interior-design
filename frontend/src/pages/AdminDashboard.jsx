@@ -3057,7 +3057,7 @@ const AdminDashboard = ({
       {/* TAB 6: AI DESIGN REQUESTS */}
       {/* ======================================================== */}
       {activeTab === 'ai_designs' && (() => {
-        const aiDesigns = managementData?.aiDesigns || [];
+        const aiDesigns = (managementData?.aiDesigns || []).filter(d => d.status === 'accepted');
         const totalRequests = aiDesigns.length;
         const pendingRequests = aiDesigns.filter(d => d.status === 'pending').length;
         const acceptedRequests = aiDesigns.filter(d => d.status === 'accepted').length;
@@ -4352,8 +4352,8 @@ const AdminDashboard = ({
         );
       })()}
 
-      {/* TAB 10: PAYMENTS & COMMISSION */}
-      {activeTab === 'payments' && (() => {
+      {/* TAB 10: ADMIN TRANSACTIONS */}
+      {activeTab === 'admin_transactions' && (() => {
         const filteredTransactions = transactions.filter(tx => {
           const searchStr = `${tx._id} ${tx.orderId} ${tx.userId?.name || ''} ${tx.userId?.email || ''} ${tx.vendorId?.companyName || ''}`.toLowerCase();
           const matchesSearch = searchStr.includes(transactionSearch.toLowerCase());
@@ -4363,80 +4363,22 @@ const AdminDashboard = ({
         });
 
         return (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-gradient-to-br from-[#065F46] to-[#047857] p-6 rounded-3xl text-white space-y-2 shadow-lg hover:scale-[1.02] transition-all">
-                <p className="font-bold text-[#A7F3D0] uppercase tracking-wider text-[10px]">Total Platform Revenue</p>
-                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.totalPlatformRevenue?.toLocaleString() || '0'}</h3>
-                <p className="text-[10px] text-white/70">Gross customer collections</p>
-              </div>
-              <div className="bg-gradient-to-br from-[#1E293B] to-[#334155] p-6 rounded-3xl text-white space-y-2 shadow-lg hover:scale-[1.02] transition-all">
-                <p className="font-bold text-[#E2E8F0] uppercase tracking-wider text-[10px]">Platform Commission ({commissionRate}%)</p>
-                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.estimatedCommission?.toLocaleString() || '0'}</h3>
-                <p className="text-[10px] text-white/70">Net system earnings</p>
-              </div>
-              <div className="bg-gradient-to-br from-[#0E7490] to-[#06B6D4] p-6 rounded-3xl text-white space-y-2 shadow-lg hover:scale-[1.02] transition-all">
-                <p className="font-bold text-[#CFFAFE] uppercase tracking-wider text-[10px]">Disbursed Payouts</p>
-                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.disbursedPayouts?.toLocaleString() || '0'}</h3>
-                <p className="text-[10px] text-white/70">Released to vendor partners</p>
-              </div>
-              <div className="bg-gradient-to-br from-[#B45309] to-[#D97706] p-6 rounded-3xl text-white space-y-2 shadow-lg hover:scale-[1.02] transition-all">
-                <p className="font-bold text-[#FEF3C7] uppercase tracking-wider text-[10px]">Pending Payouts</p>
-                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.pendingPayouts?.toLocaleString() || '0'}</h3>
-                <p className="text-[10px] text-white/70">Held / Processing settlements</p>
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Platform Transactions</h2>
+                <p className="text-xs text-gray-500 mt-1">Audit trail of all customer payments and vendor transactions across the platform.</p>
               </div>
             </div>
 
-            {/* Commission Configuration & Control */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-left">
-                <h4 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Global Commission Rate Configuration</h4>
-                <p className="text-xs text-gray-500">Define the percentage deducted by the platform from each marketplace or design order.</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={commissionRate}
-                    onChange={(e) => setCommissionRate(Number(e.target.value))}
-                    className="w-24 p-3 rounded-xl border border-gray-200 text-sm font-bold text-center focus:ring-2 focus:ring-[#8B5E3C] focus:outline-none"
-                  />
-                  <span className="absolute right-3 top-3 text-sm font-bold text-gray-400">%</span>
-                </div>
-                <button
-                  onClick={() => handleUpdateCommissionRate(commissionRate)}
-                  className="px-6 py-3 bg-[#8B5E3C] hover:bg-[#724C30] text-white rounded-xl font-bold text-xs shadow-md transition-all whitespace-nowrap"
-                >
-                  Update Platform Rate
-                </button>
-              </div>
-            </div>
-
-            {/* Transactions Ledger Table Card */}
             <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
-              <div className="p-8 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div className="text-left">
-                  <h3 className="font-['Playfair_Display'] font-bold text-2xl text-gray-800">Transactions Ledger</h3>
-                  <p className="text-xs text-gray-500">Track client payments, commission rates, and execute payouts to specialist partners.</p>
-                </div>
-                <button
-                  onClick={handleDisburseAllPending}
-                  className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold text-xs shadow-md transition-all"
-                >
-                  Disburse All Pending Payouts
-                </button>
-              </div>
-
               {/* Filters Panel */}
               <div className="p-6 bg-[#FDFBF7] border-b border-gray-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="relative">
                   <Search className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search transaction, order, customer..."
+                    placeholder="Search transaction..."
                     value={transactionSearch}
                     onChange={(e) => setTransactionSearch(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:ring-2 focus:ring-[#8B5E3C] focus:outline-none bg-white"
@@ -4473,27 +4415,19 @@ const AdminDashboard = ({
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
                       <th className="p-4 pl-8">Transaction ID / Date</th>
-                      <th className="p-4">Customer Details</th>
+                      <th className="p-4">Customer</th>
                       <th className="p-4">Vendor Partner</th>
                       <th className="p-4 text-right">Amount</th>
                       <th className="p-4 text-right">Commission ({commissionRate}%)</th>
                       <th className="p-4 text-right">Net Payout</th>
                       <th className="p-4">Method / Type</th>
                       <th className="p-4">Status</th>
-                      <th className="p-4 pr-8 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {loadingTransactions ? (
+                    {filteredTransactions.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center p-12 text-gray-400 font-medium">
-                          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-gray-300" />
-                          Synchronizing ledger records...
-                        </td>
-                      </tr>
-                    ) : filteredTransactions.length === 0 ? (
-                      <tr>
-                        <td colSpan="9" className="text-center p-12 text-gray-400 font-medium">
+                        <td colSpan="8" className="text-center p-12 text-gray-400 font-medium">
                           No transaction records matching filters.
                         </td>
                       </tr>
@@ -4539,8 +4473,92 @@ const AdminDashboard = ({
                               {tx.status}
                             </span>
                           </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: VENDOR PAYOUTS */}
+      {activeTab === 'vendor_payouts' && (() => {
+        const payoutTxs = transactions.filter(tx => tx.type === 'Vendor Payout' || tx.status === 'Pending');
+
+        return (
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
+              <div>
+                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Vendor Payouts & Disbursals</h2>
+                <p className="text-xs text-gray-500 mt-1">Disburse cleared revenue shares to design and manufacturing partners.</p>
+              </div>
+              <button
+                onClick={handleDisburseAllPending}
+                className="px-5 py-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-xl font-bold text-xs shadow-md transition-all"
+              >
+                Disburse All Pending Payouts
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-[#0E7490] to-[#06B6D4] p-6 rounded-3xl text-white space-y-2 shadow-lg">
+                <p className="font-bold text-[#CFFAFE] uppercase tracking-wider text-[10px]">Disbursed Payouts</p>
+                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.disbursedPayouts?.toLocaleString() || '0'}</h3>
+                <p className="text-[10px] text-white/70">Total funds successfully transferred</p>
+              </div>
+              <div className="bg-gradient-to-br from-[#B45309] to-[#D97706] p-6 rounded-3xl text-white space-y-2 shadow-lg">
+                <p className="font-bold text-[#FEF3C7] uppercase tracking-wider text-[10px]">Pending Payouts</p>
+                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.pendingPayouts?.toLocaleString() || '0'}</h3>
+                <p className="text-[10px] text-white/70">Awaiting disbursal confirmation</p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 font-bold text-lg text-gray-850">Payout Requests Log</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
+                      <th className="p-4 pl-8">Transaction ID</th>
+                      <th className="p-4">Vendor Partner</th>
+                      <th className="p-4 text-right">Net Share</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 pr-8 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payoutTxs.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="text-center p-12 text-gray-400 font-medium">
+                          No pending payouts found.
+                        </td>
+                      </tr>
+                    ) : (
+                      payoutTxs.map((tx) => (
+                        <tr key={tx._id} className="border-b border-gray-150 text-xs hover:bg-[#FDFBF7] transition-all">
+                          <td className="p-4 pl-8">
+                            <span className="font-mono font-bold text-gray-800 block">#{tx._id}</span>
+                            <span className="text-[10px] text-gray-400 block mt-0.5">{tx.createdAt ? new Date(tx.createdAt).toLocaleDateString() : 'N/A'}</span>
+                          </td>
+                          <td className="p-4 font-bold text-gray-700">
+                            {tx.vendorId?.companyName || 'Artisan Workshop'}
+                          </td>
+                          <td className="p-4 text-right font-bold text-[#E76F51] font-mono">
+                            ${tx.netPayout?.toFixed(2) || tx.amount?.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-block ${
+                              tx.status === 'Paid' ? 'bg-green-50 text-green-600 border border-green-200' :
+                              'bg-amber-50 text-amber-600 border border-amber-200'
+                            }`}>
+                              {tx.status}
+                            </span>
+                          </td>
                           <td className="p-4 pr-8 text-right">
-                            {(tx.status === 'Pending' || tx.status === 'Processing') && (
+                            {tx.status === 'Pending' && (
                               <button
                                 onClick={() => handleDisbursePayout(tx._id)}
                                 className="px-3.5 py-1.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white rounded-lg font-bold text-[10px] transition-all"
@@ -4555,6 +4573,213 @@ const AdminDashboard = ({
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: REFUNDS */}
+      {activeTab === 'refunds' && (() => {
+        const refundOrders = orders.filter(o => o.orderStatus === 'Cancelled' || o.paymentStatus === 'refunded');
+
+        const handleProcessRefund = (orderId) => {
+          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const updated = localOrders.map(o => o._id === orderId ? { ...o, paymentStatus: 'refunded', orderStatus: 'Refunded' } : o);
+          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          setOrders(updated);
+          alert('✅ Refund processed successfully! The transaction has been updated in the ledger.');
+        };
+
+        return (
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Refund Claims & Returns</h2>
+              <p className="text-xs text-gray-500 mt-1">Approve and process refund transactions for cancelled designs or marketplace items.</p>
+            </div>
+
+            <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-gray-100 font-bold text-lg text-gray-850">Refund Processing Center</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
+                      <th className="p-4 pl-8">Order ID</th>
+                      <th className="p-4">Customer</th>
+                      <th className="p-4 text-right">Amount</th>
+                      <th className="p-4">Status</th>
+                      <th className="p-4 pr-8 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {refundOrders.length === 0 ? (
+                      <tr>
+                        <td colSpan="5" className="text-center p-12 text-gray-400 font-medium">
+                          No pending refund claims.
+                        </td>
+                      </tr>
+                    ) : (
+                      refundOrders.map((order) => (
+                        <tr key={order._id} className="border-b border-gray-150 text-xs hover:bg-[#FDFBF7] transition-all">
+                          <td className="p-4 pl-8">
+                            <span className="font-mono font-bold text-gray-800">#{order._id}</span>
+                          </td>
+                          <td className="p-4">
+                            <span className="font-bold text-gray-700">{order.userId?.name || 'Customer'}</span>
+                          </td>
+                          <td className="p-4 text-right font-bold text-gray-800 font-mono">
+                            ${order.totalAmount?.toLocaleString()}
+                          </td>
+                          <td className="p-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-block ${
+                              order.paymentStatus === 'refunded' ? 'bg-gray-100 text-gray-605 border border-gray-200' : 'bg-red-50 text-red-600 border border-red-200'
+                            }`}>
+                              {order.paymentStatus === 'refunded' ? 'Refunded' : 'Awaiting Processing'}
+                            </span>
+                          </td>
+                          <td className="p-4 pr-8 text-right">
+                            {order.paymentStatus !== 'refunded' && (
+                              <button
+                                onClick={() => handleProcessRefund(order._id)}
+                                className="px-3.5 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-bold text-[10px] transition-all"
+                              >
+                                Process Refund
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: PLATFORM COMMISSION */}
+      {activeTab === 'platform_commission' && (() => {
+        return (
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Platform Commission & Revenue</h2>
+              <p className="text-xs text-gray-500 mt-1">Monitor cumulative platform revenue share rates and settings.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-[#065F46] to-[#047857] p-6 rounded-3xl text-white space-y-2 shadow-lg">
+                <p className="font-bold text-[#A7F3D0] uppercase tracking-wider text-[10px]">Total Platform Revenue</p>
+                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.totalPlatformRevenue?.toLocaleString() || '0'}</h3>
+                <p className="text-[10px] text-white/70">Gross collections of custom and product orders</p>
+              </div>
+              <div className="bg-gradient-to-br from-[#1E293B] to-[#334155] p-6 rounded-3xl text-white space-y-2 shadow-lg">
+                <p className="font-bold text-[#E2E8F0] uppercase tracking-wider text-[10px]">Estimated Net Commission ({commissionRate}%)</p>
+                <h3 className="font-['Playfair_Display'] font-extrabold text-3xl">${paymentStats?.estimatedCommission?.toLocaleString() || '0'}</h3>
+                <p className="text-[10px] text-white/70">Gross platform earnings share</p>
+              </div>
+            </div>
+
+            {/* Commission Rate Settings card */}
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div className="text-left">
+                <h4 className="font-['Playfair_Display'] font-bold text-xl text-gray-850">Global Commission Rate Configuration</h4>
+                <p className="text-xs text-gray-500 mt-1">This rate is automatically deducted from payouts before disbursal.</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={commissionRate}
+                    onChange={(e) => setCommissionRate(Number(e.target.value))}
+                    className="w-24 p-3 rounded-xl border border-gray-200 text-sm font-bold text-center focus:ring-2 focus:ring-[#8B5E3C] focus:outline-none"
+                  />
+                  <span className="absolute right-3 top-3 text-sm font-bold text-gray-400">%</span>
+                </div>
+                <button
+                  onClick={() => handleUpdateCommissionRate(commissionRate)}
+                  className="px-6 py-3 bg-[#8B5E3C] hover:bg-[#724C30] text-white rounded-xl font-bold text-xs shadow-md transition-all"
+                >
+                  Update Rate
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: COMPLAINTS */}
+      {activeTab === 'complaints' && (() => {
+        const localInquiries = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
+        const mockSeeds = [
+          { _id: 'c_1', name: 'John Doe', email: 'john@example.com', message: 'The vendor did not deliver the custom table in the scheduled timeline. Please look into it.', status: 'Pending Review', createdAt: new Date().toISOString() },
+          { _id: 'c_2', name: 'Jane Smith', email: 'jane@example.com', message: 'I want to claim a discount on the Premium Artisan design pack. The AI studio fails to load properly.', status: 'Resolved', createdAt: new Date(Date.now() - 3600000 * 24).toISOString() }
+        ];
+        const inquiries = localInquiries.length > 0 ? localInquiries : mockSeeds;
+
+        return (
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Client Inquiries & Complaints</h2>
+              <p className="text-xs text-gray-500 mt-1">Review contact requests, complaints, and general support requests submitted via the landing portal.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              {inquiries.map((inq) => (
+                <div key={inq._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                    <div>
+                      <h4 className="font-bold text-sm text-gray-800">{inq.name}</h4>
+                      <p className="text-[10px] text-gray-400">{inq.email} • {new Date(inq.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      inq.status === 'Resolved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
+                    }`}>{inq.status || 'Pending Review'}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed bg-[#F8F5F0] p-4 rounded-xl">{inq.message}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: DISPUTES */}
+      {activeTab === 'disputes' && (() => {
+        const disputeList = [
+          { _id: 'dsp_101', ticketId: 'tick_001', clientName: 'Alice Johnson', vendorName: 'Artisan Workshop', subject: 'Product Damage on Arrival', detail: 'Customer claims the premium oak chair was received with deep structural scratches. Vendor claims delivery team is not responsible.', status: 'Pending Arbitration', amount: 450 },
+          { _id: 'dsp_102', ticketId: 'tick_004', clientName: 'Marcus Aurelius', vendorName: 'Elite Woodworks', subject: 'Installation Failure', detail: 'Designer did not complete the layout design inside the AI Room Studio. Vendor asserts user did not approve budget.', status: 'Resolved', amount: 1200 }
+        ];
+
+        return (
+          <div className="space-y-8 animate-fadeIn text-left">
+            <div className="border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Vendor-Client Disputes Arbitration</h2>
+              <p className="text-xs text-gray-500 mt-1">Review and arbitrate disputes between clients and registered vendors/interior designers.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+              {disputeList.map((dsp) => (
+                <div key={dsp._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
+                  <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+                    <div>
+                      <h4 className="font-['Playfair_Display'] font-bold text-xl text-gray-800">{dsp.subject}</h4>
+                      <p className="text-xs text-gray-400">Client: {dsp.clientName} • Vendor: {dsp.vendorName} • Dispute Amount: ${dsp.amount}</p>
+                    </div>
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      dsp.status === 'Resolved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-red-50 text-red-600 border border-red-200'
+                    }`}>{dsp.status}</span>
+                  </div>
+                  <p className="text-xs text-gray-600 leading-relaxed bg-[#F8F5F0] p-4 rounded-xl">{dsp.detail}</p>
+                  {dsp.status === 'Pending Arbitration' && (
+                    <div className="flex gap-3 pt-2">
+                      <button onClick={() => alert('Dispute resolved in favor of client. Refund initiated.')} className="px-4 py-2 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl text-xs font-bold shadow-sm">Resolve in Client Favor</button>
+                      <button onClick={() => alert('Dispute resolved in favor of vendor. Disbursing payment.')} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-[#1F2937] rounded-xl text-xs font-bold border border-gray-200">Resolve in Vendor Favor</button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         );
