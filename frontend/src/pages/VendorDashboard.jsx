@@ -216,6 +216,95 @@ const VendorDashboard = ({
 
       // 5. Custom Requests
       let localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      if (localManualRequests.length === 0) {
+        localManualRequests = [
+          {
+            _id: 'seed_ai_1',
+            requestType: 'AI Generated',
+            userId: { _id: 'u_seed_1', name: 'Priya Sharma', email: 'priya.s@example.com', phone: '+91 98765 43210' },
+            roomType: 'Living Room',
+            style: 'AI Generated (Warm Oak)',
+            budget: '$4,200',
+            size: '400 sq ft',
+            timeline: 'Within 1 Month',
+            ownMaterialsAvailable: 'No',
+            materialDetails: '',
+            materialQuantity: '',
+            materialPickupNeeded: 'No',
+            pickupAddress: '',
+            materialImages: [],
+            requirements: 'AI Suggestions: Furniture (Custom Teak Sofa, Minimalist Oak Coffee Table, Modern Brass Sconces). Materials (Teak Wood, Linen, Brass).',
+            referenceImages: ['https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=600'],
+            status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+          },
+          {
+            _id: 'seed_man_1',
+            requestType: 'Manual Design',
+            userId: { _id: 'u_seed_2', name: 'Arjun Mehta', email: 'arjun.m@example.com', phone: '+91 87654 32109' },
+            roomType: 'Bedroom',
+            style: 'Minimalist',
+            budget: '₹50,000 - ₹1,00,000',
+            size: 'Medium (12x14 ft)',
+            timeline: 'Within 1 Month',
+            ownMaterialsAvailable: 'Yes',
+            materialDetails: 'Teak wood panels, white marble tiles',
+            materialQuantity: '40 sq ft teak, 120 sq ft marble',
+            materialPickupNeeded: 'Yes',
+            pickupAddress: 'Block 4B, Sector 62, Noida',
+            materialImages: ['https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400'],
+            requirements: 'Cozy and dark theme with hidden lighting. Need custom wardrobe with sliding doors.',
+            referenceImages: ['https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600'],
+            status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            createdAt: new Date(Date.now() - 3600000 * 8).toISOString()
+          },
+          {
+            _id: 'seed_des_1',
+            requestType: 'Interior Designer Help',
+            userId: { _id: 'u_seed_3', name: 'Neha Kapoor', email: 'neha.k@example.com', phone: '+91 99887 66554' },
+            roomType: 'Interior Design',
+            style: 'Consultation',
+            budget: '$500 - $1,000',
+            size: 'Entire Home (1500 sq ft)',
+            timeline: 'Flexible',
+            ownMaterialsAvailable: 'No',
+            materialDetails: '',
+            materialQuantity: '',
+            materialPickupNeeded: 'No',
+            pickupAddress: '',
+            materialImages: [],
+            requirements: 'Need expert consultation for entire 3BHK apartment. Modern theme with warm tones.',
+            referenceImages: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600'],
+            status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
+          },
+          {
+            _id: 'seed_man_2',
+            requestType: 'Manual Design',
+            userId: { _id: 'u_seed_4', name: 'Ravi Desai', email: 'ravi.d@example.com', phone: '+91 88990 77665' },
+            roomType: 'Kitchen',
+            style: 'Modern Luxury',
+            budget: '₹1,00,000 - ₹3,00,000',
+            size: 'Large (20x15 ft)',
+            timeline: '1-3 Months',
+            ownMaterialsAvailable: 'No',
+            materialDetails: '',
+            materialQuantity: '',
+            materialPickupNeeded: 'No',
+            pickupAddress: '',
+            materialImages: [],
+            requirements: 'Modular kitchen with island counter, quartz countertops, and smart storage solutions.',
+            referenceImages: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600'],
+            status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+          }
+        ];
+        localStorage.setItem('mockManualRequests', JSON.stringify(localManualRequests));
+      }
       const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
       setCustomRequests(assignedRequests);
 
@@ -643,7 +732,7 @@ const VendorDashboard = ({
     }
     if (activeTab === 'custom_requests') {
       const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const vendorId = localProfile?._id || 'mock_vendor_id_123';
+      const vendorId = profile?._id || 'mock_vendor_id_123';
       const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
       setCustomRequests(assignedRequests);
     }
@@ -850,6 +939,73 @@ const VendorDashboard = ({
     const name = req.userId?.name || 'Customer';
     alert(`📞 Contacting ${name}\n📧 Email: ${email}\n📱 Phone: ${phone}\n\nOpening your default email client...`);
     window.location.href = `mailto:${email}?subject=Regarding your Custom Design Request #${req._id}&body=Hello ${name}, we are reviewing your interior design request...`;
+  };
+
+  const handleDownloadAiReport = (req) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert('Pop-up blocked! Please allow popups to view the report.');
+      return;
+    }
+    const furniture = req.requirements?.match(/Furniture \(([^)]+)\)/)?.[1] || req.materials || 'Custom furniture set';
+    const materials = req.requirements?.match(/Materials \(([^)]+)\)/)?.[1] || req.materialDetails || 'Premium materials';
+    const budget = req.budget || '$3,000 - $5,000';
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>AI Design Report - ${req._id}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #1F2937; max-width: 900px; margin: auto; }
+            .header { border-bottom: 3px solid #8B5E3C; padding-bottom: 20px; margin-bottom: 30px; }
+            .header h1 { color: #8B5E3C; margin: 0; font-size: 28px; }
+            .section { margin: 25px 0; padding: 20px; background: #F8F5F0; border-radius: 12px; border: 1px solid #D4A373; }
+            .section h2 { color: #8B5E3C; font-size: 16px; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+            .label { color: #6B7280; font-size: 11px; text-transform: uppercase; font-weight: 700; }
+            .value { font-size: 14px; font-weight: 600; margin-top: 2px; }
+            .images { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+            .images img { width: 200px; height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #D4A373; }
+            .footer { margin-top: 40px; text-align: center; color: #9CA3AF; font-size: 11px; border-top: 1px solid #E5E7EB; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>AI Generated Design Report</h1>
+            <p style="color: #6B7280; margin: 5px 0 0 0;">Request ID: ${req._id} • Generated by AI Interior Studio</p>
+          </div>
+          <div class="section">
+            <h2>Request Overview</h2>
+            <div class="grid">
+              <div><div class="label">Room Type</div><div class="value">${req.roomType || 'Living Room'}</div></div>
+              <div><div class="label">Status</div><div class="value">${req.status}</div></div>
+              <div><div class="label">Customer</div><div class="value">${req.userId?.name || 'Customer'}</div></div>
+              <div><div class="label">Budget</div><div class="value">${budget}</div></div>
+              <div><div class="label">Timeline</div><div class="value">${req.timeline || 'Flexible'}</div></div>
+              <div><div class="label">Style</div><div class="value">${req.style || 'AI Generated'}</div></div>
+            </div>
+          </div>
+          <div class="section">
+            <h2>AI Recommendations</h2>
+            <div class="grid">
+              <div><div class="label">Furniture</div><div class="value">${furniture}</div></div>
+              <div><div class="label">Materials</div><div class="value">${materials}</div></div>
+            </div>
+          </div>
+          ${req.referenceImages?.length > 0 ? `
+          <div class="section">
+            <h2>Reference Images</h2>
+            <div class="images">
+              ${req.referenceImages.map(img => `<img src="${img}" alt="Reference" />`).join('')}
+            </div>
+          </div>` : ''}
+          <div class="footer">
+            Generated on ${new Date().toLocaleString()} • AI Interior Platform
+          </div>
+          <script>window.onload = function() { window.print(); }</script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleSuggestVendor = async (e, reqId) => {
@@ -2004,16 +2160,16 @@ const VendorDashboard = ({
                 const filtered = customRequests.filter(req => {
                   if (customRequestFilter === 'All') return true;
                   if (customRequestFilter === 'AI Generated') {
-                    return req.requestType === 'AI Generated' || req.style?.startsWith('AI Generated');
+                    return req.requestType === 'AI Generated';
                   }
                   if (customRequestFilter === 'Manual Design') {
-                    return req.requestType === 'Manual Design' || (!req.requestType && req.roomType !== 'Interior Design' && req.style !== 'Consultation' && !req.style?.startsWith('AI Generated'));
-                  }
-                  if (customRequestFilter === 'Interior Designer Help') {
-                    return req.requestType === 'Interior Designer Help' || (req.roomType === 'Interior Design' && req.style === 'Consultation');
+                    return req.requestType === 'Manual Design' && req.ownMaterialsAvailable !== 'Yes';
                   }
                   if (customRequestFilter === 'Own Materials') {
-                    return req.ownMaterialsAvailable === 'Yes';
+                    return req.requestType === 'Manual Design' && req.ownMaterialsAvailable === 'Yes';
+                  }
+                  if (customRequestFilter === 'Interior Designer Help') {
+                    return req.requestType === 'Interior Designer Help';
                   }
                   return true;
                 });
@@ -2045,13 +2201,17 @@ const VendorDashboard = ({
                             
                             {/* Request Type Badge */}
                             {(() => {
-                              const reqType = req.requestType || 
-                                ((req.roomType === 'Interior Design' && req.style === 'Consultation') ? 'Interior Designer Help' : (req.style?.startsWith('AI Generated') ? 'AI Generated' : 'Manual Design'));
-                              const badgeColor = reqType === 'Interior Designer Help' 
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
-                                : reqType === 'AI Generated'
-                                  ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200';
+                              const reqType = req.ownMaterialsAvailable === 'Yes' && req.requestType === 'Manual Design'
+                                ? 'Own Materials'
+                                : req.requestType || 'Manual Design';
+                              const badgeColor = 
+                                reqType === 'Interior Designer Help' 
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
+                                  : reqType === 'AI Generated'
+                                    ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                    : reqType === 'Own Materials'
+                                      ? 'bg-orange-50 text-orange-700 border-orange-200'
+                                      : 'bg-amber-50 text-amber-700 border-amber-200';
                               return (
                                 <span className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border ${badgeColor}`}>
                                   Request Type: {reqType}
@@ -2222,6 +2382,11 @@ const VendorDashboard = ({
                         <button onClick={() => handleContactCustomer(req)} className="flex-1 sm:flex-none px-4 py-2.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
                           <MessageSquare className="w-4 h-4" /> Contact Customer
                         </button>
+                        {req.requestType === 'AI Generated' && (
+                          <button onClick={() => handleDownloadAiReport(req)} className="flex-1 sm:flex-none px-4 py-2.5 bg-[#E9C46A] hover:bg-[#E9C46A]/80 text-[#1F2937] rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                            <Download className="w-4 h-4" /> Download Report
+                          </button>
+                        )}
                       </div>
 
                       <div className="flex flex-wrap gap-2 w-full sm:w-auto justify-end">

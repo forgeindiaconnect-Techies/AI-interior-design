@@ -3057,7 +3057,7 @@ const AdminDashboard = ({
       {/* TAB 6: AI DESIGN REQUESTS */}
       {/* ======================================================== */}
       {activeTab === 'ai_designs' && (() => {
-        const aiDesigns = (managementData?.aiDesigns || []).filter(d => d.status === 'accepted');
+        const aiDesigns = managementData?.aiDesigns || [];
         const totalRequests = aiDesigns.length;
         const pendingRequests = aiDesigns.filter(d => d.status === 'pending').length;
         const acceptedRequests = aiDesigns.filter(d => d.status === 'accepted').length;

@@ -34,6 +34,7 @@ const UserDashboard = ({
   const [roomType, setRoomType] = useState('Living Room');
   const [originalImage, setOriginalImage] = useState('');
   const [aiDesigns, setAiDesigns] = useState([]);
+  const savedDesigns = aiDesigns.filter(d => d.isBookmarked || d.status === 'accepted');
   const [loadingAi, setLoadingAi] = useState(false);
 
   // Manual Design State
@@ -304,6 +305,54 @@ const UserDashboard = ({
     
     const updatedDesign = updated.find(d => d._id === id);
 
+    if (status === 'regenerated') {
+      const regenerateVariants = [
+        {
+          generatedImage: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800',
+          aiSuggestion: {
+            furniture: ['Sectional Velvet Sofa', 'Hexagonal Side Table', 'Arc Floor Lamp'],
+            materials: ['Velvet Upholstery', 'Gold Metal', 'Glass'],
+            colorPalette: ['Navy Blue', 'Gold', 'Cream White'],
+            budgetEstimate: 5800
+          }
+        },
+        {
+          generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800',
+          aiSuggestion: {
+            furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
+            materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
+            colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
+            budgetEstimate: 6200
+          }
+        },
+        {
+          generatedImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+          aiSuggestion: {
+            furniture: ['Open Shelving Unit', 'Farmhouse Table', 'Pendant Lights'],
+            materials: ['Reclaimed Wood', 'Wrought Iron', 'Ceramic'],
+            colorPalette: ['Rustic Brown', 'Slate Gray', 'Sage Green'],
+            budgetEstimate: 4900
+          }
+        }
+      ];
+      const variantIndex = localAi.filter(d => d._id.startsWith('ai_reg_')).length % regenerateVariants.length;
+      const variant = regenerateVariants[variantIndex];
+      const regeneratedDesign = {
+        _id: 'ai_reg_' + Date.now(),
+        userId: user?._id || 'u_local',
+        roomType: updatedDesign?.roomType || 'Living Room',
+        originalImage: updatedDesign?.originalImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800',
+        generatedImage: variant.generatedImage,
+        aiSuggestion: variant.aiSuggestion,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
+      const withRegen = [regeneratedDesign, ...localAi];
+      localStorage.setItem('mockAiDesigns', JSON.stringify(withRegen));
+      setAiDesigns(withRegen);
+      alert('✨ AI Design regenerated with new style! Check the new design above.');
+    }
+
     if (status === 'accepted') {
       try {
         const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
@@ -351,6 +400,21 @@ const UserDashboard = ({
       alert('AI Design rejected. You can now submit a manual design request.');
       if (setActiveTab) setActiveTab('manual');
     }
+  };
+
+  const handleDeleteDesign = (id) => {
+    if (!confirm('Delete this AI design?')) return;
+    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const filtered = localAi.filter(d => d._id !== id);
+    localStorage.setItem('mockAiDesigns', JSON.stringify(filtered));
+    setAiDesigns(filtered);
+  };
+
+  const handleToggleBookmark = (id) => {
+    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const updated = localAi.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d);
+    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    setAiDesigns(updated);
   };
 
   // Manual Design Actions
@@ -963,6 +1027,12 @@ const UserDashboard = ({
                               <button onClick={() => handleAiStatus(design._id, 'rejected')} className="p-2 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm" title="Reject & Manual Design"><XCircle className="w-4 h-4" /></button>
                             </>
                           )}
+                          <button onClick={() => handleToggleBookmark(design._id)} className={`p-2 rounded-xl shadow-sm transition-all ${design.isBookmarked ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`} title={design.isBookmarked ? 'Unsave' : 'Save Design'}>
+                            <Bookmark className={`w-4 h-4 ${design.isBookmarked ? 'fill-current' : ''}`} />
+                          </button>
+                          <button onClick={() => handleDeleteDesign(design._id)} className="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl shadow-sm transition-all" title="Delete">
+                            <XCircle className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -2017,21 +2087,45 @@ const UserDashboard = ({
       {/* TAB 12: SAVED DESIGNS */}
       {activeTab === 'saved' && (
         <div className="space-y-8">
-          <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Saved Designs & Inspirations</h2>
+          <div className="flex justify-between items-center border-b border-gray-100 pb-4">
+            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Saved Designs & Inspirations</h2>
+            <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-4 py-1.5 rounded-full text-xs font-bold">
+              {savedDesigns.length} Saved
+            </span>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {aiDesigns.filter(d => d.status === 'accepted').length === 0 ? (
+            {savedDesigns.length === 0 ? (
               <div className="col-span-full py-8 text-center text-gray-400 font-medium">
-                No saved designs yet. Accept an AI design to save it here.
+                No saved designs yet. Click the bookmark icon on any AI design to save it here.
               </div>
             ) : (
-              aiDesigns.filter(d => d.status === 'accepted').map(design => (
+              savedDesigns.map(design => (
                 <div key={design._id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/20 group relative">
                   <img src={design.generatedImage || "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500"} alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-                  <button className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700"><Bookmark className="w-5 h-5 fill-current" /></button>
+                  <div className="absolute top-3 right-3 flex flex-col gap-2">
+                    <button onClick={() => handleToggleBookmark(design._id)} className="p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700 transition-all" title="Unsave">
+                      <Bookmark className="w-4 h-4 fill-current" />
+                    </button>
+                    <button onClick={() => handleDeleteDesign(design._id)} className="p-2 bg-white rounded-full shadow-md text-gray-400 hover:text-red-500 transition-all" title="Delete">
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </div>
                   <div className="absolute bottom-0 left-0 w-full p-4 bg-gradient-to-t from-black/80 to-transparent text-white">
                     <p className="font-bold text-lg">{design.roomType || 'Living Room'}</p>
-                    <p className="text-xs opacity-80">AI Generated • ${design.aiSuggestion?.budgetEstimate || '4,500'}</p>
+                    <p className="text-xs opacity-80">${design.aiSuggestion?.budgetEstimate || '4,500'}</p>
                   </div>
+                  {design.status !== 'accepted' && (
+                    <div className="p-3 bg-white border-t border-gray-100 flex gap-2">
+                      <button onClick={() => handleAiStatus(design._id, 'accepted')} className="flex-1 py-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1">
+                        <CheckCircle className="w-3.5 h-3.5" /> Accept & Order
+                      </button>
+                    </div>
+                  )}
+                  {design.status === 'accepted' && (
+                    <div className="p-3 bg-white border-t border-gray-100">
+                      <span className="block text-center text-xs font-bold text-[#2A9D8F]">✓ Accepted & Sent to Vendor</span>
+                    </div>
+                  )}
                 </div>
               ))
             )}
