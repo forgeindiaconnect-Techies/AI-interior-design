@@ -36,6 +36,8 @@ const VendorDashboard = ({
   const [quoteAmount, setQuoteAmount] = useState('');
   const [quoteMaterials, setQuoteMaterials] = useState('');
   const [quoteTime, setQuoteTime] = useState('');
+  const [quoteUPI, setQuoteUPI] = useState('');
+  const [quoteQR, setQuoteQR] = useState('');
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [viewDetailsId, setViewDetailsId] = useState(null);
 
@@ -436,7 +438,7 @@ const VendorDashboard = ({
       setReadyMadeOrders(mktOrders);
       
       const mfgOrders = localOrders
-        .filter(o => o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .filter(o => o.orderStatus === 'Processing' || o.orderStatus === 'In Progress' || o.orderStatus === 'Installation' || o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
         .map(o => ({
           _id: o._id,
           orderId: o._id,
@@ -748,7 +750,7 @@ const VendorDashboard = ({
     if (activeTab === 'manufacturing') {
       const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
       const mfgOrders = freshOrders
-        .filter(o => o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .filter(o => o.orderStatus === 'Processing' || o.orderStatus === 'In Progress' || o.orderStatus === 'Installation' || o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
         .map(o => ({
           _id: o._id,
           orderId: o._id,
@@ -910,7 +912,9 @@ const VendorDashboard = ({
     const quotationFields = { 
       quotationAmount: quoteAmount, 
       quotationMaterials: quoteMaterials, 
-      quotationTime: quoteTime 
+      quotationTime: quoteTime,
+      quotationUPI: quoteUPI,
+      quotationQR: quoteQR
     };
     
     setCustomRequests(customRequests.map(r => r._id === req._id ? { ...r, status: 'Quotation Sent', ...quotationFields } : r));
@@ -926,7 +930,7 @@ const VendorDashboard = ({
     }, ...localUserNotifs]));
 
     alert('✅ Quotation sent to customer successfully! User has been notified.');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime('');
+    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR('');
   };
 
   const handleAcceptRequest = async (id) => {
@@ -947,7 +951,7 @@ const VendorDashboard = ({
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const updated = localOrders.map(o =>
       o._id === order._id
-        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime }
+        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime, quotationUPI: quoteUPI, quotationQR: quoteQR }
         : o
     );
     localStorage.setItem('mockOrders', JSON.stringify(updated));
@@ -962,7 +966,7 @@ const VendorDashboard = ({
     }, ...localUserNotifs]));
 
     alert('Quotation sent to customer for AI Design order!');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime('');
+    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR('');
   };
 
   const handleContactCustomer = (req) => {
@@ -1083,12 +1087,14 @@ const VendorDashboard = ({
     // Send customer notification
     const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
     let userMessage = `Order status update: ${updatedStatus} for your custom furniture.`;
-    if (updatedStatus === 'In Production') {
-      userMessage = `Order update: Production has started for your custom furniture.`;
+    if (updatedStatus === 'Processing') {
+      userMessage = `Order update: Your order is now being processed.`;
+    } else if (updatedStatus === 'In Progress') {
+      userMessage = `Order update: Your custom furniture is now in progress.`;
+    } else if (updatedStatus === 'Installation') {
+      userMessage = `Order update: Installation has been scheduled for your order.`;
     } else if (updatedStatus === 'Completed') {
-      userMessage = `Order update: Manufacturing completed for your custom furniture.`;
-    } else if (updatedStatus === 'Ready for Delivery') {
-      userMessage = `Order update: Your order is ready for delivery.`;
+      userMessage = `Order update: Your order has been completed!`;
     }
     localStorage.setItem('mockUserNotifications', JSON.stringify([{
       _id: `notif_${Date.now()}`,
@@ -2395,6 +2401,16 @@ const VendorDashboard = ({
                           <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Materials Breakdown & Scope of Work</label>
                           <textarea rows={3} required value={quoteMaterials} onChange={(e) => setQuoteMaterials(e.target.value)} placeholder="Provide detailed breakdown of solid wood framing, premium upholstery, marble sourcing, and labor costs..." className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
                         </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">UPI ID (VPA) <span className="text-gray-400 font-normal normal-case">for Scan & Pay</span></label>
+                            <input type="text" value={quoteUPI} onChange={(e) => setQuoteUPI(e.target.value)} placeholder="e.g. vendor@paytm" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">QR Code Image URL <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                            <input type="text" value={quoteQR} onChange={(e) => setQuoteQR(e.target.value)} placeholder="e.g. https://example.com/qr.png" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                          </div>
+                        </div>
                         <div className="flex gap-3 pt-2">
                           <button type="submit" className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all">Submit Quotation & Notify User</button>
                           <button type="button" onClick={() => setSelectedRequestId(null)} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
@@ -2582,6 +2598,16 @@ const VendorDashboard = ({
                             <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Materials Breakdown & Scope of Work</label>
                             <textarea rows={3} required value={quoteMaterials} onChange={(e) => setQuoteMaterials(e.target.value)} placeholder="Provide detailed breakdown of materials, labor, and timeline..." className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
                           </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">UPI ID (VPA) <span className="text-gray-400 font-normal normal-case">for Scan & Pay</span></label>
+                              <input type="text" value={quoteUPI} onChange={(e) => setQuoteUPI(e.target.value)} placeholder="e.g. vendor@paytm" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">QR Code Image URL <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+                              <input type="text" value={quoteQR} onChange={(e) => setQuoteQR(e.target.value)} placeholder="e.g. https://example.com/qr.png" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                            </div>
+                          </div>
                           <div className="flex gap-3 pt-2">
                             <button type="submit" className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all">Submit Quotation & Notify User</button>
                             <button type="button" onClick={() => setSelectedRequestId(null)} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
@@ -2670,9 +2696,10 @@ const VendorDashboard = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={mfgStatus[mfg._id] || mfg.status} onChange={(e) => setMfgStatus({ ...mfgStatus, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
                     <option value="Pending">Pending</option>
-                    <option value="In Production">In Production</option>
+                    <option value="Processing">Processing</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Installation">Installation</option>
                     <option value="Completed">Completed</option>
-                    <option value="Ready for Delivery">Ready for Delivery</option>
                   </select>
                   <input type="text" placeholder="Progress Image URL" value={progressImg[mfg._id] || ''} onChange={(e) => setProgressImg({ ...progressImg, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                   <button onClick={() => handleMfgUpdate(mfg._id)} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage & Upload Photo</button>

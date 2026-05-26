@@ -72,6 +72,8 @@ const ProductDetails = () => {
     localStorage.setItem('mockCart', JSON.stringify(localCart));
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
+    localStorage.setItem('activeDashboardTab', 'cart');
+    navigate('/dashboard/user');
   };
 
   const handleSaveItem = async () => {

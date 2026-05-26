@@ -5,7 +5,7 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
@@ -73,7 +73,11 @@ const UserDashboard = ({
   const [pendingPaid, setPendingPaid] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [showCheckoutSummary, setShowCheckoutSummary] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('Google Pay');
   const [viewingQuotation, setViewingQuotation] = useState(null);
+  const [quotationPayment, setQuotationPayment] = useState(null);
+  const [quotationPaymentMethod, setQuotationPaymentMethod] = useState('Google Pay');
+  const [quotationProcessing, setQuotationProcessing] = useState(false);
 
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
@@ -88,9 +92,38 @@ const UserDashboard = ({
   }, []);
 
   useEffect(() => {
+    if (activeTab === 'quotations' || activeTab === 'manual') {
+      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      setManualDesigns(localManual);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
     if (activeTab === 'cart') {
       const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
       setCartItems(localCart);
+      
+      const syncProducts = async () => {
+        let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+        try {
+          const res = await axios.get('/products');
+          if (res.data && res.data.data && res.data.data.length > 0) {
+            const serverProds = res.data.data;
+            const mergedMap = new Map();
+            serverProds.forEach(p => mergedMap.set(p._id, p));
+            localProducts.forEach(p => mergedMap.set(p._id, p));
+            const sorted = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
+            setProducts(sorted);
+            localStorage.setItem('mockProducts', JSON.stringify(sorted));
+          } else {
+            setProducts(localProducts);
+          }
+        } catch (err) {
+          console.warn('Backend products fetch failed in activeTab cart useEffect:', err);
+          setProducts(localProducts);
+        }
+      };
+      syncProducts();
     } else {
       setShowCheckoutSummary(false);
     }
@@ -164,35 +197,31 @@ const UserDashboard = ({
       }
 
       // 3. Products
-      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || 'null');
-      if (!localProducts) {
+      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+      if (localProducts.length === 0) {
         localProducts = [
-          { 
-            _id: 'prod_1', 
-            title: 'Velvet Lounge Chair', 
-            category: 'Living Room', 
-            price: 450, 
-            images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], 
-            description: 'Luxurious velvet chair crafted with solid oak frames and high-density premium foam padding.',
-            material: 'Velvet / Oak Wood',
-            size: '32×32×30',
-            stockStatus: 'In Stock',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
-          },
-          { 
-            _id: 'prod_2', 
-            title: 'Modern Oak Dining Table', 
-            category: 'Dining Room', 
-            price: 1200, 
-            images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'], 
-            description: 'Solid oak dining table for 6 with matte oil finish.',
-            material: 'Solid Oak Wood',
-            size: '72×36×30',
-            stockStatus: 'In Stock',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
-          }
+          { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+          { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+          { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+          { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
         ];
         localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+      }
+
+      try {
+        const res = await axios.get('/products');
+        if (res.data && res.data.data && res.data.data.length > 0) {
+          const serverProds = res.data.data;
+          const mergedMap = new Map();
+          serverProds.forEach(p => mergedMap.set(p._id, p));
+          localProducts.forEach(p => mergedMap.set(p._id, p));
+          localProducts = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
+          localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+        }
+      } catch (err) {
+        console.warn('Backend products fetch failed in UserDashboard:', err);
       }
 
       // 4. Orders
@@ -646,13 +675,25 @@ const UserDashboard = ({
     if (setActiveTab) setActiveTab('orders');
   };
 
-  // Budget Approval Action
-  const handleBudgetApproval = async (quotationId) => {
+  // Open Quotation Payment Modal
+  const handleBudgetApproval = (quotationId) => {
+    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const req = localRequests.find(r => r._id === quotationId);
+    if (req) setQuotationPayment(req);
+  };
+
+  // Process Quotation Payment
+  const handleQuotationPayment = async () => {
+    if (!quotationPayment) return;
+    setQuotationProcessing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const quotationId = quotationPayment._id;
     const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
     const reqIndex = localRequests.findIndex(r => r._id === quotationId);
     let requestObj = null;
     if (reqIndex !== -1) {
-      localRequests[reqIndex].status = 'Quotation Accepted';
+      localRequests[reqIndex].status = 'Approved';
       localStorage.setItem('mockManualRequests', JSON.stringify(localRequests));
       requestObj = localRequests[reqIndex];
     }
@@ -664,16 +705,19 @@ const UserDashboard = ({
       orderType: requestObj?.requestType || 'Manual Design',
       userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
       vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-      manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
+      manufacturerId: null,
       deliveryPartnerId: null,
       installationPartnerId: null,
       totalAmount: orderAmount,
       paymentStatus: 'paid',
-      orderStatus: 'Quotation Accepted',
+      orderStatus: 'Processing',
       expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
       createdAt: new Date().toISOString(),
       shippingAddress: user?.address || '789 Designer Lane, New York, NY, USA',
-      designRequestId: quotationId
+      designRequestId: quotationId,
+      quotationAmount: requestObj?.quotationAmount || orderAmount,
+      quotationMaterials: requestObj?.quotationMaterials || '',
+      quotationTime: requestObj?.quotationTime || ''
     };
 
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -682,10 +726,27 @@ const UserDashboard = ({
     setOrders(updated);
 
     if (requestObj) {
-      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Quotation Accepted' } : r));
+      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Approved' } : r));
     }
 
-    // Real-time notifications simulation helper
+    // Create transaction record for admin
+    const newTransaction = {
+      _id: 'txn_q_' + Date.now(),
+      orderId: newOrder._id,
+      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
+      vendorId: { companyName: 'Artisan Workshop' },
+      amount: orderAmount,
+      commissionAmount: Math.round(orderAmount * 0.15 * 100) / 100,
+      netPayout: Math.round(orderAmount * 0.85 * 100) / 100,
+      paymentMethod: quotationPaymentMethod,
+      status: 'Paid',
+      type: 'Customer Payment',
+      createdAt: new Date().toISOString()
+    };
+    const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
+    localStorage.setItem('mockAdminTransactions', JSON.stringify([newTransaction, ...localTxns]));
+
+    // Notifications
     const triggerNotif = (recipient, message, type = 'success') => {
       const notifObj = {
         _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -703,7 +764,9 @@ const UserDashboard = ({
     triggerNotif('vendor', `Quotation approved by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'info');
     triggerNotif('admin', `Payment success for order: ${newOrder._id.slice(-6)}.`, 'success');
 
-    alert('Quotation approved! Order confirmed and moved to manufacturing.');
+    setQuotationProcessing(false);
+    setQuotationPayment(null);
+    showToast('Payment successful! Order has been created.');
     if (setActiveTab) setActiveTab('orders');
   };
 
@@ -1535,7 +1598,112 @@ const UserDashboard = ({
                   <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">${shipping}</span></div>
                   <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">${tax}</span></div>
                 </div>
-                <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
+                {/* Payment Method Selector */}
+                <div className="space-y-2 pt-2 border-t border-gray-100">
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Select Payment Method</label>
+                  <div className="relative">
+                    <select 
+                      value={paymentMethod} 
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      className="w-full bg-[#F8F5F0] border border-gray-200 rounded-xl py-3 px-4 pr-10 text-sm font-bold text-gray-700 focus:outline-none focus:border-[#8B5E3C] focus:ring-2 focus:ring-[#8B5E3C]/20 appearance-none transition-all cursor-pointer"
+                    >
+                      <option value="Google Pay">Google Pay (GPay)</option>
+                      <option value="PhonePe">PhonePe</option>
+                      <option value="Paytm">Paytm</option>
+                      <option value="UPI">UPI ID / QR Code</option>
+                      <option value="Card">Credit / Debit Card</option>
+                      <option value="NetBanking">Net Banking</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7"></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Conditional Payment Fields */}
+                {['Google Pay', 'PhonePe', 'Paytm'].includes(paymentMethod) && (
+                  <div className="space-y-2 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">UPI Mobile Number</label>
+                    <input 
+                      type="tel" 
+                      placeholder="Enter 10-digit mobile number" 
+                      maxLength="10"
+                      className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                    />
+                    <p className="text-[10px] text-gray-400">A payment request will be sent to this number.</p>
+                  </div>
+                )}
+
+                {paymentMethod === 'UPI' && (
+                  <div className="space-y-2 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">UPI ID (VPA)</label>
+                    <input 
+                      type="text" 
+                      placeholder="username@bank" 
+                      className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                    />
+                    <p className="text-[10px] text-gray-400">Example: mobile@okaxis, name@okicici</p>
+                  </div>
+                )}
+
+                {paymentMethod === 'Card' && (
+                  <div className="space-y-3 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
+                    <div>
+                      <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Cardholder Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="John Doe" 
+                        className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3.5 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Card Number</label>
+                      <input 
+                        type="text" 
+                        placeholder="XXXX XXXX XXXX XXXX" 
+                        className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3.5 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Expiry Date</label>
+                        <input 
+                          type="text" 
+                          placeholder="MM/YY" 
+                          className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3.5 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">CVV</label>
+                        <input 
+                          type="password" 
+                          placeholder="XXX" 
+                          maxLength="3"
+                          className="w-full bg-white border border-gray-200 rounded-xl py-2 px-3.5 text-xs font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {paymentMethod === 'NetBanking' && (
+                  <div className="space-y-2 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Select Bank</label>
+                    <select 
+                      className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all cursor-pointer"
+                    >
+                      <option>HDFC Bank</option>
+                      <option>SBI (State Bank of India)</option>
+                      <option>ICICI Bank</option>
+                      <option>Axis Bank</option>
+                      <option>Kotak Mahindra Bank</option>
+                    </select>
+                  </div>
+                )}
+
+                <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C] pt-2 border-t border-gray-100">
                   <span>Total</span>
                   <span>${total.toLocaleString()}</span>
                 </div>
@@ -1729,7 +1897,7 @@ const UserDashboard = ({
           </div>
 
           <div className="grid grid-cols-1 gap-6">
-            {manualDesigns.filter(d => ['Quotation Sent', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).length === 0 ? (
+            {manualDesigns.filter(d => ['Quotation Sent', 'Approved', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).length === 0 ? (
               <div className="bg-white p-16 rounded-3xl border border-[#D4A373]/30 text-center space-y-4">
                 <FileText className="w-16 h-16 text-[#D4A373]/40 mx-auto" />
                 <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">No Quotations Yet</h3>
@@ -1737,9 +1905,10 @@ const UserDashboard = ({
                 <button onClick={() => setActiveTab('manual')} className="px-6 py-3 bg-[#8B5E3C] text-white rounded-xl font-bold text-xs shadow-md">Create Custom Request</button>
               </div>
             ) : (
-              manualDesigns.filter(d => ['Quotation Sent', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).map((req) => {
+              manualDesigns.filter(d => ['Quotation Sent', 'Approved', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).map((req) => {
                 const statusColors = {
                   'Quotation Sent': 'bg-amber-50 text-amber-700 border-amber-200',
+                  'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
                   'Quotation Accepted': 'bg-emerald-50 text-emerald-700 border-emerald-200',
                   'Quotation Rejected': 'bg-red-50 text-red-700 border-red-200'
                 };
@@ -1849,6 +2018,129 @@ const UserDashboard = ({
                   <button onClick={() => { handleBudgetRejection(viewingQuotation._id); setViewingQuotation(null); }} className="flex-1 py-3.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs shadow-sm transition-all border border-red-200">Reject Quotation</button>
                   <button onClick={() => { handleBudgetApproval(viewingQuotation._id); setViewingQuotation(null); }} className="flex-1 py-3.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"><Check className="w-4 h-4" /> Accept & Confirm Pay</button>
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quotation Payment Modal */}
+      {quotationPayment && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+            <div className="bg-[#8B5E3C] p-6 text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4A373]">Payment</span>
+                <h3 className="font-['Playfair_Display'] font-bold text-2xl mt-0.5">{quotationPayment.roomType} — {quotationPayment.style}</h3>
+              </div>
+              <button onClick={() => setQuotationPayment(null)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
+            </div>
+            <div className="p-6 space-y-6 text-left">
+              <div className="bg-[#F8F5F0] p-4 rounded-2xl space-y-2 border border-[#D4A373]/20">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Quotation Amount</span>
+                  <span className="font-extrabold text-[#8B5E3C] text-lg">${quotationPayment.quotationAmount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Materials</span>
+                  <span className="font-bold text-gray-700">{quotationPayment.quotationMaterials}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Timeline</span>
+                  <span className="font-bold text-gray-700">{quotationPayment.quotationTime}</span>
+                </div>
+              </div>
+
+              {/* Payment Method Selector */}
+              <div className="space-y-3">
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Select Payment Method</label>
+                <select
+                  value={quotationPaymentMethod}
+                  onChange={(e) => setQuotationPaymentMethod(e.target.value)}
+                  className="w-full bg-[#F8F5F0] border border-gray-200 rounded-xl py-3 px-4 text-sm font-bold text-gray-700 focus:outline-none focus:border-[#8B5E3C] focus:ring-2 focus:ring-[#8B5E3C]/20 transition-all cursor-pointer"
+                >
+                  <option value="Google Pay">Google Pay (GPay)</option>
+                  <option value="PhonePe">PhonePe</option>
+                  <option value="Paytm">Paytm</option>
+                  <option value="UPI">UPI ID / QR Code</option>
+                  <option value="Card">Credit / Debit Card</option>
+                  <option value="NetBanking">Net Banking</option>
+                </select>
+              </div>
+
+              {/* QR / Scan Section — shown only for UPI-based methods */}
+              {['Google Pay', 'PhonePe', 'Paytm', 'UPI'].includes(quotationPaymentMethod) && (
+                <div className="bg-[#F0FDF4] border border-emerald-200 rounded-2xl p-5 text-center space-y-4 animate-fadeIn">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                    <Smartphone className="w-3.5 h-3.5" /> Scan with {quotationPaymentMethod}
+                  </div>
+
+                  {/* QR Code Image */}
+                  <div className="flex justify-center">
+                    {quotationPayment.quotationQR ? (
+                      <img
+                        src={quotationPayment.quotationQR}
+                        alt="Scan to Pay QR Code"
+                        className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm"
+                        onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }}
+                      />
+                    ) : null}
+                    <div className={`${quotationPayment.quotationQR ? 'hidden' : 'flex'} w-48 h-48 bg-white rounded-2xl border-2 border-dashed border-gray-300 items-center justify-center flex-col text-gray-400`}>
+                      <Smartphone className="w-10 h-10 mb-2" />
+                      <span className="text-[10px] font-bold">No QR provided</span>
+                      <span className="text-[9px] mt-1">Use UPI ID below</span>
+                    </div>
+                  </div>
+
+                  {/* UPI ID */}
+                  {quotationPayment.quotationUPI ? (
+                    <div className="bg-white border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                      <div className="text-left">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase">UPI ID</p>
+                        <p className="font-bold text-gray-800 text-sm">{quotationPayment.quotationUPI}</p>
+                      </div>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(quotationPayment.quotationUPI); showToast('UPI ID copied!'); }}
+                        className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-[11px] font-bold transition-all"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500">Vendor did not provide a UPI ID for scan & pay.</p>
+                  )}
+
+                  <p className="text-xs text-gray-500 leading-relaxed">
+                    Open <strong>{quotationPaymentMethod}</strong> on your phone, scan the QR code above or enter the UPI ID to pay <strong>${quotationPayment.quotationAmount}</strong>. Then click confirm below.
+                  </p>
+                </div>
+              )}
+
+              {/* Action Button */}
+              {['Google Pay', 'PhonePe', 'Paytm', 'UPI'].includes(quotationPaymentMethod) ? (
+                <button
+                  onClick={handleQuotationPayment}
+                  disabled={quotationProcessing}
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  {quotationProcessing ? (
+                    <>Processing...</>
+                  ) : (
+                    <><Smartphone className="w-5 h-5" /> I've Paid — Confirm Payment</>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleQuotationPayment}
+                  disabled={quotationProcessing}
+                  className="w-full py-4 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                >
+                  {quotationProcessing ? (
+                    <>Processing...</>
+                  ) : (
+                    <><Check className="w-5 h-5" /> Pay ${quotationPayment.quotationAmount}</>
+                  )}
+                </button>
               )}
             </div>
           </div>

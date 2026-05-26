@@ -209,6 +209,25 @@ const AdminDashboard = ({
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (activeTab === 'manual_designs' || activeTab === 'orders') {
+      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      setManagementData(prev => {
+        if (!prev) return prev;
+        const mergedManual = [...localManual];
+        (prev.manualDesigns || []).forEach(br => {
+          if (!mergedManual.find(lr => lr._id === br._id)) mergedManual.push(br);
+        });
+        const mergedOrders = [...localOrders];
+        (prev.orders || []).forEach(bo => {
+          if (!mergedOrders.find(lo => lo._id === bo._id)) mergedOrders.push(bo);
+        });
+        return { ...prev, manualDesigns: mergedManual, orders: mergedOrders };
+      });
+    }
+  }, [activeTab]);
+
   const fetchAdminData = async () => {
     setLoading(true);
     try {
@@ -676,7 +695,13 @@ const AdminDashboard = ({
           createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
         }
       ];
-      setTransactions(mockTx);
+      // Merge transactions from localStorage (created by quotation payments)
+      const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
+      const mergedTxns = [...mockTx];
+      localTxns.forEach(lt => {
+        if (!mergedTxns.find(t => t._id === lt._id)) mergedTxns.push(lt);
+      });
+      setTransactions(mergedTxns);
       setPaymentStats({
         totalPlatformRevenue: 19550,
         estimatedCommission: 2932.5,
@@ -868,7 +893,7 @@ const AdminDashboard = ({
   };
 
   useEffect(() => {
-    if (activeTab === 'payments') {
+    if (activeTab === 'admin_transactions') {
       fetchTransactions();
     }
     if (activeTab === 'tickets') {
@@ -3392,7 +3417,7 @@ const AdminDashboard = ({
         const pendingCount = manualList.filter(d => d.status === 'Submitted' || d.status === 'pending').length;
         const vendorAssignedCount = manualList.filter(d => d.assignedVendorId || d.assignedDesignerId).length;
         const quotationSentCount = manualList.filter(d => d.status === 'Quotation Sent').length;
-        const approvedCount = manualList.filter(d => ['User Approved', 'Manufacturing', 'Delivery', 'Installation', 'Completed'].includes(d.status)).length;
+        const approvedCount = manualList.filter(d => ['Approved', 'User Approved', 'Manufacturing', 'Delivery', 'Installation', 'Completed'].includes(d.status)).length;
 
         // Filter the manual requests list
         const filteredList = manualList.filter(d => {
@@ -3620,6 +3645,8 @@ const AdminDashboard = ({
                           statusColor = "bg-indigo-50 text-indigo-600 border-indigo-200";
                         } else if (d.status === 'Quotation Sent') {
                           statusColor = "bg-blue-50 text-blue-600 border-blue-200";
+                        } else if (d.status === 'Approved') {
+                          statusColor = "bg-emerald-50 text-emerald-600 border-emerald-200";
                         } else if (d.status === 'User Approved') {
                           statusColor = "bg-teal-50 text-teal-600 border-teal-200";
                         } else if (d.status === 'Completed') {
@@ -3665,6 +3692,15 @@ const AdminDashboard = ({
                             <td className="py-4 px-4">
                               <p className="text-xs font-extrabold text-[#2A9D8F]">{d.budget}</p>
                               <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">{d.timeline || 'Flexible'}</p>
+                              {(d.status === 'Quotation Sent' || d.status === 'Approved') && d.quotationAmount && (
+                                <div className={`mt-2 pt-2 border-t ${d.status === 'Approved' ? 'border-emerald-100' : 'border-blue-100'}`}>
+                                  <p className={`text-xs font-extrabold ${d.status === 'Approved' ? 'text-emerald-600' : 'text-blue-600'}`}>
+                                    {d.status === 'Approved' ? '✓ Approved — ' : ''}Quotation: ${d.quotationAmount}
+                                  </p>
+                                  <p className="text-[10px] text-gray-500 mt-0.5">{d.quotationMaterials}</p>
+                                  <p className="text-[10px] text-gray-400">{d.quotationTime}</p>
+                                </div>
+                              )}
                             </td>
 
                             <td className="py-4 px-4 space-y-1">
@@ -3727,6 +3763,11 @@ const AdminDashboard = ({
                                       <XCircle size={14} />
                                     </button>
                                   </>
+                                )}
+                                {d.status === 'Approved' && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200">
+                                    <CheckCircle size={12} /> Paid
+                                  </span>
                                 )}
 
                                 <button
@@ -4220,6 +4261,13 @@ const AdminDashboard = ({
                                 </div>
                               )}
                               <span className="font-bold text-gray-800 block mt-1.5 font-mono">${order.totalAmount?.toLocaleString() || '0'}</span>
+                              {order.quotationMaterials && (
+                                <div className="mt-2 pt-2 border-t border-indigo-100 space-y-1">
+                                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Quotation Details</p>
+                                  <p className="text-[10px] text-gray-600"><span className="font-bold">Materials:</span> {order.quotationMaterials}</p>
+                                  <p className="text-[10px] text-gray-600"><span className="font-bold">Timeline:</span> {order.quotationTime}</p>
+                                </div>
+                              )}
                             </td>
 
                             {/* Stage & Payment */}

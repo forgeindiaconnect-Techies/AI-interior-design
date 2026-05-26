@@ -88,6 +88,12 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     localStorage.setItem('mockCart', JSON.stringify(localCart));
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
+    if (onGoToCart) {
+      onGoToCart();
+    } else {
+      localStorage.setItem('activeDashboardTab', 'cart');
+      navigate('/dashboard/user');
+    }
   };
 
   const handleSaveItem = async (e, productId) => {
