@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -263,29 +263,64 @@ const AdminDashboard = ({
   const [designerRequestBudgetFilter, setDesignerRequestBudgetFilter] = useState('all');
   const [selectedRequestDesignerId, setSelectedRequestDesignerId] = useState('');
 
+  const syncLocalDataToAdminState = () => {
+    setManagementData(prev => {
+      if (!prev) return prev;
+      
+      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const mergedManual = [...localManual];
+      (prev.manualDesigns || []).forEach(br => {
+        if (!mergedManual.find(lr => lr._id === br._id)) mergedManual.push(br);
+      });
+
+      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const mergedOrders = [...localOrders];
+      (prev.orders || []).forEach(bo => {
+        if (!mergedOrders.find(lo => lo._id === bo._id)) mergedOrders.push(bo);
+      });
+
+      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const mergedAi = [...localAi];
+      (prev.aiDesigns || []).forEach(bd => {
+        if (!mergedAi.find(ld => ld._id === bd._id)) mergedAi.push(bd);
+      });
+
+      const localDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const mergedDesigner = [...localDesigner];
+      (prev.designerRequests || []).forEach(br => {
+        if (!mergedDesigner.find(lr => lr._id === br._id)) mergedDesigner.push(br);
+      });
+
+      return {
+        ...prev,
+        manualDesigns: mergedManual,
+        orders: mergedOrders,
+        aiDesigns: mergedAi,
+        designerRequests: mergedDesigner
+      };
+    });
+  };
+
   useEffect(() => {
     fetchAdminData();
     loadContactMessages();
     const interval = setInterval(loadContactMessages, 5000);
-    return () => clearInterval(interval);
+
+    window.addEventListener('storage', syncLocalDataToAdminState);
+    window.addEventListener('focus', syncLocalDataToAdminState);
+    const syncInterval = setInterval(syncLocalDataToAdminState, 3000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(syncInterval);
+      window.removeEventListener('storage', syncLocalDataToAdminState);
+      window.removeEventListener('focus', syncLocalDataToAdminState);
+    };
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'manual_designs' || activeTab === 'orders') {
-      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      setManagementData(prev => {
-        if (!prev) return prev;
-        const mergedManual = [...localManual];
-        (prev.manualDesigns || []).forEach(br => {
-          if (!mergedManual.find(lr => lr._id === br._id)) mergedManual.push(br);
-        });
-        const mergedOrders = [...localOrders];
-        (prev.orders || []).forEach(bo => {
-          if (!mergedOrders.find(lo => lo._id === bo._id)) mergedOrders.push(bo);
-        });
-        return { ...prev, manualDesigns: mergedManual, orders: mergedOrders };
-      });
+    if (activeTab === 'manual_designs' || activeTab === 'orders' || activeTab === 'ai_designs' || activeTab === 'designer_requests') {
+      syncLocalDataToAdminState();
     }
   }, [activeTab]);
 

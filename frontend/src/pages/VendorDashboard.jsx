@@ -241,6 +241,20 @@ const VendorDashboard = ({
 
   useEffect(() => {
     fetchPartnerData();
+
+    const handleSync = () => {
+      fetchPartnerData();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    const interval = setInterval(fetchPartnerData, 3000);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+      clearInterval(interval);
+    };
   }, []);
 
   const fetchPartnerData = async () => {

@@ -198,6 +198,20 @@ const UserDashboard = ({
 
   useEffect(() => {
     fetchUserData();
+
+    const handleSync = () => {
+      fetchUserData();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+    const interval = setInterval(fetchUserData, 3000);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+      clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
