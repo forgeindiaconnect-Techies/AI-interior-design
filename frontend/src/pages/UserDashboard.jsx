@@ -5,8 +5,9 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle
 } from 'lucide-react';
+import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
 
 const UserDashboard = ({ 
@@ -17,6 +18,7 @@ const UserDashboard = ({
   onMarkAllRead
 }) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const location = useLocation();
@@ -34,7 +36,7 @@ const UserDashboard = ({
   const [roomType, setRoomType] = useState('Living Room');
   const [originalImage, setOriginalImage] = useState('');
   const [aiDesigns, setAiDesigns] = useState([]);
-  const savedDesigns = aiDesigns.filter(d => d.isBookmarked || d.status === 'accepted');
+  const savedDesigns = aiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution');
   const [loadingAi, setLoadingAi] = useState(false);
 
   // Manual Design State
@@ -70,6 +72,7 @@ const UserDashboard = ({
   const [orders, setOrders] = useState([]);
   const [pendingPaid, setPendingPaid] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+  const [showCheckoutSummary, setShowCheckoutSummary] = useState(false);
   const [viewingQuotation, setViewingQuotation] = useState(null);
 
   // Ticket & Review State
@@ -88,6 +91,8 @@ const UserDashboard = ({
     if (activeTab === 'cart') {
       const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
       setCartItems(localCart);
+    } else {
+      setShowCheckoutSummary(false);
     }
   }, [activeTab]);
 
@@ -120,7 +125,7 @@ const UserDashboard = ({
         localManual = [
           {
             _id: 'man_1',
-            requestType: 'Manual Design',
+      requestType: needDesigner === 'Yes' ? 'INTERIOR_DESIGN' : 'Manual Design',
             userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: '+91 98765 43210' },
             roomType: 'Bedroom',
             style: 'Minimalist',
@@ -131,6 +136,7 @@ const UserDashboard = ({
             timeline: 'Within 1 Month',
             ownMaterialsAvailable: 'No',
             status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
             createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
           },
           {
@@ -150,6 +156,7 @@ const UserDashboard = ({
             materialPickupNeeded: 'Yes',
             pickupAddress: 'Block 4B, Sector 62, Noida',
             status: 'Submitted',
+            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
             createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
           }
         ];
@@ -417,6 +424,46 @@ const UserDashboard = ({
     setAiDesigns(updated);
   };
 
+  const handleProceedToExecution = (design) => {
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const newOrder = {
+      _id: 'ord_ai_' + Date.now(),
+      orderType: 'AI Design',
+      orderStatus: 'quotation_pending',
+      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+      vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      totalAmount: design.aiSuggestion?.budgetEstimate || 0,
+      paymentStatus: 'pending',
+      aiDesignData: {
+        roomType: design.roomType,
+        originalImage: design.originalImage,
+        generatedImage: design.generatedImage,
+        style: 'AI Generated (' + (design.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+        furniture: design.aiSuggestion?.furniture || [],
+        materials: design.aiSuggestion?.materials || [],
+        colorPalette: design.aiSuggestion?.colorPalette || [],
+        budgetEstimate: design.aiSuggestion?.budgetEstimate || 0,
+        requirements: 'AI Suggestions: Furniture (' + (design.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (design.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+      },
+      createdAt: new Date().toISOString()
+    };
+    const updatedOrders = [newOrder, ...localOrders];
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    setOrders(updatedOrders);
+    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const updatedAi = localAi.map(d => d._id === design._id ? { ...d, status: 'execution' } : d);
+    localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+    setAiDesigns(updatedAi);
+    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
+      _id: 'notif_v_' + Date.now(),
+      message: 'New AI Design order requires your quotation.',
+      type: 'info',
+      createdAt: new Date().toISOString()
+    }, ...localVendorNotifs]));
+    alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
+  };
+
   // Manual Design Actions
   const handleRefImgUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -448,6 +495,7 @@ const UserDashboard = ({
       timeline, needDesignerHelp: needDesigner,
       serviceAddress, vendorPreference: vendorPref, quotationType,
       status: 'Submitted',
+      assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
       createdAt: new Date().toISOString()
     };
 
@@ -455,6 +503,21 @@ const UserDashboard = ({
     const updated = [fallbackRequest, ...localRequests];
     localStorage.setItem('mockManualRequests', JSON.stringify(updated));
     setManualDesigns(updated);
+
+    if (needDesigner === 'Yes') {
+      const localDesReqs = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const desEntry = {
+        _id: 'des_from_manual_' + Date.now(),
+        userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+        details: manualRequirements || '',
+        budget: Number(String(manualBudget).replace(/[^0-9]/g, '')) || 0,
+        status: 'pending',
+        assignedDesignerId: null,
+        roomType, style: manualStyle,
+        createdAt: new Date().toISOString()
+      };
+      localStorage.setItem('mockDesignerRequests', JSON.stringify([desEntry, ...localDesReqs]));
+    }
 
     const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
     localStorage.setItem('mockVendorNotifications', JSON.stringify([{
@@ -517,6 +580,7 @@ const UserDashboard = ({
       requirements: fallbackRequest.details || '',
       referenceImages: [],
       status: 'Pending',
+      assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
       createdAt: fallbackRequest.createdAt
     };
     localStorage.setItem('mockManualRequests', JSON.stringify([manualRequestFromDesigner, ...localManualRequests]));
@@ -1006,8 +1070,8 @@ const UserDashboard = ({
                     <div className="space-y-4 flex-1 w-full">
                       <div className="flex items-center justify-between">
                         <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{design.roomType}</span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${design.status === 'accepted' ? 'bg-[#2A9D8F] text-white' : design.status === 'rejected' ? 'bg-[#E76F51] text-white' : 'bg-[#E9C46A] text-[#1F2937]'}`}>
-                          {design.status.toUpperCase()}
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${design.status === 'accepted' || design.status === 'execution' ? 'bg-[#2A9D8F] text-white' : design.status === 'rejected' ? 'bg-[#E76F51] text-white' : 'bg-[#E9C46A] text-[#1F2937]'}`}>
+                          {design.status === 'execution' ? 'SENT TO EXECUTION' : design.status.toUpperCase()}
                         </span>
                       </div>
                       <div>
@@ -1020,9 +1084,10 @@ const UserDashboard = ({
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                         <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: ${design.aiSuggestion?.budgetEstimate || '4,500'}</span>
                         <div className="flex items-center gap-2">
-                          {design.status !== 'accepted' && (
+                          {design.status !== 'accepted' && design.status !== 'execution' && (
                             <>
                               <button onClick={() => handleAiStatus(design._id, 'accepted')} className="p-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm" title="Accept & Order"><CheckCircle className="w-4 h-4" /></button>
+                              <button onClick={() => handleProceedToExecution(design)} className="p-2 bg-[#1F2937] hover:bg-black text-white rounded-xl shadow-sm" title="Proceed to Execution"><PlayCircle className="w-4 h-4" /></button>
                               <button onClick={() => handleAiStatus(design._id, 'regenerated')} className="p-2 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
                               <button onClick={() => handleAiStatus(design._id, 'rejected')} className="p-2 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm" title="Reject & Manual Design"><XCircle className="w-4 h-4" /></button>
                             </>
@@ -1365,20 +1430,25 @@ const UserDashboard = ({
           }).filter(Boolean);
           setCartItems(updated);
           localStorage.setItem('mockCart', JSON.stringify(updated));
+          window.dispatchEvent(new Event('cartUpdated'));
         };
 
         const removeFromCart = (productId) => {
           const updated = cartItems.filter(item => item.productId !== productId);
           setCartItems(updated);
           localStorage.setItem('mockCart', JSON.stringify(updated));
+          window.dispatchEvent(new Event('cartUpdated'));
         };
 
         const handleCheckout = () => {
           if (resolvedItems.length === 0) {
-            alert('Your cart is empty!');
+            showToast('Your cart is empty!', 'warning');
             return;
           }
+          setShowCheckoutSummary(true);
+        };
 
+        const handleConfirmPayment = () => {
           // Create mock orders for each vendor's products in the cart
           const newOrders = resolvedItems.map(item => ({
             _id: 'ord_p_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -1430,10 +1500,52 @@ const UserDashboard = ({
           // Clear cart
           setCartItems([]);
           localStorage.setItem('mockCart', JSON.stringify([]));
+          window.dispatchEvent(new Event('cartUpdated'));
+          setShowCheckoutSummary(false);
 
-          alert('✅ Order placed successfully! Thank you for your purchase.');
+          showToast('✅ Order placed successfully! Thank you for your purchase.');
           if (setActiveTab) setActiveTab('orders');
         };
+
+        if (showCheckoutSummary) {
+          return (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
+              <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Order Summary</h2>
+                <div className="space-y-4">
+                  {resolvedItems.map(item => (
+                    <div key={item._id} className="flex items-center gap-4 p-4 border border-gray-100 rounded-2xl bg-[#F8F5F0]/50">
+                      <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-16 h-16 object-cover rounded-xl shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
+                        <p className="text-xs text-gray-500">Qty: {item.quantity} x ${item.price}</p>
+                      </div>
+                      <span className="font-bold text-[#8B5E3C]">${(item.price * item.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setShowCheckoutSummary(false)} className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1.5 hover:underline transition-all">
+                  Back to Cart
+                </button>
+              </div>
+              <div className="lg:col-span-4 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
+                <h3 className="font-bold text-lg text-[#1F2937]">Payment</h3>
+                <div className="space-y-3 text-sm text-gray-600 border-b border-gray-100 pb-4">
+                  <div className="flex justify-between"><span>Subtotal</span><span className="font-bold text-[#1F2937]">${subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">${shipping}</span></div>
+                  <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">${tax}</span></div>
+                </div>
+                <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
+                  <span>Total</span>
+                  <span>${total.toLocaleString()}</span>
+                </div>
+                <button onClick={handleConfirmPayment} className="w-full py-4 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  Pay Now <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
@@ -1444,27 +1556,34 @@ const UserDashboard = ({
                   <div className="text-center py-12 space-y-4">
                     <ShoppingCart className="w-12 h-12 text-[#D4A373] mx-auto" />
                     <p className="text-gray-500 font-bold">Your shopping cart is empty.</p>
-                    <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Explore Marketplace</button>
+                    <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Continue Shopping</button>
                   </div>
                 ) : (
-                  resolvedItems.map(item => (
-                    <div key={item._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-gray-100 rounded-2xl">
-                      <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-50" />
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
-                        <p className="text-xs text-gray-500 mt-0.5">Vendor: {item.vendorId?.companyName || 'Artisan Workshop'}</p>
-                        <div className="flex items-center gap-4 mt-2">
-                          <span className="font-extrabold text-[#8B5E3C]">${item.price}</span>
-                          <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1 bg-white">
-                            <button onClick={() => updateCartQuantity(item._id, -1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">-</button>
-                            <span className="w-4 text-center">{item.quantity}</span>
-                            <button onClick={() => updateCartQuantity(item._id, 1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">+</button>
+                  <>
+                    {resolvedItems.map(item => (
+                      <div key={item._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-gray-100 rounded-2xl">
+                        <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-50" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
+                          <p className="text-xs text-gray-500 mt-0.5">Vendor: {item.vendorId?.companyName || 'Artisan Workshop'}</p>
+                          <div className="flex items-center gap-4 mt-2">
+                            <span className="font-extrabold text-[#8B5E3C]">${item.price}</span>
+                            <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1 bg-white">
+                              <button onClick={() => updateCartQuantity(item._id, -1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">-</button>
+                              <span className="w-4 text-center">{item.quantity}</span>
+                              <button onClick={() => updateCartQuantity(item._id, 1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">+</button>
+                            </div>
                           </div>
                         </div>
+                        <button onClick={() => removeFromCart(item._id)} className="self-end sm:self-center p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
                       </div>
-                      <button onClick={() => removeFromCart(item._id)} className="self-end sm:self-center p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
+                    ))}
+                    <div className="pt-2">
+                      <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1.5 hover:underline transition-all">
+                        Continue Shopping
+                      </button>
                     </div>
-                  ))
+                  </>
                 )}
               </div>
             </div>
@@ -1479,9 +1598,11 @@ const UserDashboard = ({
                 <span>Total</span>
                 <span>${total.toLocaleString()}</span>
               </div>
-              <button onClick={handleCheckout} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                Proceed to Checkout <ArrowRight className="w-4 h-4" />
-              </button>
+              {resolvedItems.length > 0 && (
+                <button onClick={handleCheckout} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                  Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
         );
@@ -2114,16 +2235,24 @@ const UserDashboard = ({
                     <p className="font-bold text-lg">{design.roomType || 'Living Room'}</p>
                     <p className="text-xs opacity-80">${design.aiSuggestion?.budgetEstimate || '4,500'}</p>
                   </div>
-                  {design.status !== 'accepted' && (
+                  {design.status !== 'accepted' && design.status !== 'execution' && (
                     <div className="p-3 bg-white border-t border-gray-100 flex gap-2">
                       <button onClick={() => handleAiStatus(design._id, 'accepted')} className="flex-1 py-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1">
                         <CheckCircle className="w-3.5 h-3.5" /> Accept & Order
+                      </button>
+                      <button onClick={() => handleProceedToExecution(design)} className="flex-1 py-2 bg-[#1F2937] hover:bg-black text-white rounded-xl font-bold text-xs shadow-sm transition-all flex items-center justify-center gap-1">
+                        <PlayCircle className="w-3.5 h-3.5" /> Execute
                       </button>
                     </div>
                   )}
                   {design.status === 'accepted' && (
                     <div className="p-3 bg-white border-t border-gray-100">
                       <span className="block text-center text-xs font-bold text-[#2A9D8F]">✓ Accepted & Sent to Vendor</span>
+                    </div>
+                  )}
+                  {design.status === 'execution' && (
+                    <div className="p-3 bg-white border-t border-gray-100">
+                      <span className="block text-center text-xs font-bold text-[#2A9D8F]">✓ Sent for Execution</span>
                     </div>
                   )}
                 </div>

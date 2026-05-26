@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Filter, Star, ShoppingCart, Heart, Eye, ArrowRight, Truck } from 'lucide-react';
 import axios from 'axios';
+import { useToast } from '../components/Toast';
 
 const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,10 +86,8 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
       localCart.push({ productId, quantity: 1 });
     }
     localStorage.setItem('mockCart', JSON.stringify(localCart));
-    alert('🛒 Product added to your cart!');
-    if (onGoToCart) {
-      onGoToCart();
-    }
+    window.dispatchEvent(new Event('cartUpdated'));
+    showToast('🛒 Product added to your cart!');
   };
 
   const handleSaveItem = async (e, productId) => {

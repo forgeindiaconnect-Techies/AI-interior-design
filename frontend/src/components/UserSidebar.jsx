@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Palette, LayoutDashboard, Sparkles, FileText, HelpCircle, 
   ShoppingBag, Bookmark, ShoppingCart, Package, Truck, DollarSign, 
@@ -6,6 +6,22 @@ import {
 } from 'lucide-react';
 
 const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
+  const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const updateCartCount = () => {
+      const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+      setCartCount(cart.length);
+    };
+    updateCartCount();
+    window.addEventListener('storage', updateCartCount);
+    window.addEventListener('cartUpdated', updateCartCount);
+    return () => {
+      window.removeEventListener('storage', updateCartCount);
+      window.removeEventListener('cartUpdated', updateCartCount);
+    };
+  }, []);
+
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     design: true,
@@ -106,8 +122,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
           {openGroups.marketplace && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-100 ml-3.5">
               {[
-                { name: 'Products', icon: ShoppingBag, tab: 'marketplace' },
-                { name: 'Saved Items', icon: Bookmark, tab: 'saved' }
+                { name: 'Products', icon: ShoppingBag, tab: 'marketplace' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -142,29 +157,36 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
           
           {openGroups.orders && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-100 ml-3.5">
-              {[
-                { name: 'My Cart', icon: ShoppingCart, tab: 'cart' },
-                { name: 'Quotations', icon: FileText, tab: 'quotations' },
-                { name: 'My Orders', icon: Package, tab: 'orders' },
-                { name: 'Order Tracking', icon: Truck, tab: 'tracking' },
-                { name: 'Payments', icon: DollarSign, tab: 'payments' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                      isActive 
-                        ? 'bg-[#8B5E3C]/10 text-[#8B5E3C]' 
-                        : 'text-gray-500 hover:text-gray-700 hover:bg-[#8B5E3C]/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
+                {[
+                  { name: 'My Cart', icon: ShoppingCart, tab: 'cart', badge: cartCount },
+                  { name: 'Quotations', icon: FileText, tab: 'quotations' },
+                  { name: 'My Orders', icon: Package, tab: 'orders' },
+                  { name: 'Order Tracking', icon: Truck, tab: 'tracking' },
+                  { name: 'Payments', icon: DollarSign, tab: 'payments' }
+                ].map((item, index) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.tab;
+                  return (
+                    <button 
+                      key={index} 
+                      onClick={() => setActiveTab(item.tab)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                        isActive 
+                          ? 'bg-[#8B5E3C]/10 text-[#8B5E3C]' 
+                          : 'text-gray-500 hover:text-gray-700 hover:bg-[#8B5E3C]/5'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-3.5 h-3.5 shrink-0" />
+                        <span>{item.name}</span>
+                      </div>
+                      {item.badge != null && item.badge > 0 && (
+                        <span className="bg-[#8B5E3C] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
               })}
             </div>
           )}

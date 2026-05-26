@@ -3639,8 +3639,8 @@ const AdminDashboard = ({
                                   const badgeClass = reqType === 'Interior Designer Help' 
                                     ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
                                     : reqType === 'AI Generated'
-                                      ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                      : 'bg-amber-50 text-amber-700 border-amber-200';
+                                        ? 'bg-teal-50 text-teal-700 border-teal-200'
+                                        : 'bg-amber-50 text-amber-700 border-amber-200';
                                   return (
                                     <span className={`px-2 py-0.5 rounded border text-[9px] font-extrabold uppercase ${badgeClass}`}>
                                       {reqType}

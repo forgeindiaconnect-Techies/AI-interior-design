@@ -5,7 +5,7 @@ import {
   Store, Hammer, Truck, CheckCircle, PlusCircle, DollarSign, UploadCloud, 
   Send, RefreshCw, Eye, ArrowRight, ClipboardList, Package, MessageSquare, 
   Star, Briefcase, ShieldCheck, Bell, ShoppingCart, FileText, Activity,
-  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight
+  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot
 } from 'lucide-react';
 
 const VendorDashboard = ({ 
@@ -23,6 +23,7 @@ const VendorDashboard = ({
   const [products, setProducts] = useState([]);
   const [customRequests, setCustomRequests] = useState([]);
   const [customRequestFilter, setCustomRequestFilter] = useState('All');
+  const [aiDesignOrders, setAiDesignOrders] = useState([]);
   const [newTitle, setNewTitle] = useState('');
   const [newDesc, setNewDesc] = useState('');
   const [newPrice, setNewPrice] = useState('');
@@ -307,6 +308,11 @@ const VendorDashboard = ({
       }
       const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
       setCustomRequests(assignedRequests);
+
+      // AI Design Orders from mockOrders
+      const localAllOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const aiOrders = localAllOrders.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
+      setAiDesignOrders(aiOrders);
 
       // 6. Orders (Manufacturing and Delivery)
       let localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -735,6 +741,9 @@ const VendorDashboard = ({
       const vendorId = profile?._id || 'mock_vendor_id_123';
       const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
       setCustomRequests(assignedRequests);
+      const allOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const aiOrders = allOrders.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
+      setAiDesignOrders(aiOrders);
     }
     if (activeTab === 'manufacturing') {
       const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
@@ -931,6 +940,29 @@ const VendorDashboard = ({
     setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Rejected' } : r));
     updateRequestStatusInStorage(id, 'Rejected');
     alert('❌ Design request rejected. The user has been notified.');
+  };
+
+  const handleSendAiOrderQuotation = async (e, order) => {
+    e.preventDefault();
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = localOrders.map(o =>
+      o._id === order._id
+        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime }
+        : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    setAiDesignOrders(updated.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === (profile?._id || 'mock_vendor_id_123') || o.vendorId === (profile?._id || 'mock_vendor_id_123'))));
+
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: 'notif_' + Date.now(),
+      message: `Vendor has sent a quotation of $${quoteAmount} for your AI Design ${order.aiDesignData?.roomType || 'order'}.`,
+      type: 'success',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+
+    alert('Quotation sent to customer for AI Design order!');
+    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime('');
   };
 
   const handleContactCustomer = (req) => {
@@ -2408,6 +2440,180 @@ const VendorDashboard = ({
               })()} 
             </div>
           )}
+
+          {/* AI Design Orders Section */}
+          {(() => {
+            const showAiOrders = customRequestFilter === 'All' || customRequestFilter === 'AI Generated';
+            if (!showAiOrders || aiDesignOrders.length === 0) return null;
+            return (
+              <div className="space-y-6 mt-8">
+                <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-[#2A9D8F]" /> AI Design Orders ({aiDesignOrders.length})
+                </h3>
+                {aiDesignOrders.map((order) => {
+                  const isOrderDetailsOpen = viewDetailsId === order._id;
+                  const isOrderQuoteOpen = selectedRequestId === order._id;
+                  const orderStatusColor =
+                    order.orderStatus === 'quotation_sent' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+                    order.orderStatus === 'quotation_pending' ? 'bg-[#E9C46A]/20 text-[#8B5E3C]' :
+                    'bg-gray-100 text-gray-600';
+                  return (
+                    <div key={order._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#2A9D8F]/30 space-y-6 hover:shadow-md transition-all">
+                      {/* Header with AI Images */}
+                      <div className="flex flex-col sm:flex-row items-start gap-4 border-b border-gray-100 pb-6">
+                        <div className="flex gap-3 shrink-0">
+                          <div className="relative">
+                            <img src={order.aiDesignData?.generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=300'} alt="AI Generated" className="w-28 h-20 object-cover rounded-xl border border-gray-200" />
+                            <span className="absolute bottom-1 left-1 bg-[#2A9D8F]/90 text-white text-[8px] px-1.5 py-0.5 rounded font-bold">AI</span>
+                          </div>
+                          {order.aiDesignData?.originalImage && (
+                            <div className="relative">
+                              <img src={order.aiDesignData.originalImage} alt="Original" className="w-28 h-20 object-cover rounded-xl border border-gray-200 opacity-70" />
+                              <span className="absolute bottom-1 left-1 bg-gray-700/80 text-white text-[8px] px-1.5 py-0.5 rounded font-bold">Original</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex items-center gap-3 flex-wrap">
+                            <span className="bg-[#2A9D8F] text-white px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider">{order.aiDesignData?.roomType || 'Custom'}</span>
+                            <span className="bg-teal-50 text-teal-700 border border-teal-200 px-2.5 py-1 rounded-lg text-xs font-extrabold">Request Type: AI Generated</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${orderStatusColor}`}>
+                              {order.orderStatus === 'quotation_pending' ? 'QUOTATION PENDING' : order.orderStatus === 'quotation_sent' ? 'QUOTATION SENT' : order.orderStatus?.toUpperCase() || 'PENDING'}
+                            </span>
+                          </div>
+                          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] truncate">AI Design — {order.aiDesignData?.roomType || 'Custom Order'}</h3>
+                          <p className="text-xs text-[#6B7280]">
+                            Submitted by: <strong className="text-[#1F2937]">{order.userId?.name || 'Customer'}</strong> • Email: {order.userId?.email || ''} • Phone: {order.userId?.phone || ''}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="text-xs text-gray-500 block">Est. Budget</span>
+                          <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#2A9D8F]">${order.totalAmount || 0}</span>
+                        </div>
+                      </div>
+
+                      {/* AI Suggestions Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#F8F5F0] p-5 rounded-2xl border border-[#D4A373]/20 text-xs">
+                        <div>
+                          <span className="text-gray-500 block mb-1 uppercase font-bold tracking-wider text-[10px]">Furniture</span>
+                          <strong className="text-[#1F2937] text-sm">{order.aiDesignData?.furniture?.join(', ') || 'Standard'}</strong>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1 uppercase font-bold tracking-wider text-[10px]">Materials</span>
+                          <strong className="text-[#1F2937] text-sm">{order.aiDesignData?.materials?.join(', ') || 'Standard'}</strong>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1 uppercase font-bold tracking-wider text-[10px]">Color Palette</span>
+                          <div className="flex gap-1 items-center">
+                            <strong className="text-[#1F2937] text-sm">{order.aiDesignData?.colorPalette?.join(', ') || 'Modern'}</strong>
+                            <div className="flex gap-0.5 ml-1">
+                              {order.aiDesignData?.colorPalette?.slice(0, 4).map((c, i) => (
+                                <span key={i} className="w-3 h-3 rounded-full border border-gray-300" style={{ backgroundColor: c }} />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 block mb-1 uppercase font-bold tracking-wider text-[10px]">Style</span>
+                          <strong className="text-[#1F2937] text-sm">{order.aiDesignData?.style || 'AI Generated'}</strong>
+                        </div>
+                      </div>
+
+                      {/* Requirements */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">AI Design Requirements</h4>
+                        <p className="text-sm text-gray-600 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-inner">
+                          {order.aiDesignData?.requirements || 'Custom AI design order awaiting vendor review.'}
+                        </p>
+                      </div>
+
+                      {/* Reference Images */}
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Design Images</h4>
+                        <div className="flex gap-4 overflow-x-auto pb-2">
+                          <a href={order.aiDesignData?.generatedImage} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                            <img src={order.aiDesignData?.generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=300'} alt="AI Generated" className="w-32 h-32 object-cover" />
+                          </a>
+                          {order.aiDesignData?.originalImage && (
+                            <a href={order.aiDesignData.originalImage} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                              <img src={order.aiDesignData.originalImage} alt="Original Upload" className="w-32 h-32 object-cover" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Expandable Details */}
+                      {isOrderDetailsOpen && (
+                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 space-y-4 text-xs animate-fadeIn">
+                          <h4 className="font-bold text-sm text-[#1F2937] border-b border-gray-200 pb-2">Comprehensive Order Details</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[#4B5563]">
+                            <div><strong className="text-[#1F2937]">Order ID:</strong> {order._id}</div>
+                            <div><strong className="text-[#1F2937]">Customer:</strong> {order.userId?.name || 'N/A'}</div>
+                            <div><strong className="text-[#1F2937]">Email:</strong> {order.userId?.email || 'N/A'}</div>
+                            <div><strong className="text-[#1F2937]">Phone:</strong> {order.userId?.phone || 'N/A'}</div>
+                            <div><strong className="text-[#1F2937]">Room Type:</strong> {order.aiDesignData?.roomType || 'N/A'}</div>
+                            <div><strong className="text-[#1F2937]">Style:</strong> {order.aiDesignData?.style || 'AI Generated'}</div>
+                            <div><strong className="text-[#1F2937]">Budget:</strong> ${order.totalAmount || 0}</div>
+                            <div><strong className="text-[#1F2937]">Status:</strong> {order.orderStatus || 'quotation_pending'}</div>
+                            <div><strong className="text-[#1F2937]">Color Palette:</strong> {order.aiDesignData?.colorPalette?.join(', ') || 'N/A'}</div>
+                            <div><strong className="text-[#1F2937]">Furniture Items:</strong> {order.aiDesignData?.furniture?.join(', ') || 'N/A'}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Send Quotation Form */}
+                      {isOrderQuoteOpen && (
+                        <form onSubmit={(e) => handleSendAiOrderQuotation(e, order)} className="space-y-4 bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/30 animate-fadeIn">
+                          <div className="flex justify-between items-center border-b border-gray-200 pb-3">
+                            <h4 className="font-bold text-base text-[#1F2937]">Send Official Budget Quotation</h4>
+                            <span className="text-xs text-gray-500">Order #{order._id}</span>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Proposed Budget ($)</label>
+                              <input type="number" required value={quoteAmount} onChange={(e) => setQuoteAmount(e.target.value)} placeholder="e.g. 4850" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Estimated Timeline</label>
+                              <input type="text" required value={quoteTime} onChange={(e) => setQuoteTime(e.target.value)} placeholder="e.g. 2 Weeks" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Materials Breakdown & Scope of Work</label>
+                            <textarea rows={3} required value={quoteMaterials} onChange={(e) => setQuoteMaterials(e.target.value)} placeholder="Provide detailed breakdown of materials, labor, and timeline..." className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
+                          </div>
+                          <div className="flex gap-3 pt-2">
+                            <button type="submit" className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all">Submit Quotation & Notify User</button>
+                            <button type="button" onClick={() => setSelectedRequestId(null)} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
+                          </div>
+                        </form>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                          <button onClick={() => setViewDetailsId(isOrderDetailsOpen ? null : order._id)} className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-[#1F2937] rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                            <FileText className="w-4 h-4 text-gray-500" /> {isOrderDetailsOpen ? 'Hide Details' : 'View Details'}
+                          </button>
+                          <button onClick={() => setSelectedRequestId(isOrderQuoteOpen ? null : order._id)} className="flex-1 sm:flex-none px-4 py-2.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                            <Send className="w-4 h-4" /> Send Quotation
+                          </button>
+                          <button onClick={() => handleContactCustomer({
+                            userId: order.userId,
+                            _id: order._id,
+                            roomType: order.aiDesignData?.roomType || 'AI Design',
+                            style: order.aiDesignData?.style || 'AI Generated'
+                          })} className="flex-1 sm:flex-none px-4 py-2.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                            <MessageSquare className="w-4 h-4" /> Contact Customer
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 

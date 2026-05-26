@@ -10,6 +10,7 @@ import UserDashboard from './pages/UserDashboard';
 import VendorDashboard from './pages/VendorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import DashboardLayout from './components/DashboardLayout';
+import { ToastProvider } from './components/Toast';
 import Marketplace from './pages/Marketplace';
 import ProductDetails from './pages/ProductDetails';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -103,7 +104,9 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <AppRoutes />
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
       </Router>
     </AuthProvider>
   );

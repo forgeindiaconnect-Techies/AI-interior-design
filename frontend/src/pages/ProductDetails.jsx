@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Star, Truck, ShieldCheck, Hammer, Heart, ShoppingCart, ArrowLeft, ChevronRight, Check } from 'lucide-react';
+import { useToast } from '../components/Toast';
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -10,6 +11,7 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState(0);
+  const { showToast } = useToast();
 
   const colors = ['#1F2937', '#8B5E3C', '#D4A373', '#F8F5F0'];
 
@@ -68,7 +70,8 @@ const ProductDetails = () => {
       localCart.push({ productId: id, quantity: 1 });
     }
     localStorage.setItem('mockCart', JSON.stringify(localCart));
-    alert('🛒 Product added to your cart!');
+    window.dispatchEvent(new Event('cartUpdated'));
+    showToast('🛒 Product added to your cart!');
   };
 
   const handleSaveItem = async () => {
@@ -78,17 +81,6 @@ const ProductDetails = () => {
     } catch (error) {
       alert('Product saved (Demo Mode)');
     }
-  };
-
-  const handleBuyNow = () => {
-    const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
-    const existingItem = localCart.find(item => item.productId === id);
-    if (!existingItem) {
-      localCart.push({ productId: id, quantity: 1 });
-      localStorage.setItem('mockCart', JSON.stringify(localCart));
-    }
-    localStorage.setItem('activeDashboardTab', 'cart');
-    navigate('/dashboard/user');
   };
 
   if (loading || !product) {
@@ -183,9 +175,6 @@ const ProductDetails = () => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 mt-auto">
-              <button onClick={handleBuyNow} className="flex-1 bg-[#1F2937] hover:bg-black text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md">
-                Buy Now
-              </button>
               <button onClick={handleAddToCart} className="flex-1 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-md flex items-center justify-center gap-2">
                 <ShoppingCart className="w-5 h-5" /> Add to Cart
               </button>
