@@ -87,6 +87,115 @@ const UserDashboard = ({
   const [reviewTargetId, setReviewTargetId] = useState('');
 
 
+  const [directMessages, setDirectMessages] = useState([]);
+  const [msgInput, setMsgInput] = useState('');
+  const [selectedVendorMsg, setSelectedVendorMsg] = useState('Artisan Workshop Ltd');
+
+  // Help Center Live Chat States
+  const [helpMessages, setHelpMessages] = useState([]);
+  const [helpInput, setHelpInput] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      const loadMessages = () => {
+        const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+        setDirectMessages(msgs);
+      };
+      loadMessages();
+      const interval = setInterval(loadMessages, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'support') {
+      const loadHelpMessages = () => {
+        const msgs = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+        setHelpMessages(msgs);
+      };
+      loadHelpMessages();
+      const interval = setInterval(loadHelpMessages, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
+  const handleSendDirectMessage = (e) => {
+    e.preventDefault();
+    if (!msgInput.trim()) return;
+
+    const newMsg = {
+      _id: 'dm_' + Date.now(),
+      sender: 'user',
+      userName: user?.name || 'User Demo',
+      userEmail: user?.email || 'user@example.com',
+      vendorName: selectedVendorMsg,
+      message: msgInput,
+      createdAt: new Date().toISOString()
+    };
+
+    const existing = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+    const updated = [...existing, newMsg];
+    localStorage.setItem('mockDirectMessages', JSON.stringify(updated));
+    setDirectMessages(updated);
+    setMsgInput('');
+
+    // Trigger notification to vendor
+    const notifObj = {
+      _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `New direct message from ${user?.name || 'User Demo'}: "${msgInput.substring(0, 35)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([notifObj, ...vNotifs]));
+  };
+
+  const handleSendHelpMessage = (e) => {
+    e.preventDefault();
+    if (!helpInput.trim()) return;
+
+    const email = user?.email || 'user@example.com';
+    const name = user?.name || 'User Demo';
+
+    const newMsg = {
+      _id: 'hm_' + Date.now(),
+      userName: name,
+      userEmail: email,
+      sender: 'user',
+      senderName: name,
+      message: helpInput,
+      createdAt: new Date().toISOString()
+    };
+
+    const existing = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+    const updated = [...existing, newMsg];
+    localStorage.setItem('mockHelpCenterMessages', JSON.stringify(updated));
+    setHelpMessages(updated);
+    setHelpInput('');
+
+    // Trigger notification to vendor
+    const notifMsg = `[Help Center] New message from customer ${name}: "${helpInput.substring(0, 30)}..."`;
+    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}_v`,
+      message: notifMsg,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    }, ...vNotifs]));
+
+    // Trigger notification to admin
+    const aNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}_a`,
+      message: notifMsg,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    }, ...aNotifs]));
+  };
+
   useEffect(() => {
     fetchUserData();
   }, []);
@@ -2415,22 +2524,108 @@ const UserDashboard = ({
 
       {/* TAB 10: HELP CENTER (SUPPORT) */}
       {activeTab === 'support' && (
-        <div className="max-w-2xl mx-auto bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-            <AlertCircle className="w-6 h-6 text-[#E76F51]" />
-            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Raise Support Ticket</h2>
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden flex h-[600px] animate-fade-in">
+          {/* Left panel: Help resources & FAQs */}
+          <div className="w-1/3 border-r border-gray-100 flex flex-col bg-[#FDFBF7] p-6 space-y-6">
+            <div>
+              <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Help Center</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">24/7 Support Desk</p>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Frequently Asked Questions</h4>
+              <div className="space-y-3">
+                <div className="p-3 bg-white rounded-xl border border-[#D4A373]/20 shadow-xs">
+                  <p className="font-bold text-[10px] text-gray-800">How to request custom design?</p>
+                  <p className="text-[9px] text-gray-500 mt-1 leading-relaxed">Go to "Manual Design Request" tab and fill out room requirements and files.</p>
+                </div>
+                <div className="p-3 bg-white rounded-xl border border-[#D4A373]/20 shadow-xs">
+                  <p className="font-bold text-[10px] text-gray-800">How does payment work?</p>
+                  <p className="text-[9px] text-gray-500 mt-1 leading-relaxed">We support standard methods. You can pay via credit card under "Design Quotations".</p>
+                </div>
+                <div className="p-3 bg-white rounded-xl border border-[#D4A373]/20 shadow-xs">
+                  <p className="font-bold text-[10px] text-gray-800">Who manufactures the furniture?</p>
+                  <p className="text-[9px] text-gray-500 mt-1 leading-relaxed">Our registered artisan vendor workshops build and ship designs directly.</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mt-auto bg-[#E76F51]/5 border border-[#E76F51]/10 p-4 rounded-2xl">
+              <p className="text-[10px] text-[#E76F51] font-bold">Need urgent help?</p>
+              <p className="text-[9px] text-gray-500 mt-1 leading-relaxed">Send a live message on the right. Both Admin and Vendor support agents are active.</p>
+            </div>
           </div>
-          <form onSubmit={handleRaiseTicket} className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Subject</label>
-              <input type="text" required value={ticketSubject} onChange={(e) => setTicketSubject(e.target.value)} placeholder="Issue with delivery schedule..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+
+          {/* Right panel: Live Support Chat conversation */}
+          <div className="flex-1 flex flex-col bg-white">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#E76F51]/15 text-[#E76F51] flex items-center justify-center font-bold">
+                  <AlertCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-xs text-[#1F2937]">ArtisanStudio Support</h3>
+                  <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider mt-0.5">Online • Replies in minutes</p>
+                </div>
+              </div>
+              <span className="text-[9px] bg-gray-50 text-gray-500 border border-gray-100 px-2 py-0.5 rounded font-bold uppercase">Shared Chat</span>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
-              <textarea rows={4} required value={ticketMessage} onChange={(e) => setTicketMessage(e.target.value)} placeholder="Please explain your issue in detail..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+
+            {/* Support Messages Log */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
+              {helpMessages.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                  <AlertCircle className="w-8 h-8 text-gray-300 mb-2" />
+                  <p className="text-xs text-gray-700 font-bold">No messages yet</p>
+                  <p className="text-[10px] text-gray-400 mt-1 max-w-[200px] leading-relaxed">Ask a question below to start a live support conversation with our team.</p>
+                </div>
+              ) : (
+                helpMessages.map((msg) => {
+                  const isUser = msg.sender === 'user';
+                  let senderBadge = '';
+                  if (msg.sender === 'admin') senderBadge = 'Admin';
+                  if (msg.sender === 'vendor') senderBadge = 'Vendor';
+                  
+                  return (
+                    <div key={msg._id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[75%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                        isUser 
+                          ? 'bg-[#E76F51] text-white rounded-tr-none' 
+                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                      }`}>
+                        {!isUser && (
+                          <span className="block text-[8px] font-bold uppercase tracking-wider text-[#E76F51] mb-1">
+                            Support ({senderBadge})
+                          </span>
+                        )}
+                        <p>{msg.message}</p>
+                        <span className={`block text-[8px] mt-1.5 text-right ${isUser ? 'text-white/60' : 'text-gray-400'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
-            <button type="submit" className="w-full py-4 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Submit Support Ticket</button>
-          </form>
+
+            {/* Chat Send Input */}
+            <form onSubmit={handleSendHelpMessage} className="p-4 border-t border-gray-100 flex gap-2 bg-white">
+              <input
+                type="text"
+                value={helpInput}
+                onChange={(e) => setHelpInput(e.target.value)}
+                placeholder="Describe your issue or ask support..."
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51] text-xs"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/95 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
+              >
+                Send Help Message
+              </button>
+            </form>
+          </div>
         </div>
       )}
 
@@ -2458,6 +2653,109 @@ const UserDashboard = ({
             </div>
             <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Publish Review</button>
           </form>
+        </div>
+      )}
+
+      {/* TAB: DIRECT MESSAGES */}
+      {activeTab === 'messages' && (
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden flex h-[600px]">
+          {/* Left panel: Vendor list */}
+          <div className="w-1/3 border-r border-gray-100 flex flex-col bg-[#FDFBF7]">
+            <div className="p-4 border-b border-gray-100 bg-white">
+              <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Conversations</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5">Chat with store artisans</p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {[
+                { name: 'Artisan Workshop Ltd', desc: 'Main Workshop & Furniture Design', status: 'Online' },
+                { name: 'Nordic Design Ltd', desc: 'Scandinavian furniture specialists', status: 'Offline' },
+                { name: 'Luxury Living Inc', desc: 'Premium marble & custom fittings', status: 'Online' }
+              ].map(vendor => (
+                <button
+                  key={vendor.name}
+                  onClick={() => setSelectedVendorMsg(vendor.name)}
+                  className={`w-full text-left p-3.5 rounded-2xl transition-all flex items-start gap-3 ${
+                    selectedVendorMsg === vendor.name 
+                      ? 'bg-[#8B5E3C]/10 border border-[#8B5E3C]/20 shadow-sm' 
+                      : 'hover:bg-gray-50 border border-transparent'
+                  }`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#8B5E3C]/10 text-[#8B5E3C] flex items-center justify-center font-bold text-sm shrink-0">
+                    {vendor.name.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-baseline">
+                      <h4 className="font-bold text-xs text-[#1F2937] truncate">{vendor.name}</h4>
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${vendor.status === 'Online' ? 'bg-emerald-500' : 'bg-gray-300'}`}></span>
+                    </div>
+                    <p className="text-[10px] text-gray-500 truncate mt-0.5">{vendor.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Right panel: Chat messages */}
+          <div className="flex-1 flex flex-col bg-white">
+            {/* Active chat header */}
+            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-sm text-[#1F2937]">{selectedVendorMsg}</h3>
+                <p className="text-[10px] text-emerald-600 font-medium">Active Session</p>
+              </div>
+              <div className="flex gap-2">
+                <span className="text-[10px] bg-gray-100 text-gray-600 px-2 py-1 rounded-md font-bold">Direct Support</span>
+              </div>
+            </div>
+
+            {/* Chat history */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FCFAF7]/30">
+              {directMessages.filter(m => m.vendorName === selectedVendorMsg).length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                  <div className="w-12 h-12 rounded-full bg-[#8B5E3C]/5 flex items-center justify-center text-[#8B5E3C] mb-3">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-bold text-xs text-[#1F2937]">Start a conversation</h4>
+                  <p className="text-[10px] text-gray-400 max-w-[200px] mt-1">Send a message to inquire about design requests, custom pricing, or order adjustments.</p>
+                </div>
+              ) : (
+                directMessages.filter(m => m.vendorName === selectedVendorMsg).map((msg) => {
+                  const isUser = msg.sender === 'user';
+                  return (
+                    <div key={msg._id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                      <div className={`max-w-[70%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                        isUser 
+                          ? 'bg-[#8B5E3C] text-white rounded-tr-none' 
+                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                      }`}>
+                        <p>{msg.message}</p>
+                        <span className={`block text-[9px] mt-1 text-right ${isUser ? 'text-white/70' : 'text-gray-400'}`}>
+                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Chat Input */}
+            <form onSubmit={handleSendDirectMessage} className="p-3 border-t border-gray-100 flex gap-2 bg-white">
+              <input
+                type="text"
+                value={msgInput}
+                onChange={(e) => setMsgInput(e.target.value)}
+                placeholder={`Type a message to ${selectedVendorMsg}...`}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-xs"
+              />
+              <button
+                type="submit"
+                className="px-5 py-2.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
+              >
+                Send
+              </button>
+            </form>
+          </div>
         </div>
       )}
 

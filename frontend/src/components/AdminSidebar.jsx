@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { 
   Palette, LayoutDashboard, Users, Store, Factory, Truck, 
-  Sparkles, FileText, UserCheck, ShoppingBag, DollarSign, 
+  Sparkles, FileText, ShoppingBag, DollarSign, 
   HelpCircle, BarChart, CheckSquare, Key, Bell, LogOut, ShieldCheck,
   ChevronDown, ChevronRight 
 } from 'lucide-react';
 
-const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
+const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     users: true,
     operations: true,
-    design: true,
-    verification: false,
     finance: true,
-    support: true
+    support: false,
+    settings: false
   });
 
   const toggleGroup = (group) => {
@@ -37,8 +36,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-        {/* Section: Main */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+        {/* Section: Dashboard */}
         <div className="space-y-1">
           <button 
             onClick={() => setActiveTab('overview')}
@@ -53,13 +52,13 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           </button>
         </div>
 
-        {/* Section: User & Vendor Management */}
+        {/* Section: User Management */}
         <div className="space-y-1">
           <button 
             onClick={() => toggleGroup('users')}
             className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
           >
-            <span>User & Vendor Management</span>
+            <span>User Management</span>
             {openGroups.users ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
           
@@ -67,10 +66,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
               {[
                 { name: 'Users', icon: Users, tab: 'users' },
-                { name: 'Vendors', icon: Store, tab: 'vendors' },
-                { name: 'Manufacturers', icon: Factory, tab: 'manufacturers' },
-                { name: 'Delivery Partners', icon: Truck, tab: 'delivery' },
-                { name: 'Interior Designers', icon: UserCheck, tab: 'designer_requests' }
+                { name: 'Vendors', icon: Store, tab: 'vendors' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -78,7 +74,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
                       isActive 
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -93,13 +89,13 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           )}
         </div>
 
-        {/* Section: Operations Workflow */}
+        {/* Section: Operations */}
         <div className="space-y-1">
           <button 
             onClick={() => toggleGroup('operations')}
             className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
           >
-            <span>Operations Workflow</span>
+            <span>Operations</span>
             {openGroups.operations ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
           
@@ -109,7 +105,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                 { name: 'Orders', icon: ShoppingBag, tab: 'orders' },
                 { name: 'Manufacturing', icon: Factory, tab: 'manufacturing' },
                 { name: 'Delivery', icon: Truck, tab: 'delivery' },
-                { name: 'Installation', icon: HelpCircle, tab: 'installation' }
+                { name: 'AI Requests', icon: Sparkles, tab: 'ai_designs' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -117,46 +113,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
                       isActive
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section: AI & Design Requests */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('design')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>AI & Design Requests</span>
-            {openGroups.design ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
-          {openGroups.design && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'AI Requests', icon: Sparkles, tab: 'ai_designs' },
-                { name: 'Manual Requests', icon: FileText, tab: 'manual_designs' },
-                { name: 'Designer Requests', icon: UserCheck, tab: 'designer_requests' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                      isActive 
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
                     }`}
@@ -183,10 +141,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           {openGroups.finance && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
               {[
-                { name: 'Transactions', icon: DollarSign, tab: 'admin_transactions' },
-                { name: 'Vendor Payouts', icon: Key, tab: 'vendor_payouts' },
-                { name: 'Refunds', icon: ChevronRight, tab: 'refunds' },
-                { name: 'Platform Commission', icon: BarChart, tab: 'platform_commission' }
+                { name: 'Platform Commission', icon: BarChart, tab: 'platform_commission' },
+                { name: 'Refunds', icon: ChevronRight, tab: 'refunds' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -194,7 +150,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
                       isActive
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -222,6 +178,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           {openGroups.support && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
               {[
+                { name: 'Live Support Chat', icon: HelpCircle, tab: 'support' },
                 { name: 'Complaints', icon: HelpCircle, tab: 'complaints' },
                 { name: 'Support Tickets', icon: FileText, tab: 'tickets' },
                 { name: 'Disputes', icon: ShieldCheck, tab: 'disputes' }
@@ -232,7 +189,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
                       isActive
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -247,7 +204,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           )}
         </div>
 
-        {/* Section: Reports & Analytics */}
+        {/* Section: Analytics */}
         <div className="space-y-1">
           <button 
             onClick={() => setActiveTab('analytics')}
@@ -262,23 +219,22 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           </button>
         </div>
 
-        {/* Section: Verification & Reviews */}
+        {/* Section: Settings */}
         <div className="space-y-1">
           <button 
-            onClick={() => toggleGroup('verification')}
+            onClick={() => toggleGroup('settings')}
             className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
           >
-            <span>Verification & Reviews</span>
-            {openGroups.verification ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            <span>Settings</span>
+            {openGroups.settings ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
           </button>
           
-          {openGroups.verification && (
+          {openGroups.settings && (
             <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
               {[
-                { name: 'Vendor Verification', icon: CheckSquare, tab: 'verifications' },
-                { name: 'Store Approval', icon: ShieldCheck, tab: 'store-approvals' },
-                { name: 'Product Quality Review', icon: HelpCircle, tab: 'product-reviews' },
-                { name: 'Role & Permissions', icon: Key, tab: 'roles' }
+                { name: 'Verification & Approvals', icon: CheckSquare, tab: 'verifications' },
+                { name: 'Roles & Permissions', icon: Key, tab: 'roles' },
+                { name: 'Notifications', icon: Bell, tab: 'notifications' }
               ].map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.tab;
@@ -286,7 +242,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
                   <button 
                     key={index} 
                     onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
                       isActive 
                         ? 'bg-white/10 text-white' 
                         : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -300,35 +256,13 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
             </div>
           )}
         </div>
-
-        {/* Section: Notifications */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => setActiveTab('notifications')}
-            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'notifications' 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="w-4 h-4 shrink-0" />
-              <span>Notifications</span>
-            </div>
-            {unreadNotifCount > 0 && (
-              <span className="bg-[#E76F51] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
-                {unreadNotifCount}
-              </span>
-            )}
-          </button>
-        </div>
       </div>
 
-      {/* Logout Footer */}
-      <div className="p-4 border-t border-gray-850 bg-gray-900/50">
+      {/* Logout Footer Fixed at Bottom */}
+      <div className="p-4 border-t border-gray-800 bg-gray-900/50">
         <button 
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-[#2D3748] hover:bg-red-900/20 hover:text-red-400 text-gray-400 rounded-xl font-bold text-xs transition-all border border-gray-800 shadow-sm"
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#2D3748] hover:bg-red-900/20 hover:text-red-400 text-gray-400 rounded-xl font-bold text-xs transition-all border border-gray-800 shadow-sm"
         >
           <LogOut className="w-4 h-4" />
           <span>Logout</span>

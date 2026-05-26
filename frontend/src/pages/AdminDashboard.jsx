@@ -65,6 +65,31 @@ const AdminDashboard = ({
   // Contact Messages from Landing Page
   const [contactMessages, setContactMessages] = useState([]);
 
+  // Help Center Live Chat States
+  const [helpMessages, setHelpMessages] = useState([]);
+  const [helpInput, setHelpInput] = useState('');
+  const [selectedHelpUser, setSelectedHelpUser] = useState('');
+
+  useEffect(() => {
+    if (activeTab === 'support') {
+      const loadHelpMessages = () => {
+        const msgs = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+        setHelpMessages(msgs);
+        
+        // Auto-select first customer support chat if none is selected
+        if (msgs.length > 0 && !selectedHelpUser) {
+          const uniqueUsers = Array.from(new Set(msgs.map(m => m.userName)));
+          if (uniqueUsers.length > 0) {
+            setSelectedHelpUser(uniqueUsers[0]);
+          }
+        }
+      };
+      loadHelpMessages();
+      const interval = setInterval(loadHelpMessages, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, selectedHelpUser]);
+
   const loadContactMessages = () => {
     const msgs = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
     setContactMessages(msgs);
@@ -80,6 +105,42 @@ const AdminDashboard = ({
     const updated = contactMessages.map(m => m._id === id ? { ...m, status: 'replied' } : m);
     setContactMessages(updated);
     localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+  };
+
+  const handleSendAdminHelpMessage = (e) => {
+    e.preventDefault();
+    if (!helpInput.trim() || !selectedHelpUser) return;
+
+    // Find the user's email to respond to the correct thread
+    const userMsg = helpMessages.find(m => m.userName === selectedHelpUser);
+    const userEmail = userMsg ? userMsg.userEmail : 'user@example.com';
+
+    const newMsg = {
+      _id: 'hm_' + Date.now(),
+      userName: selectedHelpUser,
+      userEmail: userEmail,
+      sender: 'admin',
+      senderName: 'Platform Admin',
+      message: helpInput,
+      createdAt: new Date().toISOString()
+    };
+
+    const existing = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+    const updated = [...existing, newMsg];
+    localStorage.setItem('mockHelpCenterMessages', JSON.stringify(updated));
+    setHelpMessages(updated);
+    setHelpInput('');
+
+    // Trigger notification to user
+    const notifObj = {
+      _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `[Help Center] Support reply from Admin: "${helpInput.substring(0, 30)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
   };
 
   // Roles & Permissions State
@@ -4828,6 +4889,136 @@ const AdminDashboard = ({
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* TAB: LIVE SUPPORT CHAT */}
+      {activeTab === 'support' && (() => {
+        const supportMsgs = helpMessages;
+        
+        // Find all unique users who messaged help desk
+        const uniqueUsers = Array.from(new Set(supportMsgs.map(m => m.userName))).map(name => {
+          const userMsgs = supportMsgs.filter(m => m.userName === name);
+          const lastMsg = userMsgs[userMsgs.length - 1];
+          return {
+            name,
+            lastMessage: lastMsg ? lastMsg.message : '',
+            time: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
+          };
+        });
+
+        const activeUserHelpMsgs = supportMsgs.filter(m => m.userName === selectedHelpUser);
+
+        return (
+          <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden flex h-[600px] animate-fadeIn text-left">
+            {/* Left Panel: Customer Conversations list */}
+            <div className="w-1/3 border-r border-gray-150 flex flex-col bg-gray-50/50">
+              <div className="p-5 border-b border-gray-150 bg-white">
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-gray-800">Support Chat Inbox</h3>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Help Desk Live Channels</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {uniqueUsers.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400 text-xs font-medium">
+                    No active support chats.
+                  </div>
+                ) : (
+                  uniqueUsers.map(u => (
+                    <button
+                      key={u.name}
+                      onClick={() => setSelectedHelpUser(u.name)}
+                      className={`w-full text-left p-4 rounded-2xl transition-all flex items-start gap-3.5 border ${
+                        selectedHelpUser === u.name 
+                          ? 'bg-[#E76F51]/10 border-[#E76F51]/20 shadow-sm' 
+                          : 'hover:bg-white border-transparent hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#E76F51]/10 text-[#E76F51] flex items-center justify-center font-bold text-sm shrink-0">
+                        {u.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="font-bold text-xs text-gray-800 truncate">{u.name}</h4>
+                          <span className="text-[9px] text-gray-400 font-bold">{u.time}</span>
+                        </div>
+                        <p className="text-[10px] text-gray-500 truncate mt-1 leading-normal">{u.lastMessage}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Right Panel: Conversation history & response */}
+            <div className="flex-1 flex flex-col bg-white">
+              {selectedHelpUser ? (
+                <>
+                  {/* Chat header */}
+                  <div className="p-5 border-b border-gray-150 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-gray-800">Support Chat: {selectedHelpUser}</h3>
+                      <p className="text-[10px] text-[#E76F51] font-bold uppercase tracking-wider mt-0.5 font-sans">Role: Platform Admin Monitor</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-[10px] bg-red-50 text-[#E76F51] border border-red-100 px-2.5 py-1 rounded-lg font-bold">Admin Console</span>
+                    </div>
+                  </div>
+
+                  {/* Chat message content */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
+                    {activeUserHelpMsgs.map((msg) => {
+                      const isMe = msg.sender === 'admin';
+                      const senderBadge = msg.sender === 'admin' ? 'Admin' : (msg.sender === 'user' ? 'Customer' : 'Vendor');
+                      return (
+                        <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                            isMe 
+                              ? 'bg-[#1F2937] text-white rounded-tr-none' 
+                              : 'bg-white text-gray-800 border border-gray-150 rounded-tl-none'
+                          }`}>
+                            {!isMe && (
+                              <span className="block text-[8px] font-bold uppercase tracking-wider text-[#E76F51] mb-1">
+                                {senderBadge} {msg.senderName && `(${msg.senderName})`}
+                              </span>
+                            )}
+                            <p>{msg.message}</p>
+                            <span className={`block text-[8px] mt-1.5 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
+                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Reply Input */}
+                  <form onSubmit={handleSendAdminHelpMessage} className="p-4 border-t border-gray-150 flex gap-2 bg-white">
+                    <input
+                      type="text"
+                      value={helpInput}
+                      onChange={(e) => setHelpInput(e.target.value)}
+                      placeholder={`Type a support response to ${selectedHelpUser}...`}
+                      className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1F2937] text-xs font-sans"
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-[#1F2937] hover:bg-[#1F2937]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
+                    >
+                      Send Support Response
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-14 h-14 rounded-full bg-[#E76F51]/5 flex items-center justify-center text-[#E76F51] mb-4">
+                    <HelpCircle className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-bold text-sm text-gray-800">Select a support ticket</h4>
+                  <p className="text-xs text-gray-450 max-w-[240px] mt-1.5 leading-relaxed">Choose a customer help ticket from the list to view history and troubleshoot.</p>
+                </div>
+              )}
             </div>
           </div>
         );
