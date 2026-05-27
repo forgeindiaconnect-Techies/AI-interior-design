@@ -60,103 +60,158 @@ body {
 .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
 
 /* =========================================
-   USER SIDEBAR - Warm Dark Brown Theme
+   USER SIDEBAR - Clean Light White/Peach Theme
    ========================================= */
 .user-sidebar {
-  background-color: #231A14 !important;
-  border-right: 1px solid #35271E !important;
-  color: #D1D5DB !important;
+  background-color: #ffffff !important;
+  border-right: 1px solid #E5E7EB !important;
+  color: #4B5563 !important;
 }
 .user-sidebar .sidebar-header {
-  border-bottom: 1px solid #35271E !important;
+  border-bottom: 1px solid #E5E7EB !important;
 }
 .user-sidebar .sidebar-footer {
-  border-top: 1px solid #35271E !important;
-  background-color: rgba(27, 20, 15, 0.5) !important;
+  border-top: 1px solid #E5E7EB !important;
+  background-color: #FAFAFA !important;
 }
 .user-sidebar .sidebar-footer-btn {
-  background-color: #2D211A !important;
-  border: 1px solid #35271E !important;
-  color: #9CA3AF !important;
-}
-.user-sidebar .sidebar-footer-btn:hover {
-  background-color: rgba(127, 29, 29, 0.3) !important;
-  color: #F87171 !important;
-}
-.user-sidebar .section-label {
+  background-color: #ffffff !important;
+  border: 1px solid #E5E7EB !important;
   color: #6B7280 !important;
 }
-.user-sidebar .section-label:hover {
-  color: #D1D5DB !important;
+.user-sidebar .sidebar-footer-btn:hover {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  color: #EF4444 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
 }
-.user-sidebar .nav-item {
+.user-sidebar .section-label {
   color: #9CA3AF !important;
 }
+.user-sidebar .section-label:hover {
+  color: #4B5563 !important;
+}
+.user-sidebar .nav-item {
+  color: #4B5563 !important;
+}
 .user-sidebar .nav-item:hover {
-  background-color: rgba(255,255,255,0.05) !important;
-  color: #ffffff !important;
+  background-color: #FDF8F5 !important;
+  color: #8B5E3C !important;
 }
 .user-sidebar .nav-item.active {
+  background-color: #FDF8F5 !important;
+  color: #8B5E3C !important;
+}
+.user-sidebar .section-border {
+  border-left: 1px solid #E5E7EB !important;
+}
+.user-sidebar .brand-icon {
   background-color: #8B5E3C !important;
   color: #ffffff !important;
 }
-.user-sidebar .section-border {
-  border-left: 1px solid #35271E !important;
-}
-.user-sidebar .brand-icon {
-  background-color: #ffffff !important;
-  color: #8B5E3C !important;
-}
-.user-sidebar .brand-text { color: #ffffff !important; }
+.user-sidebar .brand-text { color: #1F2937 !important; }
 .user-sidebar .brand-accent { color: #8B5E3C !important; }
 
 /* =========================================
-   VENDOR SIDEBAR - Dark Teal/Forest Theme
+   VENDOR SIDEBAR - Clean Light White/Teal Theme
    ========================================= */
 .vendor-sidebar {
-  background-color: #142422 !important;
-  border-right: 1px solid #1E3834 !important;
-  color: #D1D5DB !important;
+  background-color: #ffffff !important;
+  border-right: 1px solid #E5E7EB !important;
+  color: #4B5563 !important;
 }
 .vendor-sidebar .sidebar-header {
-  border-bottom: 1px solid #1E3834 !important;
+  border-bottom: 1px solid #E5E7EB !important;
 }
 .vendor-sidebar .sidebar-footer {
-  border-top: 1px solid #1E3834 !important;
-  background-color: rgba(14, 27, 25, 0.5) !important;
+  border-top: 1px solid #E5E7EB !important;
+  background-color: #FAFAFA !important;
 }
 .vendor-sidebar .sidebar-footer-btn {
-  background-color: #1E3330 !important;
-  border: 1px solid #1E3834 !important;
-  color: #9CA3AF !important;
-}
-.vendor-sidebar .sidebar-footer-btn:hover {
-  background-color: rgba(127, 29, 29, 0.3) !important;
-  color: #F87171 !important;
-}
-.vendor-sidebar .section-label {
+  background-color: #ffffff !important;
+  border: 1px solid #E5E7EB !important;
   color: #6B7280 !important;
 }
-.vendor-sidebar .section-label:hover {
-  color: #D1D5DB !important;
+.vendor-sidebar .sidebar-footer-btn:hover {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  color: #EF4444 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
 }
-.vendor-sidebar .nav-item {
+.vendor-sidebar .section-label {
   color: #9CA3AF !important;
 }
+.vendor-sidebar .section-label:hover {
+  color: #4B5563 !important;
+}
+.vendor-sidebar .nav-item {
+  color: #4B5563 !important;
+}
 .vendor-sidebar .nav-item:hover {
-  background-color: rgba(255,255,255,0.05) !important;
-  color: #ffffff !important;
+  background-color: #F0F9F8 !important;
+  color: #2A9D8F !important;
 }
 .vendor-sidebar .nav-item.active {
+  background-color: #F0F9F8 !important;
+  color: #2A9D8F !important;
+}
+.vendor-sidebar .section-border {
+  border-left: 1px solid #E5E7EB !important;
+}
+.vendor-sidebar .brand-icon {
   background-color: #2A9D8F !important;
   color: #ffffff !important;
 }
-.vendor-sidebar .section-border {
-  border-left: 1px solid #1E3834 !important;
-}
-.vendor-sidebar .brand-icon {
-  background-color: #ffffff !important;
-  color: #2A9D8F !important;
-}
-.vendor-sidebar .brand-text { color: #ffffff !important; }
+.vendor-sidebar .brand-text { color: #1F2937 !important; }
 .vendor-sidebar .brand-accent { color: #2A9D8F !important; }
+
+/* =========================================
+   ADMIN SIDEBAR - Clean Light White/Navy Theme
+   ========================================= */
+.admin-sidebar {
+  background-color: #ffffff !important;
+  border-right: 1px solid #E5E7EB !important;
+  color: #4B5563 !important;
+}
+.admin-sidebar .sidebar-header {
+  border-bottom: 1px solid #E5E7EB !important;
+}
+.admin-sidebar .sidebar-footer {
+  border-top: 1px solid #E5E7EB !important;
+  background-color: #FAFAFA !important;
+}
+.admin-sidebar .sidebar-footer-btn {
+  background-color: #ffffff !important;
+  border: 1px solid #E5E7EB !important;
+  color: #6B7280 !important;
+}
+.admin-sidebar .sidebar-footer-btn:hover {
+  background-color: rgba(239, 68, 68, 0.05) !important;
+  color: #EF4444 !important;
+  border-color: rgba(239, 68, 68, 0.2) !important;
+}
+.admin-sidebar .section-label {
+  color: #9CA3AF !important;
+}
+.admin-sidebar .section-label:hover {
+  color: #4B5563 !important;
+}
+.admin-sidebar .nav-item {
+  color: #4B5563 !important;
+}
+.admin-sidebar .nav-item:hover {
+  background-color: #F0F4F8 !important;
+  color: #1D3557 !important;
+}
+.admin-sidebar .nav-item.active {
+  background-color: #F0F4F8 !important;
+  color: #1D3557 !important;
+}
+.admin-sidebar .section-border {
+  border-left: 1px solid #E5E7EB !important;
+}
+.admin-sidebar .brand-icon {
+  background-color: #1D3557 !important;
+  color: #ffffff !important;
+}
+.admin-sidebar .brand-text { color: #1F2937 !important; }
+.admin-sidebar .brand-accent { color: #1D3557 !important; }
+

@@ -13,7 +13,8 @@ const VendorDashboard = ({
   setActiveTab,
   notifications = [],
   onNotifClick,
-  onMarkAllRead
+  onMarkAllRead,
+  searchQuery = ''
 }) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -21,6 +22,13 @@ const VendorDashboard = ({
 
   // Vendor/Seller State
   const [products, setProducts] = useState([]);
+  const filteredProducts = products.filter(p => 
+    !searchQuery || 
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.category?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.material?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const [customRequests, setCustomRequests] = useState([]);
   const [customRequestFilter, setCustomRequestFilter] = useState('All');
   const [aiDesignOrders, setAiDesignOrders] = useState([]);
@@ -62,6 +70,12 @@ const VendorDashboard = ({
   const [orderStatusFilter, setOrderStatusFilter] = useState('All');
   const [orderDateFilter, setOrderDateFilter] = useState('All');
   const [orderCategoryFilter, setOrderCategoryFilter] = useState('All');
+  
+  // Sync global search query to local search states
+  useEffect(() => {
+    setOrderSearch(searchQuery);
+    setInvSearch(searchQuery);
+  }, [searchQuery]);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetailsModal, setShowOrderDetailsModal] = useState(false);
   const [assignPartnerId, setAssignPartnerId] = useState('');
@@ -1689,7 +1703,7 @@ const VendorDashboard = ({
           {/* Listed Products */}
           <div className="lg:col-span-7 space-y-6">
             <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Your Listed Products</h2>
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <div className="bg-white p-16 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center space-y-4">
                 <Package className="w-16 h-16 text-gray-300 mx-auto" />
                 <p className="text-[#1F2937] font-bold text-xl">No products added yet.</p>
@@ -1697,7 +1711,7 @@ const VendorDashboard = ({
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-6">
-                {products.map(p => (
+                {filteredProducts.map(p => (
                   <div key={p._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col sm:flex-row gap-6 items-start sm:items-center justify-between hover:shadow-lg transition-all">
                     <div className="flex gap-6 items-start sm:items-center w-full sm:w-auto flex-1">
                       <img src={p.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={p.title} className="w-28 h-28 object-cover rounded-2xl shadow-sm flex-shrink-0" />
@@ -2334,6 +2348,12 @@ const VendorDashboard = ({
             <div className="grid grid-cols-1 gap-8">
               {(() => {
                 const filtered = customRequests.filter(req => {
+                  const matchesSearch = !searchQuery || 
+                    req.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.style?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.requirements?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    req.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+                  if (!matchesSearch) return false;
                   if (customRequestFilter === 'All') return true;
                   if (customRequestFilter === 'AI Generated') {
                     return req.requestType === 'AI Generated';
@@ -2814,7 +2834,7 @@ const VendorDashboard = ({
       {activeTab === 'manufacturing' && (
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Manufacturing Orders</h2>
-          {manufacturingOrders.map((mfg) => (
+          {manufacturingOrders.filter(m => !searchQuery || m.designDetails?.toLowerCase().includes(searchQuery.toLowerCase()) || m.status?.toLowerCase().includes(searchQuery.toLowerCase())).map((mfg) => (
             <div key={mfg._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
               <div className="flex justify-between items-center border-b border-gray-100 pb-4">
                 <div>
@@ -2852,7 +2872,7 @@ const VendorDashboard = ({
       {activeTab === 'logistics' && (
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Delivery & Logistics Dispatch</h2>
-          {deliveryOrders.map((del) => (
+          {deliveryOrders.filter(d => !searchQuery || d.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || d.status?.toLowerCase().includes(searchQuery.toLowerCase()) || d.trackingId?.toLowerCase().includes(searchQuery.toLowerCase())).map((del) => (
             <div key={del._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
               <div className="flex justify-between items-center border-b border-gray-100 pb-4">
                 <div>

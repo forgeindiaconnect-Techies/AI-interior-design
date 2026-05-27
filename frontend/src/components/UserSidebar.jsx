@@ -2,31 +2,32 @@ import React, { useState, useEffect } from 'react';
 import { 
   Palette, LayoutDashboard, Sparkles, FileText, 
   ShoppingBag, Bookmark, ShoppingCart, Package, Truck, 
-  User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight, MessageSquare 
+  User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight,
+  CreditCard, Star, Bell
 } from 'lucide-react';
 
-// ── USER SIDEBAR THEME: Deep Warm Brown ──
+// ── USER SIDEBAR THEME: Clean White / Peach Highlight ──
 const U = {
-  bg:          '#2C1A0E',   // main sidebar bg
-  border:      '#4A2E1A',   // divider / border
-  headerBg:    '#2C1A0E',
-  footerBg:    '#1E1108',
-  footerBtn:   '#3D2314',
-  labelColor:  '#8a6650',
-  itemColor:   '#C4A882',
-  itemHoverBg: 'rgba(255,255,255,0.06)',
-  activeBg:    '#C07D45',   // rich amber-brown
-  activeText:  '#ffffff',
-  accentText:  '#C07D45',
-  brandText:   '#ffffff',
-  iconBg:      '#C07D45',
+  bg:          '#ffffff',
+  border:      '#E5E7EB',
+  headerBg:    '#ffffff',
+  footerBg:    '#FAFAFA',
+  footerBtn:   '#ffffff',
+  labelColor:  '#9CA3AF',
+  itemColor:   '#4B5563',
+  itemHoverBg: '#FDF8F5',
+  activeBg:    '#FDF8F5',   // light peach
+  activeText:  '#8B5E3C',   // brand brown
+  accentText:  '#8B5E3C',
+  brandText:   '#1F2937',
+  iconBg:      '#8B5E3C',
   iconColor:   '#ffffff',
 };
 
-const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
   const [cartCount, setCartCount] = useState(0);
   const [openGroups, setOpenGroups] = useState({
-    design: true, shop: true, orders: true, support: false, account: false
+    design: true, shop: true, orders: true, support: true, account: true
   });
 
   useEffect(() => {
@@ -45,7 +46,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
 
   const toggleGroup = (g) => setOpenGroups(p => ({ ...p, [g]: !p[g] }));
 
-  const NavItem = ({ name, icon: Icon, tab, badge }) => {
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
     const isActive = activeTab === tab;
     return (
       <button
@@ -53,24 +54,34 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: '10px', padding: '9px 12px', borderRadius: '10px',
-          fontSize: '11.5px', fontWeight: 700, border: 'none', cursor: 'pointer',
+          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
           transition: 'all 0.15s ease',
           backgroundColor: isActive ? U.activeBg : 'transparent',
           color: isActive ? U.activeText : U.itemColor,
         }}
-        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.backgroundColor = U.itemHoverBg; e.currentTarget.style.color = '#fff'; } }}
-        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = U.itemColor; } }}
+        onMouseEnter={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = U.itemHoverBg; 
+            e.currentTarget.style.color = U.activeText; 
+          } 
+        }}
+        onMouseLeave={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = 'transparent'; 
+            e.currentTarget.style.color = U.itemColor; 
+          } 
+        }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Icon style={{ width: 14, height: 14, flexShrink: 0 }} />
+          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? U.activeText : '#9CA3AF' }} />
           {name}
         </span>
         {badge > 0 && (
           <span style={{
-            backgroundColor: isActive ? '#fff' : U.activeBg,
-            color: isActive ? U.activeBg : '#fff',
-            fontSize: 9, fontWeight: 800, padding: '2px 6px',
-            borderRadius: 9999, minWidth: 16, textAlign: 'center'
+            backgroundColor: isBadgeCoral ? '#E76F51' : U.activeBg,
+            color: isBadgeCoral ? '#ffffff' : U.activeText,
+            fontSize: 10, fontWeight: 700, padding: '2px 6px',
+            borderRadius: 9999, minWidth: 18, textAlign: 'center'
           }}>{badge}</span>
         )}
       </button>
@@ -82,81 +93,85 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
       onClick={() => toggleGroup(group)}
       style={{
         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '6px 14px', fontSize: 9.5, fontWeight: 800,
+        padding: '6px 14px', fontSize: '10px', fontWeight: 700,
         textTransform: 'uppercase', letterSpacing: '0.08em',
         color: U.labelColor, background: 'none', border: 'none', cursor: 'pointer',
         transition: 'color 0.15s',
       }}
-      onMouseEnter={e => { e.currentTarget.style.color = '#C4A882'; }}
+      onMouseEnter={e => { e.currentTarget.style.color = U.itemColor; }}
       onMouseLeave={e => { e.currentTarget.style.color = U.labelColor; }}
     >
       <span>{label}</span>
       {openGroups[group]
-        ? <ChevronDown style={{ width: 13, height: 13 }} />
-        : <ChevronRight style={{ width: 13, height: 13 }} />}
+        ? <ChevronDown style={{ width: 14, height: 14, color: U.labelColor }} />
+        : <ChevronRight style={{ width: 14, height: 14, color: U.labelColor }} />}
     </button>
   );
 
   const sections = [
     {
-      group: 'design', label: 'Design',
+      group: 'design', label: 'Design Services',
       items: [
         { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio' },
         { name: 'Manual Design Request', icon: FileText, tab: 'manual' },
-        { name: 'My Designs', icon: Bookmark, tab: 'saved' },
+        { name: 'Interior Designer Help', icon: UserIcon, tab: 'designer' },
+        { name: 'Saved Designs', icon: Bookmark, tab: 'saved' },
       ]
     },
     {
-      group: 'shop', label: 'Shop',
+      group: 'shop', label: 'Marketplace',
       items: [
         { name: 'Products', icon: ShoppingBag, tab: 'marketplace' },
       ]
     },
     {
-      group: 'orders', label: 'Orders',
+      group: 'orders', label: 'Orders & Payments',
       items: [
-        { name: 'Cart', icon: ShoppingCart, tab: 'cart', badge: cartCount },
+        { name: 'My Cart', icon: ShoppingCart, tab: 'cart', badge: cartCount },
+        { name: 'Quotations', icon: FileText, tab: 'quotations' },
         { name: 'My Orders', icon: Package, tab: 'orders' },
         { name: 'Order Tracking', icon: Truck, tab: 'tracking' },
+        { name: 'Payments', icon: CreditCard, tab: 'payments' },
       ]
     },
     {
       group: 'support', label: 'Support',
       items: [
+        { name: 'Reviews', icon: Star, tab: 'reviews' },
         { name: 'Help Center', icon: HelpCircle, tab: 'support' },
-        { name: 'Message Vendor', icon: MessageSquare, tab: 'messages' },
       ]
     },
     {
       group: 'account', label: 'Account',
       items: [
         { name: 'Profile', icon: UserIcon, tab: 'profile' },
+        { name: 'Notifications', icon: Bell, tab: 'notifications', badge: unreadNotifCount, isBadgeCoral: true },
       ]
     },
   ];
 
   return (
-    <aside style={{
+    <aside className="user-sidebar" style={{
       width: 256, backgroundColor: U.bg, color: U.itemColor,
       display: 'flex', flexDirection: 'column', height: '100vh',
       position: 'fixed', left: 0, top: 0, zIndex: 50,
-      boxShadow: '4px 0 24px rgba(0,0,0,0.35)',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
       borderRight: `1px solid ${U.border}`,
     }}>
       {/* Brand Header */}
-      <div style={{
+      <div className="sidebar-header" style={{
         height: 64, display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12,
         borderBottom: `1px solid ${U.border}`, backgroundColor: U.headerBg,
       }}>
-        <div style={{
-          width: 34, height: 34, borderRadius: 10, display: 'flex',
+        <div className="brand-icon" style={{
+          width: 32, height: 32, borderRadius: '50%', display: 'flex',
           alignItems: 'center', justifyContent: 'center',
           backgroundColor: U.iconBg, color: U.iconColor, flexShrink: 0,
         }}>
-          <Palette style={{ width: 17, height: 17 }} />
+          <Palette style={{ width: 16, height: 16 }} />
         </div>
-        <span style={{ fontWeight: 800, fontSize: 17, letterSpacing: '-0.5px', color: U.brandText, fontFamily: "'Outfit', sans-serif" }}>
-          Artisan<span style={{ color: U.accentText }}>Studio</span>
+        <span className="brand-text" style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.5px', color: U.brandText, fontFamily: "'Outfit', sans-serif" }}>
+          Artisan<span className="brand-accent" style={{ color: U.accentText }}>Studio</span>
         </span>
       </div>
 
@@ -167,10 +182,10 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
 
         {/* Collapsible Sections */}
         {sections.map(({ group, label, items }) => (
-          <div key={group}>
+          <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <SectionLabel label={label} group={group} />
             {openGroups[group] && (
-              <div style={{ borderLeft: `2px solid ${U.border}`, marginLeft: 18, paddingLeft: 8, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div className="section-border" style={{ borderLeft: `1px solid ${U.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {items.map(item => (
                   <NavItem key={item.tab} {...item} />
                 ))}
@@ -181,17 +196,18 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout }) => {
       </div>
 
       {/* Logout Footer */}
-      <div style={{ padding: 14, borderTop: `1px solid ${U.border}`, backgroundColor: U.footerBg }}>
+      <div className="sidebar-footer" style={{ padding: 14, borderTop: `1px solid ${U.border}`, backgroundColor: U.footerBg }}>
         <button
           onClick={onLogout}
+          className="sidebar-footer-btn"
           style={{
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 8, padding: '11px 16px', borderRadius: 10, fontWeight: 700, fontSize: 11.5,
-            backgroundColor: U.footerBtn, color: '#9CA3AF', border: `1px solid ${U.border}`,
+            gap: 8, padding: '11px 16px', borderRadius: 10, fontWeight: 700, fontSize: 12,
+            backgroundColor: U.footerBtn, color: '#6B7280', border: `1px solid ${U.border}`,
             cursor: 'pointer', transition: 'all 0.15s',
           }}
-          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(180,20,20,0.2)'; e.currentTarget.style.color = '#F87171'; }}
-          onMouseLeave={e => { e.currentTarget.style.backgroundColor = U.footerBtn; e.currentTarget.style.color = '#9CA3AF'; }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = U.footerBtn; e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = U.border; }}
         >
           <LogOut style={{ width: 15, height: 15 }} />
           <span>Logout</span>

@@ -1,19 +1,38 @@
 import React, { useState } from 'react';
 import { 
   Palette, LayoutDashboard, Users, Store, Factory, Truck, 
-  Sparkles, FileText, ShoppingBag, DollarSign, 
-  HelpCircle, BarChart, CheckSquare, Key, Bell, LogOut, ShieldCheck,
-  ChevronDown, ChevronRight 
+  ShoppingBag, Sparkles, FileText, BarChart2, RefreshCw, 
+  HelpCircle, ShieldCheck, Key, Bell, LogOut, ChevronDown, ChevronRight,
+  CheckSquare, AlertCircle, Wrench, UserCheck
 } from 'lucide-react';
 
-const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+// ── ADMIN SIDEBAR THEME: Clean White / Navy Highlight ──
+const A = {
+  bg:          '#ffffff',
+  border:      '#E5E7EB',
+  headerBg:    '#ffffff',
+  footerBg:    '#FAFAFA',
+  footerBtn:   '#ffffff',
+  labelColor:  '#9CA3AF',
+  itemColor:   '#4B5563',
+  itemHoverBg: '#F0F4F8',
+  activeBg:    '#F0F4F8',   // light navy
+  activeText:  '#1D3557',   // brand navy
+  accentText:  '#1D3557',
+  brandText:   '#1F2937',
+  iconBg:      '#1D3557',
+  iconColor:   '#ffffff',
+};
+
+const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     users: true,
     operations: true,
+    ai_requests: true,
     finance: true,
-    support: false,
-    settings: false
+    support: true,
+    verifications: true
   });
 
   const toggleGroup = (group) => {
@@ -23,248 +42,198 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout }) => {
     }));
   };
 
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
+    const isActive = activeTab === tab;
+    return (
+      <button
+        onClick={() => setActiveTab(tab)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '10px', padding: '9px 12px', borderRadius: '10px',
+          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          backgroundColor: isActive ? A.activeBg : 'transparent',
+          color: isActive ? A.activeText : A.itemColor,
+        }}
+        onMouseEnter={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = A.itemHoverBg; 
+            e.currentTarget.style.color = A.activeText; 
+          } 
+        }}
+        onMouseLeave={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = 'transparent'; 
+            e.currentTarget.style.color = A.itemColor; 
+          } 
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? A.activeText : '#9CA3AF' }} />
+          {name}
+        </span>
+        {badge > 0 && (
+          <span style={{
+            backgroundColor: isBadgeCoral ? '#E76F51' : A.activeBg,
+            color: isBadgeCoral ? '#ffffff' : A.activeText,
+            fontSize: 10, fontWeight: 700, padding: '2px 6px',
+            borderRadius: 9999, minWidth: 18, textAlign: 'center'
+          }}>{badge}</span>
+        )}
+      </button>
+    );
+  };
+
+  const SectionLabel = ({ label, group }) => (
+    <button
+      onClick={() => toggleGroup(group)}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '6px 14px', fontSize: '10px', fontWeight: 700,
+        textTransform: 'uppercase', letterSpacing: '0.08em',
+        color: A.labelColor, background: 'none', border: 'none', cursor: 'pointer',
+        transition: 'color 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.color = A.itemColor; }}
+      onMouseLeave={e => { e.currentTarget.style.color = A.labelColor; }}
+    >
+      <span>{label}</span>
+      {openGroups[group]
+        ? <ChevronDown style={{ width: 14, height: 14, color: A.labelColor }} />
+        : <ChevronRight style={{ width: 14, height: 14, color: A.labelColor }} />}
+    </button>
+  );
+
   return (
-    <aside className="w-64 bg-[#1F2937] text-gray-300 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-md">
+    <aside className="admin-sidebar" style={{
+      width: 256, backgroundColor: A.bg, color: A.itemColor,
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      position: 'fixed', left: 0, top: 0, zIndex: 50,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      borderRight: `1px solid ${A.border}`,
+    }}>
       {/* Brand Header */}
-      <div className="h-16 flex items-center px-6 border-b border-gray-800 gap-3">
-        <div className="w-8 h-8 rounded-xl bg-white text-[#1F2937] flex items-center justify-center shadow-sm">
-          <Palette className="w-4.5 h-4.5" />
+      <div className="sidebar-header" style={{
+        height: 64, display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12,
+        borderBottom: `1px solid ${A.border}`, backgroundColor: A.headerBg,
+      }}>
+        <div className="brand-icon" style={{
+          width: 32, height: 32, borderRadius: '50%', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: A.iconBg, color: A.iconColor, flexShrink: 0,
+        }}>
+          <Palette style={{ width: 16, height: 16 }} />
         </div>
-        <span className="font-['Outfit'] font-bold text-lg tracking-tight text-white">
-          Artisan<span className="text-[#E76F51]">Studio</span>
+        <span className="brand-text" style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.5px', color: A.brandText, fontFamily: "'Outfit', sans-serif" }}>
+          Artisan<span className="brand-accent" style={{ color: A.accentText }}>Studio</span>
         </span>
       </div>
 
-      {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
-        {/* Section: Dashboard */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => setActiveTab('overview')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'overview' 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <LayoutDashboard className="w-4 h-4 shrink-0" />
-            <span>Overview</span>
-          </button>
-        </div>
+      {/* Nav Scroll Area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Overview */}
+        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" />
 
-        {/* Section: User Management */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('users')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>User Management</span>
-            {openGroups.users ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
+        {/* Collapsible: USER & VENDOR MANAGEMENT */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="User & Vendor Management" group="users" />
           {openGroups.users && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Users', icon: Users, tab: 'users' },
-                { name: 'Vendors', icon: Store, tab: 'vendors' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                      isActive 
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="Users" icon={Users} tab="users" />
+              <NavItem name="Vendors" icon={Store} tab="vendors" />
+              <NavItem name="Manufacturers" icon={Factory} tab="manufacturers" />
+              <NavItem name="Delivery Partners" icon={Truck} tab="delivery" />
+              <NavItem name="Interior Designers" icon={UserCheck} tab="designer_requests" />
             </div>
           )}
         </div>
 
-        {/* Section: Operations */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('operations')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>Operations</span>
-            {openGroups.operations ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
+        {/* Collapsible: OPERATIONS WORKFLOW */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="Operations Workflow" group="operations" />
           {openGroups.operations && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Orders', icon: ShoppingBag, tab: 'orders' },
-                { name: 'Manufacturing', icon: Factory, tab: 'manufacturing' },
-                { name: 'Delivery', icon: Truck, tab: 'delivery' },
-                { name: 'AI Requests', icon: Sparkles, tab: 'ai_designs' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="Orders" icon={ShoppingBag} tab="orders" />
+              <NavItem name="Manufacturing" icon={Factory} tab="manufacturing" />
+              <NavItem name="Delivery" icon={Truck} tab="delivery" />
+              <NavItem name="Installation" icon={Wrench} tab="installation" />
             </div>
           )}
         </div>
 
-        {/* Section: Finance */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('finance')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>Finance</span>
-            {openGroups.finance ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
+        {/* Collapsible: AI & DESIGN REQUESTS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="AI & Design Requests" group="ai_requests" />
+          {openGroups.ai_requests && (
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="AI Requests" icon={Sparkles} tab="ai_designs" />
+              <NavItem name="Manual Requests" icon={FileText} tab="manual_designs" />
+            </div>
+          )}
+        </div>
+
+        {/* Collapsible: FINANCE */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="Finance" group="finance" />
           {openGroups.finance && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Platform Commission', icon: BarChart, tab: 'platform_commission' },
-                { name: 'Refunds', icon: ChevronRight, tab: 'refunds' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="Platform Commission" icon={BarChart2} tab="platform_commission" />
+              <NavItem name="Refunds" icon={RefreshCw} tab="refunds" />
             </div>
           )}
         </div>
 
-        {/* Section: Support */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('support')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>Support</span>
-            {openGroups.support ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
+        {/* Collapsible: SUPPORT */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="Support" group="support" />
           {openGroups.support && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Live Support Chat', icon: HelpCircle, tab: 'support' },
-                { name: 'Complaints', icon: HelpCircle, tab: 'complaints' },
-                { name: 'Support Tickets', icon: FileText, tab: 'tickets' },
-                { name: 'Disputes', icon: ShieldCheck, tab: 'disputes' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                      isActive
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="Complaints" icon={HelpCircle} tab="complaints" />
+              <NavItem name="Support Tickets" icon={FileText} tab="tickets" />
+              <NavItem name="Disputes" icon={ShieldCheck} tab="disputes" />
             </div>
           )}
         </div>
 
-        {/* Section: Analytics */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => setActiveTab('analytics')}
-            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
-              activeTab === 'analytics' 
-                ? 'bg-white/10 text-white' 
-                : 'text-gray-400 hover:bg-white/5 hover:text-white'
-            }`}
-          >
-            <BarChart className="w-4 h-4 shrink-0" />
-            <span>Reports & Analytics</span>
-          </button>
+        {/* Outer-level: Reports & Analytics */}
+        <div>
+          <NavItem name="Reports & Analytics" icon={BarChart2} tab="analytics" />
         </div>
 
-        {/* Section: Settings */}
-        <div className="space-y-1">
-          <button 
-            onClick={() => toggleGroup('settings')}
-            className="w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider hover:text-gray-300 transition-colors"
-          >
-            <span>Settings</span>
-            {openGroups.settings ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-          
-          {openGroups.settings && (
-            <div className="pl-2 space-y-1 mt-1 border-l border-gray-800 ml-3.5">
-              {[
-                { name: 'Verification & Approvals', icon: CheckSquare, tab: 'verifications' },
-                { name: 'Roles & Permissions', icon: Key, tab: 'roles' },
-                { name: 'Notifications', icon: Bell, tab: 'notifications' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                const isActive = activeTab === item.tab;
-                return (
-                  <button 
-                    key={index} 
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                      isActive 
-                        ? 'bg-white/10 text-white' 
-                        : 'text-gray-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
+        {/* Collapsible: VERIFICATION & REVIEWS */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="Verification & Reviews" group="verifications" />
+          {openGroups.verifications && (
+            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" />
+              <NavItem name="Store Approval" icon={Store} tab="store-approvals" />
+              <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" />
+              <NavItem name="Role & Permissions" icon={Key} tab="roles" />
             </div>
           )}
+        </div>
+
+        {/* Outer-level: Notifications */}
+        <div>
+          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} />
         </div>
       </div>
 
-      {/* Logout Footer Fixed at Bottom */}
-      <div className="p-4 border-t border-gray-800 bg-gray-900/50">
-        <button 
+      {/* Logout Footer */}
+      <div className="sidebar-footer" style={{ padding: 14, borderTop: `1px solid ${A.border}`, backgroundColor: A.footerBg }}>
+        <button
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-[#2D3748] hover:bg-red-900/20 hover:text-red-400 text-gray-400 rounded-xl font-bold text-xs transition-all border border-gray-800 shadow-sm"
+          className="sidebar-footer-btn"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, padding: '11px 16px', borderRadius: 10, fontWeight: 700, fontSize: 12,
+            backgroundColor: A.footerBtn, color: '#6B7280', border: `1px solid ${A.border}`,
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = A.footerBtn; e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = A.border; }}
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut style={{ width: 15, height: 15 }} />
           <span>Logout</span>
         </button>
       </div>

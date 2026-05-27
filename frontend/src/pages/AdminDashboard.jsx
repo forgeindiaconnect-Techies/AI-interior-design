@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -14,7 +14,8 @@ const AdminDashboard = ({
   setActiveTab,
   notifications = [],
   onNotifClick,
-  onMarkAllRead
+  onMarkAllRead,
+  searchQuery = ''
 }) => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
@@ -262,6 +263,18 @@ const AdminDashboard = ({
   const [designerRequestStatusFilter, setDesignerRequestStatusFilter] = useState('all');
   const [designerRequestBudgetFilter, setDesignerRequestBudgetFilter] = useState('all');
   const [selectedRequestDesignerId, setSelectedRequestDesignerId] = useState('');
+
+  // Sync global header search query to all local tab search filters
+  useEffect(() => {
+    setTransactionSearch(searchQuery);
+    setOrderSearch(searchQuery);
+    setUserSearch(searchQuery);
+    setMfgSearch(searchQuery);
+    setDeliverySearch(searchQuery);
+    setAiDesignSearch(searchQuery);
+    setManualDesignSearch(searchQuery);
+    setDesignerRequestSearch(searchQuery);
+  }, [searchQuery]);
 
   const syncLocalDataToAdminState = () => {
     setManagementData(prev => {

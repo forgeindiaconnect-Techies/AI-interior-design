@@ -2,17 +2,35 @@ import React, { useState } from 'react';
 import { 
   Palette, LayoutDashboard, Package, ShoppingCart, FileText, 
   Wrench, Truck, MessageSquare, Star, DollarSign, Briefcase, 
-  LogOut, ChevronDown, ChevronRight, HelpCircle 
+  LogOut, ChevronDown, ChevronRight, HelpCircle, Bell, ShieldCheck, Store
 } from 'lucide-react';
 
-const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
+// ── VENDOR SIDEBAR THEME: Clean White / Teal Highlight ──
+const V = {
+  bg:          '#ffffff',
+  border:      '#E5E7EB',
+  headerBg:    '#ffffff',
+  footerBg:    '#FAFAFA',
+  footerBtn:   '#ffffff',
+  labelColor:  '#9CA3AF',
+  itemColor:   '#4B5563',
+  itemHoverBg: '#F0F9F8',
+  activeBg:    '#F0F9F8',   // light teal
+  activeText:  '#2A9D8F',   // brand teal
+  accentText:  '#2A9D8F',
+  brandText:   '#1F2937',
+  iconBg:      '#2A9D8F',
+  iconColor:   '#ffffff',
+};
+
+const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     products: true,
     orders: true,
     customers: true,
-    finance: false,
-    business: false
+    finance: true,
+    business: true
   });
 
   const toggleGroup = (group) => {
@@ -22,202 +40,175 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout }) => {
     }));
   };
 
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
+    const isActive = activeTab === tab;
+    return (
+      <button
+        onClick={() => setActiveTab(tab)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '10px', padding: '9px 12px', borderRadius: '10px',
+          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'all 0.15s ease',
+          backgroundColor: isActive ? V.activeBg : 'transparent',
+          color: isActive ? V.activeText : V.itemColor,
+        }}
+        onMouseEnter={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = V.itemHoverBg; 
+            e.currentTarget.style.color = V.activeText; 
+          } 
+        }}
+        onMouseLeave={e => { 
+          if (!isActive) { 
+            e.currentTarget.style.backgroundColor = 'transparent'; 
+            e.currentTarget.style.color = V.itemColor; 
+          } 
+        }}
+      >
+        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? V.activeText : '#9CA3AF' }} />
+          {name}
+        </span>
+        {badge > 0 && (
+          <span style={{
+            backgroundColor: isBadgeCoral ? '#E76F51' : V.activeBg,
+            color: isBadgeCoral ? '#ffffff' : V.activeText,
+            fontSize: 10, fontWeight: 700, padding: '2px 6px',
+            borderRadius: 9999, minWidth: 18, textAlign: 'center'
+          }}>{badge}</span>
+        )}
+      </button>
+    );
+  };
+
+  const SectionLabel = ({ label, group }) => (
+    <button
+      onClick={() => toggleGroup(group)}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '6px 14px', fontSize: '10px', fontWeight: 700,
+        textTransform: 'uppercase', letterSpacing: '0.08em',
+        color: V.labelColor, background: 'none', border: 'none', cursor: 'pointer',
+        transition: 'color 0.15s',
+      }}
+      onMouseEnter={e => { e.currentTarget.style.color = V.itemColor; }}
+      onMouseLeave={e => { e.currentTarget.style.color = V.labelColor; }}
+    >
+      <span>{label}</span>
+      {openGroups[group]
+        ? <ChevronDown style={{ width: 14, height: 14, color: V.labelColor }} />
+        : <ChevronRight style={{ width: 14, height: 14, color: V.labelColor }} />}
+    </button>
+  );
+
+  const sections = [
+    {
+      group: 'products', label: 'Products',
+      items: [
+        { name: 'Product Management', icon: Package, tab: 'products' },
+        { name: 'Inventory', icon: Package, tab: 'inventory' }
+      ]
+    },
+    {
+      group: 'orders', label: 'Orders Workflow',
+      items: [
+        { name: 'Ready-made Orders', icon: ShoppingCart, tab: 'orders' },
+        { name: 'Custom Orders', icon: FileText, tab: 'custom_requests' },
+        { name: 'Production Requests', icon: Wrench, tab: 'manufacturing' },
+        { name: 'Delivery & Installation', icon: Truck, tab: 'logistics' }
+      ]
+    },
+    {
+      group: 'customers', label: 'Quotations & Customers',
+      items: [
+        { name: 'Quotations', icon: FileText, tab: 'quotations' },
+        { name: 'Customer Messages', icon: MessageSquare, tab: 'messages' },
+        { name: 'Reviews', icon: Star, tab: 'reviews' }
+      ]
+    },
+    {
+      group: 'finance', label: 'Earnings',
+      items: [
+        { name: 'Revenue', icon: DollarSign, tab: 'earnings' },
+        { name: 'Payouts', icon: DollarSign, tab: 'payouts' }
+      ]
+    },
+    {
+      group: 'business', label: 'Business Settings',
+      items: [
+        { name: 'Business Profile', icon: Briefcase, tab: 'profile' },
+        { name: 'Business Verification', icon: ShieldCheck, tab: 'verification' },
+        { name: 'Store Setup', icon: Store, tab: 'store_setup' }
+      ]
+    }
+  ];
+
   return (
-    <aside className="vendor-sidebar w-64 flex flex-col h-screen fixed left-0 top-0 z-50 shadow-lg">
+    <aside className="vendor-sidebar" style={{
+      width: 256, backgroundColor: V.bg, color: V.itemColor,
+      display: 'flex', flexDirection: 'column', height: '100vh',
+      position: 'fixed', left: 0, top: 0, zIndex: 50,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+      borderRight: `1px solid ${V.border}`,
+    }}>
       {/* Brand Header */}
-      <div className="sidebar-header h-16 flex items-center px-6 gap-3">
-        <div className="brand-icon w-8 h-8 rounded-xl flex items-center justify-center shadow-sm">
-          <Palette className="w-4 h-4" />
+      <div className="sidebar-header" style={{
+        height: 64, display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12,
+        borderBottom: `1px solid ${V.border}`, backgroundColor: V.headerBg,
+      }}>
+        <div className="brand-icon" style={{
+          width: 32, height: 32, borderRadius: '50%', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: V.iconBg, color: V.iconColor, flexShrink: 0,
+        }}>
+          <Palette style={{ width: 16, height: 16 }} />
         </div>
-        <span className="brand-text font-bold text-lg tracking-tight" style={{fontFamily: "'Outfit', sans-serif"}}>
-          Artisan<span className="brand-accent">Studio</span>
+        <span className="brand-text" style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.5px', color: V.brandText, fontFamily: "'Outfit', sans-serif" }}>
+          Artisan<span className="brand-accent" style={{ color: V.accentText }}>Studio</span>
         </span>
       </div>
 
-      {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+      {/* Nav Scroll Area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        {/* Overview */}
+        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" />
 
-        {/* Section: Dashboard */}
-        <div className="space-y-1">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`nav-item w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${activeTab === 'overview' ? 'active' : ''}`}
-          >
-            <LayoutDashboard className="w-4 h-4 shrink-0" />
-            <span>Overview</span>
-          </button>
-        </div>
+        {/* Collapsible Sections */}
+        {sections.map(({ group, label, items }) => (
+          <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <SectionLabel label={label} group={group} />
+            {openGroups[group] && (
+              <div className="section-border" style={{ borderLeft: `1px solid ${V.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {items.map(item => (
+                  <NavItem key={item.tab} {...item} />
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
 
-        {/* Section: Products */}
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleGroup('products')}
-            className="section-label w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
-          >
-            <span>Products</span>
-            {openGroups.products ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-
-          {openGroups.products && (
-            <div className="section-border pl-2 space-y-1 mt-1 ml-3.5">
-              {[
-                { name: 'Product Management', icon: Package, tab: 'products' },
-                { name: 'Inventory', icon: Package, tab: 'inventory' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === item.tab ? 'active' : ''}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section: Orders */}
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleGroup('orders')}
-            className="section-label w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
-          >
-            <span>Orders</span>
-            {openGroups.orders ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-
-          {openGroups.orders && (
-            <div className="section-border pl-2 space-y-1 mt-1 ml-3.5">
-              {[
-                { name: 'Ready-made Orders', icon: ShoppingCart, tab: 'orders' },
-                { name: 'Custom Orders', icon: FileText, tab: 'custom_requests' },
-                { name: 'Production Requests', icon: Wrench, tab: 'manufacturing' },
-                { name: 'Delivery & Installation', icon: Truck, tab: 'logistics' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === item.tab ? 'active' : ''}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section: Customers */}
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleGroup('customers')}
-            className="section-label w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
-          >
-            <span>Customers</span>
-            {openGroups.customers ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-
-          {openGroups.customers && (
-            <div className="section-border pl-2 space-y-1 mt-1 ml-3.5">
-              {[
-                { name: 'Messages', icon: MessageSquare, tab: 'messages' },
-                { name: 'Reviews', icon: Star, tab: 'reviews' },
-                { name: 'Help Center', icon: HelpCircle, tab: 'support' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === item.tab ? 'active' : ''}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section: Finance */}
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleGroup('finance')}
-            className="section-label w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
-          >
-            <span>Finance</span>
-            {openGroups.finance ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-
-          {openGroups.finance && (
-            <div className="section-border pl-2 space-y-1 mt-1 ml-3.5">
-              {[
-                { name: 'Revenue', icon: DollarSign, tab: 'earnings' },
-                { name: 'Payouts', icon: DollarSign, tab: 'payouts' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === item.tab ? 'active' : ''}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Section: Business */}
-        <div className="space-y-1">
-          <button
-            onClick={() => toggleGroup('business')}
-            className="section-label w-full flex items-center justify-between px-3.5 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors"
-          >
-            <span>Business</span>
-            {openGroups.business ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-          </button>
-
-          {openGroups.business && (
-            <div className="section-border pl-2 space-y-1 mt-1 ml-3.5">
-              {[
-                { name: 'Business Profile', icon: Briefcase, tab: 'profile' }
-              ].map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={index}
-                    onClick={() => setActiveTab(item.tab)}
-                    className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-bold transition-all ${activeTab === item.tab ? 'active' : ''}`}
-                  >
-                    <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{item.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* Outer-level Notifications Item */}
+        <div style={{ marginTop: 10 }}>
+          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} />
         </div>
       </div>
 
       {/* Logout Footer */}
-      <div className="sidebar-footer p-4">
+      <div className="sidebar-footer" style={{ padding: 14, borderTop: `1px solid ${V.border}`, backgroundColor: V.footerBg }}>
         <button
           onClick={onLogout}
-          className="sidebar-footer-btn w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-xs transition-all"
+          className="sidebar-footer-btn"
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, padding: '11px 16px', borderRadius: 10, fontWeight: 700, fontSize: 12,
+            backgroundColor: V.footerBtn, color: '#6B7280', border: `1px solid ${V.border}`,
+            cursor: 'pointer', transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.05)'; e.currentTarget.style.color = '#EF4444'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.2)'; }}
+          onMouseLeave={e => { e.currentTarget.style.backgroundColor = V.footerBtn; e.currentTarget.style.color = '#6B7280'; e.currentTarget.style.borderColor = V.border; }}
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut style={{ width: 15, height: 15 }} />
           <span>Logout</span>
         </button>
       </div>

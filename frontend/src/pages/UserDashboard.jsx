@@ -15,7 +15,8 @@ const UserDashboard = ({
   setActiveTab,
   notifications = [],
   onNotifClick,
-  onMarkAllRead
+  onMarkAllRead,
+  searchQuery = ''
 }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -36,7 +37,13 @@ const UserDashboard = ({
   const [roomType, setRoomType] = useState('Living Room');
   const [originalImage, setOriginalImage] = useState('');
   const [aiDesigns, setAiDesigns] = useState([]);
-  const savedDesigns = aiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution');
+  const filteredAiDesigns = aiDesigns.filter(d => 
+    !searchQuery || 
+    d.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.aiSuggestion?.furniture?.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+  const savedDesigns = filteredAiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution');
   const [loadingAi, setLoadingAi] = useState(false);
 
   // Manual Design State
@@ -46,6 +53,13 @@ const UserDashboard = ({
   const [manualMaterials, setManualMaterials] = useState('');
   const [manualRequirements, setManualRequirements] = useState('');
   const [manualDesigns, setManualDesigns] = useState([]);
+  const filteredManualDesigns = manualDesigns.filter(d => 
+    !searchQuery || 
+    d.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.style?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.requirements?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.status?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   // --- New fields ---
   const [referenceImages, setReferenceImages] = useState([]);
   const [ownMaterials, setOwnMaterials] = useState('No');
@@ -70,6 +84,15 @@ const UserDashboard = ({
 
   // Orders & Quotations State
   const [orders, setOrders] = useState([]);
+  const filteredOrders = orders.filter(o => 
+    !searchQuery || 
+    o._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.orderStatus?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.orderType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.vendorId?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    o.productDetails?.title?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   const [pendingPaid, setPendingPaid] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [showCheckoutSummary, setShowCheckoutSummary] = useState(false);
@@ -1249,7 +1272,7 @@ const UserDashboard = ({
                 <p className="text-[#6B7280] font-medium">No AI designs generated yet. Use the studio panel to start styling!</p>
               </div>
             ) : (
-              aiDesigns.map((design) => (
+              filteredAiDesigns.map((design) => (
                 <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     <img src={design.generatedImage} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner" />
@@ -1549,10 +1572,10 @@ const UserDashboard = ({
             </div>
 
             {/* Submitted Requests */}
-            {manualDesigns.length > 0 && (
+            {filteredManualDesigns.length > 0 && (
               <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 space-y-4">
                 <h3 className="font-bold text-[#1F2937] text-sm uppercase tracking-wider">Your Submitted Requests</h3>
-                {manualDesigns.slice(0,3).map((d, i) => (
+                {filteredManualDesigns.slice(0, 3).map((d, i) => (
                   <div key={d._id || i} className="flex items-start justify-between gap-3 p-4 bg-[#F8F5F0] rounded-xl">
                     <div>
                       <p className="font-bold text-[#1F2937] text-sm">{d.roomType} — {d.style}</p>
@@ -1591,7 +1614,7 @@ const UserDashboard = ({
 
       {/* TAB 5: MARKETPLACE */}
       {activeTab === 'marketplace' && (
-        <Marketplace isEmbedded={true} onGoToCart={() => setActiveTab && setActiveTab('cart')} />
+        <Marketplace isEmbedded={true} onGoToCart={() => setActiveTab && setActiveTab('cart')} searchQuery={searchQuery} />
       )}
 
       {/* TAB 6: MY CART */}
@@ -1905,12 +1928,12 @@ const UserDashboard = ({
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Your Orders</h2>
 
           {/* Marketplace Orders — with product thumbnail, name and status badge */}
-          {orders.filter(o => o.orderType === 'Marketplace Product').length > 0 && (
+          {filteredOrders.filter(o => o.orderType === 'Marketplace Product').length > 0 && (
             <div className="space-y-4">
               <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
                 <ShoppingBag className="w-4 h-4 text-[#8B5E3C]" /> Marketplace Product Orders
               </h3>
-              {orders.filter(o => o.orderType === 'Marketplace Product').map((order) => {
+              {filteredOrders.filter(o => o.orderType === 'Marketplace Product').map((order) => {
                 const statusColors = {
                   'Pending Confirmation': 'bg-amber-50 text-amber-700 border-amber-200',
                   'Processing': 'bg-blue-50 text-blue-700 border-blue-200',
@@ -1969,12 +1992,12 @@ const UserDashboard = ({
           )}
 
           {/* Custom Design Orders */}
-          {orders.filter(o => o.orderType !== 'Marketplace Product').length > 0 && (
+          {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').length > 0 && (
             <div className="space-y-4">
               <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
                 <Hammer className="w-4 h-4 text-[#2A9D8F]" /> Custom Design Orders
               </h3>
-              {orders.filter(o => o.orderType !== 'Marketplace Product').map((order) => (
+              {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').map((order) => (
                 <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:shadow-md transition-all">
                   <div>
                     <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{order.orderType?.replace('_', ' ') || 'CUSTOM'}</span>
@@ -2028,7 +2051,7 @@ const UserDashboard = ({
                 <button onClick={() => setActiveTab('manual')} className="px-6 py-3 bg-[#8B5E3C] text-white rounded-xl font-bold text-xs shadow-md">Create Custom Request</button>
               </div>
             ) : (
-              manualDesigns.filter(d => ['Quotation Sent', 'Approved', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).map((req) => {
+              filteredManualDesigns.filter(d => ['Quotation Sent', 'Approved', 'Quotation Accepted', 'Quotation Rejected'].includes(d.status)).map((req) => {
                 const statusColors = {
                   'Quotation Sent': 'bg-amber-50 text-amber-700 border-amber-200',
                   'Approved': 'bg-emerald-50 text-emerald-700 border-emerald-200',
