@@ -5,7 +5,7 @@ import {
   Store, Hammer, Truck, CheckCircle, PlusCircle, DollarSign, UploadCloud, 
   Send, RefreshCw, Eye, ArrowRight, ClipboardList, Package, MessageSquare, 
   Star, Briefcase, ShieldCheck, Bell, ShoppingCart, FileText, Activity,
-  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot, AlertCircle, HelpCircle
+  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot, AlertCircle, HelpCircle, XCircle, CreditCard
 } from 'lucide-react';
 
 const VendorDashboard = ({ 
@@ -49,6 +49,15 @@ const VendorDashboard = ({
   const [selectedRequestId, setSelectedRequestId] = useState(null);
   const [viewDetailsId, setViewDetailsId] = useState(null);
 
+  // Payment Method State
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('upi');
+  const [quoteBankHolder, setQuoteBankHolder] = useState('');
+  const [quoteBankAccount, setQuoteBankAccount] = useState('');
+  const [quoteBankIFSC, setQuoteBankIFSC] = useState('');
+  const [quoteBankName, setQuoteBankName] = useState('');
+  const [quotePaymentGateway, setQuotePaymentGateway] = useState('');
+  const [quoteCashOnVisit, setQuoteCashOnVisit] = useState(false);
+
   // Suggest Vendor State
   const [suggestedVendorId, setSuggestedVendorId] = useState('');
   const [suggestNote, setSuggestNote] = useState('');
@@ -57,6 +66,8 @@ const VendorDashboard = ({
   const [manufacturingOrders, setManufacturingOrders] = useState([]);
   const [mfgStatus, setMfgStatus] = useState({});
   const [progressImg, setProgressImg] = useState({});
+  const [pendingVerificationOrders, setPendingVerificationOrders] = useState([]);
+  const [verificationProcessing, setVerificationProcessing] = useState({});
 
   // Delivery State
   const [deliveryOrders, setDeliveryOrders] = useState([]);
@@ -594,15 +605,22 @@ const VendorDashboard = ({
         .map(o => ({
           _id: o._id,
           orderId: o._id,
-          designDetails: o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
-          measurements: o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
-          materials: 'Wood, Premium Fabrics',
-          budget: o.totalAmount,
+          designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
+            ? 'AI Design - ' + o.aiDesignData.roomType
+            : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+          measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
+            ? o.aiDesignData.measurements
+            : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+          materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
+          budget: o.quotationAmount || o.totalAmount,
           status: o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' ? 'Production Started' : o.orderStatus,
           progressImages: o.progressImages || []
         }));
       setManufacturingOrders(mfgOrders);
- 
+
+      const pendingOrders = localOrders.filter(o => o.orderStatus === 'Paid - Awaiting Verification');
+      setPendingVerificationOrders(pendingOrders);
+
       const delOrders = localOrders
         .filter(o => o.orderStatus === 'Delivery Assigned' || o.orderStatus === 'Picked Up' || o.orderStatus === 'Shipped' || o.orderStatus === 'Delivered')
         .map(o => ({
@@ -914,6 +932,8 @@ const VendorDashboard = ({
           progressImages: o.progressImages || []
         }));
       setManufacturingOrders(mfgOrders);
+      const pendingVerif = freshOrders.filter(o => o.orderStatus === 'Paid - Awaiting Verification');
+      setPendingVerificationOrders(pendingVerif);
     }
   }, [activeTab]);
 
@@ -1066,7 +1086,14 @@ const VendorDashboard = ({
       quotationMaterials: quoteMaterials, 
       quotationTime: quoteTime,
       quotationUPI: quoteUPI,
-      quotationQR: quoteQR
+      quotationQR: quoteQR,
+      quotationPaymentMethod: selectedPaymentMethod,
+      quotationBankHolder: quoteBankHolder,
+      quotationBankAccount: quoteBankAccount,
+      quotationBankIFSC: quoteBankIFSC,
+      quotationBankName: quoteBankName,
+      quotationPaymentGateway: quotePaymentGateway,
+      quotationCashOnVisit: quoteCashOnVisit,
     };
     
     setCustomRequests(customRequests.map(r => r._id === req._id ? { ...r, status: 'Quotation Sent', ...quotationFields } : r));
@@ -1082,7 +1109,13 @@ const VendorDashboard = ({
     }, ...localUserNotifs]));
 
     alert('✅ Quotation sent to customer successfully! User has been notified.');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR('');
+    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+  };
+
+  const resetPaymentFields = () => {
+    setSelectedPaymentMethod('upi');
+    setQuoteBankHolder(''); setQuoteBankAccount(''); setQuoteBankIFSC(''); setQuoteBankName('');
+    setQuotePaymentGateway(''); setQuoteCashOnVisit(false);
   };
 
   const handleAcceptRequest = async (id) => {
@@ -1103,7 +1136,7 @@ const VendorDashboard = ({
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const updated = localOrders.map(o =>
       o._id === order._id
-        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime, quotationUPI: quoteUPI, quotationQR: quoteQR }
+        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime, quotationUPI: quoteUPI, quotationQR: quoteQR, quotationPaymentMethod: selectedPaymentMethod, quotationBankHolder: quoteBankHolder, quotationBankAccount: quoteBankAccount, quotationBankIFSC: quoteBankIFSC, quotationBankName: quoteBankName, quotationPaymentGateway: quotePaymentGateway, quotationCashOnVisit: quoteCashOnVisit }
         : o
     );
     localStorage.setItem('mockOrders', JSON.stringify(updated));
@@ -1118,7 +1151,57 @@ const VendorDashboard = ({
     }, ...localUserNotifs]));
 
     alert('Quotation sent to customer for AI Design order!');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR('');
+    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+  };
+
+  const handleAcceptAiOrder = async (orderId) => {
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = localOrders.map(o =>
+      o._id === orderId ? { ...o, orderStatus: 'Accepted' } : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    const vendorId = profile?._id || 'mock_vendor_id_123';
+    setAiDesignOrders(
+      updated.filter(o =>
+        o.orderType === 'AI Design' &&
+        (o.vendorId?._id === vendorId || o.vendorId === vendorId)
+      )
+    );
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: 'notif_' + Date.now(),
+      message: 'Vendor has accepted your AI Design request and is reviewing it.',
+      type: 'success',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+    alert('✅ AI Design request accepted! You can now review details and send a quotation.');
+  };
+
+  const handleRejectAiOrder = async (orderId) => {
+    if (!confirm('Are you sure you want to reject this AI Design request?')) return;
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = localOrders.map(o =>
+      o._id === orderId ? { ...o, orderStatus: 'Rejected' } : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    const vendorId = profile?._id || 'mock_vendor_id_123';
+    setAiDesignOrders(
+      updated.filter(o =>
+        o.orderType === 'AI Design' &&
+        (o.vendorId?._id === vendorId || o.vendorId === vendorId)
+      )
+    );
+
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: 'notif_' + Date.now(),
+      message: `Vendor rejected AI Design assignment for #${orderId.slice(-6)} — re-assignment needed.`,
+      type: 'warning',
+      createdAt: new Date().toISOString(),
+      read: false
+    }, ...localAdminNotifs]));
+
+    alert('❌ AI Design request rejected.');
   };
 
   const handleContactCustomer = (req) => {
@@ -1256,6 +1339,66 @@ const VendorDashboard = ({
     }, ...localUserNotifs]));
 
     alert('Manufacturing stage updated successfully!');
+  };
+
+  // Payment Verification Actions
+  const handleVerifyPayment = async (orderId) => {
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updatedOrders = localOrders.map(o =>
+      o._id === orderId ? { ...o, orderStatus: 'Processing' } : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
+
+    // Notify user
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `Payment verified! Your order #${orderId.slice(-6)} is now in production.`,
+      type: 'success',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+
+    // Notify admin
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `Vendor verified payment for order #${orderId.slice(-6)}. Order moved to production.`,
+      type: 'info',
+      createdAt: new Date().toISOString()
+    }, ...localAdminNotifs]));
+
+    showToast('Payment verified! Order moved to production.');
+  };
+
+  const handleRejectPayment = async (orderId) => {
+    if (!confirm('Reject this payment? The order will be flagged for admin review.')) return;
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updatedOrders = localOrders.map(o =>
+      o._id === orderId ? { ...o, orderStatus: 'Payment Rejected' } : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
+
+    // Notify user
+    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `Payment verification failed for #${orderId.slice(-6)}. Please contact support.`,
+      type: 'error',
+      createdAt: new Date().toISOString()
+    }, ...localUserNotifs]));
+
+    // Notify admin
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_${Date.now()}`,
+      message: `Payment rejected by vendor for order #${orderId.slice(-6)}. Admin review required.`,
+      type: 'warning',
+      createdAt: new Date().toISOString()
+    }, ...localAdminNotifs]));
+
+    showToast('Payment rejected. Admin has been notified.');
   };
 
   // Delivery Actions
@@ -2559,19 +2702,10 @@ const VendorDashboard = ({
                           <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Materials Breakdown & Scope of Work</label>
                           <textarea rows={3} required value={quoteMaterials} onChange={(e) => setQuoteMaterials(e.target.value)} placeholder="Provide detailed breakdown of solid wood framing, premium upholstery, marble sourcing, and labor costs..." className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">UPI ID (VPA) <span className="text-gray-400 font-normal normal-case">for Scan & Pay</span></label>
-                            <input type="text" value={quoteUPI} onChange={(e) => setQuoteUPI(e.target.value)} placeholder="e.g. vendor@paytm" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">QR Code Image URL <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                            <input type="text" value={quoteQR} onChange={(e) => setQuoteQR(e.target.value)} placeholder="e.g. https://example.com/qr.png" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
-                          </div>
-                        </div>
+
                         <div className="flex gap-3 pt-2">
                           <button type="submit" className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all">Submit Quotation & Notify User</button>
-                          <button type="button" onClick={() => setSelectedRequestId(null)} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
+                          <button type="button" onClick={() => { setSelectedRequestId(null); resetPaymentFields(); }} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
                         </div>
                       </form>
                     )}
@@ -2756,19 +2890,10 @@ const VendorDashboard = ({
                             <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">Materials Breakdown & Scope of Work</label>
                             <textarea rows={3} required value={quoteMaterials} onChange={(e) => setQuoteMaterials(e.target.value)} placeholder="Provide detailed breakdown of materials, labor, and timeline..." className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">UPI ID (VPA) <span className="text-gray-400 font-normal normal-case">for Scan & Pay</span></label>
-                              <input type="text" value={quoteUPI} onChange={(e) => setQuoteUPI(e.target.value)} placeholder="e.g. vendor@paytm" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-1">QR Code Image URL <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
-                              <input type="text" value={quoteQR} onChange={(e) => setQuoteQR(e.target.value)} placeholder="e.g. https://example.com/qr.png" className="w-full p-3.5 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]" />
-                            </div>
-                          </div>
+
                           <div className="flex gap-3 pt-2">
                             <button type="submit" className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md transition-all">Submit Quotation & Notify User</button>
-                            <button type="button" onClick={() => setSelectedRequestId(null)} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
+                            <button type="button" onClick={() => { setSelectedRequestId(null); resetPaymentFields(); }} className="py-3.5 px-6 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-bold text-sm transition-all">Cancel</button>
                           </div>
                         </form>
                       )}
@@ -2776,6 +2901,16 @@ const VendorDashboard = ({
                       {/* Action Buttons */}
                       <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-gray-100">
                         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                          {order.orderStatus === 'quotation_pending' && (
+                            <>
+                              <button onClick={() => handleAcceptAiOrder(order._id)} className="flex-1 sm:flex-none px-5 py-2.5 bg-[#00A86B]/10 hover:bg-[#00A86B]/20 text-[#00A86B] rounded-xl font-bold text-xs transition-all border border-[#00A86B]/30 flex items-center justify-center gap-1.5">
+                                <CheckCircle size={14} /> Accept Request
+                              </button>
+                              <button onClick={() => handleRejectAiOrder(order._id)} className="flex-1 sm:flex-none px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs transition-all border border-red-200 flex items-center justify-center gap-1.5">
+                                <XCircle size={14} /> Reject Request
+                              </button>
+                            </>
+                          )}
                           <button onClick={() => setViewDetailsId(isOrderDetailsOpen ? null : order._id)} className="flex-1 sm:flex-none px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-[#1F2937] rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5">
                             <FileText className="w-4 h-4 text-gray-500" /> {isOrderDetailsOpen ? 'Hide Details' : 'View Details'}
                           </button>
@@ -2834,6 +2969,63 @@ const VendorDashboard = ({
       {activeTab === 'manufacturing' && (
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Manufacturing Orders</h2>
+
+          {/* Pending Payment Verification Section */}
+          {pendingVerificationOrders.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-[#1F2937]">Payment Verification</h3>
+                  <p className="text-xs text-gray-500">{pendingVerificationOrders.length} order{pendingVerificationOrders.length > 1 ? 's' : ''} awaiting verification</p>
+                </div>
+              </div>
+              {pendingVerificationOrders.map((pv) => (
+                <div key={pv._id} className="bg-white p-8 rounded-3xl shadow-sm border-l-4 border-l-amber-400 border border-[#D4A373]/30 space-y-6">
+                  <div className="flex justify-between items-start border-b border-gray-100 pb-4">
+                    <div>
+                      <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">Pending Verification</span>
+                      <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-1">
+                        {pv.orderType === 'AI Design' && pv.aiDesignData?.roomType
+                          ? pv.aiDesignData.roomType + ' — ' + (pv.aiDesignData?.style || 'Modern')
+                          : (pv.orderType || 'Custom Order') + ' — Order ' + pv._id.slice(-6)}
+                      </h3>
+                      <p className="text-xs text-gray-400 mt-1">Order ID: #{pv._id.slice(-6)}</p>
+                    </div>
+                    <span className="text-[#2A9D8F] font-extrabold text-2xl">${pv.quotationAmount || pv.totalAmount || '0'}</span>
+                  </div>
+                  <div className="bg-[#F8F5F0] p-5 rounded-2xl border border-[#D4A373]/20 space-y-3 text-sm">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 flex items-center gap-2"><FileText className="w-4 h-4" /> Transaction Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                      <div><span className="text-gray-500">Amount Paid</span><p className="font-bold text-[#1F2937]">${pv.quotationAmount || pv.totalAmount || '0'}</p></div>
+                      <div><span className="text-gray-500">Payment Method</span><p className="font-bold text-[#1F2937]">{pv.quotationPaymentMethod || 'UPI'}</p></div>
+                      <div><span className="text-gray-500">Customer</span><p className="font-bold text-[#1F2937]">{pv.userId?.name || 'Customer'}</p></div>
+                      <div><span className="text-gray-500">Date</span><p className="font-bold text-[#1F2937]">{new Date(pv.createdAt).toLocaleDateString()}</p></div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => handleVerifyPayment(pv._id)}
+                      disabled={verificationProcessing[pv._id]}
+                      className="flex-1 py-3.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2"
+                    >
+                      {verificationProcessing[pv._id] ? <>Processing...</> : <><ShieldCheck className="w-5 h-5" /> Verify Payment</>}
+                    </button>
+                    <button
+                      onClick={() => handleRejectPayment(pv._id)}
+                      disabled={verificationProcessing[pv._id]}
+                      className="py-3.5 px-6 bg-red-50 hover:bg-red-100 disabled:bg-gray-50 text-red-600 rounded-xl font-bold text-xs shadow-sm transition-all border border-red-200 flex items-center justify-center gap-2"
+                    >
+                      <XCircle className="w-4 h-4" /> Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {manufacturingOrders.filter(m => !searchQuery || m.designDetails?.toLowerCase().includes(searchQuery.toLowerCase()) || m.status?.toLowerCase().includes(searchQuery.toLowerCase())).map((mfg) => (
             <div key={mfg._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
               <div className="flex justify-between items-center border-b border-gray-100 pb-4">

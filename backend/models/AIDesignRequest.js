@@ -7,6 +7,7 @@ const AIDesignRequestSchema = new mongoose.Schema({
   generatedImage: { type: String }, // Stable Diffusion output
   stylePreference: { type: String, default: 'Modern Minimalist' },
   assignedVendor: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+  additionalVendors: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' }],
   orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
   orderStatus: { 
     type: String, 

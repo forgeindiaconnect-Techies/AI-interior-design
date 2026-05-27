@@ -5,7 +5,7 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
@@ -101,6 +101,9 @@ const UserDashboard = ({
   const [quotationPayment, setQuotationPayment] = useState(null);
   const [quotationPaymentMethod, setQuotationPaymentMethod] = useState('Google Pay');
   const [quotationProcessing, setQuotationProcessing] = useState(false);
+  const [aiQuotationPayment, setAiQuotationPayment] = useState(null);
+  const [aiQuotationProcessing, setAiQuotationProcessing] = useState(false);
+  const [aiQuotationOrders, setAiQuotationOrders] = useState([]);
 
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
@@ -430,6 +433,9 @@ const UserDashboard = ({
       setProducts(localProducts);
       setOrders(localOrders);
       setCartItems(localCart);
+
+      const aiQuoteOrders = localOrders.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
+      setAiQuotationOrders(aiQuoteOrders);
     } catch (error) {
       console.error('Error fetching user dashboard data', error);
     }
@@ -856,7 +862,7 @@ const UserDashboard = ({
       installationPartnerId: null,
       totalAmount: orderAmount,
       paymentStatus: 'paid',
-      orderStatus: 'Processing',
+      orderStatus: 'Paid - Awaiting Verification',
       expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
       createdAt: new Date().toISOString(),
       shippingAddress: user?.address || '789 Designer Lane, New York, NY, USA',
@@ -906,9 +912,20 @@ const UserDashboard = ({
       localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
     };
 
-    triggerNotif('user', 'Payment success! Order confirmed and moved to production.', 'success');
-    triggerNotif('vendor', `Quotation approved by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'info');
-    triggerNotif('admin', `Payment success for order: ${newOrder._id.slice(-6)}.`, 'success');
+    const shortOrderId = newOrder._id.slice(-6);
+    const payMethod = (quotationPaymentMethod || 'Paytm UPI').toUpperCase().includes('UPI') ? 'Paytm UPI' : (quotationPaymentMethod || 'Paytm UPI');
+    const txnId = 'PTM' + Math.floor(10000000 + Math.random() * 90000000);
+    const optionsDate = { day: 'numeric', month: 'short', year: 'numeric' };
+    const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const formattedDate = new Date().toLocaleDateString('en-GB', optionsDate);
+    const formattedTime = new Date().toLocaleTimeString('en-US', optionsTime);
+    const paidOnStr = `${formattedDate} | ${formattedTime}`;
+
+    const vendorMsg = `Payment received successfully\n\nOrder ID: #${shortOrderId}\nCustomer: ${user?.name || 'Customer'}\nAmount Paid: ₹${orderAmount.toLocaleString('en-IN')}\nPayment Method: ${payMethod}\nTransaction ID: ${txnId}\nPaid On: ${paidOnStr}\n\nPlease verify the payment and start production.`;
+
+    triggerNotif('user', 'Payment success! Awaiting vendor verification. Your order will enter production once confirmed.', 'success');
+    triggerNotif('vendor', vendorMsg, 'info');
+    triggerNotif('admin', `Payment success for order: #${shortOrderId}.`, 'success');
 
     setQuotationProcessing(false);
     setQuotationPayment(null);
@@ -946,6 +963,119 @@ const UserDashboard = ({
     triggerNotif('vendor', `Quotation rejected by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'warning');
     
     alert('Quotation rejected successfully.');
+  };
+
+  // ── AI Design Quotation Actions ──
+
+  const handleAcceptAiQuotation = (orderId) => {
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const order = localOrders.find(o => o._id === orderId);
+    if (order) {
+      setAiQuotationPayment(order);
+      const pm = order.quotationPaymentMethod || 'upi';
+      const methodLabel = pm === 'upi' ? 'UPI' : pm === 'bank' ? 'NetBanking' : pm === 'card' ? 'Card' : 'UPI';
+      setQuotationPaymentMethod(methodLabel);
+    }
+  };
+
+  const handleConfirmAiQuotationPayment = async () => {
+    if (!aiQuotationPayment) return;
+    setAiQuotationProcessing(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    const orderId = aiQuotationPayment._id;
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = localOrders.map(o =>
+      o._id === orderId
+        ? { ...o, orderStatus: 'Paid - Awaiting Verification', paymentStatus: 'paid' }
+        : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    setOrders(updated);
+
+    const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
+    setAiQuotationOrders(updatedAiQuote);
+
+    const orderAmount = aiQuotationPayment.quotationAmount || aiQuotationPayment.totalAmount || 0;
+
+    const newTransaction = {
+      _id: 'txn_ai_' + Date.now(),
+      orderId: orderId,
+      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
+      vendorId: { companyName: aiQuotationPayment.vendorId?.companyName || 'Artisan Workshop' },
+      amount: orderAmount,
+      commissionAmount: Math.round(orderAmount * 0.15 * 100) / 100,
+      netPayout: Math.round(orderAmount * 0.85 * 100) / 100,
+      paymentMethod: quotationPaymentMethod,
+      status: 'Paid',
+      type: 'Customer Payment',
+      createdAt: new Date().toISOString()
+    };
+    const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
+    localStorage.setItem('mockAdminTransactions', JSON.stringify([newTransaction, ...localTxns]));
+
+    const triggerNotif = (recipient, message, type = 'success') => {
+      const notifObj = {
+        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        message,
+        type,
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+    };
+
+    const shortOrderId = orderId.slice(-6);
+    const payMethod = (quotationPaymentMethod || 'Paytm UPI').toUpperCase().includes('UPI') ? 'Paytm UPI' : (quotationPaymentMethod || 'Paytm UPI');
+    const txnId = 'PTM' + Math.floor(10000000 + Math.random() * 90000000);
+    const optionsDate = { day: 'numeric', month: 'short', year: 'numeric' };
+    const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
+    const formattedDate = new Date().toLocaleDateString('en-GB', optionsDate);
+    const formattedTime = new Date().toLocaleTimeString('en-US', optionsTime);
+    const paidOnStr = `${formattedDate} | ${formattedTime}`;
+
+    const vendorMsg = `Payment received successfully\n\nOrder ID: #${shortOrderId}\nCustomer: ${user?.name || 'Customer'}\nAmount Paid: ₹${orderAmount.toLocaleString('en-IN')}\nPayment Method: ${payMethod}\nTransaction ID: ${txnId}\nPaid On: ${paidOnStr}\n\nPlease verify the payment and start production.`;
+
+    triggerNotif('vendor', vendorMsg, 'info');
+    triggerNotif('admin', `Payment success for AI Design order: #${shortOrderId}.`, 'success');
+    triggerNotif('user', 'Payment success! Awaiting vendor verification. Your order will enter production once confirmed.', 'success');
+
+    setAiQuotationProcessing(false);
+    setAiQuotationPayment(null);
+    showToast('Payment successful! AI Design order confirmed.');
+    if (setActiveTab) setActiveTab('orders');
+  };
+
+  const handleRejectAiQuotation = async (orderId) => {
+    if (!confirm('Are you sure you want to reject this AI Design quotation?')) return;
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const updated = localOrders.map(o =>
+      o._id === orderId ? { ...o, orderStatus: 'Quotation Rejected' } : o
+    );
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    setOrders(updated);
+
+    const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
+    setAiQuotationOrders(updatedAiQuote);
+
+    const triggerNotif = (recipient, message, type = 'warning') => {
+      const notifObj = {
+        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+        message,
+        type,
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
+      const existing = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+    };
+
+    triggerNotif('vendor', 'Your quotation has been rejected by the customer.', 'warning');
+
+    alert('AI Design quotation rejected.');
   };
 
   // Support Ticket Action
@@ -2113,13 +2243,99 @@ const UserDashboard = ({
               })
             )}
           </div>
+          {/* ── AI Design Quotations ── */}
+          {aiQuotationOrders.length > 0 && (
+            <div className="space-y-4 pt-8 border-t border-gray-200">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 rounded-full bg-[#2A9D8F]/10 flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-[#2A9D8F]" />
+                </div>
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">AI Design Quotations</h3>
+              </div>
+              {aiQuotationOrders.map((order) => (
+                <div key={order._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 hover:shadow-md transition-all space-y-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-4">
+                    <div className="flex items-center gap-4">
+                      {order.aiDesignData?.generatedImage && (
+                        <img src={order.aiDesignData.generatedImage} alt="AI Design" className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
+                      )}
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                          <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">AI Generated</span>
+                          <span className="bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">QUOTATION SENT</span>
+                        </div>
+                        <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">{order.aiDesignData?.roomType || 'AI Design'} — {order.aiDesignData?.style || 'Modern'}</h3>
+                        <p className="text-xs text-gray-400">Order ID: #{order._id?.slice(-6)} • Vendor: {order.vendorId?.companyName || 'Artisan Workshop'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C] block">${order.quotationAmount || '0'}</span>
+                      <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Quoted Amount</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Proposed Materials</span>
+                      <p className="font-bold text-gray-700">{order.quotationMaterials || order.aiDesignData?.materials?.join(', ') || 'Standard Premium Wood & Fabric'}</p>
+                    </div>
+                    <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Time to Complete</span>
+                      <p className="font-bold text-gray-700">{order.quotationTime || '14-21 Days'}</p>
+                    </div>
+                    <div className="bg-[#F8F5F0] p-4 rounded-xl border border-[#D4A373]/20">
+                      <span className="text-[10px] text-gray-400 font-bold uppercase block mb-1">Assigned Vendor</span>
+                      <p className="font-bold text-gray-700">{order.vendorId?.companyName || 'Artisan Workshop'}</p>
+                    </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {order.quotationUPI && <span className="px-2.5 py-1 bg-[#F0FDF4] text-emerald-700 rounded-full text-[10px] font-bold border border-emerald-200 flex items-center gap-1"><Smartphone className="w-3 h-3" /> UPI</span>}
+                      {order.quotationBankAccount && <span className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-[10px] font-bold border border-blue-200 flex items-center gap-1"><Building2 className="w-3 h-3" /> Bank Transfer</span>}
+                      {order.quotationPaymentGateway && <span className="px-2.5 py-1 bg-purple-50 text-purple-700 rounded-full text-[10px] font-bold border border-purple-200 flex items-center gap-1"><CreditCard className="w-3 h-3" /> Card / Gateway</span>}
+                      {order.quotationCashOnVisit && <span className="px-2.5 py-1 bg-amber-50 text-amber-700 rounded-full text-[10px] font-bold border border-amber-200 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Cash on Visit</span>}
+                    </div>
+
+                    <div className="flex flex-wrap justify-between items-center gap-4 pt-2">
+                      <button onClick={() => setViewingQuotation({
+                        _id: order._id,
+                        roomType: order.aiDesignData?.roomType || 'AI Design',
+                        style: order.aiDesignData?.style || 'Modern',
+                        budget: order.totalAmount || 'N/A',
+                        quotationAmount: order.quotationAmount,
+                        quotationMaterials: order.quotationMaterials,
+                        quotationTime: order.quotationTime,
+                        requirements: order.aiDesignData?.requirements || 'AI generated design',
+                        materials: order.quotationMaterials || order.aiDesignData?.materials?.join(', '),
+                        timeline: order.quotationTime,
+                        assignedVendorId: order.vendorId,
+                        status: 'Quotation Sent',
+                        requestType: 'AI Generated'
+                      })} className="text-xs font-bold text-[#8B5E3C] hover:underline flex items-center gap-1.5">
+                        <Eye className="w-4 h-4" /> View Full Specifications
+                      </button>
+
+                    <div className="flex gap-3">
+                      <button onClick={() => handleRejectAiQuotation(order._id)} className="px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl font-bold text-xs shadow-sm transition-all border border-red-200">
+                        Reject Quote
+                      </button>
+                      <button onClick={() => handleAcceptAiQuotation(order._id)} className="px-5 py-2.5 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center gap-1.5">
+                        <Check className="w-4 h-4" /> Accept & Pay
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* Quotation Specification Detail Modal */}
       {viewingQuotation && (
-        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-xl w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-white max-w-xl w-full rounded-3xl border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
             <div className="bg-[#8B5E3C] p-6 text-white flex justify-between items-center">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4A373]">Specification Sheet</span>
@@ -2167,13 +2383,15 @@ const UserDashboard = ({
               )}
             </div>
           </div>
+          </div>
         </div>
       )}
 
       {/* Quotation Payment Modal */}
       {quotationPayment && (
-        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-lg w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full rounded-3xl border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
             <div className="bg-[#8B5E3C] p-6 text-white flex justify-between items-center">
               <div>
                 <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4A373]">Payment</span>
@@ -2223,19 +2441,20 @@ const UserDashboard = ({
 
                   {/* QR Code Image */}
                   <div className="flex justify-center">
-                    {quotationPayment.quotationQR ? (
+                    {quotationPayment.quotationQR || quotationPayment.quotationUPI ? (
                       <img
-                        src={quotationPayment.quotationQR}
+                        src={quotationPayment.quotationQR || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(quotationPayment.quotationUPI)}`}
                         alt="Scan to Pay QR Code"
                         className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm"
                         onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }}
                       />
-                    ) : null}
-                    <div className={`${quotationPayment.quotationQR ? 'hidden' : 'flex'} w-48 h-48 bg-white rounded-2xl border-2 border-dashed border-gray-300 items-center justify-center flex-col text-gray-400`}>
-                      <Smartphone className="w-10 h-10 mb-2" />
-                      <span className="text-[10px] font-bold">No QR provided</span>
-                      <span className="text-[9px] mt-1">Use UPI ID below</span>
-                    </div>
+                    ) : (
+                      <img
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AI+Interior+Demo+Payment"
+                        alt="Demo QR Code"
+                        className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm"
+                      />
+                    )}
                   </div>
 
                   {/* UPI ID */}
@@ -2289,6 +2508,118 @@ const UserDashboard = ({
                 </button>
               )}
             </div>
+          </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── AI Design Quotation Payment Modal ── */}
+      {aiQuotationPayment && (
+        <div className="fixed inset-0 z-50 bg-black/55 backdrop-blur-sm overflow-y-auto">
+          <div className="min-h-full flex items-center justify-center p-4">
+          <div className="bg-white max-w-lg w-full rounded-3xl border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+            <div className="bg-[#2A9D8F] p-6 text-white flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#D4A373]">Payment</span>
+                <h3 className="font-['Playfair_Display'] font-bold text-2xl mt-0.5">{aiQuotationPayment.aiDesignData?.roomType || 'AI Design'} — {aiQuotationPayment.aiDesignData?.style || 'Modern'}</h3>
+              </div>
+              <button onClick={() => setAiQuotationPayment(null)} className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
+            </div>
+            <div className="p-6 space-y-6 text-left">
+              <div className="bg-[#F8F5F0] p-4 rounded-2xl space-y-2 border border-[#D4A373]/20">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Quotation Amount</span>
+                  <span className="font-extrabold text-[#2A9D8F] text-lg">${aiQuotationPayment.quotationAmount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Materials</span>
+                  <span className="font-bold text-gray-700">{aiQuotationPayment.quotationMaterials}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500 font-medium">Timeline</span>
+                  <span className="font-bold text-gray-700">{aiQuotationPayment.quotationTime}</span>
+                </div>
+              </div>
+
+              {/* Payment Method — based on what vendor provided */}
+              {(() => {
+                const pm = aiQuotationPayment.quotationPaymentMethod || 'upi';
+                if (pm === 'upi' && aiQuotationPayment.quotationUPI) {
+                  return (
+                    <div className="bg-[#F0FDF4] border border-emerald-200 rounded-2xl p-5 text-center space-y-4 animate-fadeIn">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                        <Smartphone className="w-3.5 h-3.5" /> UPI Payment
+                      </div>
+                      <div className="flex justify-center">
+                        {aiQuotationPayment.quotationQR || aiQuotationPayment.quotationUPI ? (
+                          <img src={aiQuotationPayment.quotationQR || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(aiQuotationPayment.quotationUPI)}`} alt="Scan to Pay QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                        ) : (
+                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AI+Interior+Demo+Payment" alt="Demo QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm" />
+                        )}
+                      </div>
+                      {aiQuotationPayment.quotationUPI && (
+                        <div className="bg-white border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                          <div className="text-left">
+                            <p className="text-[10px] text-gray-500 font-bold uppercase">UPI ID</p>
+                            <p className="font-bold text-gray-800 text-sm">{aiQuotationPayment.quotationUPI}</p>
+                          </div>
+                          <button onClick={() => { navigator.clipboard.writeText(aiQuotationPayment.quotationUPI); showToast('UPI ID copied!'); }} className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-[11px] font-bold transition-all">Copy</button>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500 leading-relaxed">Scan the QR code or enter the UPI ID to pay <strong>${aiQuotationPayment.quotationAmount}</strong>. Then click confirm below.</p>
+                      <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+                        {aiQuotationProcessing ? <>Processing...</> : <><Smartphone className="w-5 h-5" /> I've Paid — Confirm Payment</>}
+                      </button>
+                    </div>
+                  );
+                }
+                if (pm === 'bank' && aiQuotationPayment.quotationBankAccount) {
+                  return (
+                    <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4 animate-fadeIn">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider mx-auto">
+                        <Building2 className="w-3.5 h-3.5" /> Bank Transfer
+                      </div>
+                      <div className="bg-white rounded-xl p-4 space-y-3 border border-blue-100">
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Holder</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankHolder}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Number</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankAccount}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">IFSC Code</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankIFSC}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Bank Name</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankName}</span></div>
+                      </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">Transfer <strong>${aiQuotationPayment.quotationAmount}</strong> to the account above, then click confirm.</p>
+                      <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+                        {aiQuotationProcessing ? <>Processing...</> : <><Check className="w-5 h-5" /> I've Paid — Confirm Payment</>}
+                      </button>
+                    </div>
+                  );
+                }
+                if (pm === 'card' && aiQuotationPayment.quotationPaymentGateway) {
+                  return (
+                    <div className="bg-purple-50 border border-purple-200 rounded-2xl p-8 text-center space-y-4 animate-fadeIn">
+                      <CreditCard className="w-12 h-12 text-purple-500 mx-auto" />
+                      <p className="font-bold text-[#1F2937] text-sm">Pay via {aiQuotationPayment.quotationPaymentGateway}</p>
+                      <p className="text-xs text-gray-500">You will be redirected to {aiQuotationPayment.quotationPaymentGateway} to complete payment of <strong>${aiQuotationPayment.quotationAmount}</strong>.</p>
+                      <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+                        {aiQuotationProcessing ? <>Processing...</> : <><CreditCard className="w-5 h-5" /> Pay ${aiQuotationPayment.quotationAmount}</>}
+                      </button>
+                    </div>
+                  );
+                }
+                if (pm === 'cash' && aiQuotationPayment.quotationCashOnVisit) {
+                  return (
+                    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-4 animate-fadeIn">
+                      <DollarSign className="w-12 h-12 text-amber-500 mx-auto" />
+                      <p className="font-bold text-[#1F2937] text-sm">Cash on Visit</p>
+                      <p className="text-xs text-gray-500">Pay <strong>${aiQuotationPayment.quotationAmount}</strong> in cash when the vendor visits your site.</p>
+                      <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-amber-600 hover:bg-amber-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
+                        {aiQuotationProcessing ? <>Processing...</> : <><Check className="w-5 h-5" /> Confirm Cash Payment</>}
+                      </button>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+            </div>
+          </div>
           </div>
         </div>
       )}

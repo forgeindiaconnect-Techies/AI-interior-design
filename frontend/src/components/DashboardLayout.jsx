@@ -409,7 +409,7 @@ const DashboardLayout = ({ children }) => {
                         >
                           <span className="mt-0.5 text-xs">🔔</span>
                           <div className="flex-1">
-                            <p className="text-[11px] font-bold text-gray-700 leading-tight">{notif.message}</p>
+                            <p className="text-[11px] font-bold text-gray-700 leading-tight truncate">{notif.message.split('\n')[0]}</p>
                             <span className="text-[9px] text-gray-400 mt-1 block">
                               {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
@@ -532,7 +532,7 @@ const DashboardLayout = ({ children }) => {
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-800 text-sm leading-relaxed">
+                  <p className="font-bold text-gray-800 text-sm leading-relaxed whitespace-pre-line">
                     {selectedNotif.message}
                   </p>
                   <p className="text-[10px] text-gray-400 mt-2 font-semibold">

@@ -232,6 +232,7 @@ const AdminDashboard = ({
   const [assignVendorAIDesign, setAssignVendorAIDesign] = useState(null);
   const [convertOrderAIDesign, setConvertOrderAIDesign] = useState(null);
   const [workflowAIDesign, setWorkflowAIDesign] = useState(null);
+  const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
   const [aiDesignSearch, setAiDesignSearch] = useState('');
   const [aiDesignRoomFilter, setAiDesignRoomFilter] = useState('all');
@@ -240,6 +241,18 @@ const AdminDashboard = ({
 
   const [selectedAIDesignVendorId, setSelectedAIDesignVendorId] = useState('');
   const [selectedAIDesignManufacturerId, setSelectedAIDesignManufacturerId] = useState('');
+  const [vendorSearchQuery, setVendorSearchQuery] = useState('');
+
+  // Close action dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (openActionMenuId && !e.target.closest('.action-menu-container')) {
+        setOpenActionMenuId(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [openActionMenuId]);
 
   // Upgraded Manual Design Requests States
   const [selectedManualDesign, setSelectedManualDesign] = useState(null);
@@ -1594,8 +1607,46 @@ const AdminDashboard = ({
       alert('Please select a vendor to assign.');
       return;
     }
+
+    const createVendorLocalEntries = () => {
+      // Create a mock order so the vendor sees it in Custom Orders
+      const mockOrder = {
+        _id: 'ai_assign_' + Date.now(),
+        orderType: 'AI Design',
+        userId: assignVendorAIDesign.userId || { _id: 'u_local', name: 'Customer', email: 'customer@example.com', phone: 'N/A' },
+        vendorId: { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' },
+        totalAmount: assignVendorAIDesign.aiSuggestion?.budgetEstimate || 0,
+        orderStatus: 'quotation_pending',
+        aiDesignData: {
+          roomType: assignVendorAIDesign.roomType,
+          style: assignVendorAIDesign.stylePreference || 'Modern Minimalist',
+          generatedImage: assignVendorAIDesign.generatedImage,
+          originalImage: assignVendorAIDesign.originalImage,
+          furniture: assignVendorAIDesign.aiSuggestion?.furniture || [],
+          materials: assignVendorAIDesign.aiSuggestion?.materials || [],
+          colorPalette: assignVendorAIDesign.aiSuggestion?.colorPalette || [],
+          requirements: 'Custom AI design order awaiting vendor review.'
+        },
+        createdAt: new Date().toISOString()
+      };
+      const existingOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      localStorage.setItem('mockOrders', JSON.stringify([mockOrder, ...existingOrders]));
+
+      // Create a notification for the vendor
+      const vendorNotif = {
+        _id: 'nv_' + Date.now(),
+        message: 'New AI request assigned by Admin',
+        type: 'info',
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const existingNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+      localStorage.setItem('mockVendorNotifications', JSON.stringify([vendorNotif, ...existingNotifs]));
+    };
+
     try {
       await axios.put(`/admin/ai-designs/${assignVendorAIDesign._id}/assign-vendor`, { vendorId: selectedAIDesignVendorId });
+      createVendorLocalEntries();
       alert('✅ Vendor assigned to AI design request successfully!');
       setAssignVendorAIDesign(null);
       setSelectedAIDesignVendorId('');
@@ -1603,9 +1654,13 @@ const AdminDashboard = ({
     } catch (error) {
       // offline fallback
       const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const vendorObj = { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' };
       const updatedAi = localAi.map(d => d._id === assignVendorAIDesign._id ? {
         ...d,
-        assignedVendor: { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' }
+        ...(d.assignedVendor
+          ? { additionalVendors: [...(d.additionalVendors || []), vendorObj] }
+          : { assignedVendor: vendorObj, additionalVendors: d.additionalVendors || [] }
+        )
       } : d);
       localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
 
@@ -1616,11 +1671,15 @@ const AdminDashboard = ({
           ...prev,
           aiDesigns: (prev.aiDesigns || []).map(d => d._id === assignVendorAIDesign._id ? {
             ...d,
-            assignedVendor: { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' }
+            ...(d.assignedVendor
+              ? { additionalVendors: [...(d.additionalVendors || []), vendorObj] }
+              : { assignedVendor: vendorObj, additionalVendors: d.additionalVendors || [] }
+            )
           } : d)
         };
       });
 
+      createVendorLocalEntries();
       alert('✅ Vendor assigned to AI design request successfully! (Offline mode)');
       setAssignVendorAIDesign(null);
       setSelectedAIDesignVendorId('');
@@ -3344,20 +3403,18 @@ const AdminDashboard = ({
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                      <th className="py-4 px-6">ID & Date</th>
                       <th className="py-4 px-6">Customer</th>
-                      <th className="py-4 px-6">Room & Style</th>
-                      <th className="py-4 px-6">Original vs AI Design</th>
+                      <th className="py-4 px-6">Room</th>
                       <th className="py-4 px-6">Budget</th>
-                      <th className="py-4 px-6">Workflow Status</th>
-                      <th className="py-4 px-6">Assigned Vendor</th>
+                      <th className="py-4 px-6">Status</th>
+                      <th className="py-4 px-6">Vendor</th>
                       <th className="py-4 px-6 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAiDesigns.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="text-center py-16 text-gray-400 font-bold">
+                        <td colSpan={6} className="text-center py-16 text-gray-400 font-bold">
                           No matching AI Studio design requests found.
                         </td>
                       </tr>
@@ -3377,12 +3434,6 @@ const AdminDashboard = ({
                         return (
                           <tr key={d._id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
                             <td className="py-5 px-6">
-                              <span className="font-mono text-xs font-bold text-gray-800">#{d._id.slice(-6).toUpperCase()}</span>
-                              <p className="text-[10px] text-gray-400 font-medium mt-1">
-                                {d.createdAt ? new Date(d.createdAt).toLocaleDateString() : 'N/A'}
-                              </p>
-                            </td>
-                            <td className="py-5 px-6">
                               <p className="font-bold text-gray-800">{d.userId?.name || 'Customer'}</p>
                               <p className="text-[10px] text-gray-400">{d.userId?.email || 'N/A'}</p>
                             </td>
@@ -3390,20 +3441,6 @@ const AdminDashboard = ({
                               <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
                                 {d.roomType}
                               </span>
-                              <p className="text-xs font-bold text-gray-600 mt-1.5">{d.stylePreference || 'Modern Minimalist'}</p>
-                            </td>
-                            <td className="py-5 px-6">
-                              <div className="flex items-center gap-3">
-                                <div className="relative group">
-                                  <img src={d.originalImage} alt="Original" className="w-12 h-12 object-cover rounded-xl border border-gray-200 shadow-inner group-hover:scale-105 transition-all" />
-                                  <span className="absolute bottom-0 inset-x-0 bg-black/60 text-[8px] text-white text-center py-0.5 rounded-b-xl font-bold uppercase scale-0 group-hover:scale-100 transition-all">Original</span>
-                                </div>
-                                <span className="text-gray-300">➔</span>
-                                <div className="relative group">
-                                  <img src={d.generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=400'} alt="AI Studio Output" className="w-12 h-12 object-cover rounded-xl border border-[#D4A373]/30 shadow-sm group-hover:scale-105 transition-all" />
-                                  <span className="absolute bottom-0 inset-x-0 bg-[#8B5E3C]/80 text-[8px] text-white text-center py-0.5 rounded-b-xl font-bold uppercase scale-0 group-hover:scale-100 transition-all">AI Studio</span>
-                                </div>
-                              </div>
                             </td>
                             <td className="py-5 px-6">
                               <span className="font-extrabold text-gray-800">${d.aiSuggestion?.budgetEstimate || 'N/A'}</span>
@@ -3424,16 +3461,29 @@ const AdminDashboard = ({
                             </td>
                             <td className="py-5 px-6">
                               {d.assignedVendor ? (
-                                <div className="text-xs">
-                                  <p className="font-bold text-gray-800">{d.assignedVendor.companyName}</p>
-                                  <p className="text-[10px] text-gray-400">Assigned Partner</p>
+                                <div className="text-xs space-y-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                    <p className="font-bold text-gray-800">{d.assignedVendor.companyName}</p>
+                                    <span className="text-[9px] text-blue-500 font-bold uppercase">Primary</span>
+                                  </div>
+                                  {(d.additionalVendors || []).slice(0, 2).map((av, i) => (
+                                    <div key={i} className="flex items-center gap-1.5 pl-3">
+                                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
+                                      <p className="font-medium text-gray-600">{av.companyName}</p>
+                                    </div>
+                                  ))}
+                                  {(d.additionalVendors || []).length > 2 && (
+                                    <p className="text-[10px] text-gray-400 font-bold pl-3">+{d.additionalVendors.length - 2} more</p>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-xs text-gray-400 italic">No Vendor Assigned</span>
                               )}
                             </td>
                             <td className="py-5 px-6">
-                              <div className="flex justify-end items-center gap-1.5 flex-wrap max-w-[280px]">
+                              <div className="flex justify-end items-center gap-1.5">
+                                {/* Primary: View */}
                                 <button
                                   onClick={() => setSelectedAIDesign(d)}
                                   title="View Full Design Details"
@@ -3442,67 +3492,93 @@ const AdminDashboard = ({
                                   <Eye size={14} />
                                 </button>
 
-                                {d.status === 'pending' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleApproveAIRequest(d._id)}
-                                      title="Approve & Generate AI Design"
-                                      className="p-2 bg-[#2A9D8F]/10 hover:bg-[#2A9D8F]/20 text-[#2A9D8F] rounded-xl transition-all"
-                                    >
-                                      <CheckCircle size={14} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleRejectAIRequest(d._id)}
-                                      title="Reject Design Request"
-                                      className="p-2 bg-[#E76F51]/10 hover:bg-[#E76F51]/20 text-[#E76F51] rounded-xl transition-all"
-                                    >
-                                      <XCircle size={14} />
-                                    </button>
-                                  </>
-                                )}
-
-                                {d.status === 'accepted' && !d.assignedVendor && (
+                                {/* Primary: Assign Vendor */}
+                                {d.status === 'accepted' && (
                                   <button
                                     onClick={() => setAssignVendorAIDesign(d)}
-                                    title="Assign Partner Vendor"
+                                    title={d.assignedVendor ? "Add Another Vendor" : "Assign Partner Vendor"}
                                     className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-all"
                                   >
                                     <UserPlus size={14} />
                                   </button>
                                 )}
 
-                                {d.status === 'accepted' && d.orderStatus === 'Not Converted' && (
+                                {/* More Actions Dropdown */}
+                                <div className="relative action-menu-container">
                                   <button
-                                    onClick={() => setConvertOrderAIDesign(d)}
-                                    title="Convert AI Design to Production Order"
-                                    className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl transition-all"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setOpenActionMenuId(openActionMenuId === d._id ? null : d._id);
+                                    }}
+                                    title="More Actions"
+                                    className="flex items-center gap-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all text-xs font-bold"
                                   >
-                                    <ShoppingBag size={14} />
+                                    More ▾
                                   </button>
-                                )}
-
-                                {d.generatedImage && (
-                                  <a
-                                    href={d.generatedImage}
-                                    download={`ai-studio-design-${d._id.slice(-6)}.jpg`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    title="Download Generated Design"
-                                    className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all"
-                                  >
-                                    <Download size={14} />
-                                  </a>
-                                )}
-
-                                {d.orderStatus && d.orderStatus !== 'Not Converted' && (
-                                  <button
-                                    onClick={() => setWorkflowAIDesign(d)}
-                                    title="Track Workflow Milestones"
-                                    className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl transition-all"
-                                  >
-                                    <Activity size={14} />
-                                  </button>
-                                )}
+                                  {openActionMenuId === d._id && (
+                                    <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 min-w-[200px] z-20 py-1.5 overflow-hidden">
+                                      {d.status === 'pending' && (
+                                        <>
+                                          <button
+                                            onClick={() => { handleApproveAIRequest(d._id); setOpenActionMenuId(null); }}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2A9D8F]/10 hover:text-[#2A9D8F] transition-all text-left"
+                                          >
+                                            <CheckCircle size={14} /> Approve & Generate
+                                          </button>
+                                          <button
+                                            onClick={() => { handleRejectAIRequest(d._id); setOpenActionMenuId(null); }}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#E76F51]/10 hover:text-[#E76F51] transition-all text-left"
+                                          >
+                                            <XCircle size={14} /> Reject Request
+                                          </button>
+                                        </>
+                                      )}
+                                      {d.status === 'accepted' && d.orderStatus === 'Not Converted' && (
+                                        <button
+                                          onClick={() => { setConvertOrderAIDesign(d); setOpenActionMenuId(null); }}
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all text-left"
+                                        >
+                                          <ShoppingBag size={14} /> Convert to Order
+                                        </button>
+                                      )}
+                                      {d.status === 'accepted' && (
+                                        <button
+                                          onClick={() => { setAssignVendorAIDesign(d); setOpenActionMenuId(null); }}
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all text-left"
+                                        >
+                                          <UserPlus size={14} /> Manage Vendors
+                                        </button>
+                                      )}
+                                      {d.generatedImage && (
+                                        <a
+                                          href={d.generatedImage}
+                                          download={`ai-studio-design-${d._id.slice(-6)}.jpg`}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all text-left"
+                                          onClick={() => setOpenActionMenuId(null)}
+                                        >
+                                          <Download size={14} /> Download Design
+                                        </a>
+                                      )}
+                                      {d.orderStatus && d.orderStatus !== 'Not Converted' && (
+                                        <button
+                                          onClick={() => { setWorkflowAIDesign(d); setOpenActionMenuId(null); }}
+                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-all text-left"
+                                        >
+                                          <Activity size={14} /> Track Progress
+                                        </button>
+                                      )}
+                                      <div className="border-t border-gray-100 my-1" />
+                                      <button
+                                        onClick={() => { alert('📋 Activity logs coming soon'); setOpenActionMenuId(null); }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all text-left"
+                                      >
+                                        <FileText size={14} /> Activity Logs
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -7464,9 +7540,20 @@ const AdminDashboard = ({
       )}
 
       {/* 2. Assign Vendor Modal */}
-      {assignVendorAIDesign && (
+      {assignVendorAIDesign && (() => {
+        const vendors = (managementData?.vendors || []).filter(v => v.businessType === 'vendor' && v.isActive);
+        const searchLower = vendorSearchQuery.toLowerCase();
+        const filteredVendors = vendors.filter(v =>
+          v.companyName.toLowerCase().includes(searchLower) ||
+          v.specialization.toLowerCase().includes(searchLower)
+        );
+        const recommendedVendors = [...vendors].sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 3);
+        const selectedVendorForPreview = selectedAIDesignVendorId
+          ? vendors.find(v => v._id === selectedAIDesignVendorId)
+          : null;
+        return (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white max-w-md w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
+          <div className="bg-white max-w-xl w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fadeIn">
             <div className="bg-blue-600 p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-['Playfair_Display'] font-bold text-xl">Assign Coordinating Vendor</h3>
@@ -7475,37 +7562,170 @@ const AdminDashboard = ({
               <button onClick={() => setAssignVendorAIDesign(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
             </div>
 
-            <form onSubmit={handleAssignAIDesignVendorSubmit} className="p-8 space-y-6 text-left">
+            <form onSubmit={handleAssignAIDesignVendorSubmit} className="p-8 space-y-6 text-left max-h-[75vh] overflow-y-auto">
+              {/* Currently Assigned Vendors */}
+              {(assignVendorAIDesign.assignedVendor || (assignVendorAIDesign.additionalVendors || []).length > 0) && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Currently Assigned Vendors</p>
+                  <div className="space-y-1.5">
+                    {assignVendorAIDesign.assignedVendor && (
+                      <div className="flex items-center justify-between bg-blue-50 p-3 rounded-xl border border-blue-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-[10px]">
+                            {assignVendorAIDesign.assignedVendor.companyName?.charAt(0) || 'V'}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-800">{assignVendorAIDesign.assignedVendor.companyName}</p>
+                            <p className="text-[9px] text-blue-500 font-bold uppercase">Primary Partner</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {(assignVendorAIDesign.additionalVendors || []).map((av, i) => (
+                      <div key={i} className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-gray-400 flex items-center justify-center text-white font-bold text-[10px]">
+                            {av.companyName?.charAt(0) || 'V'}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-800">{av.companyName}</p>
+                            <p className="text-[9px] text-gray-400 font-medium">Additional Partner</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Search Input */}
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Select Available Vendor *</label>
-                <select
-                  required
-                  value={selectedAIDesignVendorId}
-                  onChange={(e) => setSelectedAIDesignVendorId(e.target.value)}
-                  className="w-full p-3.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-600 transition-colors"
-                >
-                  <option value="">-- Choose Coordinating Vendor --</option>
-                  {(managementData?.vendors || []).filter(v => v.businessType === 'vendor' && v.isActive).map(v => (
-                    <option key={v._id} value={v._id}>
-                      {v.companyName} ({v.specialization} - Rating: {v.rating}★)
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
-                  Assigning a vendor allows them to review the AI design recommendations and coordinate specialized custom orders directly with the user.
-                </p>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">Search & Select Vendor</label>
+                <div className="relative">
+                  <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by vendor name or specialization..."
+                    value={vendorSearchQuery}
+                    onChange={(e) => { setVendorSearchQuery(e.target.value); setSelectedAIDesignVendorId(''); }}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-600 transition-colors"
+                  />
+                </div>
               </div>
 
+              {/* Filtered Vendor List */}
+              {vendorSearchQuery && (
+                <div className="border border-gray-100 rounded-xl overflow-hidden max-h-48 overflow-y-auto">
+                  {filteredVendors.length === 0 ? (
+                    <p className="text-xs text-gray-400 p-4 text-center">No vendors match your search.</p>
+                  ) : (
+                    filteredVendors.map(v => (
+                      <button
+                        type="button"
+                        key={v._id}
+                        onClick={() => { setSelectedAIDesignVendorId(v._id); setVendorSearchQuery(''); }}
+                        className={`w-full flex items-center justify-between px-4 py-3 text-xs transition-all text-left hover:bg-blue-50 border-b border-gray-50 last:border-0 ${
+                          selectedAIDesignVendorId === v._id ? 'bg-blue-50 border-l-2 border-l-blue-600' : ''
+                        }`}
+                      >
+                        <div>
+                          <p className="font-bold text-gray-800">{v.companyName}</p>
+                          <p className="text-[10px] text-gray-400">{v.specialization}</p>
+                        </div>
+                        <div className="flex items-center gap-1 text-amber-500">
+                          <span className="text-[10px] font-bold">{v.rating || '—'}</span>
+                          <span className="text-[10px]">★</span>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+
+              {/* Recommended Vendors */}
+              {!vendorSearchQuery && !selectedAIDesignVendorId && (
+                <div className="space-y-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Recommended Vendors</p>
+                  <div className="grid grid-cols-1 gap-2">
+                    {recommendedVendors.map(v => (
+                      <button
+                        type="button"
+                        key={v._id}
+                        onClick={() => { setSelectedAIDesignVendorId(v._id); setVendorSearchQuery(''); }}
+                        className="flex items-center gap-3 p-3.5 rounded-xl border border-[#D4A373]/20 bg-[#F8F5F0]/40 hover:bg-[#F8F5F0] transition-all text-left"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">✦</div>
+                        <div className="flex-1">
+                          <p className="text-xs font-bold text-gray-800">{v.companyName}</p>
+                          <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-0.5">
+                            <span className="flex items-center gap-0.5">⭐ {v.rating}</span>
+                            <span>•</span>
+                            <span>{v.reviewsCount || 0} reviews</span>
+                            <span>•</span>
+                            <span>{v.workloadLevel || 'Medium'} load</span>
+                          </div>
+                        </div>
+                        <ArrowRight size={14} className="text-gray-300" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Selected Vendor Preview */}
+              {selectedVendorForPreview && (
+                <div className="bg-gradient-to-br from-blue-50 to-white p-5 rounded-2xl border border-blue-100 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                        {selectedVendorForPreview.companyName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-800 text-sm">{selectedVendorForPreview.companyName}</p>
+                        <p className="text-[10px] text-gray-400 font-medium">{selectedVendorForPreview.specialization} Specialist</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-amber-50 px-2.5 py-1 rounded-lg">
+                      <span className="text-xs font-bold text-amber-700">{selectedVendorForPreview.rating || '—'}</span>
+                      <span className="text-amber-500 text-xs">★</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <MapPin size={12} className="text-gray-400" />
+                      <span className="font-medium">{selectedVendorForPreview.serviceAreas?.[0] || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Users size={12} className="text-gray-400" />
+                      <span className="font-medium">{selectedVendorForPreview.reviewsCount || 0} reviews</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Package size={12} className="text-gray-400" />
+                      <span className="font-medium">{selectedVendorForPreview.monthlyCapacity || 50} units/mo</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <Clock size={12} className="text-gray-400" />
+                      <span className="font-medium">Load: {selectedVendorForPreview.workloadLevel || 'Medium'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <p className="text-[10px] text-gray-400 font-medium leading-relaxed">
+                Assigning a vendor allows them to review the AI design recommendations and coordinate specialized custom orders directly with the user.
+              </p>
+
               <div className="flex gap-4 pt-2">
-                <button type="button" onClick={() => setAssignVendorAIDesign(null)} className="flex-1 py-3 bg-gray-150 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all">Cancel</button>
-                <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2">
-                  <UserCheck size={16} /> Assign Partner
+                <button type="button" onClick={() => { setAssignVendorAIDesign(null); setVendorSearchQuery(''); }} className="flex-1 py-3 bg-gray-150 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all">Cancel</button>
+                <button type="submit" disabled={!selectedAIDesignVendorId} className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-xl font-bold shadow-md transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed">
+                  <UserCheck size={16} /> {assignVendorAIDesign.assignedVendor ? 'Add Vendor' : 'Assign Vendor'}
                 </button>
               </div>
             </form>
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* 3. Convert to Order Modal */}
       {convertOrderAIDesign && (

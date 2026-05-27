@@ -639,6 +639,7 @@ let mockAIDesigns = [
     },
     status: 'accepted',
     assignedVendor: null,
+    additionalVendors: [],
     orderStatus: 'Not Converted',
     orderId: null,
     createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
@@ -658,6 +659,7 @@ let mockAIDesigns = [
     },
     status: 'accepted',
     assignedVendor: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    additionalVendors: [{ _id: 'v2', companyName: 'Elite Woodworks' }],
     orderStatus: 'Pending Manufacturing',
     orderId: { _id: 'ord_102', orderStatus: 'Manufacturing', totalAmount: 5400 },
     createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
@@ -677,6 +679,7 @@ let mockAIDesigns = [
     },
     status: 'generated',
     assignedVendor: null,
+    additionalVendors: [],
     orderStatus: 'Not Converted',
     orderId: null,
     createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
@@ -696,6 +699,7 @@ let mockAIDesigns = [
     },
     status: 'pending',
     assignedVendor: null,
+    additionalVendors: [],
     orderStatus: 'Not Converted',
     orderId: null,
     createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
@@ -1378,6 +1382,7 @@ exports.getManagementData = async (req, res) => {
     const aiDesigns = await AIDesignRequest.find({})
       .populate('userId', 'name email')
       .populate('assignedVendor')
+      .populate('additionalVendors')
       .populate('orderId')
       .sort('-createdAt');
     const dbManualDesigns = await ManualDesignRequest.find({})
@@ -2090,14 +2095,26 @@ exports.assignAIDesignVendor = async (req, res) => {
       if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
       
       const vendor = mockVendors.find(v => v._id === vendorId);
-      design.assignedVendor = vendor ? { _id: vendor._id, companyName: vendor.companyName } : null;
+      if (vendor) {
+        if (!design.assignedVendor) {
+          design.assignedVendor = { _id: vendor._id, companyName: vendor.companyName };
+        } else {
+          if (!design.additionalVendors) design.additionalVendors = [];
+          design.additionalVendors.push({ _id: vendor._id, companyName: vendor.companyName });
+        }
+      }
       return res.status(200).json({ success: true, message: 'Vendor assigned successfully in mock mode', data: design });
     }
 
     const design = await AIDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
 
-    design.assignedVendor = vendorId;
+    if (!design.assignedVendor) {
+      design.assignedVendor = vendorId;
+    } else {
+      design.additionalVendors = design.additionalVendors || [];
+      design.additionalVendors.push(vendorId);
+    }
     await design.save();
 
     // Create notifications
@@ -2105,7 +2122,7 @@ exports.assignAIDesignVendor = async (req, res) => {
     if (vendor && vendor.userId) {
       await Notification.create({
         userId: vendor.userId._id,
-        message: `Admin assigned you to AI Studio Request #${id.slice(-6)} (${design.roomType}).`,
+        message: 'New AI request assigned by Admin',
         type: 'info'
       });
     }
