@@ -155,9 +155,11 @@ const VendorDashboard = ({
         const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
         setDirectMessages(msgs);
         
-        // Auto-select first user if none selected and messages exist
-        if (msgs.length > 0 && !selectedUserMsg) {
-          const uniqueUsers = Array.from(new Set(msgs.map(m => m.userName)));
+        // Auto-select first user if none selected and messages exist for this vendor
+        const currentVendorName = profile?.companyName || 'Artisan Workshop Ltd';
+        const vendorMsgs = msgs.filter(m => m.vendorName === currentVendorName);
+        if (vendorMsgs.length > 0 && !selectedUserMsg) {
+          const uniqueUsers = Array.from(new Set(vendorMsgs.map(m => m.userName)));
           if (uniqueUsers.length > 0) {
             setSelectedUserMsg(uniqueUsers[0]);
           }
@@ -167,7 +169,7 @@ const VendorDashboard = ({
       const interval = setInterval(loadMessages, 1000);
       return () => clearInterval(interval);
     }
-  }, [activeTab, selectedUserMsg]);
+  }, [activeTab, selectedUserMsg, profile]);
 
   useEffect(() => {
     if (activeTab === 'support') {
@@ -224,6 +226,17 @@ const VendorDashboard = ({
     };
     const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
     localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
+
+    // Trigger notification to admin
+    const aNotifObj = {
+      _id: `anotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `Vendor reply from ${vendorName} to ${selectedUserMsg}: "${vendorMsgInput.substring(0, 30)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const aNotifs = JSON.parse(localStorage.getItem('mockNotifications') || '[]');
+    localStorage.setItem('mockNotifications', JSON.stringify([aNotifObj, ...aNotifs]));
   };
 
   const handleSendVendorHelpMessage = (e) => {
@@ -3139,6 +3152,7 @@ const VendorDashboard = ({
       {/* TAB: HELP CENTER LIVE CHAT */}
       {activeTab === 'support' && (() => {
         const supportMsgs = helpMessages;
+        const companyName = profile?.companyName || 'Artisan Workshop Ltd';
         
         // Find all unique users who messaged help desk
         const uniqueUsers = Array.from(new Set(supportMsgs.map(m => m.userName))).map(name => {
@@ -3158,13 +3172,13 @@ const VendorDashboard = ({
             {/* Left Panel: Customer Conversations list */}
             <div className="w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/50">
               <div className="p-5 border-b border-gray-100 bg-white">
-                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Help Center Tickets</h3>
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">User Support Chats</h3>
                 <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Live support channel</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
                 {uniqueUsers.length === 0 ? (
                   <div className="text-center py-12 text-gray-400 text-xs font-medium">
-                    No support tickets found.
+                    No support chats found.
                   </div>
                 ) : (
                   uniqueUsers.map(u => (
@@ -3200,7 +3214,7 @@ const VendorDashboard = ({
                   {/* Chat header */}
                   <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-[#1F2937]">Help Thread: {selectedHelpUser}</h3>
+                      <h3 className="font-bold text-sm text-[#1F2937]">User Thread: {selectedHelpUser}</h3>
                       <p className="text-[10px] text-[#E76F51] font-bold uppercase tracking-wider mt-0.5">Assigned to: Vendor & Admin</p>
                     </div>
                     <div className="flex gap-2">
@@ -3211,23 +3225,37 @@ const VendorDashboard = ({
                   {/* Chat message content */}
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {activeUserHelpMsgs.map((msg) => {
-                      const isMe = msg.sender === 'vendor';
-                      const senderBadge = msg.sender === 'admin' ? 'Admin' : (msg.sender === 'user' ? 'Customer' : 'Vendor');
+                      const isMe = msg.sender === 'vendor' && msg.senderName === companyName;
+                      let bubbleStyle, align, senderLabel, timeColor;
+
+                      if (isMe) {
+                        bubbleStyle = 'bg-[#E76F51] text-white rounded-tr-none';
+                        align = 'justify-end';
+                        senderLabel = 'You (Vendor)';
+                        timeColor = 'text-white/70';
+                      } else if (msg.sender === 'vendor') {
+                        bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                        align = 'justify-start';
+                        senderLabel = `Vendor (${msg.senderName})`;
+                        timeColor = 'text-gray-400';
+                      } else if (msg.sender === 'admin') {
+                        bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                        align = 'justify-start';
+                        senderLabel = 'Admin';
+                        timeColor = 'text-white/70';
+                      } else {
+                        bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                        align = 'justify-start';
+                        senderLabel = msg.senderName || msg.userName || 'Customer';
+                        timeColor = 'text-gray-400';
+                      }
+
                       return (
-                        <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                            isMe 
-                              ? 'bg-[#E76F51] text-white rounded-tr-none' 
-                              : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                          }`}>
-                            {!isMe && (
-                              <span className="block text-[8px] font-bold uppercase tracking-wider text-[#E76F51] mb-1">
-                                {senderBadge} {msg.senderName && `(${msg.senderName})`}
-                              </span>
-                            )}
+                        <div key={msg._id} className={`flex ${align}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                             <p>{msg.message}</p>
-                            <span className={`block text-[8px] mt-1.5 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <span className={`block text-[8px] mt-1.5 text-right ${timeColor}`}>
+                              {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
@@ -3257,8 +3285,8 @@ const VendorDashboard = ({
                   <div className="w-14 h-14 rounded-full bg-[#E76F51]/5 flex items-center justify-center text-[#E76F51] mb-4">
                     <AlertCircle className="w-7 h-7" />
                   </div>
-                  <h4 className="font-bold text-sm text-[#1F2937]">Select a support ticket</h4>
-                  <p className="text-xs text-gray-400 max-w-[240px] mt-1.5 leading-relaxed">Choose a customer help ticket from the list to view history and troubleshoot.</p>
+                  <h4 className="font-bold text-sm text-[#1F2937]">Select a support chat</h4>
+                  <p className="text-xs text-gray-400 max-w-[240px] mt-1.5 leading-relaxed">Choose a customer help chat from the list to view history and troubleshoot.</p>
                 </div>
               )}
             </div>
@@ -3594,9 +3622,10 @@ const VendorDashboard = ({
 
       {/* TAB: CUSTOMER MESSAGES */}
       {activeTab === 'messages' && (() => {
-        const vendorMsgs = directMessages;
+        const currentVendorName = profile?.companyName || 'Artisan Workshop Ltd';
+        const vendorMsgs = directMessages.filter(m => m.vendorName === currentVendorName);
         
-        // Find all unique users who messaged any vendor
+        // Find all unique users who messaged this specific vendor
         const uniqueUsers = Array.from(new Set(vendorMsgs.map(m => m.userName))).map(name => {
           const userMsgs = vendorMsgs.filter(m => m.userName === name);
           const lastMsg = userMsgs[userMsgs.length - 1];
@@ -3604,15 +3633,13 @@ const VendorDashboard = ({
             name,
             lastMessage: lastMsg ? lastMsg.message : '',
             time: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
-            vendorName: lastMsg ? lastMsg.vendorName : 'Artisan Workshop Ltd'
+            vendorName: currentVendorName
           };
         });
 
         // Get the active vendor context for the selected customer's thread
         const selectedUserMsgs = vendorMsgs.filter(m => m.userName === selectedUserMsg);
-        const activeVendorContext = selectedUserMsgs.length > 0 
-          ? selectedUserMsgs[0].vendorName 
-          : (profile?.companyName || 'Artisan Workshop Ltd');
+        const activeVendorContext = currentVendorName;
 
         return (
           <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex h-[600px] animate-fade-in">
@@ -3674,16 +3701,32 @@ const VendorDashboard = ({
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {selectedUserMsgs.map((msg) => {
                       const isVendor = msg.sender === 'vendor';
+                      const isAdmin = msg.sender === 'admin';
+                      let bubbleStyle, align, senderLabel, timeColor;
+
+                      if (isVendor) {
+                        bubbleStyle = 'bg-[#2A9D8F] text-white rounded-tr-none';
+                        align = 'justify-end';
+                        senderLabel = 'You';
+                        timeColor = 'text-white/70';
+                      } else if (isAdmin) {
+                        bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                        align = 'justify-start';
+                        senderLabel = 'Admin';
+                        timeColor = 'text-white/70';
+                      } else {
+                        bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                        align = 'justify-start';
+                        senderLabel = msg.userName || 'Customer';
+                        timeColor = 'text-gray-400';
+                      }
+
                       return (
-                        <div key={msg._id} className={`flex ${isVendor ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                            isVendor 
-                              ? 'bg-[#2A9D8F] text-white rounded-tr-none' 
-                              : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                          }`}>
+                        <div key={msg._id} className={`flex ${align}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                             <p>{msg.message}</p>
-                            <span className={`block text-[9px] mt-1.5 text-right ${isVendor ? 'text-white/70' : 'text-gray-400'}`}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <span className={`block text-[9px] mt-1.5 text-right ${timeColor}`}>
+                              {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>

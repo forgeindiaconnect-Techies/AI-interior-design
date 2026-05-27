@@ -2890,14 +2890,14 @@ const UserDashboard = ({
         </div>
       )}
 
-      {/* TAB 10: HELP CENTER (SUPPORT) */}
+      {/* TAB 10: USER SUPPORT CHAT */}
       {activeTab === 'support' && (
         <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden flex h-[600px] animate-fade-in">
           {/* Left panel: Help resources & FAQs */}
           <div className="w-1/3 border-r border-gray-100 flex flex-col bg-[#FDFBF7] p-6 space-y-6">
             <div>
-              <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Help Center</h3>
-              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">24/7 Support Desk</p>
+              <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">User Chat</h3>
+              <p className="text-[10px] text-gray-400 mt-0.5 uppercase tracking-wider font-bold">Direct Support Desk</p>
             </div>
             
             <div className="space-y-4">
@@ -2932,7 +2932,7 @@ const UserDashboard = ({
                   <AlertCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xs text-[#1F2937]">ArtisanStudio Support</h3>
+                  <h3 className="font-bold text-xs text-[#1F2937]">User Chat Room</h3>
                   <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider mt-0.5">Online • Replies in minutes</p>
                 </div>
               </div>
@@ -2941,40 +2941,55 @@ const UserDashboard = ({
 
             {/* Support Messages Log */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
-              {helpMessages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                  <AlertCircle className="w-8 h-8 text-gray-300 mb-2" />
-                  <p className="text-xs text-gray-700 font-bold">No messages yet</p>
-                  <p className="text-[10px] text-gray-400 mt-1 max-w-[200px] leading-relaxed">Ask a question below to start a live support conversation with our team.</p>
-                </div>
-              ) : (
-                helpMessages.map((msg) => {
-                  const isUser = msg.sender === 'user';
-                  let senderBadge = '';
-                  if (msg.sender === 'admin') senderBadge = 'Admin';
-                  if (msg.sender === 'vendor') senderBadge = 'Vendor';
-                  
+              {(() => {
+                const name = user?.name || 'User Demo';
+                const email = user?.email || 'user@example.com';
+                const filteredHelpMessages = helpMessages.filter(m => m.userName === name || m.userEmail === email);
+
+                if (filteredHelpMessages.length === 0) {
                   return (
-                    <div key={msg._id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[75%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                        isUser 
-                          ? 'bg-[#E76F51] text-white rounded-tr-none' 
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                      }`}>
-                        {!isUser && (
-                          <span className="block text-[8px] font-bold uppercase tracking-wider text-[#E76F51] mb-1">
-                            Support ({senderBadge})
-                          </span>
-                        )}
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                      <AlertCircle className="w-8 h-8 text-gray-300 mb-2" />
+                      <p className="text-xs text-gray-700 font-bold">No messages yet</p>
+                      <p className="text-[10px] text-gray-400 mt-1 max-w-[200px] leading-relaxed">Ask a question below to start a live support conversation with our team.</p>
+                    </div>
+                  );
+                }
+
+                return filteredHelpMessages.map((msg) => {
+                  const isUser = msg.sender === 'user';
+                  const isAdmin = msg.sender === 'admin';
+                  let bubbleStyle, align, senderLabel, timeColor;
+
+                  if (isUser) {
+                    bubbleStyle = 'bg-[#8B5E3C] text-white rounded-tr-none';
+                    align = 'justify-end';
+                    senderLabel = 'You';
+                    timeColor = 'text-white/70';
+                  } else if (isAdmin) {
+                    bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                    align = 'justify-start';
+                    senderLabel = 'Admin';
+                    timeColor = 'text-white/70';
+                  } else {
+                    bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                    align = 'justify-start';
+                    senderLabel = `Vendor (${msg.senderName || 'Vendor'})`;
+                    timeColor = 'text-gray-400';
+                  }
+
+                  return (
+                    <div key={msg._id} className={`flex ${align}`}>
+                      <div className={`max-w-[75%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                         <p>{msg.message}</p>
-                        <span className={`block text-[8px] mt-1.5 text-right ${isUser ? 'text-white/60' : 'text-gray-400'}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <span className={`block text-[9px] mt-1.5 text-right ${timeColor}`}>
+                          {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
                   );
-                })
-              )}
+                });
+              })()}
             </div>
 
             {/* Chat Send Input */}
@@ -2983,14 +2998,14 @@ const UserDashboard = ({
                 type="text"
                 value={helpInput}
                 onChange={(e) => setHelpInput(e.target.value)}
-                placeholder="Describe your issue or ask support..."
+                placeholder="Type a message to Vendor & Admin..."
                 className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51] text-xs"
               />
               <button
                 type="submit"
                 className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/95 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
               >
-                Send Help Message
+                Send Message
               </button>
             </form>
           </div>
@@ -3078,33 +3093,60 @@ const UserDashboard = ({
 
             {/* Chat history */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FCFAF7]/30">
-              {directMessages.filter(m => m.vendorName === selectedVendorMsg).length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6">
-                  <div className="w-12 h-12 rounded-full bg-[#8B5E3C]/5 flex items-center justify-center text-[#8B5E3C] mb-3">
-                    <MessageSquare className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-xs text-[#1F2937]">Start a conversation</h4>
-                  <p className="text-[10px] text-gray-400 max-w-[200px] mt-1">Send a message to inquire about design requests, custom pricing, or order adjustments.</p>
-                </div>
-              ) : (
-                directMessages.filter(m => m.vendorName === selectedVendorMsg).map((msg) => {
-                  const isUser = msg.sender === 'user';
+              {(() => {
+                const currentUserEmail = user?.email || 'user@example.com';
+                const currentUserName = user?.name || 'User Demo';
+                const chatMsgs = directMessages.filter(
+                  m => m.vendorName === selectedVendorMsg && 
+                  (m.userEmail === currentUserEmail || m.userName === currentUserName)
+                );
+
+                if (chatMsgs.length === 0) {
                   return (
-                    <div key={msg._id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                        isUser 
-                          ? 'bg-[#8B5E3C] text-white rounded-tr-none' 
-                          : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                      }`}>
+                    <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                      <div className="w-12 h-12 rounded-full bg-[#8B5E3C]/5 flex items-center justify-center text-[#8B5E3C] mb-3">
+                        <MessageSquare className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-bold text-xs text-[#1F2937]">Start a conversation</h4>
+                      <p className="text-[10px] text-gray-400 max-w-[200px] mt-1">Send a message to inquire about design requests, custom pricing, or order adjustments.</p>
+                    </div>
+                  );
+                }
+
+                return chatMsgs.map((msg) => {
+                  const isUser = msg.sender === 'user';
+                  const isAdmin = msg.sender === 'admin';
+                  let bubbleStyle, align, senderLabel, timeColor;
+
+                  if (isUser) {
+                    bubbleStyle = 'bg-[#8B5E3C] text-white rounded-tr-none';
+                    align = 'justify-end';
+                    senderLabel = 'You';
+                    timeColor = 'text-white/70';
+                  } else if (isAdmin) {
+                    bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                    align = 'justify-start';
+                    senderLabel = 'Admin';
+                    timeColor = 'text-white/70';
+                  } else {
+                    bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                    align = 'justify-start';
+                    senderLabel = msg.vendorName || 'Vendor';
+                    timeColor = 'text-gray-400';
+                  }
+
+                  return (
+                    <div key={msg._id} className={`flex ${align}`}>
+                      <div className={`max-w-[70%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                         <p>{msg.message}</p>
-                        <span className={`block text-[9px] mt-1 text-right ${isUser ? 'text-white/70' : 'text-gray-400'}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        <span className={`block text-[9px] mt-1 text-right ${timeColor}`}>
+                          {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
                   );
-                })
-              )}
+                });
+              })()}
             </div>
 
             {/* Chat Input */}

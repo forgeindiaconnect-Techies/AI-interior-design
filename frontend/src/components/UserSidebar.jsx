@@ -138,7 +138,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
       group: 'support', label: 'Support',
       items: [
         { name: 'Reviews', icon: Star, tab: 'reviews' },
-        { name: 'Help Center', icon: HelpCircle, tab: 'support' },
+        { name: 'User Chat', icon: HelpCircle, tab: 'support' },
       ]
     },
     {

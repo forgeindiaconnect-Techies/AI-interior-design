@@ -206,7 +206,7 @@ const DashboardLayout = ({ children }) => {
     tracking: ['Home', 'Operations', 'Live Order Tracking'],
     payments: ['Home', 'Operations', 'Payments & Invoices'],
     quotations: ['Home', 'Operations', 'Quotations'],
-    support: ['Home', 'Help & Support', 'Help Center'],
+    support: ['Home', 'Help & Support', 'User Chat'],
     profile: ['Home', 'Account', 'Profile Details'],
     saved: ['Home', 'Account', 'Saved Designs'],
     notifications: ['Home', 'Account', 'Notifications'],

@@ -6,7 +6,7 @@ import {
   DollarSign, Bell, AlertCircle, RefreshCw, Eye, Send, BarChart2, ShieldCheck,
   LayoutDashboard, Key, HelpCircle, FileText, Sparkles, UserCheck, CheckSquare,
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
-  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight
+  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare
 } from 'lucide-react';
 
 const AdminDashboard = ({ 
@@ -71,6 +71,11 @@ const AdminDashboard = ({
   const [helpInput, setHelpInput] = useState('');
   const [selectedHelpUser, setSelectedHelpUser] = useState('');
 
+  // Direct Messages from Users to Vendors (admin view)
+  const [adminDirectMessages, setAdminDirectMessages] = useState([]);
+  const [adminMsgInput, setAdminMsgInput] = useState('');
+  const [selectedMsgUser, setSelectedMsgUser] = useState('');
+
   useEffect(() => {
     if (activeTab === 'support') {
       const loadHelpMessages = () => {
@@ -106,6 +111,82 @@ const AdminDashboard = ({
     const updated = contactMessages.map(m => m._id === id ? { ...m, status: 'replied' } : m);
     setContactMessages(updated);
     localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+  };
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      const loadAdminMessages = () => {
+        const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+        setAdminDirectMessages(msgs);
+        if (msgs.length > 0 && !selectedMsgUser) {
+          const seenKeys = new Set();
+          const uniqueKeys = [];
+          msgs.forEach(m => {
+            const key = `${m.userName}|||${m.vendorName}`;
+            if (!seenKeys.has(key)) {
+              seenKeys.add(key);
+              uniqueKeys.push(key);
+            }
+          });
+          if (uniqueKeys.length > 0) {
+            setSelectedMsgUser(uniqueKeys[0]);
+          }
+        }
+      };
+      loadAdminMessages();
+      const interval = setInterval(loadAdminMessages, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, selectedMsgUser]);
+
+
+
+  const handleSendAdminDirectMessage = (e) => {
+    e.preventDefault();
+    if (!adminMsgInput.trim() || !selectedMsgUser) return;
+
+    const [selUserName, selVendorName] = selectedMsgUser.includes('|||')
+      ? selectedMsgUser.split('|||')
+      : [selectedMsgUser, 'Artisan Workshop Ltd'];
+
+    const userMsgs = adminDirectMessages.filter(m => m.userName === selUserName && m.vendorName === selVendorName);
+    const userEmail = userMsgs.length > 0 ? userMsgs[0].userEmail : 'user@example.com';
+
+    const newMsg = {
+      _id: 'adm_' + Date.now(),
+      sender: 'admin',
+      userName: selUserName,
+      userEmail: userEmail,
+      vendorName: selVendorName,
+      message: adminMsgInput,
+      createdAt: new Date().toISOString()
+    };
+
+    const existing = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+    const updated = [...existing, newMsg];
+    localStorage.setItem('mockDirectMessages', JSON.stringify(updated));
+    setAdminDirectMessages(updated);
+    setAdminMsgInput('');
+
+    const notifObj = {
+      _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `[Admin] Reply regarding ${selVendorName}: "${adminMsgInput.substring(0, 30)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
+
+    const vNotifObj = {
+      _id: `vnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `[Admin] Admin replied to your thread with ${selUserName}: "${adminMsgInput.substring(0, 30)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([vNotifObj, ...vNotifs]));
   };
 
   const handleSendAdminHelpMessage = (e) => {
@@ -4942,37 +5023,160 @@ const AdminDashboard = ({
         );
       })()}
 
-      {/* TAB: COMPLAINTS */}
-      {activeTab === 'complaints' && (() => {
-        const localInquiries = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
-        const mockSeeds = [
-          { _id: 'c_1', name: 'John Doe', email: 'john@example.com', message: 'The vendor did not deliver the custom table in the scheduled timeline. Please look into it.', status: 'Pending Review', createdAt: new Date().toISOString() },
-          { _id: 'c_2', name: 'Jane Smith', email: 'jane@example.com', message: 'I want to claim a discount on the Premium Artisan design pack. The AI studio fails to load properly.', status: 'Resolved', createdAt: new Date(Date.now() - 3600000 * 24).toISOString() }
-        ];
-        const inquiries = localInquiries.length > 0 ? localInquiries : mockSeeds;
+      {/* TAB: MESSAGES (User <-> Vendor conversations, admin can view & reply) */}
+      {activeTab === 'messages' && (() => {
+        const adminMsgs = adminDirectMessages;
+
+        const uniqueConversations = [];
+        const seenKeys = new Set();
+        adminMsgs.forEach(m => {
+          const key = `${m.userName}|||${m.vendorName}`;
+          if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            uniqueConversations.push({
+              userName: m.userName,
+              userEmail: m.userEmail,
+              vendorName: m.vendorName
+            });
+          }
+        });
+
+        const conversationsList = uniqueConversations.map(c => {
+          const threadMsgs = adminMsgs.filter(m => m.userName === c.userName && m.vendorName === c.vendorName);
+          const lastMsg = threadMsgs[threadMsgs.length - 1];
+          return {
+            userName: c.userName,
+            userEmail: c.userEmail,
+            vendorName: c.vendorName,
+            lastMessage: lastMsg ? lastMsg.message : '',
+            time: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+            key: `${c.userName}|||${c.vendorName}`
+          };
+        });
+
+        const [selUserName, selVendorName] = selectedMsgUser.includes('|||')
+          ? selectedMsgUser.split('|||')
+          : [selectedMsgUser, 'Artisan Workshop Ltd'];
+
+        const selectedUserMsgs = adminMsgs.filter(m => m.userName === selUserName && m.vendorName === selVendorName);
 
         return (
-          <div className="space-y-8 animate-fadeIn text-left">
-            <div className="border-b border-gray-100 pb-4">
-              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-gray-850">Client Inquiries & Complaints</h2>
-              <p className="text-xs text-gray-500 mt-1">Review contact requests, complaints, and general support requests submitted via the landing portal.</p>
+          <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden flex h-[600px] animate-fadeIn text-left">
+            {/* Left Panel: User Conversations list */}
+            <div className="w-1/3 border-r border-gray-150 flex flex-col bg-gray-50/50">
+              <div className="p-5 border-b border-gray-150 bg-white">
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-gray-800">User Messages</h3>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">User &lt;-&gt; Vendor conversations</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {conversationsList.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400 text-xs font-medium">
+                    No messages yet.
+                  </div>
+                ) : (
+                  conversationsList.map(u => (
+                    <button
+                      key={u.key}
+                      onClick={() => setSelectedMsgUser(u.key)}
+                      className={`w-full text-left p-4 rounded-2xl transition-all flex items-start gap-3.5 border ${
+                        selectedMsgUser === u.key 
+                          ? 'bg-[#1D3557]/10 border-[#1D3557]/20 shadow-sm' 
+                          : 'hover:bg-white border-transparent hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#1D3557]/10 text-[#1D3557] flex items-center justify-center font-bold text-sm shrink-0">
+                        {u.userName.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="font-bold text-xs text-gray-800 truncate">{u.userName}</h4>
+                          <span className="text-[9px] text-gray-400 font-bold">{u.time}</span>
+                        </div>
+                        <p className="text-[9px] text-[#1D3557] font-semibold truncate mt-1">Vendor: {u.vendorName}</p>
+                        <p className="text-[10px] text-gray-500 truncate mt-0.5 leading-normal">{u.lastMessage}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6">
-              {inquiries.map((inq) => (
-                <div key={inq._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
-                  <div className="flex justify-between items-center border-b border-gray-100 pb-3">
+            {/* Right Panel: Conversation history & admin reply */}
+            <div className="flex-1 flex flex-col bg-white">
+              {selectedMsgUser ? (
+                <>
+                  {/* Chat header */}
+                  <div className="p-5 border-b border-gray-150 flex items-center justify-between">
                     <div>
-                      <h4 className="font-bold text-sm text-gray-800">{inq.name}</h4>
-                      <p className="text-[10px] text-gray-400">{inq.email} • {new Date(inq.createdAt).toLocaleDateString()}</p>
+                      <h3 className="font-bold text-sm text-gray-800">{selUserName}</h3>
+                      <p className="text-[10px] text-[#1D3557] font-bold uppercase tracking-wider mt-0.5">
+                        Thread with: {selVendorName}
+                      </p>
                     </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
-                      inq.status === 'Resolved' ? 'bg-green-50 text-green-600 border border-green-200' : 'bg-amber-50 text-amber-600 border border-amber-200'
-                    }`}>{inq.status || 'Pending Review'}</span>
+                    <div className="flex gap-2">
+                      <span className="text-[10px] bg-[#1D3557]/10 text-[#1D3557] border border-[#1D3557]/20 px-2.5 py-1 rounded-lg font-bold">Admin View</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed bg-[#F8F5F0] p-4 rounded-xl">{inq.message}</p>
+
+                  {/* Chat message content */}
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
+                    {selectedUserMsgs.map((msg) => {
+                      let bubbleStyle, align, timeColor, senderLabel;
+                      if (msg.sender === 'admin') {
+                        bubbleStyle = 'bg-[#1D3557] text-white rounded-tr-none';
+                        align = 'justify-end';
+                        timeColor = 'text-white/70';
+                        senderLabel = 'Admin';
+                      } else if (msg.sender === 'vendor') {
+                        bubbleStyle = 'bg-[#2A9D8F] text-white rounded-tl-none border border-[#2A9D8F]/25';
+                        align = 'justify-start';
+                        timeColor = 'text-white/70';
+                        senderLabel = `Vendor (${msg.vendorName})`;
+                      } else {
+                        bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                        align = 'justify-start';
+                        timeColor = 'text-gray-400';
+                        senderLabel = msg.userName || 'Customer';
+                      }
+                      return (
+                        <div key={msg._id} className={`flex ${align}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
+                            <p>{msg.message}</p>
+                            <span className={`block text-[9px] mt-1.5 text-right ${timeColor}`}>
+                              {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Reply Input */}
+                  <form onSubmit={handleSendAdminDirectMessage} className="p-4 border-t border-gray-100 flex gap-2 bg-white">
+                    <input
+                      type="text"
+                      value={adminMsgInput}
+                      onChange={(e) => setAdminMsgInput(e.target.value)}
+                      placeholder={`Reply as Admin regarding thread with ${selUserName}...`}
+                      className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1D3557] text-xs"
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-[#1D3557] hover:bg-[#1D3557]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
+                    >
+                      Reply
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-14 h-14 rounded-full bg-[#1D3557]/5 flex items-center justify-center text-[#1D3557] mb-4">
+                    <MessageSquare className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-bold text-sm text-gray-800">Select a conversation</h4>
+                  <p className="text-xs text-gray-400 max-w-[240px] mt-1.5 leading-relaxed">Choose a user conversation to view the thread and respond as admin.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         );
@@ -5036,11 +5240,11 @@ const AdminDashboard = ({
         const activeUserHelpMsgs = supportMsgs.filter(m => m.userName === selectedHelpUser);
 
         return (
-          <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-200 overflow-hidden flex h-[600px] animate-fadeIn text-left">
+          <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-250 overflow-hidden flex h-[600px] animate-fadeIn text-left">
             {/* Left Panel: Customer Conversations list */}
             <div className="w-1/3 border-r border-gray-150 flex flex-col bg-gray-50/50">
               <div className="p-5 border-b border-gray-150 bg-white">
-                <h3 className="font-['Playfair_Display'] font-bold text-xl text-gray-800">Support Chat Inbox</h3>
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-gray-800">User Support Chats</h3>
                 <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Help Desk Live Channels</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
@@ -5082,7 +5286,7 @@ const AdminDashboard = ({
                   {/* Chat header */}
                   <div className="p-5 border-b border-gray-150 flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-gray-800">Support Chat: {selectedHelpUser}</h3>
+                      <h3 className="font-bold text-sm text-gray-800">User Support Chat: {selectedHelpUser}</h3>
                       <p className="text-[10px] text-[#E76F51] font-bold uppercase tracking-wider mt-0.5 font-sans">Role: Platform Admin Monitor</p>
                     </div>
                     <div className="flex gap-2">
@@ -5094,22 +5298,31 @@ const AdminDashboard = ({
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {activeUserHelpMsgs.map((msg) => {
                       const isMe = msg.sender === 'admin';
-                      const senderBadge = msg.sender === 'admin' ? 'Admin' : (msg.sender === 'user' ? 'Customer' : 'Vendor');
+                      let bubbleStyle, align, senderLabel, timeColor;
+
+                      if (isMe) {
+                        bubbleStyle = 'bg-[#1F2937] text-white rounded-tr-none';
+                        align = 'justify-end';
+                        senderLabel = 'You (Admin)';
+                        timeColor = 'text-white/70';
+                      } else if (msg.sender === 'vendor') {
+                        bubbleStyle = 'bg-[#2A9D8F] text-white rounded-tl-none border border-emerald-600';
+                        align = 'justify-start';
+                        senderLabel = `Vendor (${msg.senderName})`;
+                        timeColor = 'text-white/70';
+                      } else {
+                        bubbleStyle = 'bg-white text-gray-800 border border-gray-150 rounded-tl-none';
+                        align = 'justify-start';
+                        senderLabel = `Customer (${msg.senderName || msg.userName})`;
+                        timeColor = 'text-gray-400';
+                      }
+
                       return (
-                        <div key={msg._id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                            isMe 
-                              ? 'bg-[#1F2937] text-white rounded-tr-none' 
-                              : 'bg-white text-gray-800 border border-gray-150 rounded-tl-none'
-                          }`}>
-                            {!isMe && (
-                              <span className="block text-[8px] font-bold uppercase tracking-wider text-[#E76F51] mb-1">
-                                {senderBadge} {msg.senderName && `(${msg.senderName})`}
-                              </span>
-                            )}
+                        <div key={msg._id} className={`flex ${align}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                             <p>{msg.message}</p>
-                            <span className={`block text-[8px] mt-1.5 text-right ${isMe ? 'text-white/70' : 'text-gray-400'}`}>
-                              {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            <span className={`block text-[8px] mt-1.5 text-right ${timeColor}`}>
+                              {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
@@ -5139,8 +5352,8 @@ const AdminDashboard = ({
                   <div className="w-14 h-14 rounded-full bg-[#E76F51]/5 flex items-center justify-center text-[#E76F51] mb-4">
                     <HelpCircle className="w-7 h-7" />
                   </div>
-                  <h4 className="font-bold text-sm text-gray-800">Select a support ticket</h4>
-                  <p className="text-xs text-gray-450 max-w-[240px] mt-1.5 leading-relaxed">Choose a customer help ticket from the list to view history and troubleshoot.</p>
+                  <h4 className="font-bold text-sm text-gray-800">Select a support chat</h4>
+                  <p className="text-xs text-gray-450 max-w-[240px] mt-1.5 leading-relaxed">Choose a customer help chat from the list to view history and troubleshoot.</p>
                 </div>
               )}
             </div>

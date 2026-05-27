@@ -3,7 +3,7 @@ import {
   Palette, LayoutDashboard, Users, Store, Factory, Truck, 
   ShoppingBag, Sparkles, FileText, BarChart2, RefreshCw, 
   HelpCircle, ShieldCheck, Key, Bell, LogOut, ChevronDown, ChevronRight,
-  CheckSquare, AlertCircle, Wrench, UserCheck
+  CheckSquare, AlertCircle, Wrench, UserCheck, MessageSquare
 } from 'lucide-react';
 
 // ── ADMIN SIDEBAR THEME: Clean White / Navy Highlight ──
@@ -188,7 +188,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           <SectionLabel label="Support" group="support" />
           {openGroups.support && (
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Complaints" icon={HelpCircle} tab="complaints" />
+              <NavItem name="Messages" icon={MessageSquare} tab="messages" />
               <NavItem name="Support Tickets" icon={FileText} tab="tickets" />
               <NavItem name="Disputes" icon={ShieldCheck} tab="disputes" />
             </div>

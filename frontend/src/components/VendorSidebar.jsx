@@ -123,7 +123,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
       group: 'customers', label: 'Quotations & Customers',
       items: [
         { name: 'Quotations', icon: FileText, tab: 'quotations' },
-        { name: 'Customer Messages', icon: MessageSquare, tab: 'messages' },
+        { name: 'Customer Chat', icon: MessageSquare, tab: 'messages' },
         { name: 'Reviews', icon: Star, tab: 'reviews' }
       ]
     },
