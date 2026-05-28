@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Palette, LayoutDashboard, Sparkles, FileText, 
-  ShoppingBag, Bookmark, ShoppingCart, Package, Truck, 
-  User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight,
-  CreditCard, Star, Bell
-} from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, ShoppingBag, Bookmark, ShoppingCart, Package, Truck, User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight, CreditCard, Star, Bell, Armchair } from 'lucide-react';
 
 // ── USER SIDEBAR THEME: Clean White / Peach Highlight ──
 const U = {

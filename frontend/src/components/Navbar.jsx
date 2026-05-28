@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Palette, LogOut, LayoutDashboard } from 'lucide-react';
+import { LogOut, LayoutDashboard, Armchair, Sparkles } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -51,7 +51,10 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <a href="/" onClick={handleHomeNav} className="flex items-center gap-3 group cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-[#8B5E3C] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-            <Palette className="w-6 h-6" />
+            <div className="relative flex items-center justify-center">
+              <Armchair className="w-6 h-6" />
+              <Sparkles className="w-1/2 h-1/2 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+            </div>
           </div>
           <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-[#1F2937] group-hover:text-[#8B5E3C] transition-colors">
             Artisan<span className="text-[#8B5E3C]">Studio</span>

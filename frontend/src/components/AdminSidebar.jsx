@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Palette, LayoutDashboard, Users, Store, Factory, Truck, 
-  ShoppingBag, Sparkles, FileText, BarChart2, RefreshCw, 
-  HelpCircle, ShieldCheck, Key, Bell, LogOut, ChevronDown, ChevronRight,
-  CheckSquare, AlertCircle, Wrench, UserCheck, MessageSquare
-} from 'lucide-react';
+import { LayoutDashboard, Users, Store, Factory, Truck, ShoppingBag, Sparkles, FileText, BarChart2, RefreshCw, HelpCircle, ShieldCheck, Key, Bell, LogOut, ChevronDown, ChevronRight, CheckSquare, AlertCircle, Wrench, UserCheck, MessageSquare, Armchair } from 'lucide-react';
 
 // ── ADMIN SIDEBAR THEME: Clean White / Navy Highlight ──
 const A = {

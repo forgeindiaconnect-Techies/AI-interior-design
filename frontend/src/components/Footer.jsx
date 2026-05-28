@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Palette, Heart } from 'lucide-react';
+import { Heart, Armchair, Sparkles } from 'lucide-react';
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -38,7 +38,10 @@ const Footer = () => {
         <div className="space-y-4">
           <a href="/" onClick={handleHomeTop} className="flex items-center gap-3 cursor-pointer group w-fit">
             <div className="w-10 h-10 rounded-full bg-[#D4A373] flex items-center justify-center text-[#2F3E46] shadow-md group-hover:scale-105 transition-transform">
-              <Palette className="w-6 h-6" />
+              <div className="relative flex items-center justify-center">
+              <Armchair className="w-6 h-6" />
+              <Sparkles className="w-1/2 h-1/2 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+            </div>
             </div>
             <span className="font-['Playfair_Display'] font-bold text-2xl tracking-wide text-white group-hover:text-[#D4A373] transition-colors">
               Artisan<span className="text-[#D4A373]">Studio</span>

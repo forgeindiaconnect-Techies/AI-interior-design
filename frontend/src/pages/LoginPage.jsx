@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Palette, LogIn, ArrowLeft } from 'lucide-react';
+import { LogIn, ArrowLeft, Armchair, Sparkles } from 'lucide-react';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -40,7 +40,10 @@ const LoginPage = () => {
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <Link to="/" className="inline-flex items-center gap-3 group mb-6">
           <div className="w-12 h-12 rounded-full bg-[#8B5E3C] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform">
-            <Palette className="w-7 h-7" />
+            <div className="relative flex items-center justify-center">
+              <Armchair className="w-7 h-7" />
+              <Sparkles className="w-1/2 h-1/2 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+            </div>
           </div>
           <span className="font-['Playfair_Display'] font-bold text-3xl tracking-wide text-[#1F2937]">
             Artisan<span className="text-[#8B5E3C]">Studio</span>

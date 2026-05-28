@@ -1,9 +1,5 @@
 import React, { useState } from 'react';
-import { 
-  Palette, LayoutDashboard, Package, ShoppingCart, FileText, 
-  Wrench, Truck, MessageSquare, Star, DollarSign, Briefcase, 
-  LogOut, ChevronDown, ChevronRight, HelpCircle, Bell, ShieldCheck, Store
-} from 'lucide-react';
+import { LayoutDashboard, Package, ShoppingCart, FileText, Wrench, Truck, MessageSquare, Star, DollarSign, Briefcase, LogOut, ChevronDown, ChevronRight, HelpCircle, Bell, ShieldCheck, Store, Armchair, Sparkles } from 'lucide-react';
 
 // ── VENDOR SIDEBAR THEME: Clean White / Teal Highlight ──
 const V = {
