@@ -260,7 +260,7 @@ exports.submitVerification = async (req, res) => {
     vendor.accountActivationStatus = 'Verification Submitted';
     await vendor.save();
 
-    await Notification.create({ isAdmin: true, message: Vendor  submitted business verification details. });
+    await Notification.create({ isAdmin: true, message: `Vendor submitted business verification details.` });
 
     res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: verification });
   } catch (error) {
