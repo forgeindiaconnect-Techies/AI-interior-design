@@ -45,7 +45,6 @@ const LandingPage = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setUploadedImage(e.target.result);
-        startAiAnalysis();
       };
       reader.readAsDataURL(file);
     }
@@ -266,15 +265,27 @@ const LandingPage = () => {
             {aiState === 'idle' && (
               <div className="text-center space-y-6">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#D4A373]/5 to-[#8B5E3C]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-md border-2 border-dashed border-[#8B5E3C]/50 text-[#8B5E3C] hover:bg-[#8B5E3C]/5 cursor-pointer hover:scale-105 transition-all"
-                >
-                  <Camera className="w-10 h-10" />
-                </div>
-                <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937]">Upload Your Room Photo</h3>
+                {uploadedImage ? (
+                  <div className="relative w-48 h-48 mx-auto rounded-2xl overflow-hidden shadow-xl border-4 border-white group/img cursor-pointer" onClick={() => fileInputRef.current?.click()} title="Change Photo">
+                    <img src={uploadedImage} alt="Uploaded Room" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                       <span className="text-white text-xs font-bold flex items-center gap-1"><Camera className="w-4 h-4"/> Change</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-md border-2 border-dashed border-[#8B5E3C]/50 text-[#8B5E3C] hover:bg-[#8B5E3C]/5 cursor-pointer hover:scale-105 transition-all"
+                  >
+                    <Camera className="w-10 h-10" />
+                  </div>
+                )}
+                
+                <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937]">
+                  {uploadedImage ? "Room Photo Ready!" : "Upload Your Room Photo"}
+                </h3>
                 <p className="text-[#6B7280] text-sm max-w-md mx-auto leading-relaxed">
-                  Snap a picture of your kitchen, living room, or bedroom. Our AI will instantly style it with luxury furniture and custom materials.
+                  {uploadedImage ? "Click the button below to let our AI instantly style your room with luxury furniture and custom materials." : "Snap a picture of your kitchen, living room, or bedroom. Our AI will instantly style it with luxury furniture and custom materials."}
                 </p>
                 <input 
                   type="file" 
@@ -283,13 +294,24 @@ const LandingPage = () => {
                   accept="image/*" 
                   className="hidden" 
                 />
-                <button 
-                  onClick={() => fileInputRef.current?.click()}
-                  className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 z-10 relative"
-                >
-                  <Sparkles className="w-5 h-5" />
-                  <span>Try AI Stylist Now</span>
-                </button>
+                
+                {uploadedImage ? (
+                  <button 
+                    onClick={startAiAnalysis}
+                    className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 z-10 relative"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    <span>Try AI Stylist Now</span>
+                  </button>
+                ) : (
+                  <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 z-10 relative"
+                  >
+                    <Sparkles className="w-5 h-5" />
+                    <span>Select Room Photo</span>
+                  </button>
+                )}
                 <p className="text-xs text-[#6B7280] pt-2">No credit card required • Free trial available</p>
               </div>
             )}
