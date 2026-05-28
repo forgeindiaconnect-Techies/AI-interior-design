@@ -29,19 +29,19 @@ const SyncManager = () => {
       originalSetItem.apply(this, arguments);
       if (key === 'mockOrders') {
         window.dispatchEvent(new Event('mockOrdersUpdated'));
-        axios.put('http://localhost:5000/api/orders/sync', { orders: JSON.parse(value) })
+        axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/sync`, { orders: JSON.parse(value) })
              .catch(err => console.error('Sync push failed:', err));
       }
       if (key === 'mockSharedChat') {
         window.dispatchEvent(new Event('mockChatUpdated'));
-        axios.put('http://localhost:5000/api/chat/sync', { chat: JSON.parse(value) })
+        axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/sync`, { chat: JSON.parse(value) })
              .catch(err => console.error('Chat sync push failed:', err));
       }
     };
 
     // 2. Poll backend every 2.5 seconds to pull down updates
     const interval = setInterval(() => {
-      axios.get('http://localhost:5000/api/orders/sync')
+      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/sync`)
         .then(res => {
           if (res.data?.data && res.data.data.length > 0) {
              const localStr = localStorage.getItem('mockOrders');
@@ -54,7 +54,7 @@ const SyncManager = () => {
         })
         .catch(err => console.error('Sync pull failed:', err));
 
-      axios.get('http://localhost:5000/api/chat/sync')
+      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/sync`)
         .then(res => {
           if (res.data?.data && res.data.data.length > 0) {
              const localStr = localStorage.getItem('mockSharedChat');
