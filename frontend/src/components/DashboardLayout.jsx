@@ -10,7 +10,6 @@ const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -49,14 +48,7 @@ const DashboardLayout = ({ children }) => {
     }
   }, []);
 
-  // Theme Sync
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [isDarkMode]);
+
 
   // Load notifications from local storage based on role
   const isVendor = ['vendor', 'manufacturer', 'delivery', 'installation'].includes(user?.role);
@@ -376,14 +368,7 @@ const DashboardLayout = ({ children }) => {
           {/* Right: Actions Dropdowns */}
           <div className="flex items-center gap-4">
             
-            {/* Dark Mode toggle */}
-            <button 
-              onClick={() => setIsDarkMode(!isDarkMode)} 
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl transition-all"
-              title="Toggle Theme"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
-            </button>
+
 
             {/* Notification Dropdown Container */}
             <div className="relative" ref={notifRef}>
