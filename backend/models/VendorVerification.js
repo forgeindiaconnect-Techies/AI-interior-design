@@ -2,22 +2,29 @@ const mongoose = require('mongoose');
 
 const VendorVerificationSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
-  businessName: { type: String, required: true },
-  ownerName: { type: String, required: true },
-  phone: { type: String, required: true },
-  email: { type: String, required: true },
-  gstNumber: { type: String, required: true },
-  panNumber: { type: String, required: true },
-  idProofUrl: { type: String, required: true },
-  addressProofUrl: { type: String, required: true },
+  businessName: { type: String },
+  ownerName: { type: String },
+  phone: { type: String },
+  email: { type: String },
+  gstNumber: { type: String },
+  panNumber: { type: String },
+  businessAddress: { type: String },
+  idProofUrl: { type: String },
+  addressProofUrl: { type: String },
+  gstCertificateUrl: { type: String },
+  businessLicenseUrl: { type: String },
   bankDetails: {
-    accountNumber: { type: String, required: true },
-    ifscCode: { type: String, required: true },
-    bankName: { type: String, required: true }
+    accountNumber: { type: String },
+    ifscCode: { type: String },
+    bankName: { type: String }
   },
-  status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
+  status: {
+    type: String,
+    enum: ['Not Submitted', 'Pending', 'Under Review', 'Approved', 'Rejected'],
+    default: 'Not Submitted'
+  },
   adminRemarks: { type: String, default: '' },
-  submittedAt: { type: Date, default: Date.now },
+  submittedAt: { type: Date },
   updatedAt: { type: Date, default: Date.now }
 });
 

@@ -423,6 +423,22 @@ const AdminDashboard = ({
     if (activeTab === 'manual_designs' || activeTab === 'orders' || activeTab === 'ai_designs' || activeTab === 'designer_requests') {
       syncLocalDataToAdminState();
     }
+    // Live-refresh verification submissions from localStorage when admin is on verifications tab
+    if (activeTab === 'verifications') {
+      const loadVerifFromStorage = () => {
+        const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+        if (localVer.length > 0) {
+          setVerificationSubmissions(prev => {
+            const merged = [...localVer];
+            (prev || []).forEach(p => { if (!merged.find(m => m._id === p._id)) merged.push(p); });
+            return merged;
+          });
+        }
+      };
+      loadVerifFromStorage();
+      const verifInterval = setInterval(loadVerifFromStorage, 3000);
+      return () => clearInterval(verifInterval);
+    }
   }, [activeTab]);
 
   const fetchAdminData = async () => {
@@ -747,27 +763,29 @@ const AdminDashboard = ({
       const currentStore = storeRes.data?.data || [];
       const currentProd = prodRes.data?.data || [];
 
-      if (currentVer.length === 0) {
-        setVerificationSubmissions([
-          {
-            _id: 'verification_mock_1',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            businessName: 'Artisan Workshop Private Limited',
-            ownerName: 'Rajesh Kumar',
-            phone: '+91 98765 43210',
-            email: 'vendor@example.com',
-            gstNumber: '27AAAAA1111A1Z1',
-            panNumber: 'ABCDE1234F',
-            idProofUrl: 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
-            addressProofUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
-            status: 'Pending',
-            adminRemarks: '',
-            submittedAt: new Date(Date.now() - 3600000 * 2).toISOString()
-          }
-        ]);
-      } else {
-        setVerificationSubmissions(currentVer);
+      // Always merge vendor-submitted verifications from localStorage (vendor submissions go here)
+      const localVerifications = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const mergedVer = [...localVerifications];
+      currentVer.forEach(cv => { if (!mergedVer.find(lv => lv._id === cv._id)) mergedVer.push(cv); });
+      if (mergedVer.length === 0) {
+        mergedVer.push({
+          _id: 'verification_mock_1',
+          vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+          businessName: 'Artisan Workshop Private Limited',
+          ownerName: 'Rajesh Kumar',
+          phone: '+91 98765 43210',
+          email: 'vendor@example.com',
+          gstNumber: '27AAAAA1111A1Z1',
+          panNumber: 'ABCDE1234F',
+          idProofUrl: 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
+          addressProofUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
+          bankDetails: { accountNumber: '987654321098', ifscCode: 'HDFC0000123', bankName: 'HDFC Bank' },
+          status: 'Pending',
+          adminRemarks: '',
+          submittedAt: new Date(Date.now() - 3600000 * 2).toISOString()
+        });
       }
+      setVerificationSubmissions(mergedVer);
 
       if (currentStore.length === 0) {
         setStoreSetupSubmissions([
@@ -1471,8 +1489,36 @@ const AdminDashboard = ({
     try {
       const currentRemarks = remarks[id] || '';
       await axios.put(`/admin/verifications/${id}`, { status, adminRemarks: currentRemarks }).catch(() => console.log('mock verification verify'));
-      setVerificationSubmissions(verificationSubmissions.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k));
-      alert(`✅ Business Verification status set to ${status} successfully!`);
+      
+      // Update state
+      const updatedSubs = verificationSubmissions.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k);
+      setVerificationSubmissions(updatedSubs);
+      
+      // Sync back to localStorage so vendor sees the updated status
+      const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const updatedLocalVer = localVer.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k);
+      localStorage.setItem('mockVerificationSubmissions', JSON.stringify(updatedLocalVer));
+      
+      // Send notification to vendor dashboard
+      const sub = updatedSubs.find(k => k._id === id);
+      const vendorEmail = sub?.email || 'vendor@example.com';
+            const vendorNotifMessage = status === 'Approved'
+        ? `Your business verification has been approved.`
+        : status === 'Under Review'
+        ? `Your business verification is now under review. We will notify you once a decision is made.`
+        : `Your business verification has been rejected. Reason: ${currentRemarks || 'Please resubmit with correct documents.'}`;
+      
+      const vendorNotif = {
+        _id: `verif_notif_${Date.now()}`,
+        message: vendorNotifMessage,
+        type: status === 'Approved' ? 'success' : status === 'Under Review' ? 'info' : 'error',
+        createdAt: new Date().toISOString(),
+        read: false
+      };
+      const existingVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+      localStorage.setItem('mockVendorNotifications', JSON.stringify([vendorNotif, ...existingVendorNotifs]));
+      
+      alert(`✅ Business Verification status set to ${status} successfully! Vendor has been notified.`);
     } catch (error) {
       alert('Error updating Business Verification status');
     }
@@ -5856,7 +5902,8 @@ const AdminDashboard = ({
                     </div>
                     <span className={`px-4 py-2 rounded-full font-bold text-xs ${
                       sub.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-                      sub.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
+                      sub.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' :
+                      sub.status === 'Under Review' ? 'bg-blue-50 text-blue-600' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
                     }`}>
                       Verification Status: {sub.status}
                     </span>
@@ -5885,6 +5932,39 @@ const AdminDashboard = ({
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open ID URL</div>
                       </a>
                     </div>
+
+                  {/* New Business Fields */}
+                  {sub.businessAddress && (
+                    <div className="border border-[#D4A373]/20 rounded-2xl p-5 bg-[#F8F5F0]/50">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Business Address</p>
+                      <p className="text-sm text-gray-700">{sub.businessAddress}</p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {sub.gstCertificateUrl && (
+                      <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">GST Certificate</p>
+                        <a href={sub.gstCertificateUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
+                          <img src={sub.gstCertificateUrl} alt="GST Certificate" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open GST Certificate</div>
+                        </a>
+                      </div>
+                    )}
+                    {sub.businessLicenseUrl && (
+                      <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
+                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Business License</p>
+                        <a href={sub.businessLicenseUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
+                          <img src={sub.businessLicenseUrl} alt="Business License" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open Business License</div>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address Proof (GST/Utility Bill)</p>
                       <a href={sub.addressProofUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
@@ -5892,6 +5972,33 @@ const AdminDashboard = ({
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open Address URL</div>
                       </a>
                     </div>
+                  </div>
+
+                  {/* Bank Details Section */}
+                  {sub.bankDetails && sub.bankDetails.accountNumber && (
+                    <div className="border border-[#D4A373]/20 rounded-2xl p-5 bg-[#F8F5F0]/50">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Bank Account Details</p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div>
+                          <p className="font-bold text-gray-400 uppercase tracking-wider">Account Number</p>
+                          <p className="font-extrabold text-gray-800 mt-1">{sub.bankDetails.accountNumber}</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-400 uppercase tracking-wider">IFSC Code</p>
+                          <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.bankDetails.ifscCode}</p>
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-400 uppercase tracking-wider">Bank Name</p>
+                          <p className="font-extrabold text-gray-800 mt-1">{sub.bankDetails.bankName}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Submission Date */}
+                  <div className="text-xs text-gray-400 font-medium flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Submitted: {new Date(sub.submittedAt || sub.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </div>
 
                   {sub.adminRemarks && (
@@ -5904,8 +6011,18 @@ const AdminDashboard = ({
                     <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Evaluation Remarks / Feedback</label>
                     <textarea rows={2} placeholder="Enter remarks regarding verification approval or rejection..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#8B5E3C]" />
                     <div className="flex gap-4">
-                      <button onClick={() => handleVerifyBusiness(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Verification</button>
-                      <button onClick={() => handleVerifyBusiness(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject Verification</button>
+                      {(sub.status === 'Submitted' || sub.status === 'Pending' || sub.status === 'Under Review') && (
+                        <>
+                          <button onClick={() => handleVerifyBusiness(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Verification</button>
+                          <button onClick={() => handleVerifyBusiness(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject Verification</button>
+                          {(sub.status === 'Submitted' || sub.status === 'Pending') && (
+                            <button onClick={() => handleVerifyBusiness(sub._id, 'Under Review')} className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-xs shadow-md transition-all">Mark Under Review</button>
+                          )}
+                        </>
+                      )}
+                      {sub.status !== 'Submitted' && sub.status !== 'Pending' && sub.status !== 'Under Review' && (
+                        <span className="text-xs text-gray-400 italic">No further actions available (Verification is {sub.status})</span>
+                      )}
                     </div>
                   </div>
                 </div>

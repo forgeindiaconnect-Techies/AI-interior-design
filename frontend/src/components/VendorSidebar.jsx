@@ -23,7 +23,7 @@ const V = {
   iconColor:   '#ffffff',
 };
 
-const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }) => {
+const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0, verificationStatus }) => {
   // Collapsible groups state
   const [openGroups, setOpenGroups] = useState({
     products: true,
@@ -40,7 +40,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
     }));
   };
 
-  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral, isVerified }) => {
     const isActive = activeTab === tab;
     return (
       <button
@@ -69,6 +69,14 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
         <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? V.activeText : '#9CA3AF' }} />
           {name}
+          {isVerified && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 2,
+              backgroundColor: '#2A9D8F', color: '#fff',
+              fontSize: 8, fontWeight: 800, padding: '1px 5px',
+              borderRadius: 9999, lineHeight: '14px',
+            }}>✓</span>
+          )}
         </span>
         {badge > 0 && (
           <span style={{
@@ -181,7 +189,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
             {openGroups[group] && (
               <div className="section-border" style={{ borderLeft: `1px solid ${V.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {items.map(item => (
-                  <NavItem key={item.tab} {...item} />
+                  <NavItem key={item.tab} {...item} isVerified={item.tab === 'verification' && verificationStatus === 'Approved'} />
                 ))}
               </div>
             )}

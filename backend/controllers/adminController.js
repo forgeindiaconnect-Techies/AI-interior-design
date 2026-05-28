@@ -1627,24 +1627,28 @@ exports.updateVerificationStatus = async (req, res) => {
     if (vendor) {
       if (status === 'Approved') {
         vendor.accountActivationStatus = 'Store Setup Pending';
-      } else {
+        vendor.isVerified = true;
+        vendor.verificationStatus = 'Approved';
+        await Notification.create({ userId: vendor.userId, message: 'Your business verification has been approved.' });
+      } else if (status === 'Under Review') {
+        vendor.accountActivationStatus = 'Under Review';
+        vendor.verificationStatus = 'Under Review';
+        await Notification.create({ userId: vendor.userId, message: 'Your business verification is now under review. We will notify you once a decision is made.' });
+      } else if (status === 'Rejected') {
         vendor.accountActivationStatus = 'Rejected';
+        vendor.verificationStatus = 'Rejected';
+        await Notification.create({ userId: vendor.userId, message: 'Your business verification has been rejected. Reason: ' + (adminRemarks || 'Please resubmit with correct documents.') });
       }
       await vendor.save();
-      await Notification.create({ userId: vendor.userId, message: `Your business verification has been ${status.toUpperCase()}. Remarks: ${adminRemarks}` });
     }
 
-    await AdminLog.create({ adminId: req.user.id, action: `Updated business verification status to ${status} for vendor ${vendor?.companyName}` });
+    await AdminLog.create({ adminId: req.user.id, action: 'Updated business verification status to ' + status + ' for vendor ' + (vendor?.companyName || 'Unknown') });
 
     res.status(200).json({ success: true, data: verification });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-// @desc    Get all vendor Store Setup details
-// @route   GET /api/admin/store-approvals
-// @access  Private (Admin)
 exports.getAllStoreApprovals = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1) {

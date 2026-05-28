@@ -17,6 +17,7 @@ const DashboardLayout = ({ children }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [selectedNotif, setSelectedNotif] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState('Not Submitted');
 
   const profileRef = useRef(null);
   const notifRef = useRef(null);
@@ -90,6 +91,17 @@ const DashboardLayout = ({ children }) => {
     return () => clearInterval(interval);
   }, [user?.role]);
 
+  // Fetch verification status for vendor sidebar badge
+  useEffect(() => {
+    if (isVendor) {
+      const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const current = localVer.find(k => k.email === user?.email || k.email === 'vendor@example.com');
+      if (current?.status) {
+        setVerificationStatus(current.status);
+      }
+    }
+  }, [user?.email, isVendor]);
+
   const handleMarkAllRead = () => {
     const key = getNotifKey();
     const updated = notifications.map(n => ({ ...n, read: true }));
@@ -119,7 +131,7 @@ const DashboardLayout = ({ children }) => {
 
   const renderSidebar = () => {
     if (isAdmin) return <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
-    if (isVendor) return <VendorSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
+    if (isVendor) return <VendorSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} verificationStatus={verificationStatus} />;
     return <UserSidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={handleLogout} unreadNotifCount={unreadCount} />;
   };
 

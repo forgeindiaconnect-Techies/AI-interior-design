@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const Vendor = require('../models/Vendor');
 const Notification = require('../models/Notification');
+const VendorVerification = require('../models/VendorVerification');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
@@ -46,23 +47,28 @@ exports.register = async (req, res) => {
     });
 
     if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(role)) {
-      await Vendor.create({
+      const vendor = await Vendor.create({
         userId: user._id,
-        companyName: companyName || `${name}'s Business`,
+        companyName: companyName || ${name}'s Business,
         businessType: businessType || (role === 'vendor' ? 'seller' : role)
       });
-      
+
+      await VendorVerification.create({
+        vendorId: vendor._id,
+        status: 'Not Submitted'
+      });
+
       // Notify Admin about new partner
       await Notification.create({
         isAdmin: true,
-        message: `New Partner Application: ${companyName || name} registered as a ${role.toUpperCase()}.`,
-        type: 'warning' // warning/alert color for attention needed
+        message: New Partner Application:  registered as a .,
+        type: 'warning'
       });
     } else {
       // Notify Admin about normal user
       await Notification.create({
         isAdmin: true,
-        message: `New User Registration: ${name} (${email}) joined the platform.`,
+        message: New User Registration:  () joined the platform.,
         type: 'info'
       });
     }
@@ -95,7 +101,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
     }
 
-    // Only treat exact demo role emails as mock (user@, vendor@, admin@, etc.)
     const validRoles = ['user', 'vendor', 'admin', 'manufacturer', 'delivery', 'installation'];
     const prefix = email.split('@')[0];
     const isDemoEmail = email.endsWith('@example.com') && validRoles.includes(prefix);

@@ -208,7 +208,16 @@ exports.rejectRequest = async (req, res) => {
 exports.submitVerification = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      mockVerification[req.user.id] = { ...req.body, status: 'Pending', submittedAt: new Date() };
+      const existing = mockVerification[req.user.id];
+      if (existing && (existing.status === 'Approved' || existing.status === 'Under Review')) {
+        return res.status(409).json({ success: false, message: 'Verification already ' + existing.status.toLowerCase() + '. Cannot resubmit.' });
+      }
+      mockVerification[req.user.id] = {
+        ...req.body,
+        status: 'Pending',
+        submittedAt: new Date(),
+        updatedAt: new Date()
+      };
       return res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: mockVerification[req.user.id] });
     }
 
@@ -216,19 +225,42 @@ exports.submitVerification = async (req, res) => {
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     let verification = await VendorVerification.findOne({ vendorId: vendor._id });
+
+    if (verification && (verification.status === 'Approved' || verification.status === 'Under Review')) {
+      return res.status(409).json({ success: false, message: 'Verification already ' + verification.status.toLowerCase() + '. Cannot resubmit.' });
+    }
+
+    const fields = {
+      businessName: req.body.businessName,
+      ownerName: req.body.ownerName,
+      phone: req.body.phone,
+      email: req.body.email,
+      gstNumber: req.body.gstNumber,
+      panNumber: req.body.panNumber,
+      businessAddress: req.body.businessAddress,
+      idProofUrl: req.body.idProofUrl,
+      addressProofUrl: req.body.addressProofUrl,
+      gstCertificateUrl: req.body.gstCertificateUrl,
+      businessLicenseUrl: req.body.businessLicenseUrl,
+      bankDetails: req.body.bankDetails,
+      status: 'Pending',
+      adminRemarks: '',
+      submittedAt: new Date(),
+      updatedAt: new Date()
+    };
+
     if (verification) {
-      Object.assign(verification, req.body);
-      verification.status = 'Pending';
+      Object.assign(verification, fields);
       await verification.save();
     } else {
-      verification = await VendorVerification.create({ vendorId: vendor._id, ...req.body, status: 'Pending' });
+      verification = await VendorVerification.create({ vendorId: vendor._id, ...fields });
     }
 
     vendor.verificationStatus = 'Submitted';
     vendor.accountActivationStatus = 'Verification Submitted';
     await vendor.save();
 
-    await Notification.create({ isAdmin: true, message: `Vendor ${vendor.companyName} submitted business verification details.` });
+    await Notification.create({ isAdmin: true, message: Vendor  submitted business verification details. });
 
     res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: verification });
   } catch (error) {
@@ -240,6 +272,21 @@ exports.submitVerification = async (req, res) => {
 // @route   GET /api/vendor/verification
 // @access  Private (Vendor)
 exports.getVerificationStatus = async (req, res) => {
+  try {
+    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
+      const data = mockVerification[req.user.id] || { status: 'Not Submitted' };
+      return res.status(200).json({ success: true, data });
+    }
+
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const verification = await VendorVerification.findOne({ vendorId: vendor._id });
+    res.status(200).json({ success: true, data: verification || { status: 'Not Submitted' } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};exports.getVerificationStatus = async (req, res) => {
   try {
     if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
       return res.status(200).json({ success: true, data: mockVerification[req.user.id] || { status: 'Not Submitted' } });
@@ -312,3 +359,4 @@ exports.getStoreSetupStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

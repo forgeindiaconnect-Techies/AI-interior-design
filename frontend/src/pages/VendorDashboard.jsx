@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -117,6 +117,9 @@ const VendorDashboard = ({
   const [verifyPan, setVerifyPan] = useState('');
   const [verifyIdProof, setVerifyIdProof] = useState('');
   const [verifyAddressProof, setVerifyAddressProof] = useState('');
+  const [verifyBusinessAddress, setVerifyBusinessAddress] = useState('');
+  const [verifyGstCertificate, setVerifyGstCertificate] = useState('');
+  const [verifyBusinessLicense, setVerifyBusinessLicense] = useState('');
 
   // Store Setup Form States
   const [storeBrandName, setStoreBrandName] = useState('');
@@ -1531,18 +1534,29 @@ const VendorDashboard = ({
   // Verification and Store Setup Handlers
   const handleSubmitVerification = async (e) => {
     e.preventDefault();
+    const isUpdate = verificationDetails && (verificationDetails.status === 'Submitted' || verificationDetails.status === 'Approved');
     const payload = {
-      _id: 'ver_' + Date.now(),
+      _id: isUpdate ? verificationDetails._id : 'ver_' + Date.now(),
+      vendorId: { _id: user?._id || user?.id || 'mock_vendor_id_123', companyName: user?.companyName || verifyBusinessName || 'Vendor' },
       businessName: verifyBusinessName,
       ownerName: verifyOwnerName,
       phone: verifyPhone,
       email: user?.email || verifyEmail || 'vendor@example.com',
       gstNumber: verifyGst,
       panNumber: verifyPan,
+      businessAddress: verifyBusinessAddress,
       idProofUrl: verifyIdProof || 'https://images.unsplash.com/photo-1554774853-aae0a22c8aa4?w=600',
       addressProofUrl: verifyAddressProof || 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=600',
+      gstCertificateUrl: verifyGstCertificate || '',
+      businessLicenseUrl: verifyBusinessLicense || '',
+      bankDetails: {
+        accountNumber: '',
+        ifscCode: '',
+        bankName: ''
+      },
       status: 'Submitted',
-      createdAt: new Date().toISOString()
+      adminRemarks: '',
+      submittedAt: new Date().toISOString()
     };
 
     const localVerification = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
@@ -1550,6 +1564,20 @@ const VendorDashboard = ({
     localStorage.setItem('mockVerificationSubmissions', JSON.stringify([payload, ...filteredVerification]));
 
     setVerificationDetails(payload);
+
+    // Reset form fields so vendor can submit for another business
+    setVerifyBusinessName('');
+    setVerifyOwnerName('');
+    setVerifyPhone('');
+    setVerifyEmail('');
+    setVerifyGst('');
+    setVerifyPan('');
+    setVerifyIdProof('');
+    setVerifyAddressProof('');
+    setVerifyBusinessAddress('');
+    setVerifyGstCertificate('');
+    setVerifyBusinessLicense('');
+
     alert('✅ Business verification details submitted successfully for review.');
   };
 
@@ -1622,7 +1650,7 @@ const VendorDashboard = ({
               <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <p className="text-white/70 text-xs font-bold uppercase tracking-widest mb-1">Vendor & Partner Portal</p>
-                  <h1 className="font-['Playfair_Display'] font-extrabold text-3xl md:text-4xl">Welcome back, {profile?.companyName || 'Partner'}! 👋</h1>
+                  <h1 className="font-['Playfair_Display'] font-extrabold text-3xl md:text-4xl">Welcome back, {profile?.companyName || 'Partner'}! {verificationDetails?.status === 'Approved' && <span className="ml-2 inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-500 text-white text-xs font-bold rounded-full"><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>Verified</span>} 👋</h1>
                   <p className="text-white/80 text-sm mt-2">Your store is online and visible. {newRequestsCount > 0 && `You have ${newRequestsCount} new design requests.`}</p>
                 </div>
                 <div className="text-right bg-white/10 backdrop-blur-sm px-5 py-3 rounded-2xl border border-white/20">
@@ -3425,102 +3453,173 @@ const VendorDashboard = ({
             <div className={`px-4 py-2 rounded-full font-bold text-xs ${
               verificationDetails?.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
               verificationDetails?.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' :
-              verificationDetails?.status === 'Submitted' ? 'bg-[#E9C46A]/10 text-[#8B5E3C]' : 'bg-gray-100 text-gray-500'
+              verificationDetails?.status === 'Under Review' ? 'bg-blue-50 text-blue-600' :
+              verificationDetails?.status === 'Submitted' || verificationDetails?.status === 'Pending' ? 'bg-[#E9C46A]/10 text-[#8B5E3C]' : 'bg-gray-100 text-gray-500'
             }`}>
               Verification Status: {verificationDetails?.status || 'Not Submitted'}
             </div>
           </div>
 
-          {verificationDetails?.adminRemarks && (
-            <div className="p-4 bg-gray-50 border-l-4 border-[#E76F51] rounded-r-xl">
-              <p className="text-xs font-bold text-gray-700">Admin Remarks:</p>
-              <p className="text-xs text-gray-600 mt-1">{verificationDetails.adminRemarks}</p>
+          {/* Approval/Rejection Banner */}
+          {verificationDetails?.status === 'Approved' && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-emerald-800 text-base">🎉 Business Verification Approved!</h3>
+                <p className="text-sm text-emerald-700 mt-1">Your business has been verified by our admin team. Your store is now live and ready to accept orders.</p>
+                {verificationDetails.adminRemarks && (
+                  <p className="text-xs text-emerald-600 mt-2 font-medium">Admin Note: {verificationDetails.adminRemarks}</p>
+                )}
+              </div>
             </div>
           )}
 
-          {(!verificationDetails || verificationDetails.status === 'Not Submitted' || verificationDetails.status === 'Rejected') ? (
-            <form onSubmit={handleSubmitVerification} className="space-y-6">
+          {verificationDetails?.status === 'Rejected' && (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center shrink-0">
+                <X className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-red-800 text-base">❌ Verification Rejected</h3>
+                <p className="text-sm text-red-700 mt-1">Your verification was rejected. Please review the admin remarks below, correct the issues and resubmit.</p>
+                {verificationDetails.adminRemarks && (
+                  <p className="text-xs text-red-600 mt-2 font-medium bg-red-100 p-2 rounded-lg">Reason: {verificationDetails.adminRemarks}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {(verificationDetails?.status === 'Submitted' || verificationDetails?.status === 'Pending') && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-amber-800 text-base">Pending Review</h3>
+                <p className="text-sm text-amber-700 mt-1">Your verification documents have been submitted and are pending review. You'll be notified once a decision is made.</p>
+              </div>
+            </div>
+          )}
+
+          {verificationDetails?.status === 'Under Review' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 flex items-start gap-4">
+              <div className="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center shrink-0">
+                <AlertCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-blue-800 text-base">Under Review</h3>
+                <p className="text-sm text-blue-700 mt-1">Your verification is currently being reviewed by our admin team. This usually takes 1-2 business days.</p>
+              </div>
+            </div>
+          )}          {/* Always show the form so vendor can fill manually anytime */}
+          <form onSubmit={handleSubmitVerification} className="space-y-6">
+            <div className="flex items-center justify-between">
               <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800">Business & Owner Details</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Registered Business Name</label>
-                  <input type="text" required value={verifyBusinessName} onChange={(e) => setVerifyBusinessName(e.target.value)} placeholder="Artisan Corp" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Owner's Full Name</label>
-                  <input type="text" required value={verifyOwnerName} onChange={(e) => setVerifyOwnerName(e.target.value)} placeholder="John Doe" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
+              {verificationDetails && verificationDetails.status === 'Rejected' && (
+                <span className="text-[10px] text-red-600 font-medium bg-red-50 px-3 py-1 rounded-full">Please fix the issues and resubmit</span>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Registered Business Name</label>
+                <input type="text" required value={verifyBusinessName} onChange={(e) => setVerifyBusinessName(e.target.value)} placeholder="Artisan Corp" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Phone Number</label>
-                  <input type="tel" required value={verifyPhone} onChange={(e) => setVerifyPhone(e.target.value)} placeholder="+91 9876543210" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Email</label>
-                  <input type="email" required value={verifyEmail} onChange={(e) => setVerifyEmail(e.target.value)} placeholder="vendor@example.com" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-              </div>
-
-              <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800 pt-4">Tax & Document Verification</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">GSTIN Number</label>
-                  <input type="text" required value={verifyGst} onChange={(e) => setVerifyGst(e.target.value)} placeholder="22AAAAA0000A1Z0" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">PAN Number</label>
-                  <input type="text" required value={verifyPan} onChange={(e) => setVerifyPan(e.target.value)} placeholder="ABCDE1234F" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Aadhaar / ID Proof Image URL</label>
-                  <input type="text" required value={verifyIdProof} onChange={(e) => setVerifyIdProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Address Proof Image URL</label>
-                  <input type="text" required value={verifyAddressProof} onChange={(e) => setVerifyAddressProof(e.target.value)} placeholder="https://images.unsplash.com/photo-..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                </div>
-              </div>
-
-              <button type="submit" className="px-8 py-4 bg-[#2A9D8F] text-white rounded-xl font-bold hover:bg-[#2A9D8F]/90 transition-all shadow-md mt-4">Submit Business Verification</button>
-            </form>
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase">Business Name</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{verificationDetails.businessName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase">Owner Name</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1">{verificationDetails.ownerName}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase">GSTIN Number</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{verificationDetails.gstNumber}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase">PAN Number</p>
-                  <p className="text-sm font-bold text-gray-800 mt-1 uppercase">{verificationDetails.panNumber}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-bold text-gray-500">Aadhaar / ID Proof</p>
-                  <img src={verificationDetails.idProofUrl} alt="ID Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
-                </div>
-                <div className="border border-gray-200 rounded-2xl p-4 space-y-2">
-                  <p className="text-xs font-bold text-gray-500">Address Proof</p>
-                  <img src={verificationDetails.addressProofUrl} alt="Address Proof" className="w-full h-40 object-cover rounded-xl border border-gray-100" />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Owner's Full Name</label>
+                <input type="text" required value={verifyOwnerName} onChange={(e) => setVerifyOwnerName(e.target.value)} placeholder="John Doe" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
               </div>
             </div>
-          )}
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Address</label>
+              <textarea rows={3} value={verifyBusinessAddress} onChange={(e) => setVerifyBusinessAddress(e.target.value)} placeholder="Enter your registered business address..." className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]"></textarea>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Phone Number</label>
+                <input type="tel" required value={verifyPhone} onChange={(e) => setVerifyPhone(e.target.value)} placeholder="+91 9876543210" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Email</label>
+                <input type="email" required value={verifyEmail} onChange={(e) => setVerifyEmail(e.target.value)} placeholder="vendor@example.com" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+              </div>
+            </div>
+
+            <h3 className="font-['Playfair_Display'] font-bold text-lg text-gray-800 pt-4">Tax & Document Verification</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">GSTIN Number</label>
+                <input type="text" required value={verifyGst} onChange={(e) => setVerifyGst(e.target.value)} placeholder="22AAAAA0000A1Z0" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">PAN Number</label>
+                <input type="text" required value={verifyPan} onChange={(e) => setVerifyPan(e.target.value)} placeholder="ABCDE1234F" className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] uppercase" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Aadhaar / ID Proof Image</label>
+                <input type="file" accept="image/*" required={!verifyIdProof} onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setVerifyIdProof(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }} className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer" />
+                {verifyIdProof && <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ ID Proof ready</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Address Proof Image</label>
+                <input type="file" accept="image/*" required={!verifyAddressProof} onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setVerifyAddressProof(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }} className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer" />
+                {verifyAddressProof && <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ Address Proof ready</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">GST Certificate Upload</label>
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setVerifyGstCertificate(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }} className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer" />
+                {verifyGstCertificate && <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ GST Certificate ready</p>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business License Upload</label>
+                <input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => setVerifyBusinessLicense(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }} className="w-full p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer" />
+                {verifyBusinessLicense && <p className="text-[10px] text-emerald-600 font-bold mt-1">✓ Business License ready</p>}
+              </div>
+            </div>
+
+            <button type="submit" disabled={verificationDetails?.status === 'Under Review'} className={`px-8 py-4 rounded-xl font-bold shadow-md mt-4 transition-all ${verificationDetails?.status === 'Under Review' ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-[#2A9D8F] text-white hover:bg-[#2A9D8F]/90'}`}>
+              {verificationDetails?.status === 'Under Review' ? 'Verification Under Review' : verificationDetails?.status === 'Approved' ? 'Update & Resubmit Verification' : verificationDetails?.status === 'Rejected' ? 'Resubmit Verification' : 'Submit Business Verification'}
+            </button>
+          </form>
         </div>
       )}
 
