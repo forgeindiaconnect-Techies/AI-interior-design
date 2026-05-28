@@ -215,3 +215,39 @@ body {
 .admin-sidebar .brand-text { color: #1F2937 !important; }
 .admin-sidebar .brand-accent { color: #1D3557 !important; }
 
+/* =========================================
+   ANIMATIONS FOR HERO VIDEO SIMULATION
+   ========================================= */
+@keyframes scan {
+  0% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(500px); opacity: 0; }
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.8) translateY(10px); }
+  50% { transform: scale(1.05) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-scan { animation: scan 2.5s ease-in-out infinite; }
+.animate-popIn { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+.animate-slideUp { animation: slideUp 0.6s ease-out forwards; }
+.animate-scaleUp { animation: scaleUp 0.8s ease-out forwards; }
+.animate-spin-slow { animation: spin-slow 4s linear infinite; }
+.delay-300 { animation-delay: 300ms; }
+.delay-500 { animation-delay: 500ms; }
+.delay-700 { animation-delay: 700ms; }
+.delay-1000 { animation-delay: 1000ms; }

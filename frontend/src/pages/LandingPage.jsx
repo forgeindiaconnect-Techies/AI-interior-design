@@ -21,6 +21,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import axios from 'axios';
+import HeroVideoSimulation from '../components/HeroVideoSimulation';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -197,20 +198,7 @@ const LandingPage = () => {
           </div>
           <div className="lg:col-span-5 relative">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#8B5E3C]/20 to-[#D4A373]/30 rounded-3xl filter blur-2xl transform scale-105 -z-10" />
-            <div className="relative bg-white p-4 rounded-3xl shadow-2xl border border-white/60">
-              <img 
-                src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=80" 
-                alt="Luxury Living Room AI Designed" 
-                className="w-full h-[450px] object-cover rounded-2xl shadow-inner"
-              />
-              <div className="absolute bottom-8 left-8 right-8 bg-[#2F3E46]/90 backdrop-blur-md p-6 rounded-2xl text-white shadow-xl border border-white/10 flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-[#D4A373] uppercase tracking-wider font-bold mb-1">AI Styling Output</p>
-                  <p className="font-['Playfair_Display'] text-lg font-semibold">Scandinavian Luxury Living</p>
-                </div>
-                <span className="bg-[#2A9D8F] text-white px-3 py-1 rounded-full text-xs font-bold">Ready to Order</span>
-              </div>
-            </div>
+            <HeroVideoSimulation />
           </div>
         </div>
       </section>
