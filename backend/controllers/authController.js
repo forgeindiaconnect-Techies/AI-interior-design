@@ -49,7 +49,7 @@ exports.register = async (req, res) => {
     if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(role)) {
       const vendor = await Vendor.create({
         userId: user._id,
-        companyName: companyName || ${name}'s Business,
+        companyName: companyName || `${name}'s Business`,
         businessType: businessType || (role === 'vendor' ? 'seller' : role)
       });
 
@@ -61,14 +61,14 @@ exports.register = async (req, res) => {
       // Notify Admin about new partner
       await Notification.create({
         isAdmin: true,
-        message: New Partner Application:  registered as a .,
+        message: "New Partner Application: registered as a vendor.",
         type: 'warning'
       });
     } else {
       // Notify Admin about normal user
       await Notification.create({
         isAdmin: true,
-        message: New User Registration:  () joined the platform.,
+        message: `New User Registration: ${email} joined the platform.`,
         type: 'info'
       });
     }
