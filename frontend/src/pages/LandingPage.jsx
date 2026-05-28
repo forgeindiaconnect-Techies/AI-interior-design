@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Wand2, 
@@ -13,7 +13,12 @@ import {
   UploadCloud,
   ShieldCheck,
   Clock,
-  ThumbsUp
+  ThumbsUp,
+  Image as ImageIcon,
+  Loader,
+  Camera,
+  Activity,
+  ArrowLeft
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -25,6 +30,72 @@ const LandingPage = () => {
   // Contact form state
   const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
   const [contactSuccess, setContactSuccess] = useState(false);
+
+  // AI Room Designer State
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [aiState, setAiState] = useState('idle'); // idle, analyzing, generating, complete
+  const [analysisStep, setAnalysisStep] = useState('');
+  const [aiResultImage, setAiResultImage] = useState(null);
+  const fileInputRef = useRef(null);
+  const [activeDemoTab, setActiveDemoTab] = useState('split'); // split, original, ai
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target.result);
+        startAiAnalysis();
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const startAiAnalysis = () => {
+    setAiState('analyzing');
+    const steps = [
+      'Scanning room dimensions and layout...',
+      'Extracting existing furniture structures...',
+      'Analyzing lighting conditions...',
+      'Matching modern interior styles...',
+      'Rendering luxury materials and textures...',
+      'Finalizing high-resolution AI output...'
+    ];
+    
+    let stepIndex = 0;
+    setAnalysisStep(steps[0]);
+
+    const interval = setInterval(() => {
+      stepIndex++;
+      if (stepIndex < steps.length) {
+        setAnalysisStep(steps[stepIndex]);
+      } else {
+        clearInterval(interval);
+        // Randomly select one of the pre-generated images
+        const mockResults = [
+          '/ai-results/living_room.png',
+          '/ai-results/bedroom.png',
+          '/ai-results/kitchen.png'
+        ];
+        setAiResultImage(mockResults[Math.floor(Math.random() * mockResults.length)]);
+        setAiState('complete');
+      }
+    }, 1500); // Takes about 9 seconds total
+  };
+
+  const resetAiDesigner = () => {
+    setUploadedImage(null);
+    setAiState('idle');
+    setAiResultImage(null);
+    setAnalysisStep('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleUseDesign = () => {
+    // Save flag to local storage so post-login they can be routed to AI Studio
+    localStorage.setItem('pendingAiDesign', 'true');
+    navigate('/register');
+  };
 
   const handleContactSubmit = (e) => {
     e.preventDefault();
@@ -190,24 +261,123 @@ const LandingPage = () => {
             </div>
           </div>
           
-          {/* UPLOAD CTA BOX */}
-          <div className="bg-[#F8F5F0] p-8 lg:p-12 rounded-3xl border-2 border-dashed border-[#8B5E3C]/40 text-center space-y-6 shadow-xl relative overflow-hidden group">
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#D4A373]/5 to-[#8B5E3C]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-md border border-[#D4A373]/30 text-[#8B5E3C] group-hover:scale-110 transition-transform">
-              <UploadCloud className="w-10 h-10" />
-            </div>
-            <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937]">Upload Your Room Photo</h3>
-            <p className="text-[#6B7280] text-sm max-w-md mx-auto leading-relaxed">
-              Snap a picture of your kitchen, living room, or bedroom. Our AI will instantly style it with luxury furniture and custom materials.
-            </p>
-            <button 
-              onClick={() => navigate('/login')}
-              className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 z-10 relative"
-            >
-              <Sparkles className="w-5 h-5" />
-              <span>Try AI Stylist Now</span>
-            </button>
-            <p className="text-xs text-[#6B7280] pt-2">No credit card required • Free trial available</p>
+          {/* AI ROOM DESIGNER INTERACTIVE DEMO */}
+          <div className="bg-[#F8F5F0] p-6 lg:p-10 rounded-3xl border-2 border-[#8B5E3C]/20 shadow-xl relative overflow-hidden group">
+            {aiState === 'idle' && (
+              <div className="text-center space-y-6">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#D4A373]/5 to-[#8B5E3C]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-24 h-24 bg-white rounded-full flex items-center justify-center mx-auto shadow-md border-2 border-dashed border-[#8B5E3C]/50 text-[#8B5E3C] hover:bg-[#8B5E3C]/5 cursor-pointer hover:scale-105 transition-all"
+                >
+                  <Camera className="w-10 h-10" />
+                </div>
+                <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937]">Upload Your Room Photo</h3>
+                <p className="text-[#6B7280] text-sm max-w-md mx-auto leading-relaxed">
+                  Snap a picture of your kitchen, living room, or bedroom. Our AI will instantly style it with luxury furniture and custom materials.
+                </p>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageUpload} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-8 py-4 rounded-full font-bold shadow-lg hover:shadow-xl transition-all inline-flex items-center gap-2 z-10 relative"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  <span>Try AI Stylist Now</span>
+                </button>
+                <p className="text-xs text-[#6B7280] pt-2">No credit card required • Free trial available</p>
+              </div>
+            )}
+
+            {aiState === 'analyzing' && (
+              <div className="text-center space-y-8 py-10">
+                <div className="relative w-24 h-24 mx-auto">
+                  <div className="absolute inset-0 border-4 border-[#8B5E3C]/20 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-[#8B5E3C] rounded-full border-t-transparent animate-spin"></div>
+                  <Wand2 className="w-8 h-8 text-[#8B5E3C] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#1F2937]">AI is Designing...</h3>
+                  <p className="text-[#8B5E3C] font-semibold text-sm animate-pulse">{analysisStep}</p>
+                </div>
+                <div className="w-full max-w-xs mx-auto bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-[#8B5E3C] h-full rounded-full w-full animate-pulse transition-all duration-1000"></div>
+                </div>
+              </div>
+            )}
+
+            {aiState === 'complete' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#1F2937]">AI Redesign Complete</h3>
+                  <button onClick={resetAiDesigner} className="text-sm text-gray-500 hover:text-[#8B5E3C] font-bold flex items-center gap-1">
+                    <ArrowLeft className="w-4 h-4" /> Start Over
+                  </button>
+                </div>
+
+                {/* View Toggles */}
+                <div className="flex bg-white rounded-xl p-1 shadow-sm border border-gray-100 max-w-xs mx-auto mb-6">
+                  <button onClick={() => setActiveDemoTab('original')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg ${activeDemoTab === 'original' ? 'bg-[#8B5E3C] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>Original</button>
+                  <button onClick={() => setActiveDemoTab('split')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg ${activeDemoTab === 'split' ? 'bg-[#8B5E3C] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>Split View</button>
+                  <button onClick={() => setActiveDemoTab('ai')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg ${activeDemoTab === 'ai' ? 'bg-[#8B5E3C] text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}>AI Result</button>
+                </div>
+
+                {/* Image Display */}
+                <div className="relative rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-gray-100 h-64 lg:h-80 w-full flex items-center justify-center">
+                  {activeDemoTab === 'original' && (
+                    <img src={uploadedImage} alt="Original Room" className="w-full h-full object-cover" />
+                  )}
+                  {activeDemoTab === 'ai' && (
+                    <img src={aiResultImage} alt="AI Redesign" className="w-full h-full object-cover animate-fadeIn" />
+                  )}
+                  {activeDemoTab === 'split' && (
+                    <div className="absolute inset-0 flex w-full h-full">
+                      <div className="w-1/2 h-full overflow-hidden border-r-2 border-white/50 relative group">
+                        <img src={uploadedImage} alt="Original" className="w-[200%] h-full object-cover max-w-none origin-left" />
+                        <span className="absolute bottom-3 left-3 bg-black/60 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-sm">Before</span>
+                      </div>
+                      <div className="w-1/2 h-full overflow-hidden relative group">
+                        <img src={aiResultImage} alt="AI" className="w-[200%] h-full object-cover max-w-none -ml-[100%] origin-left" />
+                        <span className="absolute bottom-3 right-3 bg-[#8B5E3C]/90 text-white text-[10px] font-bold px-2 py-1 rounded-md backdrop-blur-sm shadow-md flex items-center gap-1"><Sparkles className="w-3 h-3"/> After</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Design Specs */}
+                <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm text-left grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Detected Style</span>
+                    <strong className="text-sm text-[#1F2937]">Modern Luxury (AI Suggestion)</strong>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Est. Budget</span>
+                    <strong className="text-sm text-[#2A9D8F]">$3,200 - $4,500</strong>
+                  </div>
+                  <div className="col-span-2">
+                    <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Generated Color Palette</span>
+                    <div className="flex gap-2">
+                      {['#F8F5F0', '#1F2937', '#8B5E3C', '#2A9D8F'].map((color, i) => (
+                        <div key={i} className="w-6 h-6 rounded-full shadow-inner border border-gray-200" style={{ backgroundColor: color }} title={color} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={handleUseDesign}
+                  className="w-full bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white py-3.5 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                >
+                  <Activity className="w-4 h-4" />
+                  Request Quotes For This Design
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
