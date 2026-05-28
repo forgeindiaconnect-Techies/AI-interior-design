@@ -409,7 +409,7 @@ const LandingPage = () => {
               </p>
             </div>
             <Link 
-              to="/login" 
+              to="/marketplace" 
               className="inline-flex items-center gap-2 text-[#8B5E3C] hover:text-[#8B5E3C]/80 font-bold text-lg group"
             >
               <span>View Full Marketplace</span>
@@ -466,7 +466,7 @@ const LandingPage = () => {
           <div className="order-2 lg:order-1 relative">
             <div className="absolute inset-0 bg-gradient-to-tr from-[#D4A373]/20 to-[#8B5E3C]/20 rounded-3xl filter blur-2xl transform scale-105 -z-10" />
             <img 
-              src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=800&auto=format&fit=crop&q=80" 
+              src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&auto=format&fit=crop&q=80" 
               alt="Custom Furniture Workshop" 
               className="w-full h-[500px] object-cover rounded-3xl shadow-2xl border border-white/60"
             />
