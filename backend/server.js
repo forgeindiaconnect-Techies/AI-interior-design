@@ -25,7 +25,7 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/cart', require('./routes/cartRoutes'));
 app.use('/api/wishlist', require('./routes/wishlistRoutes'));
 app.use('/api/marketplace-orders', require('./routes/marketplaceOrderRoutes'));
-
+app.use('/api/chat', require('./routes/chatRoutes'));
 app.get('/', (req, res) => res.send('AI Interior Marketplace API Running'));
 
 const PORT = process.env.PORT || 5000;

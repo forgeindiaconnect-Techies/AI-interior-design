@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -113,80 +113,72 @@ const AdminDashboard = ({
     localStorage.setItem('mockContactMessages', JSON.stringify(updated));
   };
 
+  const chatEndRef = useRef(null);
+
+  const loadAdminMessages = () => {
+    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    setAdminDirectMessages(msgs);
+    if (msgs.length > 0 && !selectedMsgUser) {
+      const seenKeys = new Set();
+      const uniqueKeys = [];
+      msgs.forEach(m => {
+        const key = m.userName;
+        if (!seenKeys.has(key)) {
+          seenKeys.add(key);
+          uniqueKeys.push(key);
+        }
+      });
+      if (uniqueKeys.length > 0) {
+        setSelectedMsgUser(uniqueKeys[0]);
+      }
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'messages') {
-      const loadAdminMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
-        setAdminDirectMessages(msgs);
-        if (msgs.length > 0 && !selectedMsgUser) {
-          const seenKeys = new Set();
-          const uniqueKeys = [];
-          msgs.forEach(m => {
-            const key = `${m.userName}|||${m.vendorName}`;
-            if (!seenKeys.has(key)) {
-              seenKeys.add(key);
-              uniqueKeys.push(key);
-            }
-          });
-          if (uniqueKeys.length > 0) {
-            setSelectedMsgUser(uniqueKeys[0]);
-          }
-        }
-      };
       loadAdminMessages();
-      const interval = setInterval(loadAdminMessages, 1000);
-      return () => clearInterval(interval);
+      window.addEventListener('mockChatUpdated', loadAdminMessages);
+      const interval = setInterval(loadAdminMessages, 2500);
+      return () => {
+        window.removeEventListener('mockChatUpdated', loadAdminMessages);
+        clearInterval(interval);
+      };
     }
   }, [activeTab, selectedMsgUser]);
 
-
+  useEffect(() => {
+    if (activeTab === 'messages' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [adminDirectMessages, activeTab, selectedMsgUser]);
 
   const handleSendAdminDirectMessage = (e) => {
     e.preventDefault();
     if (!adminMsgInput.trim() || !selectedMsgUser) return;
 
-    const [selUserName, selVendorName] = selectedMsgUser.includes('|||')
-      ? selectedMsgUser.split('|||')
-      : [selectedMsgUser, 'Artisan Workshop Ltd'];
-
-    const userMsgs = adminDirectMessages.filter(m => m.userName === selUserName && m.vendorName === selVendorName);
+    const selUserName = selectedMsgUser;
+    const userMsgs = adminDirectMessages.filter(m => m.userName === selUserName);
+    const selVendorName = userMsgs.length > 0 && userMsgs[0].vendorName ? userMsgs[0].vendorName : 'Artisan Workshop Ltd';
+    const roomId = userMsgs.length > 0 ? userMsgs[0].roomId : 'unknown_room';
     const userEmail = userMsgs.length > 0 ? userMsgs[0].userEmail : 'user@example.com';
 
     const newMsg = {
       _id: 'adm_' + Date.now(),
-      sender: 'admin',
+      roomId: roomId,
       userName: selUserName,
       userEmail: userEmail,
       vendorName: selVendorName,
+      senderRole: 'admin',
+      senderName: 'Admin Support',
       message: adminMsgInput,
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockDirectMessages', JSON.stringify(updated));
+    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
     setAdminDirectMessages(updated);
     setAdminMsgInput('');
-
-    const notifObj = {
-      _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      message: `[Admin] Reply regarding ${selVendorName}: "${adminMsgInput.substring(0, 30)}..."`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    };
-    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
-
-    const vNotifObj = {
-      _id: `vnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      message: `[Admin] Admin replied to your thread with ${selUserName}: "${adminMsgInput.substring(0, 30)}..."`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    };
-    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([vNotifObj, ...vNotifs]));
   };
 
   const handleSendAdminHelpMessage = (e) => {
@@ -415,6 +407,7 @@ const AdminDashboard = ({
 
     window.addEventListener('storage', syncLocalDataToAdminState);
     window.addEventListener('focus', syncLocalDataToAdminState);
+    window.addEventListener('mockOrdersUpdated', syncLocalDataToAdminState);
     const syncInterval = setInterval(syncLocalDataToAdminState, 3000);
 
     return () => {
@@ -422,6 +415,7 @@ const AdminDashboard = ({
       clearInterval(syncInterval);
       window.removeEventListener('storage', syncLocalDataToAdminState);
       window.removeEventListener('focus', syncLocalDataToAdminState);
+      window.removeEventListener('mockOrdersUpdated', syncLocalDataToAdminState);
     };
   }, []);
 
@@ -8846,6 +8840,149 @@ const AdminDashboard = ({
           </div>
         </div>
       )}
+
+      {/* TAB: ADMIN MESSAGES */}
+      {activeTab === 'messages' && (() => {
+        const uniqueConversations = [];
+        const seen = new Set();
+        adminDirectMessages.forEach(m => {
+          const key = m.userName;
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueConversations.push({
+              key,
+              userName: m.userName,
+              vendorName: m.vendorName || 'Artisan Workshop Ltd',
+              time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              lastMessage: m.message.substring(0, 40) + (m.message.length > 40 ? '...' : '')
+            });
+          }
+        });
+
+        const selUserName = selectedMsgUser;
+        const selectedThreadMsgs = adminDirectMessages.filter(m => m.userName === selUserName);
+        const selVendorName = selectedThreadMsgs.length > 0 && selectedThreadMsgs[0].vendorName ? selectedThreadMsgs[0].vendorName : 'Artisan Workshop Ltd';
+
+        return (
+          <div className="max-w-6xl mx-auto bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden flex h-[650px] animate-fadeIn">
+            {/* Left Panel: Conversations list */}
+            <div className="w-[350px] border-r border-gray-100 flex flex-col bg-gray-50/50">
+              <div className="p-5 border-b border-gray-100 bg-white">
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Admin Chat</h3>
+                <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Oversight & Support</p>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
+                {uniqueConversations.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400 text-xs font-medium">
+                    No active chat threads.
+                  </div>
+                ) : (
+                  uniqueConversations.map(c => (
+                    <button
+                      key={c.key}
+                      onClick={() => setSelectedMsgUser(c.key)}
+                      className={`w-full text-left p-4 rounded-2xl transition-all flex items-start gap-3.5 border ${
+                        selectedMsgUser === c.key 
+                          ? 'bg-[#1D3557]/10 border-[#1D3557]/20 shadow-sm' 
+                          : 'hover:bg-white border-transparent hover:shadow-sm'
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-[#1D3557]/10 text-[#1D3557] flex items-center justify-center font-bold text-sm shrink-0">
+                        {c.userName.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="font-bold text-xs text-[#1F2937] truncate">{c.userName}</h4>
+                          <span className="text-[9px] text-gray-400 font-bold">{c.time}</span>
+                        </div>
+                        <p className="text-[10px] text-[#1D3557] font-semibold truncate mt-1">Vendor: {c.vendorName}</p>
+                        <p className="text-[10px] text-gray-500 truncate mt-0.5 leading-normal">{c.lastMessage}</p>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Right Panel: Chat thread */}
+            <div className="flex-1 flex flex-col bg-white">
+              {selectedMsgUser ? (
+                <>
+                  <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-[#1F2937]">Admin Chat: {selUserName}</h3>
+                      <p className="text-[10px] text-[#1D3557] font-bold uppercase tracking-wider mt-0.5">Thread with Vendor: {selVendorName}</p>
+                    </div>
+                    <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-1 rounded-lg font-bold">Admin Monitoring Active</span>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
+                    {selectedThreadMsgs.map((msg) => {
+                      const isAdmin = msg.senderRole === 'admin';
+                      const isVendor = msg.senderRole === 'vendor';
+                      const isUser = msg.senderRole === 'user';
+                      let bubbleStyle, align, senderLabel, timeColor;
+
+                      if (isAdmin) {
+                        bubbleStyle = 'bg-[#1D3557] text-white rounded-tr-none';
+                        align = 'justify-end';
+                        senderLabel = 'You (Admin)';
+                        timeColor = 'text-white/70';
+                      } else if (isVendor) {
+                        bubbleStyle = 'bg-[#8B5E3C] text-white rounded-tl-none border border-[#8B5E3C]';
+                        align = 'justify-start';
+                        senderLabel = `Vendor (${msg.senderName || 'Vendor'})`;
+                        timeColor = 'text-white/70';
+                      } else {
+                        bubbleStyle = 'bg-white text-gray-800 border border-[#E76F51]/30 rounded-tl-none';
+                        align = 'justify-start';
+                        senderLabel = msg.userName || 'Customer';
+                        timeColor = 'text-gray-400';
+                      }
+
+                      return (
+                        <div key={msg._id} className={`flex ${align}`}>
+                          <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
+                            <p>{msg.message}</p>
+                            <span className={`block text-[9px] mt-1.5 ${isAdmin ? 'text-right' : 'text-left'} ${timeColor}`}>
+                              {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div ref={chatEndRef} />
+                  </div>
+
+                  <form onSubmit={handleSendAdminDirectMessage} className="p-4 border-t border-gray-100 flex gap-2 bg-white">
+                    <input
+                      type="text"
+                      value={adminMsgInput}
+                      onChange={(e) => setAdminMsgInput(e.target.value)}
+                      placeholder="Type a response as Admin Support..."
+                      className="flex-1 px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1D3557] text-xs"
+                    />
+                    <button
+                      type="submit"
+                      className="px-6 py-3 bg-[#1D3557] hover:bg-[#1D3557]/90 text-white rounded-xl font-bold text-xs shadow-sm transition-all"
+                    >
+                      Reply as Admin
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="w-14 h-14 rounded-full bg-[#1D3557]/5 flex items-center justify-center text-[#1D3557] mb-4">
+                    <MessageSquare className="w-7 h-7" />
+                  </div>
+                  <h4 className="font-bold text-sm text-[#1F2937]">Select a thread to monitor</h4>
+                  <p className="text-xs text-gray-400 max-w-[240px] mt-1.5 leading-relaxed">Choose a chat to provide global support and oversight.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

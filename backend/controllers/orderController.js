@@ -238,3 +238,25 @@ exports.createTicket = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get all synchronized prototype orders
+// @route   GET /api/orders/sync
+// @access  Public (for prototype)
+exports.getSyncedOrders = (req, res) => {
+  global.mockOrders = global.mockOrders || [];
+  res.status(200).json({ success: true, data: global.mockOrders });
+};
+
+// @desc    Update or create a synchronized prototype order
+// @route   PUT /api/orders/sync
+// @access  Public (for prototype)
+exports.updateSyncedOrder = (req, res) => {
+  global.mockOrders = global.mockOrders || [];
+  const updatedOrders = req.body.orders;
+  
+  if (Array.isArray(updatedOrders)) {
+    global.mockOrders = updatedOrders;
+  }
+  
+  res.status(200).json({ success: true, data: global.mockOrders });
+};

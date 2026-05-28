@@ -63,7 +63,7 @@ const Navbar = () => {
           <a href="/#ai-design" onClick={handleSectionNav('ai-design')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">AI Studio</a>
           <Link to="/marketplace" className="hidden md:inline hover:text-[#8B5E3C] transition-colors">Marketplace</Link>
           <a href="/#how-it-works" onClick={handleSectionNav('how-it-works')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">How It Works</a>
-          <a href="/#pricing" onClick={handleSectionNav('pricing')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">Pricing</a>
+          <a href="/#about-us" onClick={handleSectionNav('about-us')} className="hidden md:inline hover:text-[#8B5E3C] transition-colors cursor-pointer">About Us</a>
         </div>
 
         <div className="flex items-center gap-4">

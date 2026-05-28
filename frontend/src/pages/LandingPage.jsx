@@ -435,81 +435,43 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 7. PRICING / PACKAGES SECTION */}
-      <section id="pricing" className="py-24 px-6 bg-[#F8F5F0] border-b border-[#D4A373]/20">
+      {/* 7. ABOUT US SECTION */}
+      <section id="about-us" className="py-24 px-6 bg-[#F8F5F0] border-b border-[#D4A373]/20">
         <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-2xl mx-auto">
+          <div className="text-center space-y-4 max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 bg-[#8B5E3C]/10 text-[#8B5E3C] px-4 py-2 rounded-full text-sm font-semibold">
+              <Sparkles className="w-4 h-4" />
+              <span>About Us</span>
+            </div>
             <h2 className="font-['Playfair_Display'] text-4xl lg:text-5xl font-extrabold text-[#1F2937]">
-              Transparent Pricing Packages
+              Pioneering the Future of AI Interior Design
             </h2>
-            <p className="text-[#6B7280] text-lg">Choose the perfect plan for your residential or commercial styling needs.</p>
+            <p className="text-[#6B7280] text-lg leading-relaxed">
+              At ArtisanStudio, we believe that creating your dream space shouldn't require months of planning or exorbitant consulting fees. We are bridging the gap between cutting-edge artificial intelligence and master craftsmanship.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            {/* Package 1 */}
-            <div className="bg-white p-8 lg:p-12 rounded-3xl border border-[#D4A373]/30 shadow-md space-y-8 hover:shadow-xl transition-all">
-              <div className="space-y-2">
-                <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Essential AI</h3>
-                <p className="text-[#6B7280] text-sm">Perfect for single room instant makeovers.</p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="font-['Playfair_Display'] font-extrabold text-5xl text-[#8B5E3C]">$0</span>
-                <span className="text-[#6B7280] text-sm">/ Free Trial</span>
-              </div>
-              <ul className="space-y-4 text-sm text-[#6B7280]">
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>3 AI Room Redesigns</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Basic Material Palette</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Marketplace Access</span></li>
-                <li className="flex items-center gap-3 text-gray-300"><CheckCircle className="w-5 h-5" /><span>Dedicated Interior Designer</span></li>
-              </ul>
-              <button onClick={() => navigate('/register')} className="w-full py-4 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-full font-bold transition-all border border-[#8B5E3C]/30 shadow-sm">
-                Get Started Free
-              </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937]">Our Mission</h3>
+              <p className="text-[#6B7280] leading-relaxed">
+                Our mission is to democratize luxury interior design. By leveraging our proprietary generative AI models, we empower homeowners and designers to instantly visualize high-end spatial transformations from a single photograph.
+              </p>
+              <h3 className="font-['Playfair_Display'] text-3xl font-bold text-[#1F2937] pt-4">End-to-End Execution</h3>
+              <p className="text-[#6B7280] leading-relaxed">
+                We don't just stop at beautiful AI renders. We've built an exclusive network of verified furniture manufacturers, material suppliers, and white-glove installation teams. When our AI designs a piece of custom furniture for your space, our marketplace vendors turn it into reality with millimeter precision.
+              </p>
             </div>
-
-            {/* Package 2 - Featured */}
-            <div className="bg-[#2F3E46] text-white p-8 lg:p-12 rounded-3xl border-2 border-[#D4A373] shadow-2xl space-y-8 transform md:-translate-y-4 relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-[#D4A373] text-[#2F3E46] px-6 py-2 rounded-bl-2xl font-bold text-xs uppercase tracking-wider">
-                Most Popular
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#D4A373]/20 to-[#8B5E3C]/20 rounded-3xl filter blur-2xl transform scale-105 -z-10" />
+              <img 
+                src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop&q=80" 
+                alt="AI Design Studio Team" 
+                className="w-full h-[400px] object-cover rounded-3xl shadow-2xl border border-white/60"
+              />
+              <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-gray-100 max-w-xs hidden md:block">
+                <p className="font-['Playfair_Display'] font-bold text-xl text-[#8B5E3C]">"Transforming spaces at the speed of thought."</p>
               </div>
-              <div className="space-y-2">
-                <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#D4A373]">Premium Artisan</h3>
-                <p className="text-gray-300 text-sm">Complete end-to-end custom execution.</p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="font-['Playfair_Display'] font-extrabold text-5xl text-white">$149</span>
-                <span className="text-gray-300 text-sm">/ project</span>
-              </div>
-              <ul className="space-y-4 text-sm text-gray-300">
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Unlimited AI Generations</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Custom Manufacturer Bidding</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Priority White-Glove Delivery</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>1-on-1 Designer Consultation</span></li>
-              </ul>
-              <button onClick={() => navigate('/register')} className="w-full py-4 bg-[#D4A373] hover:bg-[#D4A373]/90 text-[#2F3E46] rounded-full font-bold shadow-lg hover:shadow-xl transition-all">
-                Choose Premium
-              </button>
-            </div>
-
-            {/* Package 3 */}
-            <div className="bg-white p-8 lg:p-12 rounded-3xl border border-[#D4A373]/30 shadow-md space-y-8 hover:shadow-xl transition-all">
-              <div className="space-y-2">
-                <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Enterprise / Commercial</h3>
-                <p className="text-[#6B7280] text-sm">For hotels, offices, and real estate developers.</p>
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="font-['Playfair_Display'] font-extrabold text-5xl text-[#8B5E3C]">$499</span>
-                <span className="text-[#6B7280] text-sm">/ month</span>
-              </div>
-              <ul className="space-y-4 text-sm text-[#6B7280]">
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Bulk AI Spatial Mapping</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Dedicated Account Manager</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Wholesale Vendor Pricing</span></li>
-                <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-[#2A9D8F]" /><span>Full Installation Team Dispatch</span></li>
-              </ul>
-              <button onClick={() => navigate('/register')} className="w-full py-4 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-full font-bold transition-all border border-[#8B5E3C]/30 shadow-sm">
-                Contact Sales
-              </button>
             </div>
           </div>
         </div>

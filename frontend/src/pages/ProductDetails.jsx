@@ -152,11 +152,18 @@ const ProductDetails = () => {
                   {colors.map((color, idx) => (
                     <button 
                       key={idx}
-                      onClick={() => setSelectedColor(idx)}
+                      onClick={() => {
+                        setSelectedColor(idx);
+                        if (product.images && product.images.length > idx) {
+                          setActiveImage(idx);
+                        } else if (product.images) {
+                          setActiveImage(idx % product.images.length);
+                        }
+                      }}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${selectedColor === idx ? 'ring-2 ring-offset-2 ring-[#8B5E3C]' : 'hover:scale-110'}`}
                       style={{ backgroundColor: color }}
                     >
-                      {selectedColor === idx && <Check className="w-5 h-5 text-white drop-shadow-md" />}
+                      {selectedColor === idx && <Check className={`w-5 h-5 drop-shadow-md ${color === '#F8F5F0' ? 'text-gray-800' : 'text-white'}`} />}
                     </button>
                   ))}
                 </div>

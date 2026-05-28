@@ -189,8 +189,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           {openGroups.support && (
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <NavItem name="Messages" icon={MessageSquare} tab="messages" />
-              <NavItem name="Support Tickets" icon={FileText} tab="tickets" />
-              <NavItem name="Disputes" icon={ShieldCheck} tab="disputes" />
             </div>
           )}
         </div>
@@ -208,7 +206,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
               <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" />
               <NavItem name="Store Approval" icon={Store} tab="store-approvals" />
               <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" />
-              <NavItem name="Role & Permissions" icon={Key} tab="roles" />
             </div>
           )}
         </div>

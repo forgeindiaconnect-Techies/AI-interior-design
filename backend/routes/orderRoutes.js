@@ -9,9 +9,15 @@ const {
   updateInstallationStatus,
   createPayment,
   createReview,
-  createTicket
+  createTicket,
+  getSyncedOrders,
+  updateSyncedOrder
 } = require('../controllers/orderController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+
+// Prototype Sync Routes
+router.get('/sync', getSyncedOrders);
+router.put('/sync', updateSyncedOrder);
 
 router.use(protect);
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -22,6 +22,11 @@ const UserDashboard = ({
   const { showToast } = useToast();
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [profileData, setProfileData] = useState(() => {
+    const saved = localStorage.getItem('mockUserProfile');
+    if (saved) return JSON.parse(saved);
+    return { name: user?.name || '', phone: '', address: '' };
+  });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -111,39 +116,53 @@ const UserDashboard = ({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewTargetId, setReviewTargetId] = useState('');
+  const [userReviews, setUserReviews] = useState([]);
 
+
+  useEffect(() => {
+    if (activeTab === 'reviews') {
+      const loadUserReviews = () => {
+        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+        const myReviews = allReviews.filter(r => r.userId?.email === (user?.email || 'user@example.com'));
+        setUserReviews(myReviews);
+      };
+      loadUserReviews();
+      const interval = setInterval(loadUserReviews, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab, user]);
 
   const [directMessages, setDirectMessages] = useState([]);
   const [msgInput, setMsgInput] = useState('');
   const [selectedVendorMsg, setSelectedVendorMsg] = useState('Artisan Workshop Ltd');
 
-  // Help Center Live Chat States
+  // Help Center Live Chat States (Now Unified Shared Chat)
   const [helpMessages, setHelpMessages] = useState([]);
   const [helpInput, setHelpInput] = useState('');
+  const chatEndRef = useRef(null);
 
-  useEffect(() => {
-    if (activeTab === 'messages') {
-      const loadMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
-        setDirectMessages(msgs);
-      };
-      loadMessages();
-      const interval = setInterval(loadMessages, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [activeTab]);
+  const loadHelpMessages = () => {
+    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    setHelpMessages(msgs);
+  };
 
   useEffect(() => {
     if (activeTab === 'support') {
-      const loadHelpMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
-        setHelpMessages(msgs);
-      };
       loadHelpMessages();
-      const interval = setInterval(loadHelpMessages, 1000);
-      return () => clearInterval(interval);
+      window.addEventListener('mockChatUpdated', loadHelpMessages);
+      const interval = setInterval(loadHelpMessages, 2500);
+      return () => {
+        window.removeEventListener('mockChatUpdated', loadHelpMessages);
+        clearInterval(interval);
+      };
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'support' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [helpMessages, activeTab]);
 
   const handleSendDirectMessage = (e) => {
     e.preventDefault();
@@ -186,17 +205,19 @@ const UserDashboard = ({
 
     const newMsg = {
       _id: 'hm_' + Date.now(),
+      roomId: email,
       userName: name,
       userEmail: email,
-      sender: 'user',
+      vendorName: 'Artisan Workshop Ltd',
+      senderRole: 'user',
       senderName: name,
       message: helpInput,
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockHelpCenterMessages', JSON.stringify(updated));
+    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
     setHelpMessages(updated);
     setHelpInput('');
 
@@ -231,11 +252,13 @@ const UserDashboard = ({
 
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
+    window.addEventListener('mockOrdersUpdated', handleSync);
     const interval = setInterval(fetchUserData, 3000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
+      window.removeEventListener('mockOrdersUpdated', handleSync);
       clearInterval(interval);
     };
   }, []);
@@ -603,6 +626,32 @@ const UserDashboard = ({
     const updated = localAi.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d);
     localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
     setAiDesigns(updated);
+  };
+
+  const handleDownloadReceipt = (order) => {
+    const receiptContent = `========================================
+           ARTISAN STUDIO               
+========================================
+RECEIPT
+Transaction ID : #${order._id.toUpperCase()}
+Date           : ${new Date(order.createdAt).toLocaleDateString()}
+Payment Method : Credit Card **1234
+Status         : PAID
+----------------------------------------
+Order Type     : ${order.orderType || 'Product'}
+Total Amount   : $${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+========================================
+Thank you for shopping with Artisan Studio!
+`;
+    const blob = new Blob([receiptContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Receipt_${order._id}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleProceedToExecution = (design) => {
@@ -1105,17 +1154,40 @@ const UserDashboard = ({
     e.preventDefault();
     const newReview = {
       _id: 'review_' + Date.now(),
-      vendorId: 'mock_vendor_id_123',
+      vendorId: reviewTargetId || 'mock_vendor_id_123',
       productId: 'prod_1',
       rating: reviewRating,
       comment: reviewComment,
-      userId: { name: user?.name || 'Customer Demo' },
+      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
       createdAt: new Date().toISOString()
     };
     const localReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
     localStorage.setItem('mockReviews', JSON.stringify([newReview, ...localReviews]));
-    alert('Review published successfully!');
+
+    // 1. Notify Vendor Dashboard
+    const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
+      _id: `notif_vendor_rev_${Date.now()}`,
+      message: `You received a new ${reviewRating}-star review from ${user?.name || 'Customer Demo'}.`,
+      type: 'success',
+      createdAt: new Date().toISOString(),
+      read: false
+    }, ...vendorNotifs]));
+
+    // 2. Notify Admin Dashboard
+    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
+      _id: `notif_admin_rev_${Date.now()}`,
+      message: `New ${reviewRating}-star review published by ${user?.name || 'Customer Demo'}.`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    }, ...adminNotifs]));
+
+    alert('✅ Review published successfully! Vendors and Admins have been notified.');
     setReviewComment('');
+    setReviewRating(5);
+    setReviewTargetId('');
   };
 
 
@@ -2544,28 +2616,25 @@ const UserDashboard = ({
               {/* Payment Method — based on what vendor provided */}
               {(() => {
                 const pm = aiQuotationPayment.quotationPaymentMethod || 'upi';
-                if (pm === 'upi' && aiQuotationPayment.quotationUPI) {
+                if (pm === 'upi') {
+                  const upiId = aiQuotationPayment.quotationUPI || 'artisanworkshop@upi';
+                  const qrUrl = aiQuotationPayment.quotationQR || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiId)}`;
                   return (
                     <div className="bg-[#F0FDF4] border border-emerald-200 rounded-2xl p-5 text-center space-y-4 animate-fadeIn">
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
                         <Smartphone className="w-3.5 h-3.5" /> UPI Payment
                       </div>
                       <div className="flex justify-center">
-                        {aiQuotationPayment.quotationQR || aiQuotationPayment.quotationUPI ? (
-                          <img src={aiQuotationPayment.quotationQR || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(aiQuotationPayment.quotationUPI)}`} alt="Scan to Pay QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
-                        ) : (
-                          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AI+Interior+Demo+Payment" alt="Demo QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm" />
-                        )}
+                        <img src={qrUrl} alt="Scan to Pay QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm" onError={(e) => { e.target.style.display = 'none'; e.target.nextElementSibling.style.display = 'flex'; }} />
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=AI+Interior+Demo+Payment" alt="Demo QR Code" className="w-48 h-48 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm hidden" />
                       </div>
-                      {aiQuotationPayment.quotationUPI && (
-                        <div className="bg-white border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
-                          <div className="text-left">
-                            <p className="text-[10px] text-gray-500 font-bold uppercase">UPI ID</p>
-                            <p className="font-bold text-gray-800 text-sm">{aiQuotationPayment.quotationUPI}</p>
-                          </div>
-                          <button onClick={() => { navigator.clipboard.writeText(aiQuotationPayment.quotationUPI); showToast('UPI ID copied!'); }} className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-[11px] font-bold transition-all">Copy</button>
+                      <div className="bg-white border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div className="text-left">
+                          <p className="text-[10px] text-gray-500 font-bold uppercase">UPI ID</p>
+                          <p className="font-bold text-gray-800 text-sm">{upiId}</p>
                         </div>
-                      )}
+                        <button onClick={() => { navigator.clipboard.writeText(upiId); showToast('UPI ID copied!'); }} className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-[11px] font-bold transition-all">Copy</button>
+                      </div>
                       <p className="text-xs text-gray-500 leading-relaxed">Scan the QR code or enter the UPI ID to pay <strong>${aiQuotationPayment.quotationAmount}</strong>. Then click confirm below.</p>
                       <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
                         {aiQuotationProcessing ? <>Processing...</> : <><Smartphone className="w-5 h-5" /> I've Paid — Confirm Payment</>}
@@ -2573,17 +2642,21 @@ const UserDashboard = ({
                     </div>
                   );
                 }
-                if (pm === 'bank' && aiQuotationPayment.quotationBankAccount) {
+                if (pm === 'bank') {
+                  const bankHolder = aiQuotationPayment.quotationBankHolder || 'Artisan Workshop';
+                  const bankAcc = aiQuotationPayment.quotationBankAccount || '09876543212345';
+                  const bankIfsc = aiQuotationPayment.quotationBankIFSC || 'HDFC0001234';
+                  const bankName = aiQuotationPayment.quotationBankName || 'HDFC Bank';
                   return (
                     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-5 space-y-4 animate-fadeIn">
                       <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider mx-auto">
                         <Building2 className="w-3.5 h-3.5" /> Bank Transfer
                       </div>
                       <div className="bg-white rounded-xl p-4 space-y-3 border border-blue-100">
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Holder</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankHolder}</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Number</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankAccount}</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">IFSC Code</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankIFSC}</span></div>
-                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Bank Name</span><span className="font-bold text-gray-800">{aiQuotationPayment.quotationBankName}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Holder</span><span className="font-bold text-gray-800">{bankHolder}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Account Number</span><span className="font-bold text-gray-800">{bankAcc}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">IFSC Code</span><span className="font-bold text-gray-800">{bankIfsc}</span></div>
+                        <div className="flex justify-between text-sm"><span className="text-gray-500 font-medium">Bank Name</span><span className="font-bold text-gray-800">{bankName}</span></div>
                       </div>
                       <p className="text-xs text-gray-500 leading-relaxed">Transfer <strong>${aiQuotationPayment.quotationAmount}</strong> to the account above, then click confirm.</p>
                       <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
@@ -2592,19 +2665,20 @@ const UserDashboard = ({
                     </div>
                   );
                 }
-                if (pm === 'card' && aiQuotationPayment.quotationPaymentGateway) {
+                if (pm === 'card') {
+                  const gateway = aiQuotationPayment.quotationPaymentGateway || 'Stripe';
                   return (
                     <div className="bg-purple-50 border border-purple-200 rounded-2xl p-8 text-center space-y-4 animate-fadeIn">
                       <CreditCard className="w-12 h-12 text-purple-500 mx-auto" />
-                      <p className="font-bold text-[#1F2937] text-sm">Pay via {aiQuotationPayment.quotationPaymentGateway}</p>
-                      <p className="text-xs text-gray-500">You will be redirected to {aiQuotationPayment.quotationPaymentGateway} to complete payment of <strong>${aiQuotationPayment.quotationAmount}</strong>.</p>
+                      <p className="font-bold text-[#1F2937] text-sm">Pay via {gateway}</p>
+                      <p className="text-xs text-gray-500">You will be redirected to {gateway} to complete payment of <strong>${aiQuotationPayment.quotationAmount}</strong>.</p>
                       <button onClick={handleConfirmAiQuotationPayment} disabled={aiQuotationProcessing} className="w-full py-4 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-300 text-white rounded-xl font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2">
                         {aiQuotationProcessing ? <>Processing...</> : <><CreditCard className="w-5 h-5" /> Pay ${aiQuotationPayment.quotationAmount}</>}
                       </button>
                     </div>
                   );
                 }
-                if (pm === 'cash' && aiQuotationPayment.quotationCashOnVisit) {
+                if (pm === 'cash') {
                   return (
                     <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center space-y-4 animate-fadeIn">
                       <DollarSign className="w-12 h-12 text-amber-500 mx-auto" />
@@ -2627,15 +2701,15 @@ const UserDashboard = ({
       {/* TAB 8: ORDER TRACKING */}
       {activeTab === 'tracking' && (() => {
         const trackingId = localStorage.getItem('activeTrackingOrderId');
-        const marketplaceOrders = orders.filter(o => o.orderType === 'Marketplace Product');
-        const activeOrder = orders.find(o => o._id === trackingId) || marketplaceOrders[0];
+        const trackableOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product');
+        const activeOrder = orders.find(o => o._id === trackingId) || trackableOrders[0];
 
         if (!activeOrder) {
           return (
             <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center space-y-4">
               <Truck className="w-16 h-16 text-gray-300 mx-auto" />
               <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">No Active Deliveries</h2>
-              <p className="text-sm text-gray-400 max-w-sm mx-auto">You haven't ordered any marketplace products yet or don't have any active shipments.</p>
+              <p className="text-sm text-gray-400 max-w-sm mx-auto">You haven't ordered any marketplace products or custom designs yet, or don't have any active shipments.</p>
               <button onClick={() => { if(setActiveTab) setActiveTab('marketplace'); }} className="px-6 py-3 bg-[#8B5E3C] text-white rounded-xl font-bold text-xs shadow-md">Browse Marketplace</button>
             </div>
           );
@@ -2650,19 +2724,20 @@ const UserDashboard = ({
             case 'Pending':
             case 'Pending Confirmation':
               return { title: 'Pending Confirmation', desc: 'The order is awaiting vendor confirmation.' };
-            case 'Processing':
-              return { title: 'Processing Order', desc: 'Your order has been confirmed by the vendor and is currently in production/packaging.' };
+            case 'Payment Verified':
+              return { title: 'Payment Verified', desc: 'Your payment has been successfully verified by the vendor.' };
+            case 'Production Started':
+              return { title: 'Production Started', desc: 'The vendor has started production of your custom design.' };
             case 'Manufacturing':
-            case 'In Production':
-              return { title: 'Manufacturing Progressing', desc: 'The vendor has started production of your custom design.' };
+              return { title: 'Manufacturing Progressing', desc: 'Your custom furniture is currently being manufactured.' };
             case 'Ready for Delivery':
               return { title: 'Ready for Delivery', desc: 'Your custom design is manufactured and ready for delivery dispatch.' };
             case 'Delivered':
               return { title: 'Delivered', desc: 'Your order has been successfully delivered. Please confirm receipt and request installation if needed.' };
             case 'Installation Scheduled':
               return { title: 'Installation Scheduled', desc: 'An installation technician is scheduled to set up your design.' };
-            case 'Completed':
-              return { title: 'Completed', desc: 'The order lifecycle is completed. We hope you enjoy your purchase!' };
+            case 'Installation Completed':
+              return { title: 'Installation Completed', desc: 'The order lifecycle is completed. We hope you enjoy your purchase!' };
             case 'Cancelled':
               return { title: 'Cancelled', desc: 'This order was cancelled.' };
             default:
@@ -2672,15 +2747,15 @@ const UserDashboard = ({
 
         const currentMsg = getStatusMessage();
 
-        // Exactly 7 Stages requested: Pending, Processing, Manufacturing, Ready for Delivery, Delivered, Installation Scheduled, Completed
+        // Exactly 7 Stages requested: Payment Verified, Production Started, Manufacturing, Ready for Delivery, Delivered, Installation Scheduled, Installation Completed
         const stagesList = [
-          { key: 'Pending', label: 'Pending', isDone: true },
-          { key: 'Processing', label: 'Processing', isDone: ['Processing', 'In Progress', 'Manufacturing', 'In Production', 'Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
-          { key: 'Manufacturing', label: 'Manufacturing', isDone: ['Manufacturing', 'In Production', 'Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
-          { key: 'Ready for Delivery', label: 'Ready for Delivery', isDone: ['Ready for Delivery', 'Dispatched', 'Out For Delivery', 'Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
-          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Installation Scheduled', 'Completed'].includes(status) },
-          { key: 'Installation Scheduled', label: 'Installation Scheduled', isDone: ['Installation Scheduled', 'Completed'].includes(status) },
-          { key: 'Completed', label: 'Completed', isDone: status === 'Completed' }
+          { key: 'Payment Verified', label: 'Payment Verified', isDone: ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Production Started', label: 'Production Started', isDone: ['Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Manufacturing', label: 'Manufacturing', isDone: ['Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Ready for Delivery', label: 'Ready for Delivery', isDone: ['Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Installation Scheduled', label: 'Installation Scheduled', isDone: ['Installation Scheduled', 'Installation Completed'].includes(status) },
+          { key: 'Installation Completed', label: 'Installation Completed', isDone: status === 'Installation Completed' }
         ];
 
         const handleReturnRequest = (e) => {
@@ -2729,7 +2804,7 @@ const UserDashboard = ({
         return (
           <div className="space-y-8 animate-fadeIn">
             {/* Quick Switch Dropdown */}
-            {marketplaceOrders.length > 1 && (
+            {trackableOrders.length > 1 && (
               <div className="bg-white p-4 rounded-2xl border border-[#D4A373]/30 flex items-center justify-between gap-4">
                 <span className="text-xs font-bold text-gray-500 uppercase">Track a different order:</span>
                 <select 
@@ -2741,8 +2816,8 @@ const UserDashboard = ({
                   }}
                   className="text-xs p-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none"
                 >
-                  {marketplaceOrders.map(o => (
-                    <option key={o._id} value={o._id}>{o.productDetails?.title} (#{o._id.slice(-6)})</option>
+                  {trackableOrders.map(o => (
+                    <option key={o._id} value={o._id}>{o.productDetails?.title || (o.orderType === 'AI Design' ? `AI Design - ${o.aiDesignData?.roomType || 'Custom'}` : 'Custom Furniture Request')} (#{o._id.slice(-6)})</option>
                   ))}
                 </select>
               </div>
@@ -2752,7 +2827,7 @@ const UserDashboard = ({
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                 <div>
                   <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Live Order Tracking</h2>
-                  <p className="text-xs text-gray-400 mt-1">Product: <strong>{activeOrder.productDetails?.title}</strong> • Order #{activeOrder._id?.slice(-6)} • Date: {new Date(activeOrder.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">Product: <strong>{activeOrder.productDetails?.title || (activeOrder.orderType === 'AI Design' ? `AI Design - ${activeOrder.aiDesignData?.roomType || 'Custom'}` : 'Custom Furniture Request')}</strong> • Order #{activeOrder._id?.slice(-6)} • Date: {new Date(activeOrder.createdAt).toLocaleDateString()}</p>
                 </div>
                 <div className="px-4 py-2 bg-[#00A86B]/10 text-[#00A86B] font-bold rounded-lg text-xs border border-[#00A86B]/20">
                   Expected: {expectedDate}
@@ -2810,8 +2885,25 @@ const UserDashboard = ({
                 </div>
               </div>
 
+              {/* Progress Images */}
+              {activeOrder.progressImages && activeOrder.progressImages.length > 0 && (
+                <div className="bg-white p-6 rounded-2xl border border-[#D4A373]/30 mt-6 space-y-4">
+                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider">Manufacturing Progress Photos</h4>
+                  <div className="flex gap-4 overflow-x-auto pb-4">
+                    {activeOrder.progressImages.map((imgUrl, i) => (
+                      <div key={i} className="flex-shrink-0 relative group">
+                        <img src={imgUrl} alt={`Progress step ${i+1}`} className="w-32 h-32 object-cover rounded-xl border border-gray-200 shadow-sm" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
+                          <span className="text-white text-xs font-bold">Step {i+1}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Return Request panel */}
-              {(status === 'Delivered' || status === 'Completed') && !activeOrder.hasReturnRequest && (
+              {(status === 'Delivered' || status === 'Installation Completed') && !activeOrder.hasReturnRequest && (
                 <div className="bg-red-50/50 p-6 rounded-2xl border border-red-200 mt-6 space-y-4">
                   <h3 className="font-['Playfair_Display'] font-bold text-lg text-red-800 flex items-center gap-2">
                     <AlertTriangle className="w-5 h-5" /> Request a Return or Refund
@@ -2855,35 +2947,44 @@ const UserDashboard = ({
                 </tr>
               </thead>
               <tbody className="text-sm">
-                <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-medium text-[#1F2937]">#TXN-99281</td>
-                  <td className="p-4 text-gray-500">Oct 12, 2026</td>
-                  <td className="p-4 font-bold text-[#8B5E3C]">$450.00</td>
-                  <td className="p-4"><div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-gray-400"/> Card **1234</div></td>
-                  <td className="p-4"><span className="bg-[#00A86B]/10 text-[#00A86B] px-2 py-1 rounded-md text-xs font-bold">Paid</span></td>
-                  <td className="p-4"><button onClick={() => alert('📥 Downloading Receipt #TXN-99281 (PDF)...')} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button></td>
-                </tr>
-                {/* Mock Pending Payment */}
-                <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                  <td className="p-4 font-medium text-[#1F2937]">#TXN-99282</td>
-                  <td className="p-4 text-gray-500">Oct 14, 2026</td>
-                  <td className="p-4 font-bold text-[#8B5E3C]">$4,850.00</td>
-                  <td className="p-4">{pendingPaid ? <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-gray-400"/> Card **5678</div> : '-'}</td>
-                  <td className="p-4">
-                    {pendingPaid ? (
-                      <span className="bg-[#00A86B]/10 text-[#00A86B] px-2 py-1 rounded-md text-xs font-bold">Paid</span>
-                    ) : (
-                      <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">Pending</span>
-                    )}
-                  </td>
-                  <td className="p-4">
-                    {pendingPaid ? (
-                      <button onClick={() => alert('📥 Downloading Receipt #TXN-99282 (PDF)...')} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button>
-                    ) : (
-                      <button onClick={() => { alert('💳 Processing Payment of $4,850.00...'); setPendingPaid(true); alert('✅ Payment Successful! Receipt generated.'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all">Pay Now</button>
-                    )}
-                  </td>
-                </tr>
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="p-6 text-center text-gray-500">No payment history found.</td>
+                  </tr>
+                ) : (
+                  orders.map(order => (
+                    <tr key={order._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4 font-medium text-[#1F2937]">#{order._id.toUpperCase()}</td>
+                      <td className="p-4 text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="p-4 font-bold text-[#8B5E3C]">${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      <td className="p-4">
+                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' 
+                          ? <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-gray-400"/> Card **1234</div> 
+                          : '-'}
+                      </td>
+                      <td className="p-4">
+                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' ? (
+                          <span className="bg-[#00A86B]/10 text-[#00A86B] px-2 py-1 rounded-md text-xs font-bold">Paid</span>
+                        ) : (
+                          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">Pending</span>
+                        )}
+                      </td>
+                      <td className="p-4">
+                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' ? (
+                          <button onClick={() => handleDownloadReceipt(order)} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button>
+                        ) : (
+                          <button onClick={() => { 
+                            const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+                            const updated = localOrders.map(o => o._id === order._id ? { ...o, paymentStatus: 'paid' } : o);
+                            localStorage.setItem('mockOrders', JSON.stringify(updated));
+                            setOrders(updated);
+                            alert(`✅ Payment of $${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} Successful! Receipt generated.`); 
+                          }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all">Pay Now</button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -2932,7 +3033,7 @@ const UserDashboard = ({
                   <AlertCircle className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-xs text-[#1F2937]">User Chat Room</h3>
+                  <h3 className="font-bold text-xs text-[#1F2937]">User Chat</h3>
                   <p className="text-[9px] text-emerald-500 font-bold uppercase tracking-wider mt-0.5">Online • Replies in minutes</p>
                 </div>
               </div>
@@ -2957,22 +3058,22 @@ const UserDashboard = ({
                 }
 
                 return filteredHelpMessages.map((msg) => {
-                  const isUser = msg.sender === 'user';
-                  const isAdmin = msg.sender === 'admin';
+                  const isUser = msg.senderRole === 'user';
+                  const isAdmin = msg.senderRole === 'admin';
                   let bubbleStyle, align, senderLabel, timeColor;
 
                   if (isUser) {
-                    bubbleStyle = 'bg-[#8B5E3C] text-white rounded-tr-none';
+                    bubbleStyle = 'bg-[#E76F51] text-white rounded-tr-none';
                     align = 'justify-end';
                     senderLabel = 'You';
                     timeColor = 'text-white/70';
                   } else if (isAdmin) {
-                    bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                    bubbleStyle = 'bg-[#1D3557] text-white rounded-tl-none border border-[#1D3557]';
                     align = 'justify-start';
-                    senderLabel = 'Admin';
+                    senderLabel = 'Admin Support';
                     timeColor = 'text-white/70';
                   } else {
-                    bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                    bubbleStyle = 'bg-white text-gray-800 border border-[#8B5E3C]/30 rounded-tl-none';
                     align = 'justify-start';
                     senderLabel = `Vendor (${msg.senderName || 'Vendor'})`;
                     timeColor = 'text-gray-400';
@@ -2982,7 +3083,7 @@ const UserDashboard = ({
                     <div key={msg._id} className={`flex ${align}`}>
                       <div className={`max-w-[75%] p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                         <p>{msg.message}</p>
-                        <span className={`block text-[9px] mt-1.5 text-right ${timeColor}`}>
+                        <span className={`block text-[9px] mt-1.5 ${isUser ? 'text-right' : 'text-left'} ${timeColor}`}>
                           {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -2990,6 +3091,7 @@ const UserDashboard = ({
                   );
                 });
               })()}
+              <div ref={chatEndRef} />
             </div>
 
             {/* Chat Send Input */}
@@ -3021,14 +3123,19 @@ const UserDashboard = ({
           </div>
           <form onSubmit={handlePublishReview} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product / Service</label>
-              <select className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
-                <option>Velvet Lounge Chair (Delivered)</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
-              <input type="number" min={1} max={5} required value={reviewRating} onChange={(e) => setReviewRating(Number(e.target.value))} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    className="focus:outline-none transition-transform hover:scale-110"
+                  >
+                    <Star className={`w-10 h-10 ${reviewRating >= star ? 'text-[#E9C46A] fill-[#E9C46A]' : 'text-gray-200'} transition-colors`} />
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Review Comment</label>
@@ -3036,6 +3143,32 @@ const UserDashboard = ({
             </div>
             <button type="submit" className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Publish Review</button>
           </form>
+
+          {userReviews.length > 0 && (
+            <div className="mt-10 pt-10 border-t border-gray-100 animate-fade-in">
+              <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] mb-6">Your Published Reviews</h3>
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                {userReviews.map(review => (
+                  <div key={review._id} className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-1 text-[#E9C46A]">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className={`w-5 h-5 ${review.rating >= star ? 'fill-current' : 'text-gray-300'}`} />
+                        ))}
+                        <span className="text-sm font-bold text-[#1F2937] ml-2">{review.rating} Stars</span>
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium bg-white px-2 py-1 rounded-md border border-gray-100">{new Date(review.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <p className="italic text-gray-700 text-sm mb-5 leading-relaxed">"{review.comment}"</p>
+                    <p className="text-xs font-bold text-[#8B5E3C] flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C] text-sm">{review.userId?.name?.charAt(0) || 'C'}</div>
+                      — Reviewed by {review.userId?.name || 'Customer'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -3174,18 +3307,22 @@ const UserDashboard = ({
         <div className="max-w-3xl bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
           <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
             <div className="w-16 h-16 rounded-full bg-[#8B5E3C] text-white flex items-center justify-center font-bold text-2xl shadow-md">
-              {(user?.name || 'C').charAt(0).toUpperCase()}
+              {(profileData.name || 'C').charAt(0).toUpperCase()}
             </div>
             <div>
               <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">My Profile</h2>
               <p className="text-gray-500 text-sm">Update your personal and shipping details.</p>
             </div>
           </div>
-          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Profile Updated'); }}>
+          <form className="space-y-6" onSubmit={(e) => { 
+            e.preventDefault(); 
+            localStorage.setItem('mockUserProfile', JSON.stringify(profileData));
+            showToast('Profile Updated Successfully!', 'success');
+          }}>
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
-                <input type="text" defaultValue={user?.name} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
+                <input type="text" value={profileData.name} onChange={(e) => setProfileData({...profileData, name: e.target.value})} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
               </div>
               <div>
                 <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Email Address</label>
@@ -3194,11 +3331,11 @@ const UserDashboard = ({
             </div>
             <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Phone Number</label>
-              <input type="tel" placeholder="+1 (555) 000-0000" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
+              <input type="tel" value={profileData.phone} onChange={(e) => setProfileData({...profileData, phone: e.target.value})} placeholder="+1 (555) 000-0000" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
             </div>
             <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Default Shipping Address</label>
-              <textarea rows={3} placeholder="123 Artisan Street, City, Country, ZIP" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
+              <textarea rows={3} value={profileData.address} onChange={(e) => setProfileData({...profileData, address: e.target.value})} placeholder="123 Artisan Street, City, Country, ZIP" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-gray-50" />
             </div>
             <button type="submit" className="py-4 px-8 bg-[#1F2937] hover:bg-black text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Save Changes</button>
           </form>

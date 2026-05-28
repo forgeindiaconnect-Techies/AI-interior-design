@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -61,6 +61,15 @@ const VendorDashboard = ({
   // Suggest Vendor State
   const [suggestedVendorId, setSuggestedVendorId] = useState('');
   const [suggestNote, setSuggestNote] = useState('');
+  
+  // Real-time backend sync trigger
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setRefreshTrigger(prev => prev + 1);
+    window.addEventListener('mockOrdersUpdated', handler);
+    return () => window.removeEventListener('mockOrdersUpdated', handler);
+  }, []);
 
   // Manufacturer State
   const [manufacturingOrders, setManufacturingOrders] = useState([]);
@@ -149,27 +158,54 @@ const VendorDashboard = ({
   const [helpInput, setHelpInput] = useState('');
   const [selectedHelpUser, setSelectedHelpUser] = useState('');
 
+  // Store Reviews
+  const [vendorReviews, setVendorReviews] = useState([]);
+
   useEffect(() => {
-    if (activeTab === 'messages') {
-      const loadMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
-        setDirectMessages(msgs);
-        
-        // Auto-select first user if none selected and messages exist for this vendor
-        const currentVendorName = profile?.companyName || 'Artisan Workshop Ltd';
-        const vendorMsgs = msgs.filter(m => m.vendorName === currentVendorName);
-        if (vendorMsgs.length > 0 && !selectedUserMsg) {
-          const uniqueUsers = Array.from(new Set(vendorMsgs.map(m => m.userName)));
-          if (uniqueUsers.length > 0) {
-            setSelectedUserMsg(uniqueUsers[0]);
-          }
-        }
+    if (activeTab === 'reviews') {
+      const loadReviews = () => {
+        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+        const myReviews = allReviews.filter(r => r.vendorId === (profile?._id || 'mock_vendor_id_123'));
+        setVendorReviews(myReviews);
       };
-      loadMessages();
-      const interval = setInterval(loadMessages, 1000);
+      loadReviews();
+      const interval = setInterval(loadReviews, 1000);
       return () => clearInterval(interval);
     }
-  }, [activeTab, selectedUserMsg, profile]);
+  }, [activeTab, profile]);
+
+  const chatEndRef = useRef(null);
+
+  const loadMessages = () => {
+    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    setDirectMessages(msgs);
+    
+    // Auto-select first user if none selected
+    if (msgs.length > 0 && !selectedUserMsg) {
+      const uniqueUsers = Array.from(new Set(msgs.map(m => m.userName)));
+      if (uniqueUsers.length > 0) {
+        setSelectedUserMsg(uniqueUsers[0]);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      loadMessages();
+      window.addEventListener('mockChatUpdated', loadMessages);
+      const interval = setInterval(loadMessages, 2500);
+      return () => {
+        window.removeEventListener('mockChatUpdated', loadMessages);
+        clearInterval(interval);
+      };
+    }
+  }, [activeTab, selectedUserMsg]);
+
+  useEffect(() => {
+    if (activeTab === 'messages' && chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [directMessages, activeTab, selectedUserMsg]);
 
   useEffect(() => {
     if (activeTab === 'support') {
@@ -195,24 +231,25 @@ const VendorDashboard = ({
     e.preventDefault();
     if (!vendorMsgInput.trim() || !selectedUserMsg) return;
 
-    // Find the vendor name the customer messaged
+    // Find the roomId from existing msgs
     const customerMsgs = directMessages.filter(m => m.userName === selectedUserMsg);
-    const vendorName = customerMsgs.length > 0 
-      ? customerMsgs[0].vendorName 
-      : (profile?.companyName || 'Artisan Workshop Ltd');
+    const roomId = customerMsgs.length > 0 ? customerMsgs[0].roomId : 'unknown_room';
+    const userEmail = customerMsgs.length > 0 ? customerMsgs[0].userEmail : 'user@example.com';
 
     const newMsg = {
       _id: 'dm_' + Date.now(),
-      sender: 'vendor',
+      roomId: roomId,
       userName: selectedUserMsg,
-      vendorName: vendorName,
+      userEmail: userEmail,
+      senderRole: 'vendor',
+      senderName: profile?.companyName || 'Vendor',
       message: vendorMsgInput,
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockDirectMessages', JSON.stringify(updated));
+    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
     setDirectMessages(updated);
     setVendorMsgInput('');
 
@@ -614,7 +651,7 @@ const VendorDashboard = ({
       setReadyMadeOrders(mktOrders);
       
       const mfgOrders = localOrders
-        .filter(o => o.orderStatus === 'Processing' || o.orderStatus === 'In Progress' || o.orderStatus === 'Installation' || o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
         .map(o => ({
           _id: o._id,
           orderId: o._id,
@@ -626,7 +663,7 @@ const VendorDashboard = ({
             : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
           materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
           budget: o.quotationAmount || o.totalAmount,
-          status: o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' ? 'Production Started' : o.orderStatus,
+          status: o.orderStatus,
           progressImages: o.progressImages || []
         }));
       setManufacturingOrders(mfgOrders);
@@ -635,12 +672,12 @@ const VendorDashboard = ({
       setPendingVerificationOrders(pendingOrders);
 
       const delOrders = localOrders
-        .filter(o => o.orderStatus === 'Delivery Assigned' || o.orderStatus === 'Picked Up' || o.orderStatus === 'Shipped' || o.orderStatus === 'Delivered')
+        .filter(o => o.orderStatus === 'Ready for Delivery' || o.orderStatus === 'Delivered' || o.orderStatus === 'Installation Scheduled' || o.orderStatus === 'Installation Completed')
         .map(o => ({
           _id: o._id,
           orderId: o._id,
           shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
-          status: o.orderStatus === 'Delivery Assigned' ? 'Picked Up' : o.orderStatus,
+          status: o.orderStatus,
           trackingNotes: o.trackingNotes || 'Dispatched from central hub'
         }));
       setDeliveryOrders(delOrders);
@@ -933,7 +970,7 @@ const VendorDashboard = ({
     if (activeTab === 'manufacturing') {
       const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
       const mfgOrders = freshOrders
-        .filter(o => o.orderStatus === 'Processing' || o.orderStatus === 'In Progress' || o.orderStatus === 'Installation' || o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' || o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing Completed' || o.orderStatus === 'Under Quality Review')
+        .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
         .map(o => ({
           _id: o._id,
           orderId: o._id,
@@ -941,7 +978,7 @@ const VendorDashboard = ({
           measurements: o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
           materials: 'Wood, Premium Fabrics',
           budget: o.totalAmount,
-          status: o.orderStatus === 'Quotation Accepted' || o.orderStatus === 'Manufacturer Assigned' ? 'Production Started' : o.orderStatus,
+          status: o.orderStatus,
           progressImages: o.progressImages || []
         }));
       setManufacturingOrders(mfgOrders);
@@ -1036,6 +1073,11 @@ const VendorDashboard = ({
     const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
     const updatedProducts = [payload, ...localProducts];
     setProducts(updatedProducts);
+    setInventoryProducts(prev => [{
+      ...payload,
+      stock: 10, // Default stock for newly created items
+      lowStockThreshold: 5
+    }, ...prev]);
     localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
     
     alert('✅ Product listed successfully! It is now live in the Marketplace.');
@@ -1061,6 +1103,7 @@ const VendorDashboard = ({
     
     const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
     setProducts(updatedProducts);
+    setInventoryProducts(prev => prev.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item));
     localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
     
     alert('✅ Product updated successfully!');
@@ -1071,6 +1114,7 @@ const VendorDashboard = ({
     
     const updatedProducts = products.filter(item => item._id !== id);
     setProducts(updatedProducts);
+    setInventoryProducts(prev => prev.filter(item => item._id !== id));
     localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
     
     alert('✅ Product deleted successfully!');
@@ -1302,6 +1346,17 @@ const VendorDashboard = ({
     alert('Order forwarded to manufacturer successfully!');
   };
 
+  const handleProgressImageUpload = (e, orderId) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProgressImg(prev => ({ ...prev, [orderId]: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Manufacturer Actions
   const handleMfgUpdate = async (id) => {
     const updatedStatus = mfgStatus[id] || 'Pending';
@@ -1335,14 +1390,12 @@ const VendorDashboard = ({
     // Send customer notification
     const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
     let userMessage = `Order status update: ${updatedStatus} for your custom furniture.`;
-    if (updatedStatus === 'Processing') {
-      userMessage = `Order update: Your order is now being processed.`;
-    } else if (updatedStatus === 'In Progress') {
-      userMessage = `Order update: Your custom furniture is now in progress.`;
-    } else if (updatedStatus === 'Installation') {
-      userMessage = `Order update: Installation has been scheduled for your order.`;
-    } else if (updatedStatus === 'Completed') {
-      userMessage = `Order update: Your order has been completed!`;
+    if (updatedStatus === 'Production Started') {
+      userMessage = `Order update: Your order is now in production.`;
+    } else if (updatedStatus === 'Manufacturing') {
+      userMessage = `Order update: Your custom furniture is currently being manufactured.`;
+    } else if (updatedStatus === 'Ready for Delivery') {
+      userMessage = `Order update: Your order is ready for delivery dispatch.`;
     }
     localStorage.setItem('mockUserNotifications', JSON.stringify([{
       _id: `notif_${Date.now()}`,
@@ -1358,7 +1411,7 @@ const VendorDashboard = ({
   const handleVerifyPayment = async (orderId) => {
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const updatedOrders = localOrders.map(o =>
-      o._id === orderId ? { ...o, orderStatus: 'Processing' } : o
+      o._id === orderId ? { ...o, orderStatus: 'Production Started' } : o
     );
     localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
     setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
@@ -1446,11 +1499,13 @@ const VendorDashboard = ({
     // Send customer notification
     const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
     let userMessage = `Delivery update: ${updatedStatus}. Notes: ${updatedNote}`;
-    if (updatedStatus === 'Delivered') {
+    if (updatedStatus === 'Ready for Delivery') {
+      userMessage = `Delivery update: Order picked up and ready for delivery.`;
+    } else if (updatedStatus === 'Delivered') {
       userMessage = `Delivery update: Your order has been delivered successfully!`;
     } else if (updatedStatus === 'Installation Scheduled') {
       userMessage = `Installation Scheduled: Technician will visit on ${new Date(Date.now() + 3600000 * 24 * 2).toLocaleDateString()}.`;
-    } else if (updatedStatus === 'Completed') {
+    } else if (updatedStatus === 'Installation Completed') {
       userMessage = `Order update: Installation completed successfully!`;
     }
     localStorage.setItem('mockUserNotifications', JSON.stringify([{
@@ -3058,13 +3113,14 @@ const VendorDashboard = ({
                 <h4 className="font-bold text-sm text-[#1F2937]">Update Manufacturing Stage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={mfgStatus[mfg._id] || mfg.status} onChange={(e) => setMfgStatus({ ...mfgStatus, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
-                    <option value="Pending">Pending</option>
-                    <option value="Processing">Processing</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Installation">Installation</option>
-                    <option value="Completed">Completed</option>
+                    <option value="Production Started">Production Started</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Ready for Delivery">Ready for Delivery</option>
                   </select>
-                  <input type="text" placeholder="Progress Image URL" value={progressImg[mfg._id] || ''} onChange={(e) => setProgressImg({ ...progressImg, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                  <div className="flex flex-col gap-2 justify-center">
+                    <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, mfg._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
+                    {progressImg[mfg._id] && progressImg[mfg._id].startsWith('data:image') && <span className="text-[10px] font-bold text-emerald-600">✓ Image ready to upload</span>}
+                  </div>
                   <button onClick={() => handleMfgUpdate(mfg._id)} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage & Upload Photo</button>
                 </div>
               </div>
@@ -3090,11 +3146,10 @@ const VendorDashboard = ({
                 <h4 className="font-bold text-sm text-[#1F2937]">Update Transit Status</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={delStatus[del._id] || del.status} onChange={(e) => setDelStatus({ ...delStatus, [del._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
-                    <option value="Picked Up">Picked Up</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
+                    <option value="Ready for Delivery">Ready for Delivery</option>
                     <option value="Delivered">Delivered</option>
                     <option value="Installation Scheduled">Installation Scheduled</option>
-                    <option value="Completed">Completed</option>
+                    <option value="Installation Completed">Installation Completed</option>
                   </select>
                   <input type="text" placeholder="Tracking Notes" value={trackingNote[del._id] || ''} onChange={(e) => setTrackingNote({ ...trackingNote, [del._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                   <button onClick={() => handleDelUpdate(del._id)} className="bg-[#2A9D8F] text-white rounded-xl font-bold text-sm shadow-md">Update Status</button>
@@ -3132,22 +3187,55 @@ const VendorDashboard = ({
       )}
 
       {/* TAB 10: REVIEWS */}
-      {activeTab === 'reviews' && (
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+      {activeTab === 'reviews' && (() => {
+        const avgRating = vendorReviews.length > 0 
+          ? (vendorReviews.reduce((sum, r) => sum + r.rating, 0) / vendorReviews.length).toFixed(1) 
+          : '0.0';
+
+        return (
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 animate-fade-in">
           <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Customer Reviews</h2>
-          <div className="flex items-center gap-4 border border-gray-100 p-6 rounded-2xl bg-gray-50">
-            <div className="text-center px-6 border-r border-gray-200">
-              <h3 className="font-extrabold text-4xl text-[#1F2937]">4.9</h3>
-              <div className="flex items-center gap-1 text-[#E9C46A] mt-1"><Star className="w-4 h-4 fill-current"/><Star className="w-4 h-4 fill-current"/><Star className="w-4 h-4 fill-current"/><Star className="w-4 h-4 fill-current"/><Star className="w-4 h-4 fill-current"/></div>
-              <p className="text-xs text-gray-500 mt-1">32 Reviews</p>
+          
+          {vendorReviews.length === 0 ? (
+            <div className="text-center p-12 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
+               No reviews received yet.
             </div>
-            <div className="pl-4">
-              <p className="italic text-gray-600">"Incredible craftsmanship on the living room set. Delivered exactly on time!"</p>
-              <p className="text-xs font-bold text-[#1F2937] mt-2">— Sarah Jenkins</p>
+          ) : (
+            <div className="space-y-6">
+              <div className="flex flex-col md:flex-row gap-6 border border-gray-100 p-6 rounded-2xl bg-gray-50/50">
+                <div className="text-center md:px-8 md:border-r border-gray-200 flex flex-col justify-center items-center">
+                  <h3 className="font-extrabold text-5xl text-[#1F2937]">{avgRating}</h3>
+                  <div className="flex items-center gap-1 text-[#E9C46A] mt-2 justify-center">
+                    {[1,2,3,4,5].map(s => <Star key={s} className={`w-5 h-5 ${s <= Math.round(Number(avgRating)) ? 'fill-current' : 'text-gray-300'}`}/>)}
+                  </div>
+                  <p className="text-sm font-bold text-gray-500 mt-2">{vendorReviews.length} Reviews</p>
+                </div>
+                <div className="flex-1 md:pl-4">
+                  <h4 className="font-bold text-[#1F2937] mb-4 border-b border-gray-200 pb-2">Recent Feedback</h4>
+                  <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                    {vendorReviews.map(review => (
+                      <div key={review._id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center gap-1 text-[#E9C46A]">
+                            {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'fill-current' : 'text-gray-200'}`}/>)}
+                          </div>
+                          <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md">{new Date(review.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <p className="italic text-gray-600 text-sm leading-relaxed">"{review.comment}"</p>
+                        <p className="text-xs font-bold text-[#8B5E3C] mt-3 flex items-center gap-2">
+                          <div className="w-5 h-5 rounded-full bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C]">{review.userId?.name?.charAt(0) || 'C'}</div>
+                          {review.userId?.name || 'Customer'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
-      )}
+        );
+      })()}
 
       {/* TAB: HELP CENTER LIVE CHAT */}
       {activeTab === 'support' && (() => {
@@ -3623,7 +3711,7 @@ const VendorDashboard = ({
       {/* TAB: CUSTOMER MESSAGES */}
       {activeTab === 'messages' && (() => {
         const currentVendorName = profile?.companyName || 'Artisan Workshop Ltd';
-        const vendorMsgs = directMessages.filter(m => m.vendorName === currentVendorName);
+        const vendorMsgs = directMessages.filter(m => !m.vendorName || m.vendorName === currentVendorName);
         
         // Find all unique users who messaged this specific vendor
         const uniqueUsers = Array.from(new Set(vendorMsgs.map(m => m.userName))).map(name => {
@@ -3646,7 +3734,7 @@ const VendorDashboard = ({
             {/* Left Panel: Customer Conversations list */}
             <div className="w-1/3 border-r border-gray-100 flex flex-col bg-gray-50/50">
               <div className="p-5 border-b border-gray-100 bg-white">
-                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Customer Chats</h3>
+                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Vendor Chat</h3>
                 <p className="text-[10px] text-gray-400 mt-1 uppercase tracking-wider font-bold">Direct inquiries & feedback</p>
               </div>
               <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
@@ -3689,7 +3777,7 @@ const VendorDashboard = ({
                   {/* Chat header */}
                   <div className="p-5 border-b border-gray-100 flex items-center justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-[#1F2937]">{selectedUserMsg}</h3>
+                      <h3 className="font-bold text-sm text-[#1F2937]">Vendor Chat: {selectedUserMsg}</h3>
                       <p className="text-[10px] text-[#2A9D8F] font-bold uppercase tracking-wider mt-0.5">Thread with: {activeVendorContext}</p>
                     </div>
                     <div className="flex gap-2">
@@ -3700,22 +3788,22 @@ const VendorDashboard = ({
                   {/* Chat message content */}
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {selectedUserMsgs.map((msg) => {
-                      const isVendor = msg.sender === 'vendor';
-                      const isAdmin = msg.sender === 'admin';
+                      const isVendor = msg.senderRole === 'vendor';
+                      const isAdmin = msg.senderRole === 'admin';
                       let bubbleStyle, align, senderLabel, timeColor;
 
                       if (isVendor) {
-                        bubbleStyle = 'bg-[#2A9D8F] text-white rounded-tr-none';
+                        bubbleStyle = 'bg-[#8B5E3C] text-white rounded-tr-none';
                         align = 'justify-end';
                         senderLabel = 'You';
                         timeColor = 'text-white/70';
                       } else if (isAdmin) {
-                        bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
+                        bubbleStyle = 'bg-[#1D3557] text-white rounded-tl-none border border-[#1D3557]';
                         align = 'justify-start';
-                        senderLabel = 'Admin';
+                        senderLabel = 'Admin Support';
                         timeColor = 'text-white/70';
                       } else {
-                        bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
+                        bubbleStyle = 'bg-white text-gray-800 border border-[#E76F51]/30 rounded-tl-none';
                         align = 'justify-start';
                         senderLabel = msg.userName || 'Customer';
                         timeColor = 'text-gray-400';
@@ -3725,13 +3813,14 @@ const VendorDashboard = ({
                         <div key={msg._id} className={`flex ${align}`}>
                           <div className={`max-w-[70%] p-4 rounded-2xl text-xs leading-relaxed shadow-sm ${bubbleStyle}`}>
                             <p>{msg.message}</p>
-                            <span className={`block text-[9px] mt-1.5 text-right ${timeColor}`}>
+                            <span className={`block text-[9px] mt-1.5 ${isVendor ? 'text-right' : 'text-left'} ${timeColor}`}>
                               {senderLabel} · {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                           </div>
                         </div>
                       );
                     })}
+                    <div ref={chatEndRef} />
                   </div>
 
                   {/* Reply Input */}

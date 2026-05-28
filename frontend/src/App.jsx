@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -18,6 +18,64 @@ import TermsOfService from './pages/TermsOfService';
 import PlanEssential from './pages/PlanEssential';
 import PlanPremium from './pages/PlanPremium';
 import PlanEnterprise from './pages/PlanEnterprise';
+import axios from 'axios';
+
+// Sync Manager for real-time backend synchronization
+const SyncManager = () => {
+  useEffect(() => {
+    // 1. Intercept localStorage setItem for mockOrders & mockSharedChat to push to backend
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+      originalSetItem.apply(this, arguments);
+      if (key === 'mockOrders') {
+        window.dispatchEvent(new Event('mockOrdersUpdated'));
+        axios.put('http://localhost:5000/api/orders/sync', { orders: JSON.parse(value) })
+             .catch(err => console.error('Sync push failed:', err));
+      }
+      if (key === 'mockSharedChat') {
+        window.dispatchEvent(new Event('mockChatUpdated'));
+        axios.put('http://localhost:5000/api/chat/sync', { chat: JSON.parse(value) })
+             .catch(err => console.error('Chat sync push failed:', err));
+      }
+    };
+
+    // 2. Poll backend every 2.5 seconds to pull down updates
+    const interval = setInterval(() => {
+      axios.get('http://localhost:5000/api/orders/sync')
+        .then(res => {
+          if (res.data?.data && res.data.data.length > 0) {
+             const localStr = localStorage.getItem('mockOrders');
+             const remoteStr = JSON.stringify(res.data.data);
+             if (localStr !== remoteStr) {
+               originalSetItem.call(localStorage, 'mockOrders', remoteStr);
+               window.dispatchEvent(new Event('mockOrdersUpdated'));
+             }
+          }
+        })
+        .catch(err => console.error('Sync pull failed:', err));
+
+      axios.get('http://localhost:5000/api/chat/sync')
+        .then(res => {
+          if (res.data?.data && res.data.data.length > 0) {
+             const localStr = localStorage.getItem('mockSharedChat');
+             const remoteStr = JSON.stringify(res.data.data);
+             if (localStr !== remoteStr) {
+               originalSetItem.call(localStorage, 'mockSharedChat', remoteStr);
+               window.dispatchEvent(new Event('mockChatUpdated'));
+             }
+          }
+        })
+        .catch(err => console.error('Chat sync pull failed:', err));
+    }, 2500);
+
+    return () => {
+      clearInterval(interval);
+      localStorage.setItem = originalSetItem;
+    };
+  }, []);
+
+  return null;
+};
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -31,12 +89,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard if role mismatch
-    if (user.role === 'admin') return <Navigate to="/dashboard/admin" replace />;
-    if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) return <Navigate to="/dashboard/vendor" replace />;
-    return <Navigate to="/dashboard/user" replace />;
-  }
+  // NOTE: Strict role-based redirects have been disabled for prototype testing 
+  // so you can view Vendor and User dashboards side-by-side in the same browser.
 
   return children;
 };
@@ -103,6 +157,7 @@ const AppRoutes = () => {
 function App() {
   return (
     <AuthProvider>
+      <SyncManager />
       <Router>
         <ToastProvider>
           <AppRoutes />

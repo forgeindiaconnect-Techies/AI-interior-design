@@ -29,12 +29,26 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
         serverProds.forEach(p => mergedMap.set(p._id, p));
         localProds.forEach(p => mergedMap.set(p._id, p));
         
-        // Sort newest first: descending by _id (timestamps are alphabetical/numerical strings)
-        const sorted = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
+        // Sort newest first. Try to extract timestamp from _id if it's like 'prod_17...', otherwise string sort.
+        const sorted = Array.from(mergedMap.values()).sort((a, b) => {
+          const tA = parseInt(a._id.split('_')[1]) || 0;
+          const tB = parseInt(b._id.split('_')[1]) || 0;
+          if (tA > 10000 && tB > 10000) return tB - tA; // Both are timestamps
+          if (tA > 10000) return -1; // A is timestamp, B is not, so A is newer
+          if (tB > 10000) return 1; // B is timestamp, A is not, so B is newer
+          return b._id.localeCompare(a._id); // Both are fallback string IDs
+        });
         setProducts(sorted);
       } else {
         if (localProds.length > 0) {
-          const sorted = [...localProds].sort((a, b) => b._id.localeCompare(a._id));
+          const sorted = [...localProds].sort((a, b) => {
+            const tA = parseInt(a._id.split('_')[1]) || 0;
+            const tB = parseInt(b._id.split('_')[1]) || 0;
+            if (tA > 10000 && tB > 10000) return tB - tA;
+            if (tA > 10000) return -1;
+            if (tB > 10000) return 1;
+            return b._id.localeCompare(a._id);
+          });
           setProducts(sorted);
         } else {
           const fallback = [
@@ -52,7 +66,14 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     } catch (error) {
       console.error('Error fetching products', error);
       if (localProds.length > 0) {
-        const sorted = [...localProds].sort((a, b) => b._id.localeCompare(a._id));
+        const sorted = [...localProds].sort((a, b) => {
+          const tA = parseInt(a._id.split('_')[1]) || 0;
+          const tB = parseInt(b._id.split('_')[1]) || 0;
+          if (tA > 10000 && tB > 10000) return tB - tA;
+          if (tA > 10000) return -1;
+          if (tB > 10000) return 1;
+          return b._id.localeCompare(a._id);
+        });
         setProducts(sorted);
       } else {
         const fallback = [
