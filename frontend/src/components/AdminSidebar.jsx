@@ -117,7 +117,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           alignItems: 'center', justifyContent: 'center',
           backgroundColor: A.iconBg, color: A.iconColor, flexShrink: 0,
         }}>
-          <Palette style={{ width: 16, height: 16 }} />
+          <div className="relative flex items-center justify-center" style={{ width: 16, height: 16 }}>
+            <Armchair style={{ width: '100%', height: '100%' }} />
+            <Sparkles className="absolute -top-1 -right-1 text-yellow-300 animate-pulse" style={{ width: '50%', height: '50%' }} />
+          </div>
         </div>
         <span className="brand-text" style={{ fontWeight: 800, fontSize: 16, letterSpacing: '-0.5px', color: A.brandText, fontFamily: "'Outfit', sans-serif" }}>
           Artisan<span className="brand-accent" style={{ color: A.accentText }}>Studio</span>
