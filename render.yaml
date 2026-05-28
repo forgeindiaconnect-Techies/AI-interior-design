@@ -1,0 +1,8 @@
+services:
+  - type: web
+    name: backend
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    # No publish directory for backend services
+    # Environment variables should be set in the Render dashboard
