@@ -9,9 +9,7 @@ let mockWishlist = [];
 // @access  Private
 exports.getWishlist = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: mockWishlist });
-    }
+
 
     let wishlist = await Wishlist.findOne({ userId: req.user.id }).populate('products');
     if (!wishlist) {
@@ -30,12 +28,7 @@ exports.toggleWishlist = async (req, res) => {
   try {
     const { productId } = req.body;
     
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const idx = mockWishlist.findIndex(id => id === productId);
-      if (idx > -1) mockWishlist.splice(idx, 1);
-      else mockWishlist.push(productId);
-      return res.status(200).json({ success: true, data: mockWishlist });
-    }
+
 
     let wishlist = await Wishlist.findOne({ userId: req.user.id });
     if (!wishlist) {

@@ -17,20 +17,7 @@ let mockStoreSetup = {};
 // @access  Private (Vendor)
 exports.getVendorProfile = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          vendor: {
-            _id: 'mock_vendor_id_123',
-            companyName: 'Artisan Furniture Ltd',
-            businessType: req.user.role === 'vendor' ? 'seller' : req.user.role,
-            isVerified: true
-          },
-          stats: { totalOrders: 15, totalQuotations: 8, revenue: 24500 }
-        }
-      });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
@@ -87,13 +74,7 @@ exports.sendQuotation = async (req, res) => {
   try {
     const { userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime } = req.body;
     
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const idx = mockManualDesigns.findIndex(m => m._id === designRequestId);
-      if (idx !== -1) {
-        mockManualDesigns[idx].status = 'Quotation Sent';
-      }
-      return res.status(201).json({ success: true, data: { _id: 'quote_' + Date.now(), ...req.body, status: 'pending' } });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
@@ -115,9 +96,7 @@ exports.sendQuotation = async (req, res) => {
 // @access  Private (Vendor)
 exports.suggestVendor = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, message: 'Forwarded to suggested vendor successfully' });
-    }
+
 
     const { requestId, suggestedVendorId, note } = req.body;
     const suggestedVendor = await Vendor.findById(suggestedVendorId);
@@ -138,9 +117,7 @@ exports.suggestVendor = async (req, res) => {
 // @access  Private (Vendor)
 exports.forwardToManufacturer = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(201).json({ success: true, data: { _id: 'mfg_' + Date.now(), ...req.body, status: 'Pending' } });
-    }
+
 
     const { orderId, manufacturerId, designDetails, measurements, materials, budget } = req.body;
     const manufacturingOrder = await ManufacturingOrder.create({ orderId, manufacturerId, designDetails, measurements, materials, budget, status: 'Pending' });
@@ -165,11 +142,7 @@ exports.forwardToManufacturer = async (req, res) => {
 // @access  Private (Vendor)
 exports.acceptRequest = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const idx = mockManualDesigns.findIndex(m => m._id === req.params.id);
-      if (idx !== -1) mockManualDesigns[idx].status = 'Vendor Review';
-      return res.status(200).json({ success: true, message: 'Request accepted successfully' });
-    }
+
 
     const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Vendor Review' }, { new: true });
     if (request) {
@@ -186,11 +159,7 @@ exports.acceptRequest = async (req, res) => {
 // @access  Private (Vendor)
 exports.rejectRequest = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const idx = mockManualDesigns.findIndex(m => m._id === req.params.id);
-      if (idx !== -1) mockManualDesigns[idx].status = 'Rejected';
-      return res.status(200).json({ success: true, message: 'Request rejected' });
-    }
+
 
     const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { new: true });
     if (request) {
@@ -207,19 +176,7 @@ exports.rejectRequest = async (req, res) => {
 // @access  Private (Vendor)
 exports.submitVerification = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const existing = mockVerification[req.user.id];
-      if (existing && (existing.status === 'Approved' || existing.status === 'Under Review')) {
-        return res.status(409).json({ success: false, message: 'Verification already ' + existing.status.toLowerCase() + '. Cannot resubmit.' });
-      }
-      mockVerification[req.user.id] = {
-        ...req.body,
-        status: 'Pending',
-        submittedAt: new Date(),
-        updatedAt: new Date()
-      };
-      return res.status(201).json({ success: true, message: 'Verification details submitted successfully', data: mockVerification[req.user.id] });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -273,10 +230,7 @@ exports.submitVerification = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVerificationStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const data = mockVerification[req.user.id] || { status: 'Not Submitted' };
-      return res.status(200).json({ success: true, data });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -288,9 +242,7 @@ exports.getVerificationStatus = async (req, res) => {
   }
 };exports.getVerificationStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: mockVerification[req.user.id] || { status: 'Not Submitted' } });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -309,10 +261,7 @@ exports.submitStoreSetup = async (req, res) => {
   try {
     const { description, specialization, monthlyCapacity, serviceAreas } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      mockStoreSetup[req.user.id] = { description, specialization, monthlyCapacity, serviceAreas, status: 'Submitted', submittedAt: new Date() };
-      return res.status(201).json({ success: true, message: 'Store Setup details submitted successfully', data: mockStoreSetup[req.user.id] });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -338,9 +287,7 @@ exports.submitStoreSetup = async (req, res) => {
 // @access  Private (Vendor)
 exports.getStoreSetupStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: mockStoreSetup[req.user.id] || { status: 'Pending' } });
-    }
+
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -360,3 +307,19 @@ exports.getStoreSetupStatus = async (req, res) => {
   }
 };
 
+
+// @desc    Get all orders for a vendor
+// @route   GET /api/vendor/orders
+// @access  Private (Vendor)
+exports.getVendorOrders = async (req, res) => {
+  try {
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
+    
+    res.status(200).json({ success: true, count: standardOrders.length, data: standardOrders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

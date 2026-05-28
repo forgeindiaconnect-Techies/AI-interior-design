@@ -61,24 +61,7 @@ exports.createAIDesign = async (req, res) => {
       Bathroom: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373']
     };
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const newAi = {
-        _id: 'ai_' + Date.now(),
-        userId: req.user.id,
-        roomType: roomType || 'Living Room',
-        originalImage,
-        generatedImage: mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'],
-        aiSuggestion: {
-          furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
-          materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble', 'Linen Upholstery'],
-          colorPalette: mockPalettes[roomType] || mockPalettes['Living Room'],
-          budgetEstimate: Math.floor(Math.random() * 3000) + 2000
-        },
-        status: 'generated',
-        createdAt: new Date().toISOString()
-      };
-      return res.status(201).json({ success: true, data: newAi });
-    }
+
 
     const aiDesign = await AIDesignRequest.create({
       userId: req.user.id,
@@ -108,25 +91,7 @@ exports.createAIDesign = async (req, res) => {
 // @access  Private
 exports.getUserAIDesigns = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const mockDesigns = [
-        {
-          _id: 'ai_design_1',
-          roomType: 'Living Room',
-          originalImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60',
-          generatedImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60',
-          aiSuggestion: {
-            furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp'],
-            materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble'],
-            colorPalette: ['#D4A373', '#2A9D8F', '#F8F5F0', '#1F2937'],
-            budgetEstimate: 2850
-          },
-          status: 'generated',
-          createdAt: new Date().toISOString()
-        }
-      ];
-      return res.status(200).json({ success: true, data: mockDesigns });
-    }
+
 
     const designs = await AIDesignRequest.find({ userId: req.user.id }).sort('-createdAt');
     res.status(200).json({ success: true, data: designs });
@@ -141,20 +106,7 @@ exports.getUserAIDesigns = async (req, res) => {
 exports.updateAIDesignStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const updated = {
-        _id: req.params.id,
-        roomType: 'Living Room',
-        generatedImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60',
-        aiSuggestion: {
-          furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Premium Accent Chair'],
-          materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble'],
-          budgetEstimate: status === 'regenerated' ? 3200 : 2850
-        },
-        status: status === 'regenerated' ? 'generated' : status
-      };
-      return res.status(200).json({ success: true, data: updated });
-    }
+
 
     let design = await AIDesignRequest.findById(req.params.id);
     if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
@@ -248,36 +200,7 @@ exports.getUserManualDesigns = async (req, res) => {
 // @access  Private
 exports.createDesignerRequest = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const designerRequest = {
-        _id: 'des_' + Date.now(),
-        userId: { _id: req.user?.id || 'mock_user_id_123', name: req.user?.name || 'Customer Demo', email: req.user?.email || 'user@example.com', phone: '+1 (555) 019-2834' },
-        ...req.body,
-        status: 'pending',
-        assignedDesignerId: null,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Also add to mockManualDesigns so it shows up in vendor dashboard!
-      mockManualDesigns.unshift({
-        _id: 'man_from_des_' + designerRequest._id,
-        requestType: 'Interior Designer Help',
-        userId: designerRequest.userId,
-        roomType: 'Interior Design',
-        style: 'Consultation',
-        budget: req.body.budget || 500,
-        size: 'Full Space',
-        materials: 'Not applicable',
-        requirements: req.body.details || '',
-        referenceImages: [],
-        timeline: 'Flexible',
-        ownMaterialsAvailable: 'No',
-        status: 'Submitted',
-        createdAt: designerRequest.createdAt
-      });
 
-      return res.status(201).json({ success: true, data: designerRequest });
-    }
 
     const request = await InteriorDesignerRequest.create({ userId: req.user.id, ...req.body });
 

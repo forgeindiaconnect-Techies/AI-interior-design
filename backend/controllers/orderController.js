@@ -15,10 +15,7 @@ const mongoose = require('mongoose');
 // @access  Private
 exports.createOrder = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const newOrder = { _id: 'ord_' + Date.now(), ...req.body, orderStatus: 'Request Submitted', paymentStatus: 'pending', createdAt: new Date().toISOString() };
-      return res.status(201).json({ success: true, data: newOrder });
-    }
+
 
     const { vendorId, orderType, referenceId, totalAmount, shippingAddress } = req.body;
     const order = await Order.create({ userId: req.user.id, vendorId, orderType, referenceId, totalAmount, shippingAddress, orderStatus: 'Request Submitted' });
@@ -37,13 +34,7 @@ exports.createOrder = async (req, res) => {
 // @access  Private
 exports.getUserOrders = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const mockOrders = [
-        { _id: 'ord_101', orderType: 'product', totalAmount: 1299, paymentStatus: 'pending', orderStatus: 'Request Submitted', vendorId: { companyName: 'Artisan Workshop' }, createdAt: new Date().toISOString() },
-        { _id: 'ord_102', orderType: 'custom_design', totalAmount: 4850, paymentStatus: 'paid', orderStatus: 'Manufacturing', vendorId: { companyName: 'Luxury Living Inc' }, createdAt: new Date().toISOString() }
-      ];
-      return res.status(200).json({ success: true, data: mockOrders });
-    }
+
 
     const orders = await Order.find({ userId: req.user.id }).populate('vendorId', 'companyName').sort('-createdAt');
     res.status(200).json({ success: true, data: orders });
@@ -57,10 +48,7 @@ exports.getUserOrders = async (req, res) => {
 // @access  Private
 exports.approveQuotation = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const newOrder = { _id: 'ord_' + Date.now(), orderType: 'custom_design', totalAmount: 4850, paymentStatus: 'pending', orderStatus: 'User Approved', vendorId: { companyName: 'Artisan Workshop' }, createdAt: new Date().toISOString() };
-      return res.status(200).json({ success: true, data: newOrder });
-    }
+
 
     const { quotationId, shippingAddress } = req.body;
     const quotation = await Quotation.findById(quotationId);
@@ -83,9 +71,7 @@ exports.approveQuotation = async (req, res) => {
 // @access  Private (Manufacturer)
 exports.updateManufacturingStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: { _id: req.params.id, status: req.body.status } });
-    }
+
 
     const { status, progressImage } = req.body;
     const mOrder = await ManufacturingOrder.findById(req.params.id);
@@ -114,9 +100,7 @@ exports.updateManufacturingStatus = async (req, res) => {
 // @access  Private (Delivery Partner)
 exports.updateDeliveryStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: { _id: req.params.id, status: req.body.status } });
-    }
+
 
     const { status, trackingNotes } = req.body;
     const dOrder = await DeliveryOrder.findById(req.params.id);
@@ -143,9 +127,7 @@ exports.updateDeliveryStatus = async (req, res) => {
 // @access  Private (Installation Partner)
 exports.updateInstallationStatus = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, data: { _id: req.params.id, status: req.body.status } });
-    }
+
 
     const { status, proofImage, notes } = req.body;
     const iOrder = await InstallationOrder.findById(req.params.id);
@@ -172,9 +154,7 @@ exports.updateInstallationStatus = async (req, res) => {
 // @access  Private
 exports.createPayment = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(201).json({ success: true, data: { _id: 'pay_' + Date.now(), amount: req.body.amount, status: 'success' } });
-    }
+
 
     const { orderId, amount, transactionId, paymentMethod } = req.body;
     const payment = await Payment.create({ orderId, userId: req.user.id, amount, transactionId, paymentMethod, status: 'success' });
@@ -190,9 +170,7 @@ exports.createPayment = async (req, res) => {
 // @access  Private
 exports.createReview = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(201).json({ success: true, data: { _id: 'rev_' + Date.now(), ...req.body } });
-    }
+
 
     const { vendorId, productId, rating, comment } = req.body;
     const review = await Review.create({ userId: req.user.id, vendorId, productId, rating, comment });
@@ -209,28 +187,7 @@ exports.createTicket = async (req, res) => {
   try {
     const { subject, message } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      global.mockTickets = global.mockTickets || [
-        {
-          _id: 't_1',
-          subject: 'Delivery Delay Inquiry',
-          message: "The assigned delivery partner hasn't updated tracking for 2 days.",
-          status: 'open',
-          userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com' },
-          createdAt: new Date(Date.now() - 3600000 * 24 * 1)
-        }
-      ];
-      const newTicket = {
-        _id: 'tick_' + Date.now(),
-        userId: req.user ? { _id: req.user.id, name: req.user.name, email: req.user.email } : { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com' },
-        subject,
-        message,
-        status: 'open',
-        createdAt: new Date()
-      };
-      global.mockTickets.unshift(newTicket);
-      return res.status(201).json({ success: true, data: newTicket });
-    }
+
 
     const ticket = await SupportTicket.create({ userId: req.user.id, subject, message });
     res.status(201).json({ success: true, data: ticket });
@@ -243,20 +200,14 @@ exports.createTicket = async (req, res) => {
 // @route   GET /api/orders/sync
 // @access  Public (for prototype)
 exports.getSyncedOrders = (req, res) => {
-  global.mockOrders = global.mockOrders || [];
-  res.status(200).json({ success: true, data: global.mockOrders });
+  // Route disabled as we use actual MongoDB.
+  res.status(400).json({ success: false, message: 'Sync not supported in prod DB' });
 };
 
 // @desc    Update or create a synchronized prototype order
 // @route   PUT /api/orders/sync
 // @access  Public (for prototype)
 exports.updateSyncedOrder = (req, res) => {
-  global.mockOrders = global.mockOrders || [];
-  const updatedOrders = req.body.orders;
-  
-  if (Array.isArray(updatedOrders)) {
-    global.mockOrders = updatedOrders;
-  }
-  
-  res.status(200).json({ success: true, data: global.mockOrders });
+  // Route disabled
+  res.status(400).json({ success: false, message: 'Sync not supported in prod DB' });
 };

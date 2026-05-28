@@ -335,361 +335,109 @@ const VendorDashboard = ({
     };
   }, []);
 
-  const fetchPartnerData = async () => {
+    const fetchPartnerData = async () => {
     try {
-      // 1. Get or seed Vendor Profile & Stats
-      let localProfile = JSON.parse(localStorage.getItem('mockProfile') || 'null');
-      if (!localProfile) {
-        localProfile = {
-          _id: 'mock_vendor_id_123',
-          companyName: 'Artisan Workshop Ltd',
-          ownerName: 'Marcus Vance',
-          email: 'vendor@example.com',
-          phone: '+1 (555) 321-7654',
-          gstNumber: 'GSTIN29AAACA1234A1Z',
-          panNumber: 'ABCDE1234F',
-          address: '45 Artisan Way, Sector 5, Bangalore'
-        };
-        localStorage.setItem('mockProfile', JSON.stringify(localProfile));
+      // 1. Get Vendor Profile & Stats
+      const profileRes = await axios.get('/vendor/profile');
+      if (profileRes.data.success) {
+        setProfile(profileRes.data.data.vendor);
+        setStats(profileRes.data.data.stats);
       }
-      setProfile(localProfile);
-
-      // Seed stats if missing
-      let localStats = JSON.parse(localStorage.getItem('mockStats') || 'null');
-      if (!localStats) {
-        localStats = { totalOrders: 15, revenue: 24500 };
-        localStorage.setItem('mockStats', JSON.stringify(localStats));
-      }
-      setStats(localStats);
 
       // 2. Verification Submission status lookup
-      let verificationSubmissions = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
-      let currentVerification = verificationSubmissions.find(k => k.email === (user?.email || 'vendor@example.com'));
-      if (!currentVerification) {
-        currentVerification = { status: 'Not Submitted' };
-      }
-      setVerificationDetails(currentVerification);
-      if (currentVerification && currentVerification.status !== 'Not Submitted') {
-        setVerifyBusinessName(currentVerification.businessName || '');
-        setVerifyOwnerName(currentVerification.ownerName || '');
-        setVerifyPhone(currentVerification.phone || '');
-        setVerifyEmail(currentVerification.email || '');
-        setVerifyGst(currentVerification.gstNumber || '');
-        setVerifyPan(currentVerification.panNumber || '');
-        setVerifyIdProof(currentVerification.idProofUrl || '');
-        setVerifyAddressProof(currentVerification.addressProofUrl || '');
+      const verifRes = await axios.get('/vendor/verification');
+      if (verifRes.data.success) {
+        const currentVerification = verifRes.data.data;
+        setVerificationDetails(currentVerification);
+        if (currentVerification && currentVerification.status !== 'Not Submitted') {
+          setVerifyBusinessName(currentVerification.businessName || '');
+          setVerifyOwnerName(currentVerification.ownerName || '');
+          setVerifyPhone(currentVerification.phone || '');
+          setVerifyEmail(currentVerification.email || '');
+          setVerifyGst(currentVerification.gstNumber || '');
+          setVerifyPan(currentVerification.panNumber || '');
+          setVerifyIdProof(currentVerification.idProofUrl || '');
+          setVerifyAddressProof(currentVerification.addressProofUrl || '');
+        }
       }
 
       // 3. Store Setup Lookup
-      let storeSetupSubmissions = JSON.parse(localStorage.getItem('mockStoreSetupSubmissions') || '[]');
-      let currentStoreSetup = storeSetupSubmissions.find(d => d.email === (user?.email || 'vendor@example.com'));
-      if (!currentStoreSetup) {
-        currentStoreSetup = { status: 'Not Submitted' };
-      }
-      setStoreSetupDetails(currentStoreSetup);
-      if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
-        setStoreBrandName(currentStoreSetup.brandName || '');
-        setStoreDescription(currentStoreSetup.description || '');
-        setStoreSupportEmail(currentStoreSetup.supportEmail || '');
-        setStoreSupportPhone(currentStoreSetup.supportPhone || '');
-        setStoreAddress(currentStoreSetup.address || '');
-        setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
-        setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
-        setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+      const storeRes = await axios.get('/vendor/store-setup');
+      if (storeRes.data.success) {
+        const currentStoreSetup = storeRes.data.data;
+        setStoreSetupDetails(currentStoreSetup);
+        if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
+          setStoreBrandName(currentStoreSetup.brandName || '');
+          setStoreDescription(currentStoreSetup.description || '');
+          setStoreSupportEmail(currentStoreSetup.supportEmail || '');
+          setStoreSupportPhone(currentStoreSetup.supportPhone || '');
+          setStoreAddress(currentStoreSetup.address || '');
+          setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
+          setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
+          setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+        }
       }
 
       // 4. Products list
-      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
-      if (localProducts.length === 0) {
-        localProducts = [
-          { 
-            _id: 'prod_1', 
-            title: 'Velvet Lounge Chair', 
-            category: 'Living Room', 
-            price: 450, 
-            images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'], 
-            description: 'Luxurious velvet chair crafted with solid oak frames and high-density premium foam padding.',
-            material: 'Velvet / Oak Wood',
-            size: '32×32×30',
-            stockStatus: 'In Stock',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
-          },
-          { 
-            _id: 'prod_2', 
-            title: 'Modern Oak Dining Table', 
-            category: 'Dining Room', 
-            price: 1200, 
-            images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'], 
-            description: 'Solid oak dining table for 6 with matte oil finish.',
-            material: 'Solid Oak Wood',
-            size: '72×36×30',
-            stockStatus: 'In Stock',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
-          }
-        ];
-        localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+      const vendorId = profileRes.data?.data?.vendor?._id;
+      if (vendorId) {
+        const productsRes = await axios.get('/products?vendorId=' + vendorId);
+        if (productsRes.data.success) {
+          setProducts(productsRes.data.data);
+        }
       }
-      setProducts(localProducts);
-
-      let vendorId = localProfile?._id || 'mock_vendor_id_123';
 
       // 5. Custom Requests
-      let localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      if (localManualRequests.length === 0) {
-        localManualRequests = [
-          {
-            _id: 'seed_ai_1',
-            requestType: 'AI Generated',
-            userId: { _id: 'u_seed_1', name: 'Priya Sharma', email: 'priya.s@example.com', phone: '+91 98765 43210' },
-            roomType: 'Living Room',
-            style: 'AI Generated (Warm Oak)',
-            budget: '$4,200',
-            size: '400 sq ft',
-            timeline: 'Within 1 Month',
-            ownMaterialsAvailable: 'No',
-            materialDetails: '',
-            materialQuantity: '',
-            materialPickupNeeded: 'No',
-            pickupAddress: '',
-            materialImages: [],
-            requirements: 'AI Suggestions: Furniture (Custom Teak Sofa, Minimalist Oak Coffee Table, Modern Brass Sconces). Materials (Teak Wood, Linen, Brass).',
-            referenceImages: ['https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=600'],
-            status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-          },
-          {
-            _id: 'seed_man_1',
-            requestType: 'Manual Design',
-            userId: { _id: 'u_seed_2', name: 'Arjun Mehta', email: 'arjun.m@example.com', phone: '+91 87654 32109' },
-            roomType: 'Bedroom',
-            style: 'Minimalist',
-            budget: '₹50,000 - ₹1,00,000',
-            size: 'Medium (12x14 ft)',
-            timeline: 'Within 1 Month',
-            ownMaterialsAvailable: 'Yes',
-            materialDetails: 'Teak wood panels, white marble tiles',
-            materialQuantity: '40 sq ft teak, 120 sq ft marble',
-            materialPickupNeeded: 'Yes',
-            pickupAddress: 'Block 4B, Sector 62, Noida',
-            materialImages: ['https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400'],
-            requirements: 'Cozy and dark theme with hidden lighting. Need custom wardrobe with sliding doors.',
-            referenceImages: ['https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600'],
-            status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 8).toISOString()
-          },
-          {
-            _id: 'seed_des_1',
-            requestType: 'Interior Designer Help',
-            userId: { _id: 'u_seed_3', name: 'Neha Kapoor', email: 'neha.k@example.com', phone: '+91 99887 66554' },
-            roomType: 'Interior Design',
-            style: 'Consultation',
-            budget: '$500 - $1,000',
-            size: 'Entire Home (1500 sq ft)',
-            timeline: 'Flexible',
-            ownMaterialsAvailable: 'No',
-            materialDetails: '',
-            materialQuantity: '',
-            materialPickupNeeded: 'No',
-            pickupAddress: '',
-            materialImages: [],
-            requirements: 'Need expert consultation for entire 3BHK apartment. Modern theme with warm tones.',
-            referenceImages: ['https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600'],
-            status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-          },
-          {
-            _id: 'seed_man_2',
-            requestType: 'Manual Design',
-            userId: { _id: 'u_seed_4', name: 'Ravi Desai', email: 'ravi.d@example.com', phone: '+91 88990 77665' },
-            roomType: 'Kitchen',
-            style: 'Modern Luxury',
-            budget: '₹1,00,000 - ₹3,00,000',
-            size: 'Large (20x15 ft)',
-            timeline: '1-3 Months',
-            ownMaterialsAvailable: 'No',
-            materialDetails: '',
-            materialQuantity: '',
-            materialPickupNeeded: 'No',
-            pickupAddress: '',
-            materialImages: [],
-            requirements: 'Modular kitchen with island counter, quartz countertops, and smart storage solutions.',
-            referenceImages: ['https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600'],
-            status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-          }
-        ];
-        localStorage.setItem('mockManualRequests', JSON.stringify(localManualRequests));
+      const reqRes = await axios.get('/vendor/requests');
+      if (reqRes.data.success) {
+        setCustomRequests(reqRes.data.data);
       }
-      const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
-      setCustomRequests(assignedRequests);
-
-      // AI Design Orders from mockOrders
-      const localAllOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      const aiOrders = localAllOrders.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
-      setAiDesignOrders(aiOrders);
 
       // 6. Orders (Manufacturing and Delivery)
-      let localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      
-      // Let's filter or seed ready-made marketplace orders specifically for this vendor
-      let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
-      
-      if (mktOrders.length === 0) {
-        const seededMarketplaceOrders = [
-          {
-            _id: 'ord_p_101',
-            orderType: 'Marketplace Product',
-            userId: { _id: 'u_1', name: 'John Doe', email: 'john.doe@example.com', phone: '+1 (555) 123-4567' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: 450,
-            paymentStatus: 'paid',
-            orderStatus: 'Pending Confirmation',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 4).toISOString(), // 4 hours ago
-            shippingAddress: '123 Oak Avenue, Seattle, WA, 98101',
-            productDetails: {
-              _id: 'prod_1',
-              title: 'Velvet Lounge Chair',
-              price: 450,
-              images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'],
-              quantity: 1,
-              category: 'Living Room'
-            },
-            trackingId: '',
-            hasReturnRequest: false,
-            returnStatus: ''
-          },
-          {
-            _id: 'ord_p_102',
-            orderType: 'Marketplace Product',
-            userId: { _id: 'u_2', name: 'Alice Smith', email: 'alice.s@example.com', phone: '+1 (555) 987-6543' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: { _id: 'del_mock_1', companyName: 'Swift Logistics Solutions' },
-            installationPartnerId: null,
-            totalAmount: 900,
-            paymentStatus: 'paid',
-            orderStatus: 'Pending Dispatch',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 5).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(), // 2 days ago
-            shippingAddress: '456 Pine Boulevard, San Francisco, CA, 94102',
-            productDetails: {
-              _id: 'prod_1',
-              title: 'Velvet Lounge Chair',
-              price: 450,
-              images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'],
-              quantity: 2,
-              category: 'Living Room'
-            },
-            trackingId: '',
-            hasReturnRequest: false,
-            returnStatus: ''
-          },
-          {
-            _id: 'ord_p_103',
-            orderType: 'Marketplace Product',
-            userId: { _id: 'u_3', name: 'Robert Johnson', email: 'robert.j@example.com', phone: '+1 (555) 456-7890' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: { _id: 'del_mock_2', companyName: 'Artisan Cargo' },
-            installationPartnerId: null,
-            totalAmount: 1200,
-            paymentStatus: 'paid',
-            orderStatus: 'Dispatched',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 3).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(), // 3 days ago
-            shippingAddress: '789 Maple Drive, Chicago, IL, 60611',
-            productDetails: {
-              _id: 'prod_2',
-              title: 'Modern Oak Dining Table',
-              price: 1200,
-              images: ['https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=500'],
-              quantity: 1,
-              category: 'Dining Room'
-            },
-            trackingId: 'TRK-ARTISAN-77283',
-            hasReturnRequest: false,
-            returnStatus: ''
-          },
-          {
-            _id: 'ord_p_104',
-            orderType: 'Marketplace Product',
-            userId: { _id: 'u_4', name: 'Emily Davis', email: 'emily.d@example.com', phone: '+1 (555) 789-0123' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: { _id: 'del_mock_3', companyName: 'QuickShip Express' },
-            installationPartnerId: null,
-            totalAmount: 450,
-            paymentStatus: 'paid',
-            orderStatus: 'Delivered',
-            expectedDeliveryDate: new Date(Date.now() - 3600000 * 24 * 1).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 8).toISOString(), // 8 days ago
-            shippingAddress: '321 Elm Street, Boston, MA, 02110',
-            productDetails: {
-              _id: 'prod_1',
-              title: 'Velvet Lounge Chair',
-              price: 450,
-              images: ['https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500'],
-              quantity: 1,
-              category: 'Living Room'
-            },
-            trackingId: 'TRK-QSHIP-10492',
-            hasReturnRequest: true,
-            returnReason: 'Wrong color shade, requested replacement or refund.',
-            returnStatus: 'Pending Review'
-          }
-        ];
+      const ordersRes = await axios.get('/vendor/orders');
+      if (ordersRes.data.success) {
+        const localOrders = ordersRes.data.data;
         
-        localOrders = [...seededMarketplaceOrders, ...localOrders];
-        localStorage.setItem('mockOrders', JSON.stringify(localOrders));
-        mktOrders = seededMarketplaceOrders;
+        let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
+        setReadyMadeOrders(mktOrders);
+        
+        const mfgOrders = localOrders
+          .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
+          .map(o => ({
+            _id: o._id,
+            orderId: o._id,
+            designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
+              ? 'AI Design - ' + o.aiDesignData.roomType
+              : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+            measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
+              ? o.aiDesignData.measurements
+              : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+            materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
+            budget: o.quotationAmount || o.totalAmount,
+            status: o.orderStatus,
+            progressImages: o.progressImages || []
+          }));
+        setManufacturingOrders(mfgOrders);
+
+        const pendingOrders = localOrders.filter(o => o.orderStatus === 'Paid - Awaiting Verification');
+        setPendingVerificationOrders(pendingOrders);
+
+        const delOrders = localOrders
+          .filter(o => o.orderStatus === 'Ready for Delivery' || o.orderStatus === 'Delivered' || o.orderStatus === 'Installation Scheduled' || o.orderStatus === 'Installation Completed')
+          .map(o => ({
+            _id: o._id,
+            orderId: o._id,
+            shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
+            status: o.orderStatus,
+            trackingNotes: o.trackingNotes || 'Dispatched from central hub'
+          }));
+        setDeliveryOrders(delOrders);
       }
-      setReadyMadeOrders(mktOrders);
-      
-      const mfgOrders = localOrders
-        .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
-        .map(o => ({
-          _id: o._id,
-          orderId: o._id,
-          designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
-            ? 'AI Design - ' + o.aiDesignData.roomType
-            : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
-          measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
-            ? o.aiDesignData.measurements
-            : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
-          materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
-          budget: o.quotationAmount || o.totalAmount,
-          status: o.orderStatus,
-          progressImages: o.progressImages || []
-        }));
-      setManufacturingOrders(mfgOrders);
-
-      const pendingOrders = localOrders.filter(o => o.orderStatus === 'Paid - Awaiting Verification');
-      setPendingVerificationOrders(pendingOrders);
-
-      const delOrders = localOrders
-        .filter(o => o.orderStatus === 'Ready for Delivery' || o.orderStatus === 'Delivered' || o.orderStatus === 'Installation Scheduled' || o.orderStatus === 'Installation Completed')
-        .map(o => ({
-          _id: o._id,
-          orderId: o._id,
-          shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
-          status: o.orderStatus,
-          trackingNotes: o.trackingNotes || 'Dispatched from central hub'
-        }));
-      setDeliveryOrders(delOrders);
 
     } catch (error) {
       console.error('Error fetching vendor data', error);
     }
   };
-
   // Ready-made Orders Action Handlers
   const triggerNotification = (recipient, message, type = 'info') => {
     const notifObj = {

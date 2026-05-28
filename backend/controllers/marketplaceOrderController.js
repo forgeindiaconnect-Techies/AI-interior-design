@@ -12,19 +12,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { shippingAddress, items, totalAmount } = req.body;
     
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      const newOrder = {
-        _id: 'm_ord_' + Date.now(),
-        userId: req.user ? req.user.id : 'user_mock',
-        items: items || [],
-        totalAmount: totalAmount || 0,
-        shippingAddress: shippingAddress || '123 Fake St',
-        orderStatus: 'Order Placed',
-        createdAt: new Date()
-      };
-      mockOrders.push(newOrder);
-      return res.status(201).json({ success: true, data: newOrder });
-    }
+
 
     // Actual DB Logic
     const order = await MarketplaceOrder.create({
@@ -49,9 +37,7 @@ exports.createOrder = async (req, res) => {
 // @access  Private
 exports.getMyOrders = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1 || (req.user && req.user.id && String(req.user.id).startsWith('mock_user_id'))) {
-      return res.status(200).json({ success: true, count: mockOrders.length, data: mockOrders });
-    }
+
 
     const orders = await MarketplaceOrder.find({ userId: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: orders.length, data: orders });

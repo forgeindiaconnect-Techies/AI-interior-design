@@ -732,12 +732,7 @@ let mockDesignerRequests = [
 // @access  Private (Admin)
 exports.getStats = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({
-        success: true,
-        data: { totalUsers: 240, totalVendors: 35, totalManufacturers: 14, totalDelivery: 18, totalInstallation: 12, totalOrders: 128, totalRevenue: 45200, estimatedCommission: 6780 }
-      });
-    }
+
 
     const totalUsers = await User.countDocuments({ role: 'user' });
     const totalVendors = await Vendor.countDocuments({ businessType: 'seller' });
@@ -761,9 +756,7 @@ exports.getStats = async (req, res) => {
 // @access  Private (Admin)
 exports.verifyVendor = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: { _id: req.params.id, isVerified: req.body.isVerified } });
-    }
+
 
     const { isVerified } = req.body;
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isVerified }, { new: true });
@@ -783,15 +776,7 @@ exports.suspendUser = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const user = mockUsers.find(u => u._id === id);
-      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-      user.status = 'Suspended';
-      user.suspensionReason = reason || 'Terms of Service violation';
-
-      return res.status(200).json({ success: true, message: 'User suspended successfully' });
-    }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -827,15 +812,7 @@ exports.reactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const user = mockUsers.find(u => u._id === id);
-      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-      user.status = 'Active';
-      user.suspensionReason = '';
-
-      return res.status(200).json({ success: true, message: 'User reactivated successfully' });
-    }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -871,15 +848,7 @@ exports.blockUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const user = mockUsers.find(u => u._id === id);
-      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-      user.status = 'Blocked';
-      user.suspensionReason = '';
-
-      return res.status(200).json({ success: true, message: 'User blocked successfully' });
-    }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -908,15 +877,7 @@ exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const index = mockUsers.findIndex(u => u._id === id);
-      if (index === -1) return res.status(404).json({ success: false, message: 'User not found' });
 
-      const deletedUser = mockUsers[index];
-      mockUsers.splice(index, 1);
-
-      return res.status(200).json({ success: true, message: `User ${deletedUser.name} deleted successfully` });
-    }
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -944,57 +905,7 @@ exports.getUserOrders = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      // Find matching mock orders for this specific mock user
-      const orders = id === 'u_mock_1' ? [
-        {
-          _id: 'mock_ord_101',
-          orderType: 'marketplace',
-          title: 'Ergonomic Office Chair, Modern Minimalist Table',
-          items: [
-            { title: 'Ergonomic Office Chair', quantity: 1, price: 450 },
-            { title: 'Modern Minimalist Table', quantity: 1, price: 800 }
-          ],
-          totalAmount: 1250,
-          paymentStatus: 'paid',
-          orderStatus: 'Delivered',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 12)
-        },
-        {
-          _id: 'mock_ord_102',
-          orderType: 'custom_design',
-          title: 'Custom Living Room Design Package',
-          vendorName: 'Artisan Workshop',
-          totalAmount: 1200,
-          paymentStatus: 'paid',
-          orderStatus: 'Completed',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 25)
-        }
-      ] : (id === 'u_mock_3' ? [
-        {
-          _id: 'mock_ord_301',
-          orderType: 'marketplace',
-          title: 'Premium Linen Sofa Cover',
-          items: [{ title: 'Premium Linen Sofa Cover', quantity: 1, price: 450 }],
-          totalAmount: 450,
-          paymentStatus: 'paid',
-          orderStatus: 'Delivered',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 4)
-        }
-      ] : (id === 'u_mock_5' ? [
-        {
-          _id: 'mock_ord_501',
-          orderType: 'marketplace',
-          title: 'Smart LED Bulb Pack',
-          items: [{ title: 'Smart LED Bulb Pack', quantity: 1, price: 80 }],
-          totalAmount: 80,
-          paymentStatus: 'paid',
-          orderStatus: 'Delivered',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 1)
-        }
-      ] : []));
-      return res.status(200).json({ success: true, data: orders });
-    }
+
 
     const customOrders = await Order.find({ userId: id })
       .populate('vendorId', 'companyName')
@@ -1046,9 +957,7 @@ exports.getUserOrders = async (req, res) => {
 // @access  Private (Admin)
 exports.assignPartner = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: { _id: req.body.orderId, orderStatus: req.body.partnerType === 'manufacturer' ? 'Manufacturing' : 'Assigned' } });
-    }
+
 
     const { orderId, partnerType, partnerId } = req.body;
     let order = await Order.findById(orderId);
@@ -1104,9 +1013,7 @@ exports.updateOrderStatus = async (req, res) => {
     const { status, expectedDeliveryDate } = req.body;
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, message: `Status updated to ${status}` });
-    }
+
 
     let order = await Order.findById(id);
     let isMarketplace = false;
@@ -1179,9 +1086,7 @@ exports.cancelOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, message: 'Order cancelled successfully' });
-    }
+
 
     let order = await Order.findById(id);
     let isMarketplace = false;
@@ -1218,9 +1123,7 @@ exports.cancelOrder = async (req, res) => {
 // @access  Private (Admin)
 exports.sendSystemNotification = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, message: 'System notification sent successfully' });
-    }
+
 
     const { message, targetUserId } = req.body;
     if (targetUserId) {
@@ -1241,19 +1144,7 @@ exports.sendSystemNotification = async (req, res) => {
 // @access  Private (Admin)
 exports.getTickets = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      global.mockTickets = global.mockTickets || [
-        {
-          _id: 't_1',
-          subject: 'Delivery Delay Inquiry',
-          message: "The assigned delivery partner hasn't updated tracking for 2 days.",
-          status: 'open',
-          userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com' },
-          createdAt: new Date(Date.now() - 3600000 * 24 * 1)
-        }
-      ];
-      return res.status(200).json({ success: true, data: global.mockTickets });
-    }
+
 
     const tickets = await SupportTicket.find({}).populate('userId', 'name email').sort('-createdAt');
     res.status(200).json({ success: true, data: tickets });
@@ -1269,23 +1160,7 @@ exports.updateTicketStatus = async (req, res) => {
   try {
     const { status } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      global.mockTickets = global.mockTickets || [
-        {
-          _id: 't_1',
-          subject: 'Delivery Delay Inquiry',
-          message: "The assigned delivery partner hasn't updated tracking for 2 days.",
-          status: 'open',
-          userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com' },
-          createdAt: new Date(Date.now() - 3600000 * 24 * 1)
-        }
-      ];
-      const ticket = global.mockTickets.find(t => t._id === req.params.id);
-      if (ticket) {
-        ticket.status = status;
-      }
-      return res.status(200).json({ success: true, data: ticket });
-    }
+
 
     const ticket = await SupportTicket.findByIdAndUpdate(req.params.id, { status }, { new: true });
     res.status(200).json({ success: true, data: ticket });
@@ -1310,71 +1185,7 @@ exports.getManagementData = async (req, res) => {
       return 'Maxed Out';
     };
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const mockTotalUsers = mockUsers.length;
-      const mockActiveUsers = mockUsers.filter(u => u.status === 'Active').length;
-      const mockSuspendedUsers = mockUsers.filter(u => u.status === 'Suspended').length;
-      const mockNewUsersThisMonth = mockUsers.filter(u => new Date(u.createdAt) >= startOfMonth).length;
 
-      // Dynamic stats for mock mode
-      const mockManufacturers = mockVendors.filter(v => v.businessType === 'manufacturer');
-      const mockTotalManufacturers = mockManufacturers.length;
-      const mockActiveManufacturers = mockManufacturers.filter(v => v.isActive).length;
-      const mockPendingVerification = mockManufacturers.filter(v => v.verificationStatus === 'Pending' || v.verificationStatus === 'Submitted').length;
-      const mockActiveMfgOrders = mockManufacturingOrders.filter(o => o.status !== 'Ready for Delivery').length;
-      const mockCompletedMfgOrders = mockManufacturingOrders.filter(o => o.status === 'Ready for Delivery').length;
-
-      // Decorate mock vendors with workloads and active orders
-      const decoratedMockVendors = mockVendors.map(v => {
-        if (v.businessType === 'manufacturer') {
-          const activeCount = mockManufacturingOrders.filter(mo => mo.manufacturerId === v._id && mo.status !== 'Ready for Delivery').length;
-          return {
-            ...v,
-            activeOrders: activeCount,
-            workloadLevel: calculateWorkload(activeCount, v.monthlyCapacity || 50)
-          };
-        }
-        return v;
-      });
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          users: mockUsers,
-          userStats: {
-            totalUsers: mockTotalUsers,
-            activeUsers: mockActiveUsers,
-            suspendedUsers: mockSuspendedUsers,
-            newUsersThisMonth: mockNewUsersThisMonth
-          },
-          vendors: decoratedMockVendors,
-          manufacturerStats: {
-            totalManufacturers: mockTotalManufacturers,
-            activeManufacturers: mockActiveManufacturers,
-            pendingVerification: mockPendingVerification,
-            activeManufacturingOrders: mockActiveMfgOrders,
-            completedManufacturingOrders: mockCompletedMfgOrders
-          },
-          deliveryOrders: mockDeliveryOrders,
-          installationOrders: mockInstallationOrders,
-          deliveryStats: {
-            totalPartners: decoratedMockVendors.filter(v => v.businessType === 'delivery' || v.businessType === 'installation').length,
-            activePartners: decoratedMockVendors.filter(v => (v.businessType === 'delivery' || v.businessType === 'installation') && v.isActive).length,
-            pendingDeliveries: mockDeliveryOrders.filter(d => d.status !== 'Delivered').length,
-            completedDeliveries: mockDeliveryOrders.filter(d => d.status === 'Delivered').length,
-            pendingInstallation: mockInstallationOrders.filter(i => i.status !== 'Installation Completed').length
-          },
-          products: [],
-          aiDesigns: mockAIDesigns,
-          manualDesigns: [...controllerMockManualDesigns, ...mockManualDesigns.filter(md => !controllerMockManualDesigns.some(cmd => cmd._id === md._id))],
-          designerRequests: mockDesignerRequests,
-          orders: [
-            { _id: 'ord_101', orderType: 'product', totalAmount: 1299, orderStatus: 'Request Submitted', userId: { name: 'John Doe' }, vendorId: { companyName: 'Artisan Workshop' } },
-            { _id: 'ord_102', orderType: 'custom_design', totalAmount: 4850, orderStatus: 'Manufacturing', userId: { name: 'John Doe' }, vendorId: { companyName: 'Luxury Living Inc' } }
-          ]
-        }
-      });
-    }
 
     const rawUsers = await User.find({}).select('-password').sort('-createdAt');
     const vendors = await Vendor.find({}).populate('userId', 'name email phone').sort('-createdAt');
@@ -1593,9 +1404,7 @@ exports.getManagementData = async (req, res) => {
 // @access  Private (Admin)
 exports.getAllVerifications = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: mockVerificationList });
-    }
+
 
     const verificationList = await VendorVerification.find({}).populate('vendorId', 'companyName').sort('-submittedAt');
     res.status(200).json({ success: true, data: verificationList });
@@ -1611,14 +1420,7 @@ exports.updateVerificationStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const ver = mockVerificationList.find(v => v._id === req.params.id);
-      if (ver) {
-        ver.status = status;
-        ver.adminRemarks = adminRemarks;
-      }
-      return res.status(200).json({ success: true, message: 'Verification status updated successfully' });
-    }
+
 
     const verification = await VendorVerification.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { new: true });
     if (!verification) return res.status(404).json({ success: false, message: 'Verification record not found' });
@@ -1651,9 +1453,7 @@ exports.updateVerificationStatus = async (req, res) => {
 };
 exports.getAllStoreApprovals = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: mockStoreSetupList });
-    }
+
 
     const storeApprovals = await Vendor.find({ storeSetupStatus: 'Submitted' }).select('companyName description specialization monthlyCapacity serviceAreas storeSetupStatus');
     res.status(200).json({ success: true, data: storeApprovals });
@@ -1669,14 +1469,7 @@ exports.updateStoreApprovalStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const store = mockStoreSetupList.find(s => s._id === req.params.id);
-      if (store) {
-        store.status = status;
-        store.adminRemarks = adminRemarks;
-      }
-      return res.status(200).json({ success: true, message: 'Store Setup status updated successfully' });
-    }
+
 
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { storeSetupStatus: status }, { new: true });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor record not found' });
@@ -1706,9 +1499,7 @@ exports.updateStoreApprovalStatus = async (req, res) => {
 // @access  Private (Admin)
 exports.getAllPendingProducts = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, data: mockProductsForReview });
-    }
+
 
     const products = await Product.find({ approvalStatus: 'Pending' }).populate('vendorId', 'companyName');
     res.status(200).json({ success: true, data: products });
@@ -1724,13 +1515,7 @@ exports.updateProductReviewStatus = async (req, res) => {
   try {
     const { approvalStatus } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const prod = mockProductsForReview.find(p => p._id === req.params.id);
-      if (prod) {
-        prod.approvalStatus = approvalStatus;
-      }
-      return res.status(200).json({ success: true, message: 'Product approval status updated successfully' });
-    }
+
 
     const product = await Product.findByIdAndUpdate(req.params.id, { approvalStatus }, { new: true });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
@@ -1748,9 +1533,7 @@ exports.updateVendorActivation = async (req, res) => {
   try {
     const { isActive } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({ success: true, message: `Vendor activation status updated to ${isActive}` });
-    }
+
 
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
@@ -1771,10 +1554,7 @@ exports.getManufacturerLoad = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const load = mockManufacturingOrders.filter(mo => mo.manufacturerId === id);
-      return res.status(200).json({ success: true, data: load });
-    }
+
 
     const load = await ManufacturingOrder.find({ manufacturerId: id })
       .populate('orderId')
@@ -1792,22 +1572,7 @@ exports.assignManufacturerOrder = async (req, res) => {
   try {
     const { orderId, manufacturerId, designDetails, measurements, materials, budget } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      // Create a mock order and push it to mockManufacturingOrders
-      const newMockMO = {
-        _id: `mo_mock_${Date.now()}`,
-        orderId: { _id: orderId, totalAmount: budget, orderStatus: 'Manufacturing' },
-        manufacturerId,
-        designDetails,
-        measurements,
-        materials,
-        budget,
-        status: 'Accepted',
-        createdAt: new Date()
-      };
-      mockManufacturingOrders.push(newMockMO);
-      return res.status(200).json({ success: true, message: 'Manufacturing Order assigned successfully', data: newMockMO });
-    }
+
 
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
@@ -1852,22 +1617,7 @@ exports.approveManufacturer = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const vendor = mockVendors.find(v => v._id === id);
-      if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
-      vendor.verificationStatus = 'Approved';
-      vendor.isVerified = true;
-      vendor.isActive = true;
-      vendor.storeSetupStatus = 'Approved';
-      vendor.accountActivationStatus = 'Active';
-
-      // Update mock verification if present
-      const ver = mockVerificationList.find(k => k.vendorId && k.vendorId._id === id);
-      if (ver) ver.status = 'Approved';
-
-      return res.status(200).json({ success: true, message: 'Manufacturer approved successfully', data: vendor });
-    }
 
     const vendor = await Vendor.findByIdAndUpdate(id, {
       verificationStatus: 'Approved',
@@ -1908,13 +1658,7 @@ exports.suspendManufacturer = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const vendor = mockVendors.find(v => v._id === id);
-      if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
-      vendor.isActive = false;
-      return res.status(200).json({ success: true, message: 'Manufacturer suspended successfully', data: vendor });
-    }
 
     const vendor = await Vendor.findByIdAndUpdate(id, { isActive: false }, { new: true });
     if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
@@ -1944,36 +1688,7 @@ exports.getManufacturerPayments = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      // Return a set of mock transactions for the ledger
-      const payments = [
-        {
-          _id: 'pay_mock_1',
-          type: 'Registration Setup Fee',
-          amount: 5000,
-          status: 'Paid & Verified',
-          reference: 'TXN_REG_982347',
-          date: new Date(Date.now() - 3600000 * 24 * 15)
-        },
-        {
-          _id: 'pay_mock_2',
-          type: 'Order Payout (MO #101)',
-          amount: 1250,
-          status: 'Settled',
-          reference: 'TXN_PAY_102938',
-          date: new Date(Date.now() - 3600000 * 24 * 3)
-        },
-        {
-          _id: 'pay_mock_3',
-          type: 'Custom Order Advance (MO #102)',
-          amount: 2425,
-          status: 'Processing',
-          reference: 'TXN_PAY_384729',
-          date: new Date(Date.now() - 3600000)
-        }
-      ];
-      return res.status(200).json({ success: true, data: payments });
-    }
+
 
     const orderPayments = await Payment.find({ vendorId: id });
 
@@ -2003,45 +1718,7 @@ exports.updateDeliveryStatus = async (req, res) => {
   try {
     const { orderId, type, status, trackingNotes, scheduledDate, notes } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      if (type === 'delivery') {
-        const dOrd = mockDeliveryOrders.find(d => d.orderId === orderId || d._id === orderId);
-        if (dOrd) {
-          dOrd.status = status;
-          if (trackingNotes) dOrd.trackingNotes = trackingNotes;
-        } else {
-          // Create entry if missing
-          mockDeliveryOrders.push({
-            _id: `do_mock_${Date.now()}`,
-            orderId,
-            deliveryPartnerId: 'del_mock_1',
-            shippingAddress: 'Address Spec',
-            status,
-            trackingNotes: trackingNotes || 'Status updated by Administrator',
-            createdAt: new Date()
-          });
-        }
-      } else if (type === 'installation') {
-        const iOrd = mockInstallationOrders.find(i => i.orderId === orderId || i._id === orderId);
-        if (iOrd) {
-          iOrd.status = status;
-          if (notes) iOrd.notes = notes;
-          if (scheduledDate) iOrd.scheduledDate = scheduledDate;
-        } else {
-          mockInstallationOrders.push({
-            _id: `io_mock_${Date.now()}`,
-            orderId,
-            installationPartnerId: 'del_mock_2',
-            scheduledDate: scheduledDate || new Date(),
-            status,
-            notes: notes || 'Status updated by Administrator',
-            proofImages: [],
-            createdAt: new Date()
-          });
-        }
-      }
-      return res.status(200).json({ success: true, message: 'Status updated successfully in mock mode' });
-    }
+
 
     if (type === 'delivery') {
       let dOrd = await DeliveryOrder.findOne({ orderId });
@@ -2094,21 +1771,7 @@ exports.assignAIDesignVendor = async (req, res) => {
     const { id } = req.params;
     const { vendorId } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockAIDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
-      
-      const vendor = mockVendors.find(v => v._id === vendorId);
-      if (vendor) {
-        if (!design.assignedVendor) {
-          design.assignedVendor = { _id: vendor._id, companyName: vendor.companyName };
-        } else {
-          if (!design.additionalVendors) design.additionalVendors = [];
-          design.additionalVendors.push({ _id: vendor._id, companyName: vendor.companyName });
-        }
-      }
-      return res.status(200).json({ success: true, message: 'Vendor assigned successfully in mock mode', data: design });
-    }
+
 
     const design = await AIDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
@@ -2145,40 +1808,7 @@ exports.convertToAIDesignOrder = async (req, res) => {
     const { id } = req.params;
     const { manufacturerId } = req.body; // Vendor ID of the manufacturer
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockAIDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
 
-      // Create a mock order
-      const mockOrder = {
-        _id: 'ord_mock_' + Date.now().toString().slice(-6),
-        orderType: 'custom_design',
-        totalAmount: design.aiSuggestion?.budgetEstimate || 3000,
-        orderStatus: 'Manufacturing',
-        userId: design.userId,
-        vendorId: design.assignedVendor || { companyName: 'System Assigned Vendor' }
-      };
-
-      // Create mock manufacturing order
-      const mockMfgOrd = {
-        _id: 'mo_ord_mock_' + Date.now().toString().slice(-6),
-        orderId: { _id: mockOrder._id, totalAmount: mockOrder.totalAmount, orderStatus: 'Manufacturing' },
-        manufacturerId: manufacturerId || 'mfg_mock_1',
-        designDetails: `AI Studio Custom ${design.roomType} (${design.stylePreference})`,
-        measurements: 'Room space tailored',
-        materials: design.aiSuggestion?.materials?.join(', ') || 'Custom Materials',
-        budget: mockOrder.totalAmount,
-        status: 'Production Started',
-        createdAt: new Date()
-      };
-
-      mockManufacturingOrders.push(mockMfgOrd);
-
-      design.orderStatus = 'Pending Manufacturing';
-      design.orderId = mockOrder;
-      
-      return res.status(200).json({ success: true, message: 'Order converted successfully in mock mode', data: design });
-    }
 
     const design = await AIDesignRequest.findById(id).populate('userId');
     if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
@@ -2241,12 +1871,7 @@ exports.updateAIDesignAdminStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body; // 'generated', 'rejected', etc.
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockAIDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
-      design.status = status;
-      return res.status(200).json({ success: true, message: `Status updated to ${status} in mock mode`, data: design });
-    }
+
 
     const design = await AIDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'AI Design request not found' });
@@ -2277,14 +1902,7 @@ exports.assignManualDesignVendor = async (req, res) => {
     const { id } = req.params;
     const { vendorId } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockManualDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
-      const vendor = mockVendors.find(v => v._id === vendorId);
-      design.assignedVendorId = vendor ? { _id: vendor._id, companyName: vendor.companyName } : null;
-      design.status = 'Vendor Review';
-      return res.status(200).json({ success: true, message: 'Vendor assigned successfully (Mock Mode)', data: design });
-    }
+
 
     const design = await ManualDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
@@ -2323,14 +1941,7 @@ exports.assignManualDesignDesigner = async (req, res) => {
     const { id } = req.params;
     const { designerId } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockManualDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
-      const designer = mockVendors.find(v => v._id === designerId);
-      design.assignedDesignerId = designer ? { _id: designer._id, companyName: designer.companyName } : null;
-      design.status = 'Vendor Review';
-      return res.status(200).json({ success: true, message: 'Designer assigned successfully (Mock Mode)', data: design });
-    }
+
 
     const design = await ManualDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
@@ -2369,12 +1980,7 @@ exports.updateManualDesignStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockManualDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
-      design.status = status;
-      return res.status(200).json({ success: true, message: `Status updated to ${status} in mock mode`, data: design });
-    }
+
 
     const design = await ManualDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
@@ -2407,12 +2013,7 @@ exports.approveManualDesign = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockManualDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
-      design.status = 'User Approved';
-      return res.status(200).json({ success: true, message: 'Manual request approved successfully (Mock Mode)', data: design });
-    }
+
 
     const design = await ManualDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
@@ -2457,12 +2058,7 @@ exports.rejectManualDesign = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const design = mockManualDesigns.find(d => d._id === id);
-      if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
-      design.status = 'Submitted';
-      return res.status(200).json({ success: true, message: 'Manual request reset to submitted successfully (Mock Mode)', data: design });
-    }
+
 
     const design = await ManualDesignRequest.findById(id);
     if (!design) return res.status(404).json({ success: false, message: 'Manual Design request not found' });
@@ -2496,14 +2092,7 @@ exports.assignDesignerRequest = async (req, res) => {
     const { id } = req.params;
     const { designerId } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const request = mockDesignerRequests.find(r => r._id === id);
-      if (!request) return res.status(404).json({ success: false, message: 'Designer request not found' });
-      const designer = mockVendors.find(v => v._id === designerId);
-      request.assignedDesignerId = designer ? { _id: designer._id, companyName: designer.companyName } : null;
-      request.status = 'assigned';
-      return res.status(200).json({ success: true, message: 'Designer assigned successfully (Mock Mode)', data: request });
-    }
+
 
     const request = await InteriorDesignerRequest.findById(id);
     if (!request) return res.status(404).json({ success: false, message: 'Designer request not found' });
@@ -2540,12 +2129,7 @@ exports.updateDesignerRequestStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const request = mockDesignerRequests.find(r => r._id === id);
-      if (!request) return res.status(404).json({ success: false, message: 'Designer request not found' });
-      request.status = status;
-      return res.status(200).json({ success: true, message: `Status updated to ${status} in mock mode`, data: request });
-    }
+
 
     const request = await InteriorDesignerRequest.findById(id);
     if (!request) return res.status(404).json({ success: false, message: 'Designer request not found' });
@@ -2575,36 +2159,7 @@ exports.updateDesignerRequestStatus = async (req, res) => {
 // @access  Private (Admin)
 exports.getTransactions = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      // Calculate mock stats
-      const totalPlatformRevenue = mockTransactions
-        .filter(t => t.type === 'Customer Payment' && t.status === 'Paid')
-        .reduce((sum, t) => sum + t.amount, 0);
 
-      const estimatedCommission = totalPlatformRevenue * (PLATFORM_COMMISSION_RATE / 100);
-      
-      const disbursedPayouts = mockTransactions
-        .filter(t => t.status === 'Paid' && t.type === 'Vendor Payout')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      const pendingPayouts = mockTransactions
-        .filter(t => t.status === 'Pending' || t.status === 'Processing')
-        .reduce((sum, t) => sum + t.amount, 0);
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          transactions: mockTransactions,
-          commissionRate: PLATFORM_COMMISSION_RATE,
-          stats: {
-            totalPlatformRevenue,
-            estimatedCommission,
-            disbursedPayouts,
-            pendingPayouts
-          }
-        }
-      });
-    }
 
     // Database mode
     // Query all Payments
@@ -2698,12 +2253,7 @@ exports.disbursePayout = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Transaction ID is required' });
     }
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const tx = mockTransactions.find(t => t._id === transactionId);
-      if (!tx) return res.status(404).json({ success: false, message: 'Transaction not found' });
-      tx.status = 'Paid';
-      return res.status(200).json({ success: true, message: 'Payout disbursed successfully (Mock Mode)', data: tx });
-    }
+
 
     // In DB mode, update status in Payments
     const pay = await Payment.findOne({ transactionId });
@@ -2730,39 +2280,7 @@ exports.disbursePayout = async (req, res) => {
 // @access  Private (Admin)
 exports.getSubAdmins = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      global.mockSubAdmins = global.mockSubAdmins || [
-        {
-          _id: 'sub_1',
-          userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com', phone: '+91 98765 43210', role: 'admin' },
-          roleName: 'Support Agent',
-          permissions: {
-            userManagement: false,
-            vendorVerification: false,
-            ordersWorkflow: false,
-            supportTickets: true,
-            analytics: false,
-            notifications: true
-          },
-          updatedAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
-        },
-        {
-          _id: 'sub_2',
-          userId: { _id: 'u_mock_3', name: 'Alice Smith', email: 'alice@example.com', phone: '+1 555-0144', role: 'admin' },
-          roleName: 'Operations Lead',
-          permissions: {
-            userManagement: true,
-            vendorVerification: true,
-            ordersWorkflow: true,
-            supportTickets: false,
-            analytics: true,
-            notifications: false
-          },
-          updatedAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString()
-        }
-      ];
-      return res.status(200).json({ success: true, data: global.mockSubAdmins });
-    }
+
 
     const subAdmins = await AdminPermission.find({}).populate('userId', 'name email phone role');
     res.status(200).json({ success: true, data: subAdmins });
@@ -2781,37 +2299,7 @@ exports.addSubAdmin = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User ID is required' });
     }
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      // Find matching mock user
-      let matchedUser = mockUsers.find(u => u._id === userId);
-      if (!matchedUser) {
-        matchedUser = { _id: userId, name: 'Promoted User', email: 'promoted@example.com', role: 'admin' };
-      } else {
-        matchedUser.role = 'admin';
-      }
-      
-      const newSubAdmin = {
-        _id: 'sub_' + Date.now(),
-        userId: matchedUser,
-        roleName: roleName || 'Moderator',
-        permissions: permissions || {
-          userManagement: false,
-          vendorVerification: false,
-          ordersWorkflow: false,
-          supportTickets: false,
-          analytics: false,
-          notifications: false
-        },
-        updatedAt: new Date().toISOString()
-      };
-      global.mockSubAdmins = global.mockSubAdmins || [];
-      // Prevent duplicates
-      if (global.mockSubAdmins.some(s => s.userId._id === userId)) {
-        return res.status(400).json({ success: false, message: 'User is already a sub-admin' });
-      }
-      global.mockSubAdmins.push(newSubAdmin);
-      return res.status(201).json({ success: true, data: newSubAdmin });
-    }
+
 
     // DB Mode: Promote user to admin role, then save permissions
     const userObj = await User.findById(userId);
@@ -2841,17 +2329,7 @@ exports.updateSubAdminPermissions = async (req, res) => {
   try {
     const { roleName, permissions } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      global.mockSubAdmins = global.mockSubAdmins || [];
-      const subAdmin = global.mockSubAdmins.find(s => s._id === req.params.id);
-      if (!subAdmin) {
-        return res.status(404).json({ success: false, message: 'Sub-admin not found' });
-      }
-      if (roleName) subAdmin.roleName = roleName;
-      if (permissions) subAdmin.permissions = { ...subAdmin.permissions, ...permissions };
-      subAdmin.updatedAt = new Date().toISOString();
-      return res.status(200).json({ success: true, data: subAdmin });
-    }
+
 
     const subAdmin = await AdminPermission.findByIdAndUpdate(
       req.params.id,
@@ -2874,17 +2352,7 @@ exports.updateSubAdminPermissions = async (req, res) => {
 // @access  Private (Admin)
 exports.deleteSubAdmin = async (req, res) => {
   try {
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      global.mockSubAdmins = global.mockSubAdmins || [];
-      const subAdmin = global.mockSubAdmins.find(s => s._id === req.params.id);
-      if (subAdmin && subAdmin.userId) {
-        // Demote in mock list if matched
-        const matchedUser = mockUsers.find(u => u._id === subAdmin.userId._id);
-        if (matchedUser) matchedUser.role = 'user';
-      }
-      global.mockSubAdmins = global.mockSubAdmins.filter(s => s._id !== req.params.id);
-      return res.status(200).json({ success: true, message: 'Sub-admin revoked successfully' });
-    }
+
 
     const subAdmin = await AdminPermission.findById(req.params.id);
     if (!subAdmin) {

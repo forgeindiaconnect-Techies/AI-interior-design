@@ -16,21 +16,7 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role, phone, address, companyName, businessType } = req.body;
 
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const userRole = role || 'user';
-      const token = generateToken('mock_user_id_' + userRole, userRole);
-      return res.status(201).json({
-        success: true,
-        token,
-        user: {
-          id: 'mock_user_id_' + userRole,
-          name: name || 'New Demo User',
-          email: email,
-          role: userRole,
-          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(userRole) ? 'mock_vendor_id_123' : null
-        }
-      });
-    }
+
 
     let user = await User.findOne({ email });
     if (user) {
