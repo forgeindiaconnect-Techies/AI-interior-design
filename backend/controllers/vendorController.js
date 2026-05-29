@@ -97,9 +97,7 @@ exports.getCustomRequests = async (req, res) => {
 exports.sendQuotation = async (req, res) => {
   try {
     const { userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime } = req.body;
-    
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, data: { status: 'pending' } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
 
@@ -200,8 +198,7 @@ exports.rejectRequest = async (req, res) => {
 // @access  Private (Vendor)
 exports.submitVerification = async (req, res) => {
   try {
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, message: 'Mock verification submitted', data: { status: 'Under Review' } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -254,8 +251,7 @@ exports.submitVerification = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVerificationStatus = async (req, res) => {
   try {
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, data: { status: 'Not Submitted' } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -266,8 +262,7 @@ exports.getVerificationStatus = async (req, res) => {
   }
 };exports.getVerificationStatus = async (req, res) => {
   try {
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, data: { status: 'Not Submitted' } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -284,9 +279,7 @@ exports.getVerificationStatus = async (req, res) => {
 exports.submitStoreSetup = async (req, res) => {
   try {
     const { description, specialization, monthlyCapacity, serviceAreas } = req.body;
-
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, message: 'Mock store setup submitted', data: { storeSetupStatus: 'Submitted' } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -311,8 +304,7 @@ exports.submitStoreSetup = async (req, res) => {
 // @access  Private (Vendor)
 exports.getStoreSetupStatus = async (req, res) => {
   try {
-
-
+    if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, data: { status: 'Pending', description: '', specialization: 'Woodworks', monthlyCapacity: 50, serviceAreas: [] } });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -337,6 +329,7 @@ exports.getStoreSetupStatus = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorOrders = async (req, res) => {
   try {
+    if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, count: 0, data: [] });
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
@@ -366,4 +359,5 @@ exports.getVendorReviews = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
