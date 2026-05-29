@@ -1451,6 +1451,47 @@ exports.updateVerificationStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Delete manual design
+// @route   DELETE /api/admin/manual-designs/:id
+// @access  Private (Admin)
+exports.deleteManualDesign = async (req, res) => {
+  try {
+    const deleted = await ManualDesignRequest.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      const idx = controllerMockManualDesigns.findIndex(m => m._id === req.params.id);
+      if (idx !== -1) controllerMockManualDesigns.splice(idx, 1);
+    }
+    res.status(200).json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete designer request
+// @route   DELETE /api/admin/designer-requests/:id
+// @access  Private (Admin)
+exports.deleteDesignerRequest = async (req, res) => {
+  try {
+    await InteriorDesignerRequest.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete order
+// @route   DELETE /api/admin/orders/:id
+// @access  Private (Admin)
+exports.deleteOrder = async (req, res) => {
+  try {
+    let deleted = await Order.findByIdAndDelete(req.params.id);
+    if (!deleted) deleted = await MarketplaceOrder.findByIdAndDelete(req.params.id);
+    res.status(200).json({ success: true, message: 'Deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 exports.getAllStoreApprovals = async (req, res) => {
   try {
 

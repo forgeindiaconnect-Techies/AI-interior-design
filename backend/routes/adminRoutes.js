@@ -44,7 +44,10 @@ const {
   getSubAdmins,
   addSubAdmin,
   updateSubAdminPermissions,
-  deleteSubAdmin
+  deleteSubAdmin,
+  deleteManualDesign,
+  deleteDesignerRequest,
+  deleteOrder
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -67,6 +70,7 @@ router.put('/tickets/:id', updateTicketStatus);
 // Order Management Routes
 router.put('/orders/:id/status', updateOrderStatus);
 router.put('/orders/:id/cancel', cancelOrder);
+router.delete('/orders/:id', deleteOrder);
 
 // Manufacturer Administration Routes
 router.get('/manufacturers/:id/load', getManufacturerLoad);
@@ -104,10 +108,12 @@ router.put('/manual-designs/:id/assign-designer', assignManualDesignDesigner);
 router.put('/manual-designs/:id/status', updateManualDesignStatus);
 router.put('/manual-designs/:id/approve', approveManualDesign);
 router.put('/manual-designs/:id/reject', rejectManualDesign);
+router.delete('/manual-designs/:id', deleteManualDesign);
 
 // Interior Designer Request Routes
 router.put('/designer-requests/:id/assign', assignDesignerRequest);
 router.put('/designer-requests/:id/status', updateDesignerRequestStatus);
+router.delete('/designer-requests/:id', deleteDesignerRequest);
 
 // Payments & Commission Routes
 router.get('/transactions', getTransactions);
