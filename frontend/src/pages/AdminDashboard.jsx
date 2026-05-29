@@ -2072,27 +2072,50 @@ const AdminDashboard = ({
     syncLocalDataToAdminState();
   };
 
-  const handleDeleteCustomRequest = (id) => {
-    if (!window.confirm(`Are you sure you want to delete the custom request #${id}?`)) return;
-
-    const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-    if (storedManual.some(r => r._id === id)) {
-      localStorage.setItem('mockManualRequests', JSON.stringify(storedManual.filter(r => r._id !== id)));
-    }
-
-    const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
-    if (storedDesigner.some(r => r._id === id)) {
-      localStorage.setItem('mockDesignerRequests', JSON.stringify(storedDesigner.filter(r => r._id !== id)));
-    }
-
-    setManagementData(prev => ({
-      ...prev,
-      manualDesigns: prev.manualDesigns.filter(r => r._id !== id),
-      designerRequests: prev.designerRequests.filter(r => r._id !== id)
-    }));
-  };
-
   const handleAdminUpdateStatus = async (id, status) => {
+    if (status === 'Delete') {
+      const confirmDelete = window.confirm('Are you sure you want to delete this request? This action cannot be undone.');
+      if (!confirmDelete) return;
+
+      let deleted = false;
+
+      const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      if (storedManual.some(r => r._id === id)) {
+        try { await axios.delete(`/admin/manual-designs/${id}`); } catch (_) {}
+        const updated = storedManual.filter(r => r._id !== id);
+        localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+        deleted = true;
+      }
+
+      if (!deleted) {
+        const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+        if (storedDesigner.some(r => r._id === id)) {
+          try { await axios.delete(`/admin/designer-requests/${id}`); } catch (_) {}
+          const updated = storedDesigner.filter(r => r._id !== id);
+          localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+          deleted = true;
+        }
+      }
+
+      if (!deleted) {
+        const storedOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+        if (storedOrders.some(o => o._id === id)) {
+          try { await axios.delete(`/admin/orders/${id}`); } catch (_) {}
+          const updated = storedOrders.filter(o => o._id !== id);
+          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          window.dispatchEvent(new Event('mockOrdersUpdated'));
+          deleted = true;
+        }
+      }
+
+      if (selectedAIDesign && selectedAIDesign._id === id) setSelectedAIDesign(null);
+      if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(null);
+      if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(null);
+
+      syncLocalDataToAdminState();
+      return;
+    }
+
     let found = false;
 
     // 1. Check mockManualRequests
@@ -3828,14 +3851,6 @@ const AdminDashboard = ({
                                 >
                                   View Details
                                 </button>
-                                
-                                <button
-                                  onClick={() => handleDeleteCustomRequest(r._id)}
-                                  className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors flex items-center justify-center"
-                                  title="Delete Request"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
 
                                 <select
                                   value={r.status}
@@ -3853,6 +3868,7 @@ const AdminDashboard = ({
                                   <option value="Delivered">Delivered</option>
                                   <option value="Installation Completed">Installation Completed</option>
                                   <option value="Rejected">Rejected</option>
+                                  <option value="Delete" className="text-red-600 font-bold">Delete</option>
                                 </select>
 
                                 {!r.assignedVendorId && !r.assignedDesignerId && (
