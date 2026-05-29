@@ -10,7 +10,7 @@ const AdminContactMessages = () => {
   const fetchMessages = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/contact');
+      const res = await axios.get('/contact');
       setMessages(res.data.data || []);
     } catch (error) {
       console.error('Error fetching contact messages:', error);
@@ -25,7 +25,7 @@ const AdminContactMessages = () => {
 
   const handleStatusChange = async (id, newStatus) => {
     try {
-      await axios.put(`/api/contact/${id}/status`, { status: newStatus });
+      await axios.put(`/contact/${id}/status`, { status: newStatus });
       setMessages(messages.map(msg => msg._id === id ? { ...msg, status: newStatus } : msg));
     } catch (error) {
       console.error('Error updating status:', error);

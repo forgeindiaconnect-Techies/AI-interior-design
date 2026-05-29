@@ -100,7 +100,7 @@ const LandingPage = () => {
   const handleContactSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('/api/contact', contactForm);
+      await axios.post('/contact', contactForm);
       setContactSuccess(true);
       setContactForm({ name: '', email: '', message: '' });
     } catch (error) {
