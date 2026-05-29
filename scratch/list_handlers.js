@@ -1,11 +1,18 @@
 const fs = require('fs');
 
-const adminPath = "c:\\Users\\renug\\OneDrive\\Desktop\\AI Interior Final Project\\frontend\\src\\pages\\AdminDashboard.jsx";
-const content = fs.readFileSync(adminPath, 'utf8');
+const fileContent = fs.readFileSync('frontend/src/pages/AdminDashboard.jsx', 'utf8');
+const lines = fileContent.split('\n');
 
-const lines = content.split(/\r?\n/);
-lines.forEach((line, idx) => {
-  if (line.includes('const handle') && (line.includes('Manual') || line.includes('Request'))) {
-    console.log(`Line ${idx + 1}: ${line.trim()}`);
+function inspectRange(start, end) {
+  console.log(`=== Inspecting Lines ${start} to ${end} ===`);
+  for (let i = start - 1; i < end; i++) {
+    const line = lines[i];
+    if (line.includes('onClick') || line.includes('onChange') || line.includes('onSubmit') || line.includes('handle')) {
+      console.log(`${i + 1}: ${line.trim()}`);
+    }
   }
-});
+}
+
+inspectRange(3374, 3718); // ai_designs
+inspectRange(3719, 4101); // manual_designs
+inspectRange(4102, 4325); // designer_requests

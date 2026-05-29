@@ -1,35 +1,21 @@
 const fs = require('fs');
-const path = require('path');
 
-function searchInFile(filepath, keywords) {
-  console.log(`\n--- Searching in ${filepath} ---`);
-  let content = '';
-  try {
-    content = fs.readFileSync(filepath, 'utf8');
-  } catch (err) {
-    try {
-      content = fs.readFileSync(filepath, 'utf16le');
-    } catch (err2) {
-      console.error(`Error reading: ${err2}`);
-      return;
-    }
-  }
+const fileContent = fs.readFileSync('frontend/src/pages/AdminDashboard.jsx', 'utf8');
+const lines = fileContent.split('\n');
 
-  const lines = content.split(/\r?\n/);
+function findDefinition(name) {
+  console.log(`=== Definition for ${name} ===`);
   lines.forEach((line, idx) => {
-    for (const kw of keywords) {
-      if (line.toLowerCase().includes(kw.toLowerCase())) {
-        console.log(`Line ${idx + 1}: ${line.trim().substring(0, 120)}`);
-        break;
+    if (line.includes(`const ${name}`) || line.includes(`function ${name}`)) {
+      // Print 20 lines starting from idx
+      for (let i = idx; i < idx + 25; i++) {
+        console.log(`${i + 1}: ${lines[i]}`);
       }
     }
   });
 }
 
-const adminPath = "c:\\Users\\renug\\OneDrive\\Desktop\\AI Interior Final Project\\frontend\\src\\pages\\AdminDashboard.jsx";
-const vendorPath = "c:\\Users\\renug\\OneDrive\\Desktop\\AI Interior Final Project\\frontend\\src\\pages\\VendorDashboard.jsx";
-const userPath = "c:\\Users\\renug\\OneDrive\\Desktop\\AI Interior Final Project\\frontend\\src\\pages\\UserDashboard.jsx";
-
-searchInFile(adminPath, ["designerRequest", "manualDesign", "customDesign", "activeTab === '", "activeTab == '"]);
-searchInFile(vendorPath, ["designerRequest", "manualDesign", "customDesign", "activeTab === '", "activeTab == '"]);
-searchInFile(userPath, ["designerRequest", "manualDesign", "customDesign", "activeTab === '", "activeTab == '"]);
+findDefinition('handleApproveAIRequest');
+findDefinition('handleRejectAIRequest');
+findDefinition('handleApproveManualDesign');
+findDefinition('handleRejectManualDesign');

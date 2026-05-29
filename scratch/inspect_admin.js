@@ -1,14 +1,23 @@
 const fs = require('fs');
 
-const adminPath = "c:\\Users\\renug\\OneDrive\\Desktop\\AI Interior Final Project\\frontend\\src\\pages\\AdminDashboard.jsx";
-const content = fs.readFileSync(adminPath, 'utf8');
+const fileContent = fs.readFileSync('frontend/src/pages/AdminDashboard.jsx', 'utf8');
+const lines = fileContent.split('\n');
 
-// Let's find where tabs are handled and where designerRequests/manualDesigns are rendered
-const lines = content.split(/\r?\n/);
-lines.forEach((line, idx) => {
-  if (line.includes('manualDesigns') || line.includes('designerRequests') || line.includes('activeTab ===') || line.includes('activeTab ==')) {
-    if (line.includes('&&') || line.includes('map') || line.includes('length')) {
-      console.log(`Line ${idx + 1}: ${line.trim().substring(0, 120)}`);
+function findPatterns(pattern) {
+  console.log(`=== Matches for ${pattern} ===`);
+  lines.forEach((line, idx) => {
+    if (line.includes(pattern)) {
+      console.log(`${idx + 1}: ${line.trim()}`);
     }
+  });
+}
+
+function printSection(start, end) {
+  console.log(`=== Lines ${start} to ${end} ===`);
+  for (let i = start - 1; i < end; i++) {
+    console.log(`${i + 1}: ${lines[i]}`);
   }
-});
+}
+
+// Find tabs rendering
+findPatterns('activeTab ===');

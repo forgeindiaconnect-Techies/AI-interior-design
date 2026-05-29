@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
-  Users, Store, ShoppingBag, Hammer, Truck, CheckCircle, XCircle, 
+  Users, Store, ShoppingBag, Hammer, Truck, CheckCircle, XCircle, Briefcase,
   DollarSign, Bell, AlertCircle, RefreshCw, Eye, Send, BarChart2, ShieldCheck,
   LayoutDashboard, Key, HelpCircle, FileText, Sparkles, UserCheck, CheckSquare,
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
@@ -4486,7 +4486,7 @@ const AdminDashboard = ({
           const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
           const updated = localOrders.map(o => o._id === orderId ? { ...o, paymentStatus: 'refunded', orderStatus: 'Refunded' } : o);
           localStorage.setItem('mockOrders', JSON.stringify(updated));
-          setOrders(updated);
+          setManagementData(prev => ({ ...prev, orders: updated }));
           alert('✅ Refund processed successfully! The transaction has been updated in the ledger.');
         };
 
