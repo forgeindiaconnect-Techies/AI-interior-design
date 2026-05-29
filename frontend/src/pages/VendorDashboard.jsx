@@ -2864,7 +2864,7 @@ const VendorDashboard = ({
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
             );
           })()}
