@@ -2546,26 +2546,50 @@ const VendorDashboard = ({
                       </div>
                     )}
 
-                    {/* Special Requirements / Ideas */}
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Special Requirements / Ideas</h4>
-                      <p className="text-sm text-gray-600 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-inner">
-                        {req.requirements || req.specialIdeas || 'Need custom L-shaped sectional sofa with built-in storage and matching marble coffee table.'}
-                      </p>
-                    </div>
-
-                    {/* Uploaded Reference Images */}
-                    {(req.referenceImages?.length > 0 || req.images?.length > 0 || req._id === 'man_101' || req._id === 'man_102') && (
-                      <div className="space-y-2 pt-2">
-                        <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Uploaded Reference Images</h4>
-                        <div className="flex gap-4 overflow-x-auto pb-2">
-                          {(req.referenceImages || req.images || [req._id === 'man_102' ? 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600' : 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600']).map((img, i) => (
-                            <a key={i} href={img} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
-                              <img src={img} alt="Reference" className="w-32 h-32 object-cover" />
-                            </a>
-                          ))}
+                    {req.requestType === 'AI Generated' ? (
+                      <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/30 flex flex-col sm:flex-row gap-6 mt-4">
+                        <img src={req.referenceImages?.[0] || '/ai-results/living_room.png'} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-sm" />
+                        <div className="space-y-4 flex-1">
+                          <h4 className="font-bold text-[#1F2937] text-lg border-b border-[#D4A373]/20 pb-2">AI Suggestions</h4>
+                          <div className="grid grid-cols-2 gap-4 text-sm text-[#6B7280]">
+                            <div>
+                              <strong className="text-[#1F2937] block mb-1">Furniture:</strong>
+                              {req.requirements?.match(/Furniture \(([^)]+)\)/)?.[1] || 'Modern Furniture Set'}
+                            </div>
+                            <div>
+                              <strong className="text-[#1F2937] block mb-1">Materials:</strong>
+                              {req.requirements?.match(/Materials \(([^)]+)\)/)?.[1] || 'Premium Materials'}
+                            </div>
+                          </div>
+                          <div className="pt-2">
+                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: {req.budget || '$3,000'}</span>
+                          </div>
                         </div>
                       </div>
+                    ) : (
+                      <>
+                        {/* Special Requirements / Ideas */}
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Special Requirements / Ideas</h4>
+                          <p className="text-sm text-gray-600 leading-relaxed bg-white p-4 rounded-2xl border border-gray-100 shadow-inner">
+                            {req.requirements || req.specialIdeas || 'Need custom L-shaped sectional sofa with built-in storage and matching marble coffee table.'}
+                          </p>
+                        </div>
+
+                        {/* Uploaded Reference Images */}
+                        {(req.referenceImages?.length > 0 || req.images?.length > 0 || req._id === 'man_101' || req._id === 'man_102') && (
+                          <div className="space-y-2 pt-2">
+                            <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Uploaded Reference Images</h4>
+                            <div className="flex gap-4 overflow-x-auto pb-2">
+                              {(req.referenceImages || req.images || [req._id === 'man_102' ? 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600' : 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600']).map((img, i) => (
+                                <a key={i} href={img} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                                  <img src={img} alt="Reference" className="w-32 h-32 object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     {/* Expandable Details Section */}
