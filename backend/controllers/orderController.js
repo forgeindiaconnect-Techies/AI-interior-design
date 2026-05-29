@@ -170,15 +170,24 @@ exports.createPayment = async (req, res) => {
 // @access  Private
 exports.createReview = async (req, res) => {
   try {
-
-
     const { vendorId, productId, rating, comment } = req.body;
+
+    // Guard: mock users cannot write real ObjectIds to MongoDB
+    if (String(req.user.id).startsWith('mock_')) {
+      return res.status(201).json({ success: true, data: { _id: 'mock_rev_' + Date.now(), vendorId, productId, rating, comment, userId: req.user.id, createdAt: new Date() } });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+      return res.status(400).json({ success: false, message: 'Invalid vendorId' });
+    }
+
     const review = await Review.create({ userId: req.user.id, vendorId, productId, rating, comment });
     res.status(201).json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
 
 // @desc    Create Support Ticket
 // @route   POST /api/orders/ticket
