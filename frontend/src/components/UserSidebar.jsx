@@ -110,7 +110,6 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
         { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio' },
         { name: 'Manual Design Request', icon: FileText, tab: 'manual' },
         { name: 'Interior Designer Help', icon: UserIcon, tab: 'designer' },
-        { name: 'Own Materials', icon: Hammer, tab: 'own_materials' },
         { name: 'Saved Designs', icon: Bookmark, tab: 'saved' },
       ]
     },
