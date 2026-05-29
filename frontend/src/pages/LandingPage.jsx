@@ -120,9 +120,9 @@ const LandingPage = () => {
         setProducts([
           { _id: '1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'] },
           { _id: '2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'] },
-          { _id: '3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'] },
+          { _id: '3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'] },
           { _id: '4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'] },
-          { _id: '5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'] },
+          { _id: '5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'] },
           { _id: '6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'] },
         ]);
       } finally {
@@ -427,7 +427,7 @@ const LandingPage = () => {
                   </div>
                   <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
                     <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">
-                      ${product.price}
+                      ₹{product.price}
                     </span>
                     <button 
                       onClick={() => navigate('/login')}

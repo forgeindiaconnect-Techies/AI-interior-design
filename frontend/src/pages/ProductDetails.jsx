@@ -131,7 +131,7 @@ const ProductDetails = () => {
               <h1 className="font-['Playfair_Display'] font-extrabold text-3xl md:text-5xl text-[#1F2937] mt-4 leading-tight">{product.title}</h1>
               
               <div className="flex items-center gap-6 mt-4 border-b border-gray-100 pb-6">
-                <span className="font-['Playfair_Display'] font-extrabold text-4xl text-[#2A9D8F]">${product.price}</span>
+                <span className="font-['Playfair_Display'] font-extrabold text-4xl text-[#2A9D8F]">₹{product.price}</span>
                 <div className="flex items-center gap-2 border-l border-gray-200 pl-6">
                   <div className="flex items-center gap-1 text-[#E9C46A]">
                     <Star className="w-5 h-5 fill-current" />

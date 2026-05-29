@@ -54,9 +54,9 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
           const fallback = [
             { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
             { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-            { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+            { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
             { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-            { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+            { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
             { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
           ];
           setProducts(fallback);
@@ -79,9 +79,9 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
         const fallback = [
           { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
           { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1503642551022-c011aafb3c88?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
           { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1630585304653-5355a297e61e?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
           { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
         ];
         setProducts(fallback);
@@ -157,7 +157,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
             <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] line-clamp-1">{product.title}</h3>
             <p className="text-xs text-[#6B7280] font-medium mt-1">by {product.vendorId?.companyName || 'Artisan Workshop'}</p>
           </div>
-          <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">${product.price}</span>
+          <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">₹{product.price}</span>
         </div>
         
         <div className="flex items-center gap-4 mt-2 mb-4">
@@ -230,7 +230,6 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
                 {cat}
               </button>
             ))}
-            <button className="p-2 bg-gray-100 text-gray-600 rounded-full hover:bg-gray-200 ml-auto md:ml-2"><Filter className="w-4 h-4" /></button>
           </div>
         </div>
 
