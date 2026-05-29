@@ -2368,7 +2368,7 @@ const VendorDashboard = ({
                   if (!matchesSearch) return false;
                   if (customRequestFilter === 'All') return true;
                   if (customRequestFilter === 'AI Generated') {
-                    return req.requestType === 'AI Generated';
+                    return req.requestType === 'AI Generated' || (req.style && req.style.includes('AI Generated')) || (req._id && req._id.startsWith('man_from_ai'));
                   }
                   if (customRequestFilter === 'Manual Design') {
                     return req.requestType === 'Manual Design' && req.ownMaterialsAvailable !== 'Yes';
