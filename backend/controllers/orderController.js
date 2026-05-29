@@ -200,8 +200,8 @@ exports.createTicket = async (req, res) => {
 // @route   GET /api/orders/sync
 // @access  Public (for prototype)
 exports.getSyncedOrders = (req, res) => {
-  // Route disabled as we use actual MongoDB.
-  res.status(400).json({ success: false, message: 'Sync not supported in prod DB' });
+  // Return an empty array for mock sync instead of a 400 error
+  res.status(200).json({ success: true, data: [] });
 };
 
 // @desc    Update or create a synchronized prototype order

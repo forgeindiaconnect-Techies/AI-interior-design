@@ -17,7 +17,31 @@ let mockStoreSetup = {};
 // @access  Private (Vendor)
 exports.getVendorProfile = async (req, res) => {
   try {
-
+    if (String(req.user.id).startsWith('mock_')) {
+      return res.status(200).json({ 
+        success: true, 
+        data: {
+          vendor: {
+            _id: 'mock_vendor_id_123',
+            userId: req.user.id,
+            companyName: 'Artisan Workshop Demo',
+            businessType: req.user.role === 'admin' ? 'seller' : (req.user.role || 'seller'),
+            rating: 4.8,
+            reviewsCount: 24,
+            isVerified: true,
+            accountActivationStatus: 'Active',
+            verificationStatus: 'Approved',
+            storeSetupStatus: 'Approved',
+            isActive: true,
+            createdAt: new Date()
+          },
+          stats: {
+            totalOrders: 14, totalQuotations: 8,
+            revenue: 28500
+          }
+        } 
+      });
+    }
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
