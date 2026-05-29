@@ -2072,6 +2072,26 @@ const AdminDashboard = ({
     syncLocalDataToAdminState();
   };
 
+  const handleDeleteCustomRequest = (id) => {
+    if (!window.confirm(`Are you sure you want to delete the custom request #${id}?`)) return;
+
+    const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    if (storedManual.some(r => r._id === id)) {
+      localStorage.setItem('mockManualRequests', JSON.stringify(storedManual.filter(r => r._id !== id)));
+    }
+
+    const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+    if (storedDesigner.some(r => r._id === id)) {
+      localStorage.setItem('mockDesignerRequests', JSON.stringify(storedDesigner.filter(r => r._id !== id)));
+    }
+
+    setManagementData(prev => ({
+      ...prev,
+      manualDesigns: prev.manualDesigns.filter(r => r._id !== id),
+      designerRequests: prev.designerRequests.filter(r => r._id !== id)
+    }));
+  };
+
   const handleAdminUpdateStatus = async (id, status) => {
     let found = false;
 
@@ -3807,6 +3827,14 @@ const AdminDashboard = ({
                                   className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors"
                                 >
                                   View Details
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleDeleteCustomRequest(r._id)}
+                                  className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors flex items-center justify-center"
+                                  title="Delete Request"
+                                >
+                                  <Trash2 className="w-4 h-4" />
                                 </button>
 
                                 <select
