@@ -29,11 +29,7 @@ const LoginPage = () => {
     }
   };
 
-  // Demo fast login buttons
-  const handleDemoLogin = async (demoEmail, demoRole) => {
-    setEmail(demoEmail);
-    setPassword('password123');
-  };
+
 
   return (
     <div className="min-h-screen bg-[#F8F5F0] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -110,35 +106,7 @@ const LoginPage = () => {
             </button>
           </form>
 
-          {/* Demo Logins */}
-          <div className="mt-8 pt-6 border-t border-gray-100">
-            <p className="text-xs font-bold text-[#6B7280] uppercase tracking-wider text-center mb-4">
-              Demo Credentials (Click to fill)
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button 
-                type="button" 
-                onClick={() => handleDemoLogin('user@example.com', 'user')}
-                className="p-2 text-xs font-bold bg-[#F8F5F0] hover:bg-[#8B5E3C] hover:text-white rounded-lg border border-[#D4A373]/30 text-[#8B5E3C] transition-all"
-              >
-                Customer
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleDemoLogin('vendor@example.com', 'vendor')}
-                className="p-2 text-xs font-bold bg-[#F8F5F0] hover:bg-[#8B5E3C] hover:text-white rounded-lg border border-[#D4A373]/30 text-[#8B5E3C] transition-all"
-              >
-                Vendor
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleDemoLogin('admin@example.com', 'admin')}
-                className="p-2 text-xs font-bold bg-[#F8F5F0] hover:bg-[#8B5E3C] hover:text-white rounded-lg border border-[#D4A373]/30 text-[#8B5E3C] transition-all"
-              >
-                Admin
-              </button>
-            </div>
-          </div>
+
 
           <div className="mt-6 text-center">
             <p className="text-sm text-[#6B7280]">
