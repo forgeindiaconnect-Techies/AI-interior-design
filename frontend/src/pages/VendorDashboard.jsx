@@ -166,13 +166,32 @@ const VendorDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'reviews') {
-      const loadReviews = () => {
+      const loadReviews = async () => {
+        let backendReviews = [];
+        try {
+          const res = await axios.get('/vendor/reviews');
+          if (res.data && res.data.success) {
+            backendReviews = res.data.data;
+          }
+        } catch (err) {
+          console.warn('Failed to fetch vendor reviews from API', err);
+        }
+        
         const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-        const myReviews = allReviews.filter(r => r.vendorId === (profile?._id || 'mock_vendor_id_123'));
-        setVendorReviews(myReviews);
+        const myLocalReviews = allReviews.filter(r => r.vendorId === (profile?._id || 'mock_vendor_id_123'));
+        
+        // Merge deduplicated by _id
+        const merged = [...backendReviews];
+        myLocalReviews.forEach(lr => {
+          if (!merged.some(mr => mr._id === lr._id)) {
+            merged.push(lr);
+          }
+        });
+        
+        setVendorReviews(merged);
       };
       loadReviews();
-      const interval = setInterval(loadReviews, 1000);
+      const interval = setInterval(loadReviews, 3000); // 3s interval
       return () => clearInterval(interval);
     }
   }, [activeTab, profile]);

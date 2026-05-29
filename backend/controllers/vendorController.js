@@ -347,3 +347,23 @@ exports.getVendorOrders = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get vendor reviews
+// @route   GET /api/vendor/reviews
+// @access  Private (Vendor)
+exports.getVendorReviews = async (req, res) => {
+  try {
+    if (String(req.user.id).startsWith('mock_')) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const Review = require('../models/Review');
+    const reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name').sort('-createdAt');
+    res.status(200).json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

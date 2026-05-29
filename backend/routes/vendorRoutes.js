@@ -36,5 +36,7 @@ router.post('/store-setup', submitStoreSetup);
 
 // Vendor Orders route
 router.get('/orders', require('../controllers/vendorController').getVendorOrders);
+router.get('/reviews', require('../controllers/vendorController').getVendorReviews);
 
 module.exports = router;
+

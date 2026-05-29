@@ -1238,9 +1238,22 @@ Thank you for shopping with Artisan Studio!
   // Review Action
   const handlePublishReview = async (e) => {
     e.preventDefault();
+    const vendorTarget = reviewTargetId || 'mock_vendor_id_123';
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
+        vendorId: vendorTarget,
+        productId: 'prod_1',
+        rating: reviewRating,
+        comment: reviewComment
+      }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+    } catch (err) {
+      console.warn("Backend API publish review failed:", err);
+    }
+
     const newReview = {
       _id: 'review_' + Date.now(),
-      vendorId: reviewTargetId || 'mock_vendor_id_123',
+      vendorId: vendorTarget,
       productId: 'prod_1',
       rating: reviewRating,
       comment: reviewComment,
