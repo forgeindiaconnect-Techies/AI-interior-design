@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -388,16 +388,38 @@ const VendorDashboard = ({
       }
 
       // 5. Custom Requests
-      const reqRes = await axios.get('/vendor/requests');
-      if (reqRes.data.success) {
-        setCustomRequests(reqRes.data.data);
-      }
+      let backendRequests = [];
+      try {
+        const reqRes = await axios.get('/vendor/requests');
+        if (reqRes.data.success) backendRequests = reqRes.data.data;
+      } catch (err) { console.warn('Backend custom requests fetch failed'); }
+      
+      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const finalRequests = [...localManual];
+      backendRequests.forEach(br => {
+        if (!finalRequests.find(lr => lr._id === br._id)) {
+          finalRequests.push(br);
+        }
+      });
+      setCustomRequests(finalRequests);
 
       // 6. Orders (Manufacturing and Delivery)
-      const ordersRes = await axios.get('/vendor/orders');
-      if (ordersRes.data.success) {
-        const localOrders = ordersRes.data.data;
-        
+      let localOrders = [];
+      try {
+        const ordersRes = await axios.get('/vendor/orders');
+        if (ordersRes.data.success) localOrders = ordersRes.data.data;
+      } catch (err) { console.warn('Backend orders fetch failed'); }
+      
+      const mockOrdersData = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const finalOrders = [...mockOrdersData];
+      localOrders.forEach(bo => {
+        if (!finalOrders.find(lo => lo._id === bo._id)) {
+          finalOrders.push(bo);
+        }
+      });
+      localOrders = finalOrders;
+
+      if (localOrders.length > 0) {
         let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
         setReadyMadeOrders(mktOrders);
         
@@ -432,6 +454,9 @@ const VendorDashboard = ({
             trackingNotes: o.trackingNotes || 'Dispatched from central hub'
           }));
         setDeliveryOrders(delOrders);
+        
+        const aiOrders = localOrders.filter(o => o.orderType === 'AI Design');
+        setAiDesignOrders(aiOrders);
       }
 
     } catch (error) {
