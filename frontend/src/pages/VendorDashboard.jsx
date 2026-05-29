@@ -3089,10 +3089,10 @@ const VendorDashboard = ({
                           <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md">{new Date(review.createdAt).toLocaleDateString()}</span>
                         </div>
                         <p className="italic text-gray-600 text-sm leading-relaxed">"{review.comment}"</p>
-                        <p className="text-xs font-bold text-[#8B5E3C] mt-3 flex items-center gap-2">
+                        <div className="text-xs font-bold text-[#8B5E3C] mt-3 flex items-center gap-2">
                           <div className="w-5 h-5 rounded-full bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C]">{review.userId?.name?.charAt(0) || 'C'}</div>
                           {review.userId?.name || 'Customer'}
-                        </p>
+                        </div>
                       </div>
                     ))}
                   </div>
