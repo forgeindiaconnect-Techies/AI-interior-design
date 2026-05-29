@@ -133,7 +133,7 @@ const VendorDashboard = ({
 
   // Lifted Inventory & Payout States
   const [inventoryProducts, setInventoryProducts] = useState(() => {
-    return JSON.parse(localStorage.getItem('mockProducts') || '[]').map(p => ({
+    return [].map(p => ({
       ...p,
       stock: p.stock ?? Math.floor(Math.random() * 30) + 2,
       lowStockThreshold: p.lowStockThreshold ?? 5
@@ -143,7 +143,7 @@ const VendorDashboard = ({
   const [invFilter, setInvFilter] = useState('All');
 
   const [payoutHistory, setPayoutHistory] = useState(() =>
-    JSON.parse(localStorage.getItem('mockPayoutHistory') || '[]')
+    []
   );
   const [reqAmount, setReqAmount] = useState('');
   const [reqMethod, setReqMethod] = useState('Bank Transfer');
@@ -177,8 +177,8 @@ const VendorDashboard = ({
           console.warn('Failed to fetch vendor reviews from API', err);
         }
         
-        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-        const myLocalReviews = allReviews.filter(r => r.vendorId === (profile?._id || 'mock_vendor_id_123'));
+        const allReviews = [];
+        const myLocalReviews = allReviews.filter(r => r.vendorId === (profile?._id));
         
         // Merge deduplicated by _id
         const merged = [...backendReviews];
@@ -199,7 +199,7 @@ const VendorDashboard = ({
   const chatEndRef = useRef(null);
 
   const loadMessages = () => {
-    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const msgs = [];
     setDirectMessages(msgs);
     
     // Auto-select first user if none selected
@@ -232,7 +232,7 @@ const VendorDashboard = ({
   useEffect(() => {
     if (activeTab === 'support') {
       const loadHelpMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+        const msgs = [];
         setHelpMessages(msgs);
         
         // Auto-select first customer support chat if none is selected
@@ -269,9 +269,9 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
+    
     setDirectMessages(updated);
     setVendorMsgInput('');
 
@@ -283,8 +283,8 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString(),
       read: false
     };
-    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
+    const uNotifs = [];
+    
 
     // Trigger notification to admin
     const aNotifObj = {
@@ -294,8 +294,8 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString(),
       read: false
     };
-    const aNotifs = JSON.parse(localStorage.getItem('mockNotifications') || '[]');
-    localStorage.setItem('mockNotifications', JSON.stringify([aNotifObj, ...aNotifs]));
+    const aNotifs = [];
+    
   };
 
   const handleSendVendorHelpMessage = (e) => {
@@ -318,9 +318,9 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockHelpCenterMessages', JSON.stringify(updated));
+    
     setHelpMessages(updated);
     setHelpInput('');
 
@@ -332,8 +332,8 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString(),
       read: false
     };
-    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
+    const uNotifs = [];
+    
   };
 
   useEffect(() => {
@@ -413,7 +413,7 @@ const VendorDashboard = ({
         if (reqRes.data.success) backendRequests = reqRes.data.data;
       } catch (err) { console.warn('Backend custom requests fetch failed'); }
       
-      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const localManual = [];
       const finalRequests = [...localManual];
       backendRequests.forEach(br => {
         if (!finalRequests.find(lr => lr._id === br._id)) {
@@ -429,7 +429,7 @@ const VendorDashboard = ({
         if (ordersRes.data.success) localOrders = ordersRes.data.data;
       } catch (err) { console.warn('Backend orders fetch failed'); }
       
-      const mockOrdersData = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const mockOrdersData = [];
       const finalOrders = [...mockOrdersData];
       localOrders.forEach(bo => {
         if (!finalOrders.find(lo => lo._id === bo._id)) {
@@ -493,23 +493,23 @@ const VendorDashboard = ({
     };
     
     if (recipient === 'vendor') {
-      const existing = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-      localStorage.setItem('mockVendorNotifications', JSON.stringify([notifObj, ...existing]));
+      const existing = [];
+      
     } else if (recipient === 'admin') {
-      const existing = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-      localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...existing]));
+      const existing = [];
+      
     } else if (recipient === 'user') {
-      const existing = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-      localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...existing]));
+      const existing = [];
+      
     } else if (recipient === 'delivery') {
-      const existing = JSON.parse(localStorage.getItem('mockDeliveryNotifications') || '[]');
-      localStorage.setItem('mockDeliveryNotifications', JSON.stringify([notifObj, ...existing]));
+      const existing = [];
+      
     }
   };
 
   const handleOrderStatusUpdate = (orderId, newStatus) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id || 'mock_vendor_id_123';
+    const localOrders = [];
+    const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
       if (o._id === orderId) {
@@ -541,7 +541,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -559,8 +559,8 @@ const VendorDashboard = ({
       return;
     }
     
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id || 'mock_vendor_id_123';
+    const localOrders = [];
+    const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
       if (o._id === orderId) {
@@ -579,7 +579,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -595,8 +595,8 @@ const VendorDashboard = ({
   };
 
   const handleApproveReturn = (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id || 'mock_vendor_id_123';
+    const localOrders = [];
+    const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
       if (o._id === orderId) {
@@ -607,7 +607,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -617,8 +617,8 @@ const VendorDashboard = ({
   };
 
   const handleRejectReturn = (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id || 'mock_vendor_id_123';
+    const localOrders = [];
+    const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
       if (o._id === orderId) {
@@ -629,7 +629,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -726,12 +726,12 @@ const VendorDashboard = ({
 
   useEffect(() => {
     if (selectedOrder) {
-      const chats = JSON.parse(localStorage.getItem(`mockChat_${selectedOrder._id}`) || '[]');
+      // Replaced mock chat fetch
+      const chats = [];
       if (chats.length === 0) {
         const initial = [
           { sender: 'customer', text: `Hi! I placed this order. Could you please make sure it's packed securely?`, time: new Date(selectedOrder.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }
         ];
-        localStorage.setItem(`mockChat_${selectedOrder._id}`, JSON.stringify(initial));
         setChatMessages(initial);
       } else {
         setChatMessages(chats);
@@ -747,15 +747,15 @@ const VendorDashboard = ({
   // Live-refresh ready-made marketplace orders, custom requests and manufacturing orders whenever vendor switches tabs
   useEffect(() => {
     if (activeTab === 'orders') {
-      const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const freshOrders = [];
       const mktOrders = freshOrders.filter(o => o.orderType === 'Marketplace Product');
       if (mktOrders.length > 0) {
         setReadyMadeOrders(mktOrders);
       }
     }
     if (activeTab === 'custom_requests') {
-      const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const localManualRequests = [];
+      const localDesignerRequests = [];
       
       const mappedDesignerRequests = localDesignerRequests.map(dr => ({
         ...dr,
@@ -771,7 +771,7 @@ const VendorDashboard = ({
       }));
 
       const combined = [...localManualRequests, ...mappedDesignerRequests];
-      const vendorId = profile?._id || 'mock_vendor_id_123';
+      const vendorId = profile?._id;
       const assignedRequests = combined.filter(r => 
         !r.assignedVendorId || 
         r.assignedVendorId?._id === vendorId || 
@@ -779,7 +779,7 @@ const VendorDashboard = ({
       );
       setCustomRequests(assignedRequests);
 
-      const allOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const allOrders = [];
       const aiOrders = allOrders.filter(o => 
         o.orderType === 'AI Design' && 
         (!o.vendorId || o.vendorId?._id === vendorId || o.vendorId === vendorId)
@@ -787,7 +787,7 @@ const VendorDashboard = ({
       setAiDesignOrders(aiOrders);
     }
     if (activeTab === 'manufacturing') {
-      const freshOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const freshOrders = [];
       const mfgOrders = freshOrders
         .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
         .map(o => ({
@@ -815,7 +815,7 @@ const VendorDashboard = ({
     };
     const updated = [...chatMessages, newMessage];
     setChatMessages(updated);
-    localStorage.setItem(`mockChat_${selectedOrder._id}`, JSON.stringify(updated));
+    
     setChatMessageInput('');
     
     // Trigger notification to user
@@ -828,11 +828,11 @@ const VendorDashboard = ({
         text: `Thanks for the update! Appreciate the quick response.`,
         time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
       };
-      // Reload current chats to prevent overwrite
-      const current = JSON.parse(localStorage.getItem(`mockChat_${selectedOrder._id}`) || '[]');
+      
+      const current = chatMessages;
       const updatedWithReply = [...current, reply];
       setChatMessages(updatedWithReply);
-      localStorage.setItem(`mockChat_${selectedOrder._id}`, JSON.stringify(updatedWithReply));
+      
       
       // Notify vendor
       triggerNotification('vendor', `New message from Customer for order #${selectedOrder._id.slice(-6)}`, 'info');
@@ -889,7 +889,7 @@ const VendorDashboard = ({
       vendorId: { _id: 'mock_vendor_id_123', companyName: profile?.companyName || 'Artisan Partner' }
     };
     
-    const localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+    const localProducts = [];
     const updatedProducts = [payload, ...localProducts];
     setProducts(updatedProducts);
     setInventoryProducts(prev => [{
@@ -897,7 +897,7 @@ const VendorDashboard = ({
       stock: 10, // Default stock for newly created items
       lowStockThreshold: 5
     }, ...prev]);
-    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
     
     alert('✅ Product listed successfully! It is now live in the Marketplace.');
     setNewTitle(''); setNewDesc(''); setNewPrice(''); setNewMaterial(''); setNewSize(''); setNewImage('');
@@ -923,7 +923,7 @@ const VendorDashboard = ({
     const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
     setProducts(updatedProducts);
     setInventoryProducts(prev => prev.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item));
-    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
     
     alert('✅ Product updated successfully!');
   };
@@ -934,7 +934,7 @@ const VendorDashboard = ({
     const updatedProducts = products.filter(item => item._id !== id);
     setProducts(updatedProducts);
     setInventoryProducts(prev => prev.filter(item => item._id !== id));
-    localStorage.setItem('mockProducts', JSON.stringify(updatedProducts));
+    
     
     alert('✅ Product deleted successfully!');
   };
@@ -947,18 +947,18 @@ const VendorDashboard = ({
   // Helper: update a request's status in localStorage so it persists across refreshes
   const updateRequestStatusInStorage = (id, newStatus, extraFields = {}) => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const stored = [];
       const hasManual = stored.some(r => r._id === id);
       if (hasManual) {
         const updated = stored.map(r => r._id === id ? { ...r, status: newStatus, ...extraFields } : r);
-        localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+        
       }
 
-      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const storedDesigner = [];
       const hasDesigner = storedDesigner.some(r => r._id === id);
       if (hasDesigner) {
         const updated = storedDesigner.map(r => r._id === id ? { ...r, status: newStatus, ...extraFields } : r);
-        localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+        
       }
     } catch (err) {
       console.error('Failed to update localStorage status', err);
@@ -986,13 +986,8 @@ const VendorDashboard = ({
     updateRequestStatusInStorage(req._id, 'Quotation Sent', quotationFields);
 
     // Send customer notification
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `Vendor has sent a quotation of $${quoteAmount} for your ${req.roomType} request.`,
-      type: 'success',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    const localUserNotifs = [];
+    
 
     alert('✅ Quotation sent to customer successfully! User has been notified.');
     setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
@@ -1019,58 +1014,48 @@ const VendorDashboard = ({
 
   const handleSendAiOrderQuotation = async (e, order) => {
     e.preventDefault();
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = localOrders.map(o =>
       o._id === order._id
         ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime, quotationUPI: quoteUPI, quotationQR: quoteQR, quotationPaymentMethod: selectedPaymentMethod, quotationBankHolder: quoteBankHolder, quotationBankAccount: quoteBankAccount, quotationBankIFSC: quoteBankIFSC, quotationBankName: quoteBankName, quotationPaymentGateway: quotePaymentGateway, quotationCashOnVisit: quoteCashOnVisit }
         : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    setAiDesignOrders(updated.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === (profile?._id || 'mock_vendor_id_123') || o.vendorId === (profile?._id || 'mock_vendor_id_123'))));
+    
+    setAiDesignOrders(updated.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === (profile?._id) || o.vendorId === (profile?._id))));
 
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: 'notif_' + Date.now(),
-      message: `Vendor has sent a quotation of $${quoteAmount} for your AI Design ${order.aiDesignData?.roomType || 'order'}.`,
-      type: 'success',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    const localUserNotifs = [];
+    
 
     alert('Quotation sent to customer for AI Design order!');
     setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
   };
 
   const handleAcceptAiOrder = async (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = localOrders.map(o =>
       o._id === orderId ? { ...o, orderStatus: 'Accepted' } : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    const vendorId = profile?._id || 'mock_vendor_id_123';
+    
+    const vendorId = profile?._id;
     setAiDesignOrders(
       updated.filter(o =>
         o.orderType === 'AI Design' &&
         (o.vendorId?._id === vendorId || o.vendorId === vendorId)
       )
     );
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: 'notif_' + Date.now(),
-      message: 'Vendor has accepted your AI Design request and is reviewing it.',
-      type: 'success',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    const localUserNotifs = [];
+    
     alert('✅ AI Design request accepted! You can now review details and send a quotation.');
   };
 
   const handleRejectAiOrder = async (orderId) => {
     if (!confirm('Are you sure you want to reject this AI Design request?')) return;
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = localOrders.map(o =>
       o._id === orderId ? { ...o, orderStatus: 'Rejected' } : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    const vendorId = profile?._id || 'mock_vendor_id_123';
+    
+    const vendorId = profile?._id;
     setAiDesignOrders(
       updated.filter(o =>
         o.orderType === 'AI Design' &&
@@ -1078,14 +1063,8 @@ const VendorDashboard = ({
       )
     );
 
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: 'notif_' + Date.now(),
-      message: `Vendor rejected AI Design assignment for #${orderId.slice(-6)} — re-assignment needed.`,
-      type: 'warning',
-      createdAt: new Date().toISOString(),
-      read: false
-    }, ...localAdminNotifs]));
+    const localAdminNotifs = [];
+    
 
     alert('❌ AI Design request rejected.');
   };
@@ -1191,7 +1170,7 @@ const VendorDashboard = ({
     const updatedStatus = mfgStatus[id] || 'Pending';
     const newProgressImage = progressImg[id] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60';
 
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updatedOrders = localOrders.map(o => {
       if (o._id === id) {
         const currentImages = o.progressImages || [];
@@ -1203,7 +1182,7 @@ const VendorDashboard = ({
       }
       return o;
     });
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    
 
     setManufacturingOrders(manufacturingOrders.map(o => {
       if (o._id === id) {
@@ -1217,7 +1196,7 @@ const VendorDashboard = ({
     }));
 
     // Send customer notification
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    const localUserNotifs = [];
     let userMessage = `Order status update: ${updatedStatus} for your custom furniture.`;
     if (updatedStatus === 'Production Started') {
       userMessage = `Order update: Your order is now in production.`;
@@ -1226,72 +1205,47 @@ const VendorDashboard = ({
     } else if (updatedStatus === 'Ready for Delivery') {
       userMessage = `Order update: Your order is ready for delivery dispatch.`;
     }
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: userMessage,
-      type: 'info',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    
 
     alert('Manufacturing stage updated successfully!');
   };
 
   // Payment Verification Actions
   const handleVerifyPayment = async (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updatedOrders = localOrders.map(o =>
       o._id === orderId ? { ...o, orderStatus: 'Production Started' } : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    
     setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
 
     // Notify user
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `Payment verified! Your order #${orderId.slice(-6)} is now in production.`,
-      type: 'success',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    const localUserNotifs = [];
+    
 
     // Notify admin
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `Vendor verified payment for order #${orderId.slice(-6)}. Order moved to production.`,
-      type: 'info',
-      createdAt: new Date().toISOString()
-    }, ...localAdminNotifs]));
+    const localAdminNotifs = [];
+    
 
     showToast('Payment verified! Order moved to production.');
   };
 
   const handleRejectPayment = async (orderId) => {
     if (!confirm('Reject this payment? The order will be flagged for admin review.')) return;
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updatedOrders = localOrders.map(o =>
       o._id === orderId ? { ...o, orderStatus: 'Payment Rejected' } : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    
     setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
 
     // Notify user
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `Payment verification failed for #${orderId.slice(-6)}. Please contact support.`,
-      type: 'error',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    const localUserNotifs = [];
+    
 
     // Notify admin
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `Payment rejected by vendor for order #${orderId.slice(-6)}. Admin review required.`,
-      type: 'warning',
-      createdAt: new Date().toISOString()
-    }, ...localAdminNotifs]));
+    const localAdminNotifs = [];
+    
 
     showToast('Payment rejected. Admin has been notified.');
   };
@@ -1301,7 +1255,7 @@ const VendorDashboard = ({
     const updatedStatus = delStatus[id] || 'Picked Up';
     const updatedNote = trackingNote[id] || 'In transit';
 
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updatedOrders = localOrders.map(o => {
       if (o._id === id) {
         return {
@@ -1312,7 +1266,7 @@ const VendorDashboard = ({
       }
       return o;
     });
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    
 
     setDeliveryOrders(deliveryOrders.map(o => {
       if (o._id === id) {
@@ -1326,7 +1280,7 @@ const VendorDashboard = ({
     }));
 
     // Send customer notification
-    const localUserNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+    const localUserNotifs = [];
     let userMessage = `Delivery update: ${updatedStatus}. Notes: ${updatedNote}`;
     if (updatedStatus === 'Ready for Delivery') {
       userMessage = `Delivery update: Order picked up and ready for delivery.`;
@@ -1337,12 +1291,7 @@ const VendorDashboard = ({
     } else if (updatedStatus === 'Installation Completed') {
       userMessage = `Order update: Installation completed successfully!`;
     }
-    localStorage.setItem('mockUserNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: userMessage,
-      type: 'info',
-      createdAt: new Date().toISOString()
-    }, ...localUserNotifs]));
+    
 
     alert('Delivery status updated successfully!');
   };
@@ -1363,7 +1312,7 @@ const VendorDashboard = ({
     const isUpdate = verificationDetails && (verificationDetails.status === 'Submitted' || verificationDetails.status === 'Approved');
     const payload = {
       _id: isUpdate ? verificationDetails._id : 'ver_' + Date.now(),
-      vendorId: { _id: user?._id || user?.id || 'mock_vendor_id_123', companyName: user?.companyName || verifyBusinessName || 'Vendor' },
+      vendorId: { _id: user?._id || user?.id, companyName: user?.companyName || verifyBusinessName || 'Vendor' },
       businessName: verifyBusinessName,
       ownerName: verifyOwnerName,
       phone: verifyPhone,
@@ -1385,9 +1334,9 @@ const VendorDashboard = ({
       submittedAt: new Date().toISOString()
     };
 
-    const localVerification = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+    const localVerification = [];
     const filteredVerification = localVerification.filter(k => k.email !== payload.email);
-    localStorage.setItem('mockVerificationSubmissions', JSON.stringify([payload, ...filteredVerification]));
+    
 
     setVerificationDetails(payload);
 
@@ -1426,9 +1375,9 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const localStoreSetup = JSON.parse(localStorage.getItem('mockStoreSetupSubmissions') || '[]');
+    const localStoreSetup = [];
     const filteredStoreSetup = localStoreSetup.filter(d => d.email !== payload.email);
-    localStorage.setItem('mockStoreSetupSubmissions', JSON.stringify([payload, ...filteredStoreSetup]));
+    
 
     setStoreSetupDetails(payload);
     alert('✅ Store profile & settlement setup submitted successfully.');
@@ -3816,7 +3765,7 @@ const VendorDashboard = ({
         const updateStock = (id, delta) => {
           setInventoryProducts(prev => {
             const updated = prev.map(p => p._id === id ? { ...p, stock: Math.max(0, (p.stock || 0) + delta) } : p);
-            localStorage.setItem('mockProducts', JSON.stringify(updated));
+            
             return updated;
           });
         };
@@ -3955,7 +3904,7 @@ const VendorDashboard = ({
           };
           const updated = [newPayout, ...payoutHistory];
           setPayoutHistory(updated);
-          localStorage.setItem('mockPayoutHistory', JSON.stringify(updated));
+          
           setReqAmount(''); setReqAccount(''); setReqNote('');
           setSubmitted(true);
           setTimeout(() => setSubmitted(false), 3000);

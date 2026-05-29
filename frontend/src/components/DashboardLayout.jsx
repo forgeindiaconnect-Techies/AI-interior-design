@@ -69,7 +69,7 @@ const DashboardLayout = ({ children }) => {
         { _id: 'n1', message: 'Welcome to your premium dashboard workspace.', type: 'info', createdAt: new Date().toISOString(), read: false },
         { _id: 'n2', message: 'System optimization is complete.', type: 'success', createdAt: new Date(Date.now() - 3600000).toISOString(), read: true }
       ];
-      localStorage.setItem(key, JSON.stringify(initial));
+      
       setNotifications(initial);
     } else {
       setNotifications(stored);
@@ -86,7 +86,7 @@ const DashboardLayout = ({ children }) => {
   // Fetch verification status for vendor sidebar badge
   useEffect(() => {
     if (isVendor) {
-      const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const localVer = [];
       const current = localVer.find(k => k.email === user?.email || k.email === 'vendor@example.com');
       if (current?.status) {
         setVerificationStatus(current.status);
@@ -97,14 +97,14 @@ const DashboardLayout = ({ children }) => {
   const handleMarkAllRead = () => {
     const key = getNotifKey();
     const updated = notifications.map(n => ({ ...n, read: true }));
-    localStorage.setItem(key, JSON.stringify(updated));
+    
     setNotifications(updated);
   };
 
   const handleNotifClick = (notif) => {
     const key = getNotifKey();
     const updated = notifications.map(n => n._id === notif._id ? { ...n, read: true } : n);
-    localStorage.setItem(key, JSON.stringify(updated));
+    
     setNotifications(updated);
     setSelectedNotif({ ...notif, read: true });
     setShowNotifDropdown(false);
@@ -112,7 +112,7 @@ const DashboardLayout = ({ children }) => {
 
   const handleClearNotifications = () => {
     const key = getNotifKey();
-    localStorage.setItem(key, JSON.stringify([]));
+    
     setNotifications([]);
   };
 

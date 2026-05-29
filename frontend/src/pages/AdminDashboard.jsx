@@ -86,7 +86,7 @@ const AdminDashboard = ({
   useEffect(() => {
     if (activeTab === 'support') {
       const loadHelpMessages = () => {
-        const msgs = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+        const msgs = [];
         setHelpMessages(msgs);
         
         // Auto-select first customer support chat if none is selected
@@ -104,26 +104,26 @@ const AdminDashboard = ({
   }, [activeTab, selectedHelpUser]);
 
   const loadContactMessages = () => {
-    const msgs = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
+    const msgs = [];
     setContactMessages(msgs);
   };
 
   const handleDismissContactMessage = (id) => {
     const updated = contactMessages.filter(m => m._id !== id);
     setContactMessages(updated);
-    localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+    
   };
 
   const handleMarkContactReplied = (id) => {
     const updated = contactMessages.map(m => m._id === id ? { ...m, status: 'replied' } : m);
     setContactMessages(updated);
-    localStorage.setItem('mockContactMessages', JSON.stringify(updated));
+    
   };
 
   const chatEndRef = useRef(null);
 
   const loadAdminMessages = () => {
-    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const msgs = [];
     setAdminDirectMessages(msgs);
     if (msgs.length > 0 && !selectedMsgUser) {
       const seenKeys = new Set();
@@ -181,9 +181,9 @@ const AdminDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
+    
     setAdminDirectMessages(updated);
     setAdminMsgInput('');
   };
@@ -206,9 +206,9 @@ const AdminDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockHelpCenterMessages') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockHelpCenterMessages', JSON.stringify(updated));
+    
     setHelpMessages(updated);
     setHelpInput('');
 
@@ -220,8 +220,8 @@ const AdminDashboard = ({
       createdAt: new Date().toISOString(),
       read: false
     };
-    const uNotifs = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-    localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...uNotifs]));
+    const uNotifs = [];
+    
   };
 
   // Roles & Permissions State
@@ -444,7 +444,7 @@ const AdminDashboard = ({
     // Live-refresh verification submissions from localStorage when admin is on verifications tab
     if (activeTab === 'verifications') {
       const loadVerifFromStorage = () => {
-        const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+        const localVer = [];
         if (localVer.length > 0) {
           setVerificationSubmissions(prev => {
             const merged = [...localVer];
@@ -793,7 +793,7 @@ const AdminDashboard = ({
       const currentProd = prodRes.data?.data || [];
 
       // Always merge vendor-submitted verifications from localStorage (vendor submissions go here)
-      const localVerifications = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const localVerifications = [];
       const mergedVer = [...localVerifications];
       currentVer.forEach(cv => { if (!mergedVer.find(lv => lv._id === cv._id)) mergedVer.push(cv); });
       if (mergedVer.length === 0) {
@@ -940,7 +940,7 @@ const AdminDashboard = ({
         }
       ];
       // Merge transactions from localStorage (created by quotation payments)
-      const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
+      const localTxns = [];
       const mergedTxns = [...mockTx];
       localTxns.forEach(lt => {
         if (!mergedTxns.find(t => t._id === lt._id)) mergedTxns.push(lt);
@@ -1149,7 +1149,7 @@ const AdminDashboard = ({
     // Live-refresh orders from localStorage whenever admin switches to orders-related tabs
     if (activeTab === 'orders' || activeTab === 'manual_designs' || activeTab === 'ai_designs') {
       if (managementData) {
-        const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+        const localOrders = [];
         const existingOrders = managementData.orders || [];
         const merged = [...localOrders];
         existingOrders.forEach(eo => {
@@ -1158,7 +1158,7 @@ const AdminDashboard = ({
           }
         });
 
-        const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const localManual = [];
         const existingManual = managementData.manualDesigns || [];
         const mergedManual = [...localManual];
         existingManual.forEach(em => {
@@ -1167,7 +1167,7 @@ const AdminDashboard = ({
           }
         });
 
-        const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+        const localAi = [];
         const existingAi = managementData.aiDesigns || [];
         const mergedAi = [...localAi];
         existingAi.forEach(ea => {
@@ -1350,9 +1350,9 @@ const AdminDashboard = ({
   // Helper to persist order changes locally in mock/offline mode
   const updateLocalOrderInStorage = (orderId, fields = {}) => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const stored = [];
       const updated = stored.map(o => o._id === orderId ? { ...o, ...fields } : o);
-      localStorage.setItem('mockOrders', JSON.stringify(updated));
+      
     } catch (err) {
       console.error('Failed to update local order in storage', err);
     }
@@ -1524,9 +1524,9 @@ const AdminDashboard = ({
       setVerificationSubmissions(updatedSubs);
       
       // Sync back to localStorage so vendor sees the updated status
-      const localVer = JSON.parse(localStorage.getItem('mockVerificationSubmissions') || '[]');
+      const localVer = [];
       const updatedLocalVer = localVer.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k);
-      localStorage.setItem('mockVerificationSubmissions', JSON.stringify(updatedLocalVer));
+      
       
       // Send notification to vendor dashboard
       const sub = updatedSubs.find(k => k._id === id);
@@ -1544,8 +1544,8 @@ const AdminDashboard = ({
         createdAt: new Date().toISOString(),
         read: false
       };
-      const existingVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-      localStorage.setItem('mockVendorNotifications', JSON.stringify([vendorNotif, ...existingVendorNotifs]));
+      const existingVendorNotifs = [];
+      
       
       alert(`✅ Business Verification status set to ${status} successfully! Vendor has been notified.`);
     } catch (error) {
@@ -1779,8 +1779,8 @@ const AdminDashboard = ({
         },
         createdAt: new Date().toISOString()
       };
-      const existingOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      localStorage.setItem('mockOrders', JSON.stringify([mockOrder, ...existingOrders]));
+      const existingOrders = [];
+      
 
       // Create a notification for the vendor
       const vendorNotif = {
@@ -1790,8 +1790,8 @@ const AdminDashboard = ({
         createdAt: new Date().toISOString(),
         read: false
       };
-      const existingNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-      localStorage.setItem('mockVendorNotifications', JSON.stringify([vendorNotif, ...existingNotifs]));
+      const existingNotifs = [];
+      
     };
 
     try {
@@ -1803,7 +1803,7 @@ const AdminDashboard = ({
       fetchAdminData();
     } catch (error) {
       // offline fallback
-      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const localAi = [];
       const vendorObj = { _id: selectedAIDesignVendorId, companyName: 'Assigned Partner' };
       const updatedAi = localAi.map(d => d._id === assignVendorAIDesign._id ? {
         ...d,
@@ -1812,7 +1812,7 @@ const AdminDashboard = ({
           : { assignedVendor: vendorObj, additionalVendors: d.additionalVendors || [] }
         )
       } : d);
-      localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+      
 
       // Update state immediately
       setManagementData(prev => {
@@ -1850,13 +1850,13 @@ const AdminDashboard = ({
       fetchAdminData();
     } catch (error) {
       // offline fallback
-      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const localAi = [];
       const updatedAi = localAi.map(d => d._id === convertOrderAIDesign._id ? {
         ...d,
         orderStatus: 'Pending Manufacturing',
         assignedVendor: d.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
       } : d);
-      localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+      
 
       const newOrder = {
         _id: 'ord_ai_' + Date.now(),
@@ -1874,8 +1874,8 @@ const AdminDashboard = ({
         designRequestId: convertOrderAIDesign._id
       };
 
-      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      localStorage.setItem('mockOrders', JSON.stringify([newOrder, ...localOrders]));
+      const localOrders = [];
+      
 
       // Update state immediately
       setManagementData(prev => {
@@ -1900,9 +1900,9 @@ const AdminDashboard = ({
   // Helper: update a manual design request in localStorage (admin actions persist across sessions)
   const updateManualDesignInStorage = (id, fields = {}) => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const stored = [];
       const updated = stored.map(r => r._id === id ? { ...r, ...fields } : r);
-      localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+      
       // Also update managementData state so UI reflects change immediately
       setManagementData(prev => prev ? {
         ...prev,
@@ -1913,7 +1913,7 @@ const AdminDashboard = ({
       if (id.startsWith('man_from_des_')) {
         const desId = id.replace('man_from_des_', '');
         try {
-          const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+          const localDesignerRequests = [];
           const updatedDes = localDesignerRequests.map(r => {
             if (r._id === desId) {
               const mappedFields = {};
@@ -1927,7 +1927,7 @@ const AdminDashboard = ({
             }
             return r;
           });
-          localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDes));
+          
           setManagementData(prev => prev ? {
             ...prev,
             designerRequests: (prev.designerRequests || []).map(r => r._id === desId ? { ...r, ...updatedDes.find(d => d._id === desId) } : r)
@@ -1944,9 +1944,9 @@ const AdminDashboard = ({
   // Helper: update a designer request in localStorage (admin actions persist across sessions)
   const updateDesignerRequestInStorage = (id, fields = {}) => {
     try {
-      const stored = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const stored = [];
       const updated = stored.map(r => r._id === id ? { ...r, ...fields } : r);
-      localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+      
       // Also update managementData state so UI reflects change immediately
       setManagementData(prev => prev ? {
         ...prev,
@@ -1955,7 +1955,7 @@ const AdminDashboard = ({
 
       // Keep mockManualRequests in sync if this designer request was also mapped to manual requests
       try {
-        const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const localManualRequests = [];
         const updatedManuals = localManualRequests.map(r => {
           if (r._id === `man_from_des_${id}`) {
             const mappedFields = {};
@@ -1969,7 +1969,7 @@ const AdminDashboard = ({
           }
           return r;
         });
-        localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
+        
         setManagementData(prev => prev ? {
           ...prev,
           manualDesigns: (prev.manualDesigns || []).map(r => r._id === `man_from_des_${id}` ? { ...r, ...updatedManuals.find(m => m._id === `man_from_des_${id}`) } : r)
@@ -1994,13 +1994,13 @@ const AdminDashboard = ({
     // Check if assignVendorManualDesign is actually an AI Design order
     const isOrder = assignVendorManualDesign._id && assignVendorManualDesign._id.startsWith('ord_');
     if (isOrder) {
-      const orders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const orders = [];
       const updated = orders.map(o => o._id === assignVendorManualDesign._id ? {
         ...o,
         vendorId: { _id: selectedManualDesignVendorId, companyName },
         orderStatus: 'Assigned'
       } : o);
-      localStorage.setItem('mockOrders', JSON.stringify(updated));
+      
       window.dispatchEvent(new Event('mockOrdersUpdated'));
     } else {
       try {
@@ -2030,13 +2030,13 @@ const AdminDashboard = ({
     // Check if assignDesignerManualDesign is actually an AI Design order
     const isOrder = assignDesignerManualDesign._id && assignDesignerManualDesign._id.startsWith('ord_');
     if (isOrder) {
-      const orders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const orders = [];
       const updated = orders.map(o => o._id === assignDesignerManualDesign._id ? {
         ...o,
         designerId: { _id: selectedManualDesignDesignerId, companyName },
         orderStatus: 'Assigned'
       } : o);
-      localStorage.setItem('mockOrders', JSON.stringify(updated));
+      
       window.dispatchEvent(new Event('mockOrdersUpdated'));
     } else {
       try {
@@ -2079,30 +2079,30 @@ const AdminDashboard = ({
 
       let deleted = false;
 
-      const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const storedManual = [];
       if (storedManual.some(r => r._id === id)) {
         try { await axios.delete(`/admin/manual-designs/${id}`); } catch (_) {}
         const updated = storedManual.filter(r => r._id !== id);
-        localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+        
         deleted = true;
       }
 
       if (!deleted) {
-        const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+        const storedDesigner = [];
         if (storedDesigner.some(r => r._id === id)) {
           try { await axios.delete(`/admin/designer-requests/${id}`); } catch (_) {}
           const updated = storedDesigner.filter(r => r._id !== id);
-          localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+          
           deleted = true;
         }
       }
 
       if (!deleted) {
-        const storedOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+        const storedOrders = [];
         if (storedOrders.some(o => o._id === id)) {
           try { await axios.delete(`/admin/orders/${id}`); } catch (_) {}
           const updated = storedOrders.filter(o => o._id !== id);
-          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          
           window.dispatchEvent(new Event('mockOrdersUpdated'));
           deleted = true;
         }
@@ -2119,7 +2119,7 @@ const AdminDashboard = ({
     let found = false;
 
     // 1. Check mockManualRequests
-    const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const storedManual = [];
     const isManual = storedManual.some(r => r._id === id);
     if (isManual) {
       try {
@@ -2131,7 +2131,7 @@ const AdminDashboard = ({
 
     // 2. Check mockDesignerRequests
     if (!found) {
-      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const storedDesigner = [];
       const isDesigner = storedDesigner.some(r => r._id === id);
       if (isDesigner) {
         try {
@@ -2144,11 +2144,11 @@ const AdminDashboard = ({
 
     // 3. Check mockOrders
     if (!found) {
-      const storedOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const storedOrders = [];
       const isOrder = storedOrders.some(o => o._id === id);
       if (isOrder) {
         const updatedOrders = storedOrders.map(o => o._id === id ? { ...o, orderStatus: status } : o);
-        localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+        
         window.dispatchEvent(new Event('mockOrdersUpdated'));
         found = true;
       }
@@ -4527,9 +4527,9 @@ const AdminDashboard = ({
         const refundOrders = orders.filter(o => o.orderStatus === 'Cancelled' || o.paymentStatus === 'refunded');
 
         const handleProcessRefund = (orderId) => {
-          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const localOrders = [];
           const updated = localOrders.map(o => o._id === orderId ? { ...o, paymentStatus: 'refunded', orderStatus: 'Refunded' } : o);
-          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          
           setManagementData(prev => ({ ...prev, orders: updated }));
           alert('✅ Refund processed successfully! The transaction has been updated in the ledger.');
         };

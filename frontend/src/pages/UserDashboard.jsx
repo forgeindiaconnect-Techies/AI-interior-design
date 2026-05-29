@@ -23,7 +23,7 @@ const UserDashboard = ({
 
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [profileData, setProfileData] = useState(() => {
-    const saved = localStorage.getItem('mockUserProfile');
+    const saved = null;
     if (saved) return JSON.parse(saved);
     return { name: user?.name || '', phone: '', address: '' };
   });
@@ -122,7 +122,7 @@ const UserDashboard = ({
   useEffect(() => {
     if (activeTab === 'reviews') {
       const loadUserReviews = () => {
-        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+        const allReviews = [];
         const myReviews = allReviews.filter(r => r.userId?.email === (user?.email || 'user@example.com'));
         setUserReviews(myReviews);
       };
@@ -142,7 +142,7 @@ const UserDashboard = ({
   const chatEndRef = useRef(null);
 
   const loadHelpMessages = () => {
-    const msgs = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const msgs = [];
     setHelpMessages(msgs);
   };
 
@@ -178,9 +178,9 @@ const UserDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockDirectMessages') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockDirectMessages', JSON.stringify(updated));
+    
     setDirectMessages(updated);
     setMsgInput('');
 
@@ -192,8 +192,8 @@ const UserDashboard = ({
       createdAt: new Date().toISOString(),
       read: false
     };
-    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([notifObj, ...vNotifs]));
+    const vNotifs = [];
+    
   };
 
   const handleSendHelpMessage = (e) => {
@@ -215,32 +215,20 @@ const UserDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = JSON.parse(localStorage.getItem('mockSharedChat') || '[]');
+    const existing = [];
     const updated = [...existing, newMsg];
-    localStorage.setItem('mockSharedChat', JSON.stringify(updated));
+    
     setHelpMessages(updated);
     setHelpInput('');
 
     // Trigger notification to vendor
     const notifMsg = `[Help Center] New message from customer ${name}: "${helpInput.substring(0, 30)}..."`;
-    const vNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}_v`,
-      message: notifMsg,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    }, ...vNotifs]));
+    const vNotifs = [];
+    
 
     // Trigger notification to admin
-    const aNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}_a`,
-      message: notifMsg,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    }, ...aNotifs]));
+    const aNotifs = [];
+    
   };
 
   useEffect(() => {
@@ -265,7 +253,7 @@ const UserDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'quotations' || activeTab === 'manual') {
-      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const localManual = [];
       setManualDesigns(localManual);
     }
     if (activeTab === 'manual') {
@@ -275,11 +263,11 @@ const UserDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'cart') {
-      const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+      const localCart = [];
       setCartItems(localCart);
       
       const syncProducts = async () => {
-        let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+        let localProducts = [];
         try {
           const res = await axios.get('/products');
           if (res.data && res.data.data && res.data.data.length > 0) {
@@ -289,7 +277,7 @@ const UserDashboard = ({
             localProducts.forEach(p => mergedMap.set(p._id, p));
             const sorted = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
             setProducts(sorted);
-            localStorage.setItem('mockProducts', JSON.stringify(sorted));
+            
           } else {
             setProducts(localProducts);
           }
@@ -307,7 +295,7 @@ const UserDashboard = ({
   const fetchUserData = async () => {
     try {
       // 1. AI Designs
-      let localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || 'null');
+      let localAi = JSON.parse(null || 'null');
       if (!localAi) {
         localAi = [
           { 
@@ -324,11 +312,11 @@ const UserDashboard = ({
             createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
           }
         ];
-        localStorage.setItem('mockAiDesigns', JSON.stringify(localAi));
+        
       }
 
       // 2. Manual Requests
-      let localManual = JSON.parse(localStorage.getItem('mockManualRequests') || 'null');
+      let localManual = JSON.parse(null || 'null');
       if (!localManual) {
         localManual = [
           {
@@ -368,11 +356,11 @@ const UserDashboard = ({
             createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
           }
         ];
-        localStorage.setItem('mockManualRequests', JSON.stringify(localManual));
+        
       }
 
       // 3. Products
-      let localProducts = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+      let localProducts = [];
       if (localProducts.length === 0) {
         localProducts = [
           { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
@@ -382,7 +370,7 @@ const UserDashboard = ({
           { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
           { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
         ];
-        localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+        
       }
 
       try {
@@ -393,14 +381,14 @@ const UserDashboard = ({
           serverProds.forEach(p => mergedMap.set(p._id, p));
           localProducts.forEach(p => mergedMap.set(p._id, p));
           localProducts = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
-          localStorage.setItem('mockProducts', JSON.stringify(localProducts));
+          
         }
       } catch (err) {
         console.warn('Backend products fetch failed in UserDashboard:', err);
       }
 
       // 4. Orders
-      let localOrders = JSON.parse(localStorage.getItem('mockOrders') || 'null');
+      let localOrders = JSON.parse(null || 'null');
       if (!localOrders) {
         localOrders = [
           {
@@ -449,10 +437,10 @@ const UserDashboard = ({
             shippingAddress: '456 Cinema Road, Los Angeles, CA, USA'
           }
         ];
-        localStorage.setItem('mockOrders', JSON.stringify(localOrders));
+        
       }
 
-      const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+      const localCart = [];
 
       setAiDesigns(localAi);
       setManualDesigns(localManual);
@@ -578,18 +566,18 @@ const UserDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const localAi = [];
     const updated = [newDesign, ...localAi];
-    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    
     setAiDesigns(updated);
     setLoadingAi(false);
     alert('AI Design Generated Successfully!');
   };
 
   const handleAiStatus = async (id, status) => {
-    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const localAi = [];
     const updated = localAi.map(d => d._id === id ? { ...d, status } : d);
-    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    
     setAiDesigns(updated);
     
     const updatedDesign = updated.find(d => d._id === id);
@@ -637,14 +625,14 @@ const UserDashboard = ({
         createdAt: new Date().toISOString()
       };
       const withRegen = [regeneratedDesign, ...localAi];
-      localStorage.setItem('mockAiDesigns', JSON.stringify(withRegen));
+      
       setAiDesigns(withRegen);
       alert('✨ AI Design regenerated with new style! Check the new design above.');
     }
 
     if (status === 'accepted') {
       try {
-        const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+        const localRequests = [];
         const aiCustomRequest = {
           _id: 'man_from_ai_' + updatedDesign._id,
           requestType: 'AI Generated',
@@ -668,17 +656,12 @@ const UserDashboard = ({
         };
         if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
           const updatedManuals = [aiCustomRequest, ...localRequests];
-          localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
+          
           setManualDesigns(updatedManuals);
         }
         
-        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-        localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-          _id: `notif_admin_${Date.now()}`,
-          message: `New AI Design Order Request requires vendor assignment.`,
-          type: 'warning',
-          createdAt: new Date().toISOString()
-        }, ...localAdminNotifs]));
+        const localAdminNotifs = [];
+        
       } catch (err) {
         console.error('Failed to forward AI request to vendor', err);
       }
@@ -693,16 +676,16 @@ const UserDashboard = ({
 
   const handleDeleteDesign = (id) => {
     if (!confirm('Delete this AI design?')) return;
-    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const localAi = [];
     const filtered = localAi.filter(d => d._id !== id);
-    localStorage.setItem('mockAiDesigns', JSON.stringify(filtered));
+    
     setAiDesigns(filtered);
   };
 
   const handleToggleBookmark = (id) => {
-    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const localAi = [];
     const updated = localAi.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d);
-    localStorage.setItem('mockAiDesigns', JSON.stringify(updated));
+    
     setAiDesigns(updated);
   };
 
@@ -733,7 +716,7 @@ Thank you for shopping with Artisan Studio!
   };
 
   const handleProceedToExecution = (design) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const newOrder = {
       _id: 'ord_ai_' + Date.now(),
       orderType: 'AI Design',
@@ -756,19 +739,14 @@ Thank you for shopping with Artisan Studio!
       createdAt: new Date().toISOString()
     };
     const updatedOrders = [newOrder, ...localOrders];
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    
     setOrders(updatedOrders);
-    const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+    const localAi = [];
     const updatedAi = localAi.map(d => d._id === design._id ? { ...d, status: 'execution' } : d);
-    localStorage.setItem('mockAiDesigns', JSON.stringify(updatedAi));
+    
     setAiDesigns(updatedAi);
-    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
-      _id: 'notif_v_' + Date.now(),
-      message: 'New AI Design order requires your quotation.',
-      type: 'info',
-      createdAt: new Date().toISOString()
-    }, ...localVendorNotifs]));
+    const localVendorNotifs = [];
+    
     alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
   };
 
@@ -807,13 +785,13 @@ Thank you for shopping with Artisan Studio!
       createdAt: new Date().toISOString()
     };
 
-    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const localRequests = [];
     const updated = [fallbackRequest, ...localRequests];
-    localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+    
     setManualDesigns(updated);
 
     if (needDesigner === 'Yes') {
-      const localDesReqs = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const localDesReqs = [];
       const desEntry = {
         _id: 'des_from_manual_' + Date.now(),
         userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
@@ -824,24 +802,14 @@ Thank you for shopping with Artisan Studio!
         roomType, style: manualStyle,
         createdAt: new Date().toISOString()
       };
-      localStorage.setItem('mockDesignerRequests', JSON.stringify([desEntry, ...localDesReqs]));
+      
     }
 
-    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
-      _id: `notif_${Date.now()}`,
-      message: `New custom design request from ${fallbackRequest.userId?.name || 'Customer'}.`,
-      type: 'info',
-      createdAt: new Date().toISOString()
-    }, ...localVendorNotifs]));
+    const localVendorNotifs = [];
+    
 
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_admin_${Date.now()}`,
-      message: `New Manual Design Request ID: ${fallbackRequest._id} requires review.`,
-      type: 'warning',
-      createdAt: new Date().toISOString()
-    }, ...localAdminNotifs]));
+    const localAdminNotifs = [];
+    
 
     alert('✅ Manual Design Request Submitted Successfully! Vendors have been notified.');
     setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
@@ -865,11 +833,11 @@ Thank you for shopping with Artisan Studio!
       createdAt: new Date().toISOString()
     };
 
-    const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+    const localRequests = [];
     const updatedDesigner = [fallbackRequest, ...localRequests];
-    localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
+    
 
-    const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const localManualRequests = [];
     const manualRequestFromDesigner = {
       _id: 'man_from_des_' + fallbackRequest._id,
       requestType: 'Interior Designer Help',
@@ -891,16 +859,11 @@ Thank you for shopping with Artisan Studio!
       assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
       createdAt: fallbackRequest.createdAt
     };
-    localStorage.setItem('mockManualRequests', JSON.stringify([manualRequestFromDesigner, ...localManualRequests]));
+    
     setManualDesigns([manualRequestFromDesigner, ...manualDesigns]);
 
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_admin_${Date.now()}`,
-      message: `New Interior Designer Request ID: ${fallbackRequest._id} requires review.`,
-      type: 'warning',
-      createdAt: new Date().toISOString()
-    }, ...localAdminNotifs]));
+    const localAdminNotifs = [];
+    
 
     alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
     setDesignerDetails(''); setDesignerBudget('');
@@ -929,9 +892,9 @@ Thank you for shopping with Artisan Studio!
         images: product.images
       }
     };
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = [newOrder, ...localOrders];
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setOrders(updated);
 
     // Trigger Notifications
@@ -945,7 +908,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+      
     };
     triggerNotif('vendor', `New marketplace order received for $${product.price}`);
     triggerNotif('admin', `New marketplace purchase placed: Order #${newOrder._id.slice(-6)}`);
@@ -956,7 +919,7 @@ Thank you for shopping with Artisan Studio!
 
   // Open Quotation Payment Modal
   const handleBudgetApproval = (quotationId) => {
-    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const localRequests = [];
     const req = localRequests.find(r => r._id === quotationId);
     if (req) setQuotationPayment(req);
   };
@@ -968,12 +931,12 @@ Thank you for shopping with Artisan Studio!
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const quotationId = quotationPayment._id;
-    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const localRequests = [];
     const reqIndex = localRequests.findIndex(r => r._id === quotationId);
     let requestObj = null;
     if (reqIndex !== -1) {
       localRequests[reqIndex].status = 'Approved';
-      localStorage.setItem('mockManualRequests', JSON.stringify(localRequests));
+      
       requestObj = localRequests[reqIndex];
     }
 
@@ -999,19 +962,19 @@ Thank you for shopping with Artisan Studio!
       quotationTime: requestObj?.quotationTime || ''
     };
 
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = [newOrder, ...localOrders];
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setOrders(updated);
 
     if (requestObj) {
-      const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const storedManual = [];
       const updatedManual = storedManual.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
-      localStorage.setItem('mockManualRequests', JSON.stringify(updatedManual));
+      
 
-      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const storedDesigner = [];
       const updatedDesigner = storedDesigner.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
-      localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
+      
 
       setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r));
     }
@@ -1030,8 +993,8 @@ Thank you for shopping with Artisan Studio!
       type: 'Customer Payment',
       createdAt: new Date().toISOString()
     };
-    const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
-    localStorage.setItem('mockAdminTransactions', JSON.stringify([newTransaction, ...localTxns]));
+    const localTxns = [];
+    
 
     // Notifications
     const triggerNotif = (recipient, message, type = 'success') => {
@@ -1044,7 +1007,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+      
     };
 
     const shortOrderId = newOrder._id.slice(-6);
@@ -1069,12 +1032,12 @@ Thank you for shopping with Artisan Studio!
   };
 
   const handleBudgetRejection = async (quotationId) => {
-    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const localRequests = [];
     const reqIndex = localRequests.findIndex(r => r._id === quotationId);
     let requestObj = null;
     if (reqIndex !== -1) {
       localRequests[reqIndex].status = 'Quotation Rejected';
-      localStorage.setItem('mockManualRequests', JSON.stringify(localRequests));
+      
       requestObj = localRequests[reqIndex];
     }
     
@@ -1092,7 +1055,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+      
     };
 
     triggerNotif('vendor', `Quotation rejected by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'warning');
@@ -1103,7 +1066,7 @@ Thank you for shopping with Artisan Studio!
   // ── AI Design Quotation Actions ──
 
   const handleAcceptAiQuotation = (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const order = localOrders.find(o => o._id === orderId);
     if (order) {
       setAiQuotationPayment(order);
@@ -1119,13 +1082,13 @@ Thank you for shopping with Artisan Studio!
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const orderId = aiQuotationPayment._id;
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = localOrders.map(o =>
       o._id === orderId
         ? { ...o, orderStatus: 'Accepted', paymentStatus: 'paid' }
         : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setOrders(updated);
 
     const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
@@ -1146,8 +1109,8 @@ Thank you for shopping with Artisan Studio!
       type: 'Customer Payment',
       createdAt: new Date().toISOString()
     };
-    const localTxns = JSON.parse(localStorage.getItem('mockAdminTransactions') || '[]');
-    localStorage.setItem('mockAdminTransactions', JSON.stringify([newTransaction, ...localTxns]));
+    const localTxns = [];
+    
 
     const triggerNotif = (recipient, message, type = 'success') => {
       const notifObj = {
@@ -1159,7 +1122,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+      
     };
 
     const shortOrderId = orderId.slice(-6);
@@ -1185,11 +1148,11 @@ Thank you for shopping with Artisan Studio!
 
   const handleRejectAiQuotation = async (orderId) => {
     if (!confirm('Are you sure you want to reject this AI Design quotation?')) return;
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+    const localOrders = [];
     const updated = localOrders.map(o =>
       o._id === orderId ? { ...o, orderStatus: 'Quotation Rejected' } : o
     );
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
+    
     setOrders(updated);
 
     const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
@@ -1205,7 +1168,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+      
     };
 
     triggerNotif('vendor', 'Your quotation has been rejected by the customer.', 'warning');
@@ -1228,8 +1191,8 @@ Thank you for shopping with Artisan Studio!
       userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
       createdAt: new Date().toISOString()
     };
-    const localTickets = JSON.parse(localStorage.getItem('mockTickets') || '[]');
-    localStorage.setItem('mockTickets', JSON.stringify([newTicket, ...localTickets]));
+    const localTickets = [];
+    
     alert('Ticket Submitted Successfully!');
     setTicketSubject('');
     setTicketMessage('');
@@ -1238,7 +1201,7 @@ Thank you for shopping with Artisan Studio!
   // Review Action
   const handlePublishReview = async (e) => {
     e.preventDefault();
-    const vendorTarget = reviewTargetId || 'mock_vendor_id_123';
+    const vendorTarget = reviewTargetId;
 
     try {
       await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
@@ -1260,28 +1223,16 @@ Thank you for shopping with Artisan Studio!
       userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
       createdAt: new Date().toISOString()
     };
-    const localReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-    localStorage.setItem('mockReviews', JSON.stringify([newReview, ...localReviews]));
+    const localReviews = [];
+    
 
     // 1. Notify Vendor Dashboard
-    const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localStorage.setItem('mockVendorNotifications', JSON.stringify([{
-      _id: `notif_vendor_rev_${Date.now()}`,
-      message: `You received a new ${reviewRating}-star review from ${user?.name || 'Customer Demo'}.`,
-      type: 'success',
-      createdAt: new Date().toISOString(),
-      read: false
-    }, ...vendorNotifs]));
+    const vendorNotifs = [];
+    
 
     // 2. Notify Admin Dashboard
-    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([{
-      _id: `notif_admin_rev_${Date.now()}`,
-      message: `New ${reviewRating}-star review published by ${user?.name || 'Customer Demo'}.`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    }, ...adminNotifs]));
+    const adminNotifs = [];
+    
 
     alert('✅ Review published successfully! Vendors and Admins have been notified.');
     setReviewComment('');
@@ -1941,14 +1892,14 @@ Thank you for shopping with Artisan Studio!
             return item;
           }).filter(Boolean);
           setCartItems(updated);
-          localStorage.setItem('mockCart', JSON.stringify(updated));
+          
           window.dispatchEvent(new Event('cartUpdated'));
         };
 
         const removeFromCart = (productId) => {
           const updated = cartItems.filter(item => item.productId !== productId);
           setCartItems(updated);
-          localStorage.setItem('mockCart', JSON.stringify(updated));
+          
           window.dispatchEvent(new Event('cartUpdated'));
         };
 
@@ -1985,9 +1936,9 @@ Thank you for shopping with Artisan Studio!
             }
           }));
 
-          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const localOrders = [];
           const updatedOrders = [...newOrders, ...localOrders];
-          localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+          
           setOrders(updatedOrders);
 
           // Trigger Notifications for Vendor & Admin
@@ -2001,7 +1952,7 @@ Thank you for shopping with Artisan Studio!
             };
             const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
             const existing = JSON.parse(localStorage.getItem(key) || '[]');
-            localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+            
           };
 
           newOrders.forEach(order => {
@@ -2011,7 +1962,7 @@ Thank you for shopping with Artisan Studio!
 
           // Clear cart
           setCartItems([]);
-          localStorage.setItem('mockCart', JSON.stringify([]));
+          
           window.dispatchEvent(new Event('cartUpdated'));
           setShowCheckoutSummary(false);
 
@@ -2867,7 +2818,7 @@ Thank you for shopping with Artisan Studio!
             return;
           }
           
-          const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+          const localOrders = [];
           const updated = localOrders.map(o => {
             if (o._id === activeOrder._id) {
               return {
@@ -2880,7 +2831,7 @@ Thank you for shopping with Artisan Studio!
             return o;
           });
           
-          localStorage.setItem('mockOrders', JSON.stringify(updated));
+          
           setOrders(updated);
 
           // Notifications
@@ -2894,7 +2845,7 @@ Thank you for shopping with Artisan Studio!
             };
             const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
             const existing = JSON.parse(localStorage.getItem(key) || '[]');
-            localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
+            
           };
           triggerNotif('vendor', `Customer requested a return for order #${activeOrder._id.slice(-6)}`);
           triggerNotif('admin', `Return request filed for order #${activeOrder._id.slice(-6)}`);
@@ -2913,7 +2864,7 @@ Thank you for shopping with Artisan Studio!
                   onChange={(e) => {
                     localStorage.setItem('activeTrackingOrderId', e.target.value);
                     // Force state update by reloading activeOrder
-                    setOrders(JSON.parse(localStorage.getItem('mockOrders') || '[]'));
+                    setOrders([]);
                   }}
                   className="text-xs p-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none"
                 >
@@ -3075,9 +3026,9 @@ Thank you for shopping with Artisan Studio!
                           <button onClick={() => handleDownloadReceipt(order)} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button>
                         ) : (
                           <button onClick={() => { 
-                            const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+                            const localOrders = [];
                             const updated = localOrders.map(o => o._id === order._id ? { ...o, paymentStatus: 'paid' } : o);
-                            localStorage.setItem('mockOrders', JSON.stringify(updated));
+                            
                             setOrders(updated);
                             alert(`✅ Payment of $${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} Successful! Receipt generated.`); 
                           }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all">Pay Now</button>
@@ -3417,7 +3368,7 @@ Thank you for shopping with Artisan Studio!
           </div>
           <form className="space-y-6" onSubmit={(e) => { 
             e.preventDefault(); 
-            localStorage.setItem('mockUserProfile', JSON.stringify(profileData));
+            
             showToast('Profile Updated Successfully!', 'success');
           }}>
             <div className="grid grid-cols-2 gap-6">

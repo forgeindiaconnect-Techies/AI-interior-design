@@ -20,7 +20,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const localProds = JSON.parse(localStorage.getItem('mockProducts') || '[]');
+    const localProds = [];
     try {
       const res = await axios.get('/products');
       if (res.data && res.data.data && res.data.data.length > 0) {
@@ -60,7 +60,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
             { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
           ];
           setProducts(fallback);
-          localStorage.setItem('mockProducts', JSON.stringify(fallback));
+          
         }
       }
     } catch (error) {
@@ -85,7 +85,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
           { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
         ];
         setProducts(fallback);
-        localStorage.setItem('mockProducts', JSON.stringify(fallback));
+        
       }
     } finally {
       setLoading(false);
@@ -99,14 +99,14 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     } catch (error) {
       // ignore
     }
-    const localCart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+    const localCart = [];
     const existingItem = localCart.find(item => item.productId === productId);
     if (existingItem) {
       existingItem.quantity += 1;
     } else {
       localCart.push({ productId, quantity: 1 });
     }
-    localStorage.setItem('mockCart', JSON.stringify(localCart));
+    
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
     if (onGoToCart) {

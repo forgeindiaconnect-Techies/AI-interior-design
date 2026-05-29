@@ -20,62 +20,7 @@ import PlanPremium from './pages/PlanPremium';
 import PlanEnterprise from './pages/PlanEnterprise';
 import axios from 'axios';
 
-// Sync Manager for real-time backend synchronization
-const SyncManager = () => {
-  useEffect(() => {
-    // 1. Intercept localStorage setItem for mockOrders & mockSharedChat to push to backend
-    const originalSetItem = localStorage.setItem;
-    localStorage.setItem = function(key, value) {
-      originalSetItem.apply(this, arguments);
-      if (key === 'mockOrders') {
-        window.dispatchEvent(new Event('mockOrdersUpdated'));
-        axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/sync`, { orders: JSON.parse(value) })
-             .catch(err => console.error('Sync push failed:', err));
-      }
-      if (key === 'mockSharedChat') {
-        window.dispatchEvent(new Event('mockChatUpdated'));
-        axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/sync`, { chat: JSON.parse(value) })
-             .catch(err => console.error('Chat sync push failed:', err));
-      }
-    };
-
-    // 2. Poll backend every 2.5 seconds to pull down updates
-    const interval = setInterval(() => {
-      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/sync`)
-        .then(res => {
-          if (res.data?.data && res.data.data.length > 0) {
-             const localStr = localStorage.getItem('mockOrders');
-             const remoteStr = JSON.stringify(res.data.data);
-             if (localStr !== remoteStr) {
-               originalSetItem.call(localStorage, 'mockOrders', remoteStr);
-               window.dispatchEvent(new Event('mockOrdersUpdated'));
-             }
-          }
-        })
-        .catch(err => console.error('Sync pull failed:', err));
-
-      axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/chat/sync`)
-        .then(res => {
-          if (res.data?.data && res.data.data.length > 0) {
-             const localStr = localStorage.getItem('mockSharedChat');
-             const remoteStr = JSON.stringify(res.data.data);
-             if (localStr !== remoteStr) {
-               originalSetItem.call(localStorage, 'mockSharedChat', remoteStr);
-               window.dispatchEvent(new Event('mockChatUpdated'));
-             }
-          }
-        })
-        .catch(err => console.error('Chat sync pull failed:', err));
-    }, 2500);
-
-    return () => {
-      clearInterval(interval);
-      localStorage.setItem = originalSetItem;
-    };
-  }, []);
-
-  return null;
-};
+// Removed SyncManager as part of removing mock data
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -155,9 +100,20 @@ const AppRoutes = () => {
 };
 
 function App() {
+  useEffect(() => {
+    // Clear all mock localStorage keys on app startup
+    const keysToRemove = [
+      'mockOrders', 'mockSharedChat', 'mockProducts', 'mockReviews',
+      'mockCart', 'mockUserNotifications', 'mockVendorNotifications',
+      'mockAdminNotifications', 'mockManualRequests', 'mockDesignerRequests',
+      'mockVerificationSubmissions', 'mockStoreSetupSubmissions', 'mockPayoutHistory',
+      'mockPlatformMetrics', 'mockUsers', 'mockDesigns'
+    ];
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  }, []);
+
   return (
     <AuthProvider>
-      <SyncManager />
       <Router>
         <ToastProvider>
           <AppRoutes />

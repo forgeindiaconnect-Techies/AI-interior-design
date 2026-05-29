@@ -27,7 +27,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
 
   useEffect(() => {
     const update = () => {
-      const cart = JSON.parse(localStorage.getItem('mockCart') || '[]');
+      const cart = [];
       setCartCount(cart.length);
     };
     update();
