@@ -736,11 +736,35 @@ const VendorDashboard = ({
     }
     if (activeTab === 'custom_requests') {
       const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      
+      const mappedDesignerRequests = localDesignerRequests.map(dr => ({
+        ...dr,
+        requestType: 'Interior Designer Help',
+        userId: dr.userId,
+        roomType: 'Consultation',
+        style: 'Consultation',
+        budget: dr.budget ? `₹${dr.budget}` : 'N/A',
+        status: dr.status,
+        createdAt: dr.createdAt,
+        assignedVendorId: dr.assignedDesignerId, // map designer ID to assignedVendorId for filtering
+        raw: dr
+      }));
+
+      const combined = [...localManualRequests, ...mappedDesignerRequests];
       const vendorId = profile?._id || 'mock_vendor_id_123';
-      const assignedRequests = localManualRequests.filter(r => r.assignedVendorId?._id === vendorId || r.assignedVendorId === vendorId);
+      const assignedRequests = combined.filter(r => 
+        !r.assignedVendorId || 
+        r.assignedVendorId?._id === vendorId || 
+        r.assignedVendorId === vendorId
+      );
       setCustomRequests(assignedRequests);
+
       const allOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      const aiOrders = allOrders.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === vendorId || o.vendorId === vendorId));
+      const aiOrders = allOrders.filter(o => 
+        o.orderType === 'AI Design' && 
+        (!o.vendorId || o.vendorId?._id === vendorId || o.vendorId === vendorId)
+      );
       setAiDesignOrders(aiOrders);
     }
     if (activeTab === 'manufacturing') {
@@ -905,8 +929,18 @@ const VendorDashboard = ({
   const updateRequestStatusInStorage = (id, newStatus, extraFields = {}) => {
     try {
       const stored = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const updated = stored.map(r => r._id === id ? { ...r, status: newStatus, ...extraFields } : r);
-      localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+      const hasManual = stored.some(r => r._id === id);
+      if (hasManual) {
+        const updated = stored.map(r => r._id === id ? { ...r, status: newStatus, ...extraFields } : r);
+        localStorage.setItem('mockManualRequests', JSON.stringify(updated));
+      }
+
+      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const hasDesigner = storedDesigner.some(r => r._id === id);
+      if (hasDesigner) {
+        const updated = storedDesigner.map(r => r._id === id ? { ...r, status: newStatus, ...extraFields } : r);
+        localStorage.setItem('mockDesignerRequests', JSON.stringify(updated));
+      }
     } catch (err) {
       console.error('Failed to update localStorage status', err);
     }
@@ -2360,6 +2394,9 @@ const VendorDashboard = ({
             <div className="grid grid-cols-1 gap-8">
               {(() => {
                 const filtered = customRequests.filter(req => {
+                  const isVisible = req.status !== 'Rejected' && req.status !== 'pending';
+                  if (!isVisible) return false;
+
                   const matchesSearch = !searchQuery || 
                     req.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     req.style?.toLowerCase().includes(searchQuery.toLowerCase()) ||

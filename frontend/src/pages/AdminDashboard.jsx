@@ -75,7 +75,13 @@ const AdminDashboard = ({
   // Direct Messages from Users to Vendors (admin view)
   const [adminDirectMessages, setAdminDirectMessages] = useState([]);
   const [adminMsgInput, setAdminMsgInput] = useState('');
+  
   const [selectedMsgUser, setSelectedMsgUser] = useState('');
+  const [customDesignFilter, setCustomDesignFilter] = useState('All');
+  const [customRequestSearch, setCustomRequestSearch] = useState('');
+  const [customRequestStatusFilter, setCustomRequestStatusFilter] = useState('all');
+  const [customRequestRoomFilter, setCustomRequestRoomFilter] = useState('all');
+  const [customRequestBudgetFilter, setCustomRequestBudgetFilter] = useState('all');
 
   useEffect(() => {
     if (activeTab === 'support') {
@@ -367,25 +373,36 @@ const AdminDashboard = ({
     setManagementData(prev => {
       if (!prev) return prev;
       
-      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const getArray = (key) => {
+        try {
+          const val = localStorage.getItem(key);
+          if (!val) return [];
+          const parsed = JSON.parse(val);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      };
+      
+      const localManual = getArray('mockManualRequests');
       const mergedManual = [...localManual];
       (prev.manualDesigns || []).forEach(br => {
         if (!mergedManual.find(lr => lr._id === br._id)) mergedManual.push(br);
       });
 
-      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const localOrders = getArray('mockOrders');
       const mergedOrders = [...localOrders];
       (prev.orders || []).forEach(bo => {
         if (!mergedOrders.find(lo => lo._id === bo._id)) mergedOrders.push(bo);
       });
 
-      const localAi = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const localAi = getArray('mockAiDesigns');
       const mergedAi = [...localAi];
       (prev.aiDesigns || []).forEach(bd => {
         if (!mergedAi.find(ld => ld._id === bd._id)) mergedAi.push(bd);
       });
 
-      const localDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const localDesigner = getArray('mockDesignerRequests');
       const mergedDesigner = [...localDesigner];
       (prev.designerRequests || []).forEach(br => {
         if (!mergedDesigner.find(lr => lr._id === br._id)) mergedDesigner.push(br);
@@ -421,7 +438,7 @@ const AdminDashboard = ({
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'manual_designs' || activeTab === 'orders' || activeTab === 'ai_designs' || activeTab === 'designer_requests') {
+    if (activeTab === 'custom_design_requests' || activeTab === 'manual_designs' || activeTab === 'orders' || activeTab === 'ai_designs' || activeTab === 'designer_requests') {
       syncLocalDataToAdminState();
     }
     // Live-refresh verification submissions from localStorage when admin is on verifications tab
@@ -717,7 +734,18 @@ const AdminDashboard = ({
         ];
       }
 
-      const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const safeParse = (key) => {
+        try {
+          const raw = localStorage.getItem(key);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+          return [];
+        }
+      };
+
+      const localOrders = safeParse('mockOrders');
       const finalOrders = [...localOrders];
       (mockMgmtData.orders || []).forEach(bo => {
         if (!finalOrders.find(lo => lo._id === bo._id)) {
@@ -726,7 +754,7 @@ const AdminDashboard = ({
       });
       mockMgmtData.orders = finalOrders;
 
-      const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const localManualRequests = safeParse('mockManualRequests');
       const finalManualRequests = [...localManualRequests];
       (mockMgmtData.manualDesigns || []).forEach(br => {
         if (!finalManualRequests.find(lr => lr._id === br._id)) {
@@ -735,7 +763,7 @@ const AdminDashboard = ({
       });
       mockMgmtData.manualDesigns = finalManualRequests;
 
-      const localDesignerRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const localDesignerRequests = safeParse('mockDesignerRequests');
       const finalDesignerRequests = [...localDesignerRequests];
       (mockMgmtData.designerRequests || []).forEach(br => {
         if (!finalDesignerRequests.find(lr => lr._id === br._id)) {
@@ -744,7 +772,7 @@ const AdminDashboard = ({
       });
       mockMgmtData.designerRequests = finalDesignerRequests;
 
-      const localAiDesigns = JSON.parse(localStorage.getItem('mockAiDesigns') || '[]');
+      const localAiDesigns = safeParse('mockAiDesigns');
       const finalAiDesigns = [...localAiDesigns];
       (mockMgmtData.aiDesigns || []).forEach(bd => {
         if (!finalAiDesigns.find(ld => ld._id === bd._id)) {
@@ -1960,16 +1988,34 @@ const AdminDashboard = ({
       alert('Please select a vendor to assign.');
       return;
     }
-    try {
-      await axios.put(`/admin/manual-designs/${assignVendorManualDesign._id}/assign-vendor`, { vendorId: selectedManualDesignVendorId });
-    } catch (_) { /* offline fallback */ }
-    updateManualDesignInStorage(assignVendorManualDesign._id, {
-      assignedVendorId: { _id: selectedManualDesignVendorId, companyName: 'Assigned Vendor' },
-      status: 'Vendor Review'
-    });
-    alert('✅ Vendor assigned to manual design request successfully!');
+    const chosenVendorObj = (managementData?.vendors || []).find(v => v._id === selectedManualDesignVendorId);
+    const companyName = chosenVendorObj?.companyName || chosenVendorObj?.name || 'Assigned Vendor';
+
+    // Check if assignVendorManualDesign is actually an AI Design order
+    const isOrder = assignVendorManualDesign._id && assignVendorManualDesign._id.startsWith('ord_');
+    if (isOrder) {
+      const orders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const updated = orders.map(o => o._id === assignVendorManualDesign._id ? {
+        ...o,
+        vendorId: { _id: selectedManualDesignVendorId, companyName },
+        orderStatus: 'Assigned'
+      } : o);
+      localStorage.setItem('mockOrders', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mockOrdersUpdated'));
+    } else {
+      try {
+        await axios.put(`/admin/manual-designs/${assignVendorManualDesign._id}/assign-vendor`, { vendorId: selectedManualDesignVendorId });
+      } catch (_) { /* offline fallback */ }
+      updateManualDesignInStorage(assignVendorManualDesign._id, {
+        assignedVendorId: { _id: selectedManualDesignVendorId, companyName },
+        status: 'Assigned'
+      });
+    }
+
+    alert('✅ Vendor assigned successfully!');
     setAssignVendorManualDesign(null);
     setSelectedManualDesignVendorId('');
+    syncLocalDataToAdminState();
   };
 
   const handleAssignManualDesignDesignerSubmit = async (e) => {
@@ -1978,23 +2024,43 @@ const AdminDashboard = ({
       alert('Please select an interior designer.');
       return;
     }
-    try {
-      await axios.put(`/admin/manual-designs/${assignDesignerManualDesign._id}/assign-designer`, { designerId: selectedManualDesignDesignerId });
-    } catch (_) { /* offline fallback */ }
-    updateManualDesignInStorage(assignDesignerManualDesign._id, {
-      assignedDesignerId: { _id: selectedManualDesignDesignerId, companyName: 'Assigned Designer' }
-    });
+    const chosenDesignerObj = (managementData?.vendors || []).find(v => v._id === selectedManualDesignDesignerId);
+    const companyName = chosenDesignerObj?.companyName || chosenDesignerObj?.name || 'Assigned Designer';
+
+    // Check if assignDesignerManualDesign is actually an AI Design order
+    const isOrder = assignDesignerManualDesign._id && assignDesignerManualDesign._id.startsWith('ord_');
+    if (isOrder) {
+      const orders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const updated = orders.map(o => o._id === assignDesignerManualDesign._id ? {
+        ...o,
+        designerId: { _id: selectedManualDesignDesignerId, companyName },
+        orderStatus: 'Assigned'
+      } : o);
+      localStorage.setItem('mockOrders', JSON.stringify(updated));
+      window.dispatchEvent(new Event('mockOrdersUpdated'));
+    } else {
+      try {
+        await axios.put(`/admin/manual-designs/${assignDesignerManualDesign._id}/assign-designer`, { designerId: selectedManualDesignDesignerId });
+      } catch (_) { /* offline fallback */ }
+      updateManualDesignInStorage(assignDesignerManualDesign._id, {
+        assignedDesignerId: { _id: selectedManualDesignDesignerId, companyName },
+        status: 'Assigned'
+      });
+    }
+
     alert('🎨 Interior Designer assigned successfully!');
     setAssignDesignerManualDesign(null);
     setSelectedManualDesignDesignerId('');
+    syncLocalDataToAdminState();
   };
 
   const handleApproveManualDesign = async (id) => {
     try {
       await axios.put(`/admin/manual-designs/${id}/approve`);
     } catch (_) { /* offline fallback */ }
-    updateManualDesignInStorage(id, { status: 'User Approved' });
-    alert('🎉 Manual request approved successfully!');
+    updateManualDesignInStorage(id, { status: 'Under Review' });
+    alert('🎉 Manual request approved and under review!');
+    syncLocalDataToAdminState();
   };
 
   const handleRejectManualDesign = async (id) => {
@@ -2003,16 +2069,65 @@ const AdminDashboard = ({
     } catch (_) { /* offline fallback */ }
     updateManualDesignInStorage(id, { status: 'Rejected' });
     alert('❌ Manual request rejected/reset.');
+    syncLocalDataToAdminState();
+  };
+
+  const handleAdminUpdateStatus = async (id, status) => {
+    let found = false;
+
+    // 1. Check mockManualRequests
+    const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+    const isManual = storedManual.some(r => r._id === id);
+    if (isManual) {
+      try {
+        await axios.put(`/admin/manual-designs/${id}/status`, { status });
+      } catch (_) {}
+      updateManualDesignInStorage(id, { status });
+      found = true;
+    }
+
+    // 2. Check mockDesignerRequests
+    if (!found) {
+      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const isDesigner = storedDesigner.some(r => r._id === id);
+      if (isDesigner) {
+        try {
+          await axios.put(`/admin/designer-requests/${id}/status`, { status });
+        } catch (_) {}
+        updateDesignerRequestInStorage(id, { status });
+        found = true;
+      }
+    }
+
+    // 3. Check mockOrders
+    if (!found) {
+      const storedOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
+      const isOrder = storedOrders.some(o => o._id === id);
+      if (isOrder) {
+        const updatedOrders = storedOrders.map(o => o._id === id ? { ...o, orderStatus: status } : o);
+        localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+        window.dispatchEvent(new Event('mockOrdersUpdated'));
+        found = true;
+      }
+    }
+
+    // Update active modal objects if open
+    if (selectedAIDesign && selectedAIDesign._id === id) {
+      setSelectedAIDesign(prev => prev ? { ...prev, orderStatus: status, status } : null);
+    }
+    if (selectedManualDesign && selectedManualDesign._id === id) {
+      setSelectedManualDesign(prev => prev ? { ...prev, status } : null);
+    }
+    if (selectedDesignerRequest && selectedDesignerRequest._id === id) {
+      setSelectedDesignerRequest(prev => prev ? { ...prev, status } : null);
+    }
+
+    syncLocalDataToAdminState();
   };
 
   const handleUpdateManualDesignStatus = async (id, status) => {
-    try {
-      await axios.put(`/admin/manual-designs/${id}/status`, { status });
-    } catch (_) { /* offline fallback */ }
-    updateManualDesignInStorage(id, { status });
-    alert(`✅ Status updated to ${status}!`);
+    await handleAdminUpdateStatus(id, status);
   };
-
 
   const handleAssignDesignerRequestSubmit = async (e) => {
     e.preventDefault();
@@ -2022,7 +2137,7 @@ const AdminDashboard = ({
     }
 
     const chosenDesignerObj = (managementData?.vendors || []).find(v => v._id === selectedRequestDesignerId);
-    const companyName = chosenDesignerObj?.companyName || 'Assigned Designer';
+    const companyName = chosenDesignerObj?.companyName || chosenDesignerObj?.name || 'Assigned Designer';
 
     try {
       await axios.put(`/admin/designer-requests/${assignDesignerRequestObj._id}/assign`, { designerId: selectedRequestDesignerId });
@@ -2030,22 +2145,18 @@ const AdminDashboard = ({
 
     updateDesignerRequestInStorage(assignDesignerRequestObj._id, {
       assignedDesignerId: { _id: selectedRequestDesignerId, companyName },
-      status: 'assigned'
+      status: 'Assigned'
     });
 
     alert('🎨 Interior Designer assigned successfully to consultation request!');
     setAssignDesignerRequestObj(null);
     setSelectedRequestDesignerId('');
+    syncLocalDataToAdminState();
   };
 
   const handleUpdateDesignerRequestStatus = async (id, status) => {
-    try {
-      await axios.put(`/admin/designer-requests/${id}/status`, { status });
-    } catch (error) { /* offline fallback */ }
-
-    updateDesignerRequestInStorage(id, { status });
+    await handleAdminUpdateStatus(id, status);
     alert(`✅ Status updated to ${status}!`);
-    setSelectedDesignerRequest(null);
   };
 
   if (loading) {
@@ -3371,943 +3482,377 @@ const AdminDashboard = ({
       {/* ======================================================== */}
       {/* TAB 6: AI DESIGN REQUESTS */}
       {/* ======================================================== */}
-      {activeTab === 'ai_designs' && (() => {
-        const aiDesigns = managementData?.aiDesigns || [];
-        const totalRequests = aiDesigns.length;
-        const pendingRequests = aiDesigns.filter(d => d.status === 'pending').length;
-        const acceptedRequests = aiDesigns.filter(d => d.status === 'accepted').length;
-        const rejectedRequests = aiDesigns.filter(d => d.status === 'rejected').length;
-        const convertedOrdersCount = aiDesigns.filter(d => d.orderStatus && d.orderStatus !== 'Not Converted').length;
+            {activeTab === 'custom_design_requests' && (() => {
+        const manual = managementData?.manualDesigns || [];
+        const designerReqs = managementData?.designerRequests || [];
+        const orders = managementData?.orders || [];
+
+        const unifiedRequests = [];
+
+        // Manual and Own Materials requests
+        manual.forEach(req => {
+          const type = req.requestType || 'Manual Design';
+          unifiedRequests.push({
+            _id: req._id,
+            customerName: req.userId?.name || 'Customer Demo',
+            customerEmail: req.userId?.email || 'user@example.com',
+            customerPhone: req.userId?.phone || 'N/A',
+            roomType: req.roomType || 'N/A',
+            style: req.style || 'N/A',
+            budget: req.budget || 'N/A',
+            status: req.status || 'Submitted',
+            date: req.createdAt || req.submissionDate || new Date().toISOString(),
+            requestType: type,
+            ownMaterialsAvailable: req.ownMaterialsAvailable || 'No',
+            assignedVendorId: req.assignedVendorId || null,
+            assignedDesignerId: req.assignedDesignerId || null,
+            raw: req
+          });
+        });
+
+        // Designer Help requests
+        designerReqs.forEach(req => {
+          unifiedRequests.push({
+            _id: req._id,
+            customerName: req.userId?.name || 'Customer Demo',
+            customerEmail: req.userId?.email || 'user@example.com',
+            customerPhone: req.userId?.phone || 'N/A',
+            roomType: 'Consultation',
+            style: 'Interior Design Consultation',
+            budget: req.budget ? `₹${req.budget}` : 'N/A',
+            status: req.status || 'Submitted',
+            date: req.createdAt || new Date().toISOString(),
+            requestType: 'Interior Designer Help',
+            ownMaterialsAvailable: 'No',
+            assignedVendorId: null,
+            assignedDesignerId: req.assignedDesignerId || null,
+            raw: req
+          });
+        });
+
+        // AI Generated requests (orders with orderType === 'AI Design')
+        orders.forEach(order => {
+          if (order.orderType === 'AI Design') {
+            unifiedRequests.push({
+              _id: order._id,
+              customerName: order.userId?.name || 'Customer Demo',
+              customerEmail: order.userId?.email || 'user@example.com',
+              customerPhone: order.userId?.phone || 'N/A',
+              roomType: order.aiDesignData?.roomType || 'Living Room',
+              style: order.aiDesignData?.style || 'AI Generated',
+              budget: order.totalAmount ? `₹${order.totalAmount}` : 'N/A',
+              status: order.orderStatus || 'Submitted',
+              date: order.createdAt || new Date().toISOString(),
+              requestType: 'AI Generated',
+              ownMaterialsAvailable: 'No',
+              assignedVendorId: order.vendorId || null,
+              assignedDesignerId: order.designerId || null,
+              raw: order
+            });
+          }
+        });
+
+        // Filter based on sub-tab
+        let tabFiltered = unifiedRequests;
+        if (customDesignFilter === 'AI Generated') {
+          tabFiltered = unifiedRequests.filter(r => r.requestType === 'AI Generated');
+        } else if (customDesignFilter === 'Manual Design') {
+          tabFiltered = unifiedRequests.filter(r => r.requestType === 'Manual Design' && r.ownMaterialsAvailable !== 'Yes');
+        } else if (customDesignFilter === 'Interior Designer Help') {
+          tabFiltered = unifiedRequests.filter(r => r.requestType === 'Interior Designer Help');
+        } else if (customDesignFilter === 'Own Materials') {
+          tabFiltered = unifiedRequests.filter(r => r.ownMaterialsAvailable === 'Yes');
+        }
 
         // Apply filters
-        const filteredAiDesigns = aiDesigns.filter(d => {
-          const keyword = aiDesignSearch.toLowerCase();
+        const filteredRequests = tabFiltered.filter(r => {
+          const keyword = customRequestSearch.toLowerCase();
           const matchesSearch = 
-            (d._id || '').toLowerCase().includes(keyword) ||
-            (d.userId?.name || '').toLowerCase().includes(keyword) ||
-            (d.userId?.email || '').toLowerCase().includes(keyword) ||
-            (d.roomType || '').toLowerCase().includes(keyword) ||
-            (d.stylePreference || '').toLowerCase().includes(keyword);
+            r._id?.toLowerCase().includes(keyword) ||
+            r.customerName?.toLowerCase().includes(keyword) ||
+            r.customerEmail?.toLowerCase().includes(keyword) ||
+            r.roomType?.toLowerCase().includes(keyword) ||
+            r.style?.toLowerCase().includes(keyword);
 
-          const matchesRoom = aiDesignRoomFilter === 'all' || d.roomType === aiDesignRoomFilter;
-          const matchesStatus = aiDesignStatusFilter === 'all' || d.status === aiDesignStatusFilter;
-          const matchesBudget = aiDesignBudgetFilter === 'all' || (
-            aiDesignBudgetFilter === 'low' ? (d.aiSuggestion?.budgetEstimate <= 3000) :
-            aiDesignBudgetFilter === 'mid' ? (d.aiSuggestion?.budgetEstimate > 3000 && d.aiSuggestion?.budgetEstimate <= 5000) :
-            (d.aiSuggestion?.budgetEstimate > 5000)
-          );
+          const matchesRoom = customRequestRoomFilter === 'all' || r.roomType?.toLowerCase() === customRequestRoomFilter.toLowerCase();
+          const matchesStatus = customRequestStatusFilter === 'all' || r.status?.toLowerCase() === customRequestStatusFilter.toLowerCase();
+
+          let matchesBudget = true;
+          if (customRequestBudgetFilter !== 'all') {
+            const budStr = String(r.budget || '').replace(/[^0-9]/g, '');
+            const budNum = parseInt(budStr, 10);
+            if (!isNaN(budNum)) {
+              if (customRequestBudgetFilter === 'low') matchesBudget = budNum <= 5000;
+              else if (customRequestBudgetFilter === 'mid') matchesBudget = budNum > 5000 && budNum <= 15000;
+              else if (customRequestBudgetFilter === 'high') matchesBudget = budNum > 15000;
+            }
+          }
 
           return matchesSearch && matchesRoom && matchesStatus && matchesBudget;
         });
 
-        return (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Header */}
-            <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-              <div>
-                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">AI Studio Design Center</h2>
-                <p className="text-xs text-gray-500 mt-1">Review, approve, assign vendors, and track standard execution workflow of AI-generated designs.</p>
-              </div>
-            </div>
-
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C]">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total AI Requests</p>
-                  <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#1F2937]">{totalRequests}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
-                  <AlertCircle size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Requests</p>
-                  <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#1F2937]">{pendingRequests}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-[#2A9D8F]/10 flex items-center justify-center text-[#2A9D8F]">
-                  <CheckCircle size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Accepted Designs</p>
-                  <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#1F2937]">{acceptedRequests}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center text-red-500">
-                  <XCircle size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Rejected Designs</p>
-                  <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#1F2937]">{rejectedRequests}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm flex items-center gap-4 hover:shadow-md transition-all">
-                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
-                  <ShoppingBag size={20} />
-                </div>
-                <div>
-                  <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">Converted Orders</p>
-                  <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#1F2937]">{convertedOrdersCount}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Filter Panel */}
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm space-y-4">
-              <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                <div className="relative w-full md:max-w-md">
-                  <Search className="absolute left-4 top-3.5 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    placeholder="Search by ID, customer name, room, or style..."
-                    value={aiDesignSearch}
-                    onChange={(e) => setAiDesignSearch(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-150 text-sm focus:outline-none focus:border-[#8B5E3C]"
-                  />
-                </div>
-                <div className="flex gap-4 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-3.5 h-3.5 text-gray-400" />
-                    <select
-                      value={aiDesignRoomFilter}
-                      onChange={(e) => setAiDesignRoomFilter(e.target.value)}
-                      className="text-xs border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 font-bold text-gray-600 focus:outline-none focus:border-[#8B5E3C]"
-                    >
-                      <option value="all">All Rooms</option>
-                      <option value="Living Room">Living Room</option>
-                      <option value="Kitchen">Kitchen</option>
-                      <option value="Bedroom">Bedroom</option>
-                      <option value="Bathroom">Bathroom</option>
-                      <option value="Office">Office</option>
-                    </select>
-                  </div>
-
-                  <select
-                    value={aiDesignStatusFilter}
-                    onChange={(e) => setAiDesignStatusFilter(e.target.value)}
-                    className="text-xs border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 font-bold text-gray-600 focus:outline-none focus:border-[#8B5E3C]"
-                  >
-                    <option value="all">All Design Statuses</option>
-                    <option value="pending">Pending</option>
-                    <option value="generated">Generated</option>
-                    <option value="accepted">Accepted</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
-
-                  <select
-                    value={aiDesignBudgetFilter}
-                    onChange={(e) => setAiDesignBudgetFilter(e.target.value)}
-                    className="text-xs border border-gray-200 rounded-xl px-3 py-2 bg-gray-50 font-bold text-gray-600 focus:outline-none focus:border-[#8B5E3C]"
-                  >
-                    <option value="all">All Budgets</option>
-                    <option value="low">Under $3,000</option>
-                    <option value="mid">$3,000 - $5,000</option>
-                    <option value="high">Above $5,000</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* List / Table Area */}
-            <div className="bg-white rounded-3xl border border-[#D4A373]/20 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                      <th className="py-4 px-6">Customer</th>
-                      <th className="py-4 px-6">Room</th>
-                      <th className="py-4 px-6">Budget</th>
-                      <th className="py-4 px-6">Status</th>
-                      <th className="py-4 px-6">Vendor</th>
-                      <th className="py-4 px-6 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAiDesigns.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="text-center py-16 text-gray-400 font-bold">
-                          No matching AI Studio design requests found.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredAiDesigns.map((d) => {
-                        let statusColor = 'bg-gray-100 text-gray-600 border-gray-200';
-                        if (d.status === 'accepted') statusColor = 'bg-[#2A9D8F]/10 text-[#2A9D8F] border-[#2A9D8F]/20';
-                        else if (d.status === 'rejected') statusColor = 'bg-[#E76F51]/10 text-[#E76F51] border-[#E76F51]/20';
-                        else if (d.status === 'generated') statusColor = 'bg-blue-50 text-blue-600 border-blue-100';
-
-                        let orderStatusColor = 'bg-gray-50 text-gray-400';
-                        if (d.orderStatus === 'Pending Manufacturing') orderStatusColor = 'bg-amber-50 text-amber-600 border border-amber-100';
-                        else if (d.orderStatus === 'In Production') orderStatusColor = 'bg-blue-50 text-blue-600 border border-blue-100';
-                        else if (d.orderStatus === 'Dispatched') orderStatusColor = 'bg-purple-50 text-purple-600 border border-purple-100';
-                        else if (d.orderStatus === 'Completed') orderStatusColor = 'bg-green-50 text-green-600 border border-green-100';
-
-                        return (
-                          <tr key={d._id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
-                            <td className="py-5 px-6">
-                              <p className="font-bold text-gray-800">{d.userId?.name || 'Customer'}</p>
-                              <p className="text-[10px] text-gray-400">{d.userId?.email || 'N/A'}</p>
-                            </td>
-                            <td className="py-5 px-6">
-                              <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider">
-                                {d.roomType}
-                              </span>
-                            </td>
-                            <td className="py-5 px-6">
-                              <span className="font-extrabold text-gray-800">${d.aiSuggestion?.budgetEstimate || 'N/A'}</span>
-                            </td>
-                            <td className="py-5 px-6 space-y-2">
-                              <div>
-                                <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${statusColor}`}>
-                                  {d.status}
-                                </span>
-                              </div>
-                              {d.orderStatus && d.orderStatus !== 'Not Converted' && (
-                                <div>
-                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase border ${orderStatusColor}`}>
-                                    {d.orderStatus}
-                                  </span>
-                                </div>
-                              )}
-                            </td>
-                            <td className="py-5 px-6">
-                              {d.assignedVendor ? (
-                                <div className="text-xs space-y-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                    <p className="font-bold text-gray-800">{d.assignedVendor.companyName}</p>
-                                    <span className="text-[9px] text-blue-500 font-bold uppercase">Primary</span>
-                                  </div>
-                                  {(d.additionalVendors || []).slice(0, 2).map((av, i) => (
-                                    <div key={i} className="flex items-center gap-1.5 pl-3">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />
-                                      <p className="font-medium text-gray-600">{av.companyName}</p>
-                                    </div>
-                                  ))}
-                                  {(d.additionalVendors || []).length > 2 && (
-                                    <p className="text-[10px] text-gray-400 font-bold pl-3">+{d.additionalVendors.length - 2} more</p>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-xs text-gray-400 italic">No Vendor Assigned</span>
-                              )}
-                            </td>
-                            <td className="py-5 px-6">
-                              <div className="flex justify-end items-center gap-1.5">
-                                {/* Primary: View */}
-                                <button
-                                  onClick={() => setSelectedAIDesign(d)}
-                                  title="View Full Design Details"
-                                  className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all"
-                                >
-                                  <Eye size={14} />
-                                </button>
-
-                                {/* Primary: Assign Vendor */}
-                                {d.status === 'accepted' && (
-                                  <button
-                                    onClick={() => setAssignVendorAIDesign(d)}
-                                    title={d.assignedVendor ? "Add Another Vendor" : "Assign Partner Vendor"}
-                                    className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl transition-all"
-                                  >
-                                    <UserPlus size={14} />
-                                  </button>
-                                )}
-
-                                {/* More Actions Dropdown */}
-                                <div className="relative action-menu-container">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setOpenActionMenuId(openActionMenuId === d._id ? null : d._id);
-                                    }}
-                                    title="More Actions"
-                                    className="flex items-center gap-1 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all text-xs font-bold"
-                                  >
-                                    More ▾
-                                  </button>
-                                  {openActionMenuId === d._id && (
-                                    <div className="absolute right-0 top-full mt-1.5 bg-white rounded-xl shadow-xl border border-gray-100 min-w-[200px] z-20 py-1.5 overflow-hidden">
-                                      {d.status === 'pending' && (
-                                        <>
-                                          <button
-                                            onClick={() => { handleApproveAIRequest(d._id); setOpenActionMenuId(null); }}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#2A9D8F]/10 hover:text-[#2A9D8F] transition-all text-left"
-                                          >
-                                            <CheckCircle size={14} /> Approve & Generate
-                                          </button>
-                                          <button
-                                            onClick={() => { handleRejectAIRequest(d._id); setOpenActionMenuId(null); }}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-[#E76F51]/10 hover:text-[#E76F51] transition-all text-left"
-                                          >
-                                            <XCircle size={14} /> Reject Request
-                                          </button>
-                                        </>
-                                      )}
-                                      {d.status === 'accepted' && d.orderStatus === 'Not Converted' && (
-                                        <button
-                                          onClick={() => { setConvertOrderAIDesign(d); setOpenActionMenuId(null); }}
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-purple-50 hover:text-purple-600 transition-all text-left"
-                                        >
-                                          <ShoppingBag size={14} /> Convert to Order
-                                        </button>
-                                      )}
-                                      {d.status === 'accepted' && (
-                                        <button
-                                          onClick={() => { setAssignVendorAIDesign(d); setOpenActionMenuId(null); }}
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all text-left"
-                                        >
-                                          <UserPlus size={14} /> Manage Vendors
-                                        </button>
-                                      )}
-                                      {d.generatedImage && (
-                                        <a
-                                          href={d.generatedImage}
-                                          download={`ai-studio-design-${d._id.slice(-6)}.jpg`}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-all text-left"
-                                          onClick={() => setOpenActionMenuId(null)}
-                                        >
-                                          <Download size={14} /> Download Design
-                                        </a>
-                                      )}
-                                      {d.orderStatus && d.orderStatus !== 'Not Converted' && (
-                                        <button
-                                          onClick={() => { setWorkflowAIDesign(d); setOpenActionMenuId(null); }}
-                                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-amber-50 hover:text-amber-600 transition-all text-left"
-                                        >
-                                          <Activity size={14} /> Track Progress
-                                        </button>
-                                      )}
-                                      <div className="border-t border-gray-100 my-1" />
-                                      <button
-                                        onClick={() => { alert('📋 Activity logs coming soon'); setOpenActionMenuId(null); }}
-                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-all text-left"
-                                      >
-                                        <FileText size={14} /> Activity Logs
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* TAB 7: MANUAL DESIGN REQUESTS */}
-      {activeTab === 'manual_designs' && (() => {
-        const manualList = managementData?.manualDesigns || [];
-        
-        // Calculate dynamic stats
-        const totalCount = manualList.length;
-        const pendingCount = manualList.filter(d => d.status === 'Submitted' || d.status === 'pending').length;
-        const vendorAssignedCount = manualList.filter(d => d.assignedVendorId || d.assignedDesignerId).length;
-        const quotationSentCount = manualList.filter(d => d.status === 'Quotation Sent').length;
-        const approvedCount = manualList.filter(d => ['Approved', 'User Approved', 'Manufacturing', 'Delivery', 'Installation', 'Completed'].includes(d.status)).length;
-
-        // Filter the manual requests list
-        const filteredList = manualList.filter(d => {
-          const matchesSearch = 
-            d._id?.toLowerCase().includes(manualDesignSearch.toLowerCase()) ||
-            d.userId?.name?.toLowerCase().includes(manualDesignSearch.toLowerCase()) ||
-            d.userId?.email?.toLowerCase().includes(manualDesignSearch.toLowerCase()) ||
-            d.roomType?.toLowerCase().includes(manualDesignSearch.toLowerCase()) ||
-            d.style?.toLowerCase().includes(manualDesignSearch.toLowerCase());
-          
-          const matchesRoom = manualDesignRoomFilter === 'all' || d.roomType === manualDesignRoomFilter;
-          const matchesStatus = manualDesignStatusFilter === 'all' || d.status === manualDesignStatusFilter;
-          
-          let matchesBudget = true;
-          if (manualDesignBudgetFilter !== 'all') {
-            const budStr = String(d.budget || '').toLowerCase();
-            if (manualDesignBudgetFilter === 'low') {
-              matchesBudget = budStr.includes('1,0,000') || budStr.includes('2,0,000') || budStr.includes('1500') || budStr.includes('3,00,000') || budStr.includes('2,00,000') || budStr.includes('1500') || budStr.includes('3,000') || budStr.includes('2,000') || budStr.includes('4,000');
-            } else if (manualDesignBudgetFilter === 'mid') {
-              matchesBudget = budStr.includes('5,000') || budStr.includes('8,000') || budStr.includes('5000') || budStr.includes('50,000') || budStr.includes('1,0,000') || budStr.includes('1,00,000');
-            } else if (manualDesignBudgetFilter === 'high') {
-              matchesBudget = budStr.includes('10,000') || budStr.includes('15,000') || budStr.includes('2,50,000') || budStr.includes('2,50,000');
-            }
-          }
-
-          let matchesRequestType = true;
-          const reqType = d.requestType || 
-            ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : (d.style?.startsWith('AI Generated') ? 'AI Generated' : 'Manual Design'));
-
-          if (manualRequestFilter === 'Manual Design') {
-            matchesRequestType = reqType === 'Manual Design';
-          } else if (manualRequestFilter === 'AI Generated') {
-            matchesRequestType = reqType === 'AI Generated';
-          } else if (manualRequestFilter === 'Interior Designer Help') {
-            matchesRequestType = reqType === 'Interior Designer Help';
-          } else if (manualRequestFilter === 'Own Materials') {
-            matchesRequestType = d.ownMaterialsAvailable === 'Yes';
-          }
-
-          return matchesSearch && matchesRoom && matchesStatus && matchesBudget && matchesRequestType;
-        });
+        const total = tabFiltered.length;
+        const pending = tabFiltered.filter(r => ['Submitted', 'pending', 'Under Review'].includes(r.status)).length;
+        const assigned = tabFiltered.filter(r => r.assignedVendorId || r.assignedDesignerId || r.status === 'Assigned').length;
+        const completed = tabFiltered.filter(r => ['Completed', 'completed', 'Installation Completed'].includes(r.status)).length;
 
         return (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Top Title Section */}
-            <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-              <div>
-                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Manual Custom Design Requests</h2>
-                <p className="text-xs text-gray-500 font-bold mt-1">Manage physical measurement requests, assign interior designers, and track vendor quotation workflows.</p>
-              </div>
-            </div>
-
-            {/* Metrics Dashboard */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Manual</span>
-                  <p className="text-3xl font-extrabold text-[#1F2937]">{totalCount}</p>
+          <div className="p-6 space-y-6">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Requests</p>
+                  <p className="text-3xl font-extrabold text-gray-800 mt-1">{total}</p>
                 </div>
-                <div className="p-3 bg-gray-100 text-gray-600 rounded-xl">
-                  <Layers size={24} />
+                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                  <FileText size={22} />
                 </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Requests</span>
-                  <p className="text-3xl font-extrabold text-amber-500">{pendingCount}</p>
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending Review</p>
+                  <p className="text-3xl font-extrabold text-gray-800 mt-1">{pending}</p>
                 </div>
-                <div className="p-3 bg-amber-50 text-amber-500 rounded-xl">
-                  <Clock size={24} />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Vendor Assigned</span>
-                  <p className="text-3xl font-extrabold text-indigo-500">{vendorAssignedCount}</p>
-                </div>
-                <div className="p-3 bg-indigo-50 text-indigo-500 rounded-xl">
-                  <UserPlus size={24} />
+                <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                  <Clock size={22} />
                 </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Quotations Sent</span>
-                  <p className="text-3xl font-extrabold text-blue-500">{quotationSentCount}</p>
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Assigned / Active</p>
+                  <p className="text-3xl font-extrabold text-gray-800 mt-1">{assigned}</p>
                 </div>
-                <div className="p-3 bg-blue-50 text-blue-500 rounded-xl">
-                  <FileText size={24} />
+                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center text-green-600">
+                  <Briefcase size={22} />
                 </div>
               </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Approved Orders</span>
-                  <p className="text-3xl font-extrabold text-[#2A9D8F]">{approvedCount}</p>
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Completed</p>
+                  <p className="text-3xl font-extrabold text-gray-800 mt-1">{completed}</p>
                 </div>
-                <div className="p-3 bg-[#2A9D8F]/10 text-[#2A9D8F] rounded-xl">
-                  <CheckCircle size={24} />
+                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                  <CheckCircle size={22} />
                 </div>
               </div>
             </div>
 
-            {/* Filter and Search Panel */}
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/20 shadow-sm space-y-4">
-              {/* Type Filter Buttons */}
-              <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-100">
-                {['All', 'AI Generated', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map((filt) => (
+            <div className="flex flex-wrap gap-2.5 mb-8 border-b border-gray-200/60 pb-5">
+              {['All', 'AI Generated', 'Manual Design', 'Interior Designer Help', 'Own Materials'].map(tabName => {
+                const count = tabName === 'All' ? unifiedRequests.length :
+                              tabName === 'AI Generated' ? unifiedRequests.filter(r => r.requestType === 'AI Generated').length :
+                              tabName === 'Manual Design' ? unifiedRequests.filter(r => r.requestType === 'Manual Design' && r.ownMaterialsAvailable !== 'Yes').length :
+                              tabName === 'Interior Designer Help' ? unifiedRequests.filter(r => r.requestType === 'Interior Designer Help').length :
+                              unifiedRequests.filter(r => r.ownMaterialsAvailable === 'Yes').length;
+                const isActive = customDesignFilter === tabName;
+                return (
                   <button
-                    key={filt}
-                    onClick={() => setManualRequestFilter(filt)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                      manualRequestFilter === filt
-                        ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white shadow-sm'
-                        : 'bg-[#F8F5F0] border-[#D4A373]/20 text-gray-600 hover:bg-[#EDE8DF]'
+                    key={tabName}
+                    onClick={() => setCustomDesignFilter(tabName)}
+                    className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${
+                      isActive 
+                        ? 'bg-[#1F2937] text-white shadow-sm' 
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200/80'
                     }`}
                   >
-                    {filt}
+                    {tabName}
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${isActive ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      {count}
+                    </span>
                   </button>
-                ))}
-              </div>
-              <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                  <input
-                    type="text"
-                    placeholder="Search manual requests by user, room, style, email..."
-                    value={manualDesignSearch}
-                    onChange={(e) => setManualDesignSearch(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-[#F8F5F0]/50 hover:bg-[#F8F5F0] focus:bg-white border border-[#D4A373]/20 rounded-2xl outline-none transition-all placeholder:text-gray-400 font-medium text-sm text-[#1F2937]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Room Type</label>
-                  <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B5E3C]" size={14} />
-                    <select
-                      value={manualDesignRoomFilter}
-                      onChange={(e) => setManualDesignRoomFilter(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-[#F8F5F0]/50 border border-[#D4A373]/20 rounded-xl font-bold text-xs text-gray-700 outline-none transition-all appearance-none"
-                    >
-                      <option value="all">All Room Types</option>
-                      <option value="Living Room">Living Room</option>
-                      <option value="Bedroom">Bedroom</option>
-                      <option value="Kitchen">Kitchen</option>
-                      <option value="Bathroom">Bathroom</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Workflow Status</label>
-                  <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B5E3C]" size={14} />
-                    <select
-                      value={manualDesignStatusFilter}
-                      onChange={(e) => setManualDesignStatusFilter(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-[#F8F5F0]/50 border border-[#D4A373]/20 rounded-xl font-bold text-xs text-gray-700 outline-none transition-all appearance-none"
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="Submitted">Submitted (Pending)</option>
-                      <option value="Vendor Review">Vendor Review</option>
-                      <option value="Quotation Sent">Quotation Sent</option>
-                      <option value="User Approved">User Approved</option>
-                      <option value="Manufacturing">Manufacturing</option>
-                      <option value="Delivery">Delivery</option>
-                      <option value="Installation">Installation</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">Budget Range</label>
-                  <div className="relative">
-                    <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8B5E3C]" size={14} />
-                    <select
-                      value={manualDesignBudgetFilter}
-                      onChange={(e) => setManualDesignBudgetFilter(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 bg-[#F8F5F0]/50 border border-[#D4A373]/20 rounded-xl font-bold text-xs text-gray-700 outline-none transition-all appearance-none"
-                    >
-                      <option value="all">All Budgets</option>
-                      <option value="low">Under $5,000</option>
-                      <option value="mid">$5,000 - $10,000</option>
-                      <option value="high">Above $10,000</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
+                );
+              })}
             </div>
 
-            {/* Manual Requests Interactive Table */}
-            <div className="bg-white rounded-3xl border border-[#D4A373]/20 shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-sm">
-                  <thead>
-                    <tr className="border-b border-[#D4A373]/10 bg-[#F8F5F0]/45 text-[11px] font-extrabold uppercase tracking-wider text-[#8B5E3C]">
-                      <th className="py-4 px-6">Request ID / Client</th>
-                      <th className="py-4 px-4">Room & Style</th>
-                      <th className="py-4 px-4">Specs & Size</th>
-                      <th className="py-4 px-4">Budget / Timeline</th>
-                      <th className="py-4 px-4">Assignments</th>
-                      <th className="py-4 px-4">Status</th>
-                      <th className="py-4 px-6 text-center">Action Center</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {filteredList.length === 0 ? (
-                      <tr>
-                        <td colSpan="7" className="py-12 text-center text-gray-400 font-bold text-sm bg-gray-50/50">
-                          No manual design requests matched the filter criteria.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredList.map((d) => {
-                        let statusColor = "bg-gray-100 text-gray-700 border-gray-200";
-                        if (d.status === 'Submitted' || d.status === 'pending') {
-                          statusColor = "bg-amber-50 text-amber-600 border-amber-200";
-                        } else if (d.status === 'Vendor Review') {
-                          statusColor = "bg-indigo-50 text-indigo-600 border-indigo-200";
-                        } else if (d.status === 'Quotation Sent') {
-                          statusColor = "bg-blue-50 text-blue-600 border-blue-200";
-                        } else if (d.status === 'Approved') {
-                          statusColor = "bg-emerald-50 text-emerald-600 border-emerald-200";
-                        } else if (d.status === 'User Approved') {
-                          statusColor = "bg-teal-50 text-teal-600 border-teal-200";
-                        } else if (d.status === 'Completed') {
-                          statusColor = "bg-emerald-50 text-emerald-600 border-emerald-200";
-                        } else if (['Manufacturing', 'Delivery', 'Installation'].includes(d.status)) {
-                          statusColor = "bg-purple-50 text-purple-600 border-purple-200";
-                        }
-
-                        return (
-                          <tr key={d._id} className="hover:bg-[#F8F5F0]/15 transition-all">
-                            <td className="py-4 px-6">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-mono text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-500 font-bold uppercase">#{d._id?.slice(-6) || 'N/A'}</span>
-                                {(() => {
-                                  const reqType = d.requestType || 
-                                    ((d.roomType === 'Interior Design' && d.style === 'Consultation') ? 'Interior Designer Help' : 'Manual Design');
-                                  const badgeClass = reqType === 'Interior Designer Help' 
-                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
-                                    : reqType === 'AI Generated'
-                                        ? 'bg-teal-50 text-teal-700 border-teal-200'
-                                        : 'bg-amber-50 text-amber-700 border-amber-200';
-                                  return (
-                                    <span className={`px-2 py-0.5 rounded border text-[9px] font-extrabold uppercase ${badgeClass}`}>
-                                      {reqType}
-                                    </span>
-                                  );
-                                })()}
-                              </div>
-                              <p className="font-bold text-[#1F2937] text-sm mt-1">{d.userId?.name || 'Customer'}</p>
-                              <span className="text-[10px] text-gray-400 font-medium block">{d.userId?.email || 'N/A'}</span>
-                            </td>
-
-                            <td className="py-4 px-4">
-                              <span className="inline-block text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-[#8B5E3C]/10 text-[#8B5E3C]">{d.roomType}</span>
-                              <p className="text-xs font-bold text-gray-700 mt-1">{d.style}</p>
-                            </td>
-
-                            <td className="py-4 px-4">
-                              <p className="text-xs font-bold text-gray-700">{d.size || 'N/A'}</p>
-                              <p className="text-[10px] text-gray-400 mt-0.5 truncate max-w-[150px]" title={d.materials}>{d.materials || 'No materials specified'}</p>
-                            </td>
-
-                            <td className="py-4 px-4">
-                              <p className="text-xs font-extrabold text-[#2A9D8F]">{d.budget}</p>
-                              <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-wider">{d.timeline || 'Flexible'}</p>
-                              {(d.status === 'Quotation Sent' || d.status === 'Approved') && d.quotationAmount && (
-                                <div className={`mt-2 pt-2 border-t ${d.status === 'Approved' ? 'border-emerald-100' : 'border-blue-100'}`}>
-                                  <p className={`text-xs font-extrabold ${d.status === 'Approved' ? 'text-emerald-600' : 'text-blue-600'}`}>
-                                    {d.status === 'Approved' ? '✓ Approved — ' : ''}Quotation: ${d.quotationAmount}
-                                  </p>
-                                  <p className="text-[10px] text-gray-500 mt-0.5">{d.quotationMaterials}</p>
-                                  <p className="text-[10px] text-gray-400">{d.quotationTime}</p>
-                                </div>
-                              )}
-                            </td>
-
-                            <td className="py-4 px-4 space-y-1">
-                              <div className="flex items-center gap-1.5 text-xs text-gray-700">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-16">Vendor:</span>
-                                <span className="font-bold text-gray-800">{d.assignedVendorId?.companyName || 'Not Assigned'}</span>
-                              </div>
-                              <div className="flex items-center gap-1.5 text-xs text-gray-700">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider w-16">Designer:</span>
-                                <span className="font-bold text-[#8B5E3C]">{d.assignedDesignerId?.companyName || 'Not Assigned'}</span>
-                              </div>
-                            </td>
-
-                            <td className="py-4 px-4">
-                              <span className={`inline-flex px-2.5 py-1 text-[10px] font-extrabold border rounded-full uppercase tracking-wider ${statusColor}`}>
-                                {d.status === 'pending' ? 'PENDING' : d.status}
-                              </span>
-                            </td>
-
-                            <td className="py-4 px-6">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => setSelectedManualDesign(d)}
-                                  title="View Full Details"
-                                  className="p-2 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 text-[#8B5E3C] rounded-xl transition-all"
-                                >
-                                  <Eye size={14} />
-                                </button>
-
-                                <button
-                                  onClick={() => setAssignVendorManualDesign(d)}
-                                  title="Assign Manufacturer/Vendor"
-                                  className="p-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-xl transition-all"
-                                >
-                                  <UserPlus size={14} />
-                                </button>
-
-                                <button
-                                  onClick={() => setAssignDesignerManualDesign(d)}
-                                  title="Assign Interior Designer"
-                                  className="p-2 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl transition-all"
-                                >
-                                  <Paintbrush size={14} />
-                                </button>
-
-                                {d.status === 'Quotation Sent' && (
-                                  <>
-                                    <button
-                                      onClick={() => handleApproveManualDesign(d._id)}
-                                      title="Approve Design Quotation"
-                                      className="p-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-xl transition-all"
-                                    >
-                                      <CheckCircle size={14} />
-                                    </button>
-                                    <button
-                                      onClick={() => handleRejectManualDesign(d._id)}
-                                      title="Reject/Reset Request"
-                                      className="p-2 bg-[#E76F51]/10 hover:bg-[#E76F51]/20 text-[#E76F51] rounded-xl transition-all"
-                                    >
-                                      <XCircle size={14} />
-                                    </button>
-                                  </>
-                                )}
-                                {d.status === 'Approved' && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold border border-emerald-200">
-                                    <CheckCircle size={12} /> Paid
-                                  </span>
-                                )}
-
-                                <button
-                                  onClick={() => setWorkflowManualDesign(d)}
-                                  title="Track Design Workflow"
-                                  className="p-2 bg-amber-50 hover:bg-amber-100 text-amber-600 rounded-xl transition-all"
-                                >
-                                  <Activity size={14} />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* TAB 8: INTERIOR DESIGNER REQUESTS */}
-      {activeTab === 'designer_requests' && (() => {
-        const designerReqList = managementData?.designerRequests || [];
-
-        // Calculate dynamic stats
-        const totalCount = designerReqList.length;
-        const pendingCount = designerReqList.filter(d => d.status === 'pending').length;
-        const assignedCount = designerReqList.filter(d => d.status === 'assigned').length;
-        const completedCount = designerReqList.filter(d => d.status === 'completed').length;
-
-        // Filter list
-        const filteredReqs = designerReqList.filter(d => {
-          const matchesSearch = 
-            d._id?.toLowerCase().includes(designerRequestSearch.toLowerCase()) ||
-            d.userId?.name?.toLowerCase().includes(designerRequestSearch.toLowerCase()) ||
-            d.userId?.email?.toLowerCase().includes(designerRequestSearch.toLowerCase()) ||
-            d.details?.toLowerCase().includes(designerRequestSearch.toLowerCase());
-          
-          const matchesStatus = designerRequestStatusFilter === 'all' || d.status === designerRequestStatusFilter;
-
-          let matchesBudget = true;
-          if (designerRequestBudgetFilter !== 'all') {
-            const budVal = d.budget || 0;
-            if (designerRequestBudgetFilter === 'low') {
-              matchesBudget = budVal < 5000;
-            } else if (designerRequestBudgetFilter === 'mid') {
-              matchesBudget = budVal >= 5000 && budVal <= 10000;
-            } else if (designerRequestBudgetFilter === 'high') {
-              matchesBudget = budVal > 10000;
-            }
-          }
-
-          return matchesSearch && matchesStatus && matchesBudget;
-        });
-
-        return (
-          <div className="space-y-8 animate-fadeIn">
-            {/* Title Section */}
-            <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-              <div>
-                <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Interior Designer Consultations</h2>
-                <p className="text-xs text-gray-500 font-bold mt-1">Manage, dispatch, and review private designer consultation requests submitted by premium users.</p>
-              </div>
-            </div>
-
-            {/* Metrics Dashboard */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Consultations</span>
-                  <p className="text-3xl font-extrabold text-[#1F2937]">{totalCount}</p>
-                </div>
-                <div className="p-3 bg-gray-100 text-gray-600 rounded-xl">
-                  <Layers size={24} />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Consults</span>
-                  <p className="text-3xl font-extrabold text-amber-500">{pendingCount}</p>
-                </div>
-                <div className="p-3 bg-amber-50 text-amber-500 rounded-xl">
-                  <Clock size={24} />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Assigned Partners</span>
-                  <p className="text-3xl font-extrabold text-indigo-500">{assignedCount}</p>
-                </div>
-                <div className="p-3 bg-indigo-50 text-indigo-500 rounded-xl">
-                  <UserCheck size={24} />
-                </div>
-              </div>
-
-              <div className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm flex items-center justify-between hover:scale-[1.02] transition-transform duration-300">
-                <div className="space-y-1">
-                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Completed Consults</span>
-                  <p className="text-3xl font-extrabold text-emerald-500">{completedCount}</p>
-                </div>
-                <div className="p-3 bg-emerald-50 text-emerald-500 rounded-xl">
-                  <CheckSquare size={24} />
-                </div>
-              </div>
-            </div>
-
-            {/* Filters Section */}
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-4 items-center justify-between">
-              <div className="relative w-full md:w-96">
-                <Search className="absolute left-4 top-3.5 text-gray-400" size={18} />
+            {/* Filter Bar */}
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6 flex flex-wrap gap-4 items-center justify-between">
+              <div className="relative flex-1 min-w-[280px]">
+                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search by client name, email, or requests..."
-                  value={designerRequestSearch}
-                  onChange={(e) => setDesignerRequestSearch(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#8B5E3C] focus:border-transparent text-sm bg-gray-50/50"
+                  placeholder="Search by ID, customer name, email, style, or room..."
+                  value={customRequestSearch}
+                  onChange={(e) => setCustomRequestSearch(e.target.value)}
+                  className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-blue-600 transition-colors"
                 />
               </div>
-
-              <div className="flex flex-wrap gap-4 w-full md:w-auto">
+              
+              <div className="flex flex-wrap gap-3">
                 <select
-                  value={designerRequestStatusFilter}
-                  onChange={(e) => setDesignerRequestStatusFilter(e.target.value)}
-                  className="px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
+                  value={customRequestRoomFilter}
+                  onChange={(e) => setCustomRequestRoomFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:border-blue-600"
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="pending">Pending</option>
-                  <option value="assigned">Assigned</option>
-                  <option value="completed">Completed</option>
+                  <option value="all">All Room Types</option>
+                  <option value="Living Room">Living Room</option>
+                  <option value="Bedroom">Bedroom</option>
+                  <option value="Kitchen">Kitchen</option>
+                  <option value="Office">Office</option>
+                  <option value="Bathroom">Bathroom</option>
                 </select>
 
                 <select
-                  value={designerRequestBudgetFilter}
-                  onChange={(e) => setDesignerRequestBudgetFilter(e.target.value)}
-                  className="px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
+                  value={customRequestStatusFilter}
+                  onChange={(e) => setCustomRequestStatusFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:border-blue-600"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="under review">Under Review</option>
+                  <option value="approved">Approved</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="quotation sent">Quotation Sent</option>
+                  <option value="payment received">Payment Received</option>
+                  <option value="in progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+
+                <select
+                  value={customRequestBudgetFilter}
+                  onChange={(e) => setCustomRequestBudgetFilter(e.target.value)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:border-blue-600"
                 >
                   <option value="all">All Budgets</option>
-                  <option value="low">Under $5k</option>
-                  <option value="mid">$5k - $10k</option>
-                  <option value="high">Over $10k</option>
+                  <option value="low">Under ₹5,000 / Low</option>
+                  <option value="mid">₹5,000 - ₹15,000 / Mid</option>
+                  <option value="high">Over ₹15,000 / High</option>
                 </select>
               </div>
             </div>
 
-            {/* Table Listing */}
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Custom Request List Grid/Table */}
+            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[1200px]">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold uppercase text-gray-400 tracking-wider">
-                      <th className="py-4 px-6">ID / Date</th>
-                      <th className="py-4 px-6">Client Name</th>
-                      <th className="py-4 px-6">Consultation Needs</th>
-                      <th className="py-4 px-6 text-center">Budget</th>
-                      <th className="py-4 px-6 text-center">Status</th>
-                      <th className="py-4 px-6">Assigned Designer</th>
-                      <th className="py-4 px-6 text-right">Actions</th>
+                    <tr className="bg-gray-50/50 border-b border-gray-100 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      <th className="p-5">Request ID</th>
+                      <th className="p-5">Request Type</th>
+                      <th className="p-5">Customer Name</th>
+                      <th className="p-5">Email</th>
+                      <th className="p-5">Phone</th>
+                      <th className="p-5">Room Type</th>
+                      <th className="p-5">Budget</th>
+                      <th className="p-5">Status</th>
+                      <th className="p-5">Assigned Vendor/Designer</th>
+                      <th className="p-5">Date Submitted</th>
+                      <th className="p-5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 text-sm font-medium text-gray-700">
-                    {filteredReqs.length === 0 ? (
+                  <tbody className="divide-y divide-gray-100 text-xs">
+                    {filteredRequests.length === 0 ? (
                       <tr>
-                        <td colSpan="7" className="py-12 text-center text-gray-400">
-                          No interior designer consultation requests matched the search filters.
+                        <td colSpan="11" className="p-10 text-center text-gray-400 font-medium">
+                          No custom design requests found matching the filter criteria.
                         </td>
                       </tr>
                     ) : (
-                      filteredReqs.map((req) => {
-                        const dateFormatted = req.createdAt ? new Date(req.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        }) : 'N/A';
-                        
+                      filteredRequests.map(r => {
+                        const statusColors = 
+                          ['Approved', 'User Approved', 'Accepted', 'Installation Completed', 'Completed'].includes(r.status) ? 'bg-green-50 text-green-700 border border-green-100' :
+                          r.status === 'Rejected' ? 'bg-red-50 text-red-600 border border-red-100' :
+                          ['Submitted', 'pending'].includes(r.status) ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                          r.status === 'Under Review' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                          'bg-indigo-50 text-indigo-700 border border-indigo-100';
+
                         return (
-                          <tr key={req._id} className="hover:bg-gray-50/50 transition-colors">
-                            <td className="py-4 px-6">
-                              <span className="font-mono text-xs font-bold text-gray-400 block">#{req._id.slice(-6)}</span>
-                              <span className="text-[10px] text-gray-400 block mt-0.5">{dateFormatted}</span>
-                            </td>
-                            <td className="py-4 px-6">
-                              <span className="font-bold text-[#1F2937] block">{req.userId?.name || 'Customer'}</span>
-                              <span className="text-xs text-gray-400 block mt-0.5">{req.userId?.email || 'N/A'}</span>
-                            </td>
-                            <td className="py-4 px-6 max-w-xs">
-                              <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">
-                                {req.details}
-                              </p>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className="font-bold text-[#8B5E3C] font-mono">${req.budget || 'Open'}</span>
-                            </td>
-                            <td className="py-4 px-6 text-center">
-                              <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                                req.status === 'completed' 
-                                  ? 'bg-green-50 text-green-600 border border-green-100' 
-                                  : req.status === 'assigned' 
-                                    ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-                                    : 'bg-amber-50 text-amber-600 border border-amber-100'
-                              }`}>
-                                {req.status}
+                          <tr key={r._id} className="hover:bg-gray-50/40 transition-colors">
+                            <td className="p-5 font-mono text-[11px] text-gray-500">{r._id}</td>
+                            <td className="p-5 font-bold">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F8F5F0] text-[#8B5E3C] border border-[#D4A373]/20">
+                                {r.requestType}
                               </span>
                             </td>
-                            <td className="py-4 px-6">
-                              {req.assignedDesignerId ? (
-                                <span className="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-xl text-xs font-bold border border-indigo-100 inline-block">
-                                  🎨 {req.assignedDesignerId.companyName || 'Assigned Designer'}
-                                </span>
+                            <td className="p-5 font-bold text-gray-800">{r.customerName}</td>
+                            <td className="p-5 text-gray-600">{r.customerEmail}</td>
+                            <td className="p-5 text-gray-600">{r.customerPhone}</td>
+                            <td className="p-5 font-medium text-gray-700">{r.roomType}</td>
+                            <td className="p-5 font-semibold text-gray-800">{r.budget}</td>
+                            <td className="p-5">
+                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${statusColors}`}>
+                                {r.status}
+                              </span>
+                            </td>
+                            <td className="p-5">
+                              {r.assignedVendorId || r.assignedDesignerId ? (
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-gray-700">
+                                    {r.assignedVendorId?.companyName || r.assignedVendorId?.name || r.assignedDesignerId?.companyName || r.assignedDesignerId?.name}
+                                  </span>
+                                  <span className="text-[9px] text-gray-400 font-medium uppercase">
+                                    {r.assignedVendorId ? 'Vendor' : 'Designer'}
+                                  </span>
+                                </div>
                               ) : (
-                                <span className="text-gray-400 text-xs font-bold italic">Not Assigned</span>
+                                <span className="text-gray-400 font-medium italic">Unassigned</span>
                               )}
                             </td>
-                            <td className="py-4 px-6 text-right">
-                              <div className="flex gap-2 justify-end">
+                            <td className="p-5 text-gray-400">
+                              {new Date(r.date).toLocaleDateString()}
+                            </td>
+                            <td className="p-5 text-right">
+                              <div className="flex items-center justify-end gap-2 flex-wrap">
                                 <button
-                                  onClick={() => setSelectedDesignerRequest(req)}
-                                  title="View Consultation Details"
-                                  className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all"
+                                  onClick={() => {
+                                    if (r.requestType === 'Interior Designer Help') {
+                                      setSelectedDesignerRequest(r.raw);
+                                    } else if (r.requestType === 'AI Generated') {
+                                      setSelectedAIDesign(r.raw);
+                                    } else {
+                                      setSelectedManualDesign(r.raw);
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors"
                                 >
-                                  <Eye size={14} />
+                                  View Details
                                 </button>
-                                <button
-                                  onClick={() => setAssignDesignerRequestObj(req)}
-                                  title="Assign Designer"
-                                  className="p-2 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 text-[#8B5E3C] rounded-xl transition-all"
+
+                                <select
+                                  value={r.status}
+                                  onChange={(e) => handleAdminUpdateStatus(r._id, e.target.value)}
+                                  className="px-2 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:border-blue-600 cursor-pointer"
                                 >
-                                  <Paintbrush size={14} />
-                                </button>
+                                  <option value="Submitted">Submitted</option>
+                                  <option value="Under Review">Under Review</option>
+                                  <option value="Assigned">Assigned</option>
+                                  <option value="Quotation Sent">Quotation Sent</option>
+                                  <option value="Accepted">Accepted</option>
+                                  <option value="Production Started">Production Started</option>
+                                  <option value="Manufacturing">Manufacturing</option>
+                                  <option value="Ready for Delivery">Ready for Delivery</option>
+                                  <option value="Delivered">Delivered</option>
+                                  <option value="Installation Completed">Installation Completed</option>
+                                  <option value="Rejected">Rejected</option>
+                                </select>
+
+                                {!r.assignedVendorId && !r.assignedDesignerId && (
+                                  <div className="flex gap-1.5">
+                                    {r.requestType !== 'Interior Designer Help' && (
+                                      <button
+                                        onClick={() => setAssignVendorManualDesign(r.raw)}
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
+                                      >
+                                        Assign Vendor
+                                      </button>
+                                    )}
+                                    {(r.requestType === 'Manual Design' || r.requestType === 'Interior Designer Help' || r.requestType === 'AI Generated') && (
+                                      <button
+                                        onClick={() => {
+                                          if (r.requestType === 'Interior Designer Help') {
+                                            setAssignDesignerRequestObj(r.raw);
+                                          } else {
+                                            setAssignDesignerManualDesign(r.raw);
+                                          }
+                                        }}
+                                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors"
+                                      >
+                                        Assign Designer
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -7844,6 +7389,26 @@ const AdminDashboard = ({
                   </div>
                 </div>
               </div>
+
+              {/* Status Update Control Panel for Admin */}
+              <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-200 text-xs space-y-3 mt-6">
+                <p className="font-bold text-amber-800 uppercase tracking-wider">Administrative Status Actions</p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  {['Submitted', 'Under Review', 'Assigned', 'Quotation Sent', 'Accepted', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed'].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleAdminUpdateStatus(selectedAIDesign._id, s)}
+                      className={`px-3 py-1.5 rounded-lg font-bold border transition-all ${
+                        (selectedAIDesign.orderStatus || selectedAIDesign.status) === s 
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="bg-gray-50 p-6 border-t border-gray-100 flex justify-end gap-4">
@@ -8265,7 +7830,7 @@ const AdminDashboard = ({
               <div className="bg-amber-50/50 p-6 rounded-2xl border border-amber-200 text-xs space-y-3">
                 <p className="font-bold text-amber-800 uppercase tracking-wider">Administrative Status Actions</p>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {['Submitted', 'Vendor Review', 'Quotation Sent', 'User Approved', 'Manufacturing', 'Delivery', 'Installation', 'Completed'].map((s) => (
+                  {['Submitted', 'Under Review', 'Assigned', 'Quotation Sent', 'Accepted', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed'].map((s) => (
                     <button
                       key={s}
                       onClick={() => handleUpdateManualDesignStatus(selectedManualDesign._id, s)}
@@ -8653,29 +8218,21 @@ const AdminDashboard = ({
 
               {/* Status Update Actions */}
               <div className="space-y-2 pt-2 border-t border-gray-100">
-                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Update Stage</h4>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleUpdateDesignerRequestStatus(selectedDesignerRequest._id, 'pending')}
-                    disabled={selectedDesignerRequest.status === 'pending'}
-                    className="flex-1 py-2 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-700 text-[10px] font-bold rounded-xl uppercase transition-all border border-amber-200"
-                  >
-                    Mark Pending
-                  </button>
-                  <button
-                    onClick={() => handleUpdateDesignerRequestStatus(selectedDesignerRequest._id, 'assigned')}
-                    disabled={selectedDesignerRequest.status === 'assigned'}
-                    className="flex-1 py-2 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 text-blue-700 text-[10px] font-bold rounded-xl uppercase transition-all border border-blue-200"
-                  >
-                    Mark Assigned
-                  </button>
-                  <button
-                    onClick={() => handleUpdateDesignerRequestStatus(selectedDesignerRequest._id, 'completed')}
-                    disabled={selectedDesignerRequest.status === 'completed'}
-                    className="flex-1 py-2 bg-green-50 hover:bg-green-100 disabled:opacity-50 text-green-700 text-[10px] font-bold rounded-xl uppercase transition-all border border-green-200"
-                  >
-                    Mark Completed
-                  </button>
+                <h4 className="text-xs font-bold text-[#8B5E3C] uppercase tracking-wider mb-2">Administrative Status Actions</h4>
+                <div className="flex flex-wrap gap-2">
+                  {['Submitted', 'Under Review', 'Assigned', 'Quotation Sent', 'Accepted', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed'].map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => handleUpdateDesignerRequestStatus(selectedDesignerRequest._id, s)}
+                      className={`px-3 py-1.5 rounded-lg font-bold border text-[10px] uppercase transition-all ${
+                        selectedDesignerRequest.status === s 
+                          ? 'bg-amber-500 text-white border-amber-500 shadow-sm'
+                          : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>

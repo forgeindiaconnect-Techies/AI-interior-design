@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Sparkles, FileText, ShoppingBag, Bookmark, ShoppingCart, Package, Truck, User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight, CreditCard, Star, Bell, Armchair } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FileText, ShoppingBag, Bookmark, ShoppingCart, Package, Truck, User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight, CreditCard, Star, Bell, Armchair, Hammer } from 'lucide-react';
 
 // ── USER SIDEBAR THEME: Clean White / Peach Highlight ──
 const U = {
@@ -110,6 +110,7 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
         { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio' },
         { name: 'Manual Design Request', icon: FileText, tab: 'manual' },
         { name: 'Interior Designer Help', icon: UserIcon, tab: 'designer' },
+        { name: 'Own Materials', icon: Hammer, tab: 'own_materials' },
         { name: 'Saved Designs', icon: Bookmark, tab: 'saved' },
       ]
     },

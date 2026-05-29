@@ -264,9 +264,14 @@ const UserDashboard = ({
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'quotations' || activeTab === 'manual') {
+    if (activeTab === 'quotations' || activeTab === 'manual' || activeTab === 'own_materials') {
       const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
       setManualDesigns(localManual);
+    }
+    if (activeTab === 'own_materials') {
+      setOwnMaterials('Yes');
+    } else if (activeTab === 'manual') {
+      setOwnMaterials('No');
     }
   }, [activeTab]);
 
@@ -1002,7 +1007,15 @@ Thank you for shopping with Artisan Studio!
     setOrders(updated);
 
     if (requestObj) {
-      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Approved' } : r));
+      const storedManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
+      const updatedManual = storedManual.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
+      localStorage.setItem('mockManualRequests', JSON.stringify(updatedManual));
+
+      const storedDesigner = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
+      const updatedDesigner = storedDesigner.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
+      localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
+
+      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r));
     }
 
     // Create transaction record for admin
@@ -1111,7 +1124,7 @@ Thank you for shopping with Artisan Studio!
     const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const updated = localOrders.map(o =>
       o._id === orderId
-        ? { ...o, orderStatus: 'Paid - Awaiting Verification', paymentStatus: 'paid' }
+        ? { ...o, orderStatus: 'Accepted', paymentStatus: 'paid' }
         : o
     );
     localStorage.setItem('mockOrders', JSON.stringify(updated));
@@ -1596,12 +1609,14 @@ Thank you for shopping with Artisan Studio!
       )}
 
       {/* TAB 3: MANUAL DESIGN */}
-      {activeTab === 'manual' && (
+      {(activeTab === 'manual' || activeTab === 'own_materials') && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
             <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
               <Hammer className="w-6 h-6 text-[#8B5E3C]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Manual Design Request</h2>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">
+                {activeTab === 'own_materials' ? 'Own Materials Design Request' : 'Manual Design Request'}
+              </h2>
             </div>
             <form onSubmit={handleManualSubmit} className="space-y-6">
               {/* Row 1: Room Type + Style */}
@@ -1681,12 +1696,18 @@ Thank you for shopping with Artisan Studio!
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Own Materials Available?</label>
-                    <div className="flex gap-3">
-                      {['Yes','No'].map(opt => (
-                        <button key={opt} type="button" onClick={() => setOwnMaterials(opt)}
-                          className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all ${ ownMaterials === opt ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-[#8B5E3C]'}`}>{opt}</button>
-                      ))}
-                    </div>
+                    {activeTab === 'own_materials' ? (
+                      <div className="py-3 px-4 bg-white border border-[#D4A373]/50 text-[#8B5E3C] rounded-xl font-bold text-sm">
+                        ✓ Yes (Submitting with own materials)
+                      </div>
+                    ) : (
+                      <div className="flex gap-3">
+                        {['Yes','No'].map(opt => (
+                          <button key={opt} type="button" onClick={() => setOwnMaterials(opt)}
+                            className={`flex-1 py-3 rounded-xl font-bold text-sm border-2 transition-all ${ ownMaterials === opt ? 'bg-[#8B5E3C] border-[#8B5E3C] text-white' : 'bg-white border-gray-200 text-gray-600 hover:border-[#8B5E3C]'}`}>{opt}</button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {ownMaterials === 'Yes' && (
                     <div>
@@ -1811,7 +1832,7 @@ Thank you for shopping with Artisan Studio!
               </div>
 
               <button type="submit" disabled={manualSubmitting} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2">
-                {manualSubmitting ? <><RefreshCw className="w-5 h-5 animate-spin" /> Submitting...</> : <><Hammer className="w-5 h-5" /> Submit Manual Request to Vendors</>}
+                {manualSubmitting ? <><RefreshCw className="w-5 h-5 animate-spin" /> Submitting...</> : <><Hammer className="w-5 h-5" /> {activeTab === 'own_materials' ? 'Submit Own Materials Request' : 'Submit Manual Request to Vendors'}</>}
               </button>
             </form>
           </div>

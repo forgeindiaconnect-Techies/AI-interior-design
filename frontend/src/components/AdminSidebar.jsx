@@ -141,7 +141,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
               <NavItem name="Vendors" icon={Store} tab="vendors" />
               <NavItem name="Manufacturers" icon={Factory} tab="manufacturers" />
               <NavItem name="Delivery Partners" icon={Truck} tab="delivery" />
-              <NavItem name="Interior Designers" icon={UserCheck} tab="designer_requests" />
             </div>
           )}
         </div>
@@ -164,8 +163,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           <SectionLabel label="AI & Design Requests" group="ai_requests" />
           {openGroups.ai_requests && (
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="AI Requests" icon={Sparkles} tab="ai_designs" />
-              <NavItem name="Manual Requests" icon={FileText} tab="manual_designs" />
+              <NavItem name="Custom Design Requests" icon={FileText} tab="custom_design_requests" />
             </div>
           )}
         </div>
