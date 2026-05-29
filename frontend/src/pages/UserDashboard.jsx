@@ -310,7 +310,7 @@ const UserDashboard = ({
           { 
             _id: 'ai_1', 
             roomType: 'Living Room', 
-            generatedImage: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800', 
+            generatedImage: '/ai-results/living_room.png', 
             aiSuggestion: { 
               furniture: ['Modern Sofa', 'Glass Coffee Table', 'Minimalist TV Stand'],
               materials: ['Oak Wood', 'Beige Linen', 'Brushed Brass'],
@@ -485,70 +485,70 @@ const UserDashboard = ({
 
     const roomDesigns = {
       'Living Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?w=800',
+        generatedImage: '/ai-results/living_room.png',
         furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
         materials: ['Teak Wood', 'Linen', 'Brass'],
         colorPalette: ['Teak Warmth', 'Beige Linen', 'Warm Brass Accent'],
         budgetEstimate: 4200
       },
       'Bedroom': {
-        generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800',
+        generatedImage: '/ai-results/bedroom.png',
         furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
         materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
         colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
         budgetEstimate: 6200
       },
       'Kitchen': {
-        generatedImage: 'https://images.unsplash.com/photo-1556910103-1c02745a828d?w=800',
+        generatedImage: '/ai-results/kitchen.png',
         furniture: ['Island Counter', 'Bar Stools', 'Pendant Lights'],
         materials: ['Marble', 'Oak Wood', 'Stainless Steel'],
         colorPalette: ['White', 'Navy Blue', 'Brass'],
         budgetEstimate: 8500
       },
       'Dining Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+        generatedImage: '/ai-results/dining room.jpg',
         furniture: ['Farmhouse Table', 'Dining Chairs', 'Chandelier'],
         materials: ['Reclaimed Wood', 'Linen', 'Iron'],
         colorPalette: ['Rustic Brown', 'Slate Gray', 'Cream'],
         budgetEstimate: 5100
       },
       'Bathroom': {
-        generatedImage: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800',
+        generatedImage: '/ai-results/bathroom.png',
         furniture: ['Floating Vanity', 'Freestanding Tub', 'LED Mirror'],
         materials: ['Ceramic Tiles', 'Matte Black Fixtures', 'Glass'],
         colorPalette: ['White', 'Charcoal', 'Natural Wood'],
         budgetEstimate: 4000
       },
       'Office Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800',
+        generatedImage: '/ai-results/office room.png',
         furniture: ['Ergonomic Desk', 'Office Chair', 'Bookshelf'],
         materials: ['Oak Wood', 'Metal', 'Leather'],
         colorPalette: ['Walnut', 'Black', 'White'],
         budgetEstimate: 3200
       },
       'Kids Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1558442074-3c19857bc1dc?w=800',
+        generatedImage: '/ai-results/kids room.jpg',
         furniture: ['Bunk Bed', 'Study Table', 'Toy Storage'],
         materials: ['Pine Wood', 'Cotton', 'Laminate'],
         colorPalette: ['Pastel Blue', 'Yellow', 'White'],
         budgetEstimate: 3800
       },
       'Balcony': {
-        generatedImage: 'https://images.unsplash.com/photo-1551061803-fb91b972e21b?w=800',
+        generatedImage: '/ai-results/balcony.jpg',
         furniture: ['Rattan Chairs', 'Small Coffee Table', 'Planters'],
         materials: ['Rattan', 'Teak Wood', 'Ceramic'],
         colorPalette: ['Natural Wood', 'Green', 'White'],
         budgetEstimate: 1500
       },
       'Pooja Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1604116499831-29eb8600a96f?w=800',
+        generatedImage: '/ai-results/pooja room.jpg',
         furniture: ['Carved Mandir', 'Floor Seating', 'Brass Lamps'],
         materials: ['Teak Wood', 'Brass', 'Marble'],
         colorPalette: ['Saffron', 'Warm Wood', 'Gold'],
         budgetEstimate: 2500
       },
       'Commercial Space': {
-        generatedImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800',
+        generatedImage: '/ai-results/commercial space.png',
         furniture: ['Lounge Seating', 'Reception Desk', 'Track Lighting'],
         materials: ['Concrete', 'Glass', 'Steel'],
         colorPalette: ['Industrial Gray', 'Black', 'Accent Color'],
@@ -557,7 +557,7 @@ const UserDashboard = ({
     };
 
     const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
-    const mockImg = originalImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60';
+    const mockImg = originalImage || '/ai-results/living_room.png';
     
     const newDesign = {
       _id: 'ai_' + Date.now(),
@@ -594,7 +594,7 @@ const UserDashboard = ({
     if (status === 'regenerated') {
       const regenerateVariants = [
         {
-          generatedImage: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800',
+          generatedImage: '/ai-results/bedroom.png',
           aiSuggestion: {
             furniture: ['Sectional Velvet Sofa', 'Hexagonal Side Table', 'Arc Floor Lamp'],
             materials: ['Velvet Upholstery', 'Gold Metal', 'Glass'],
@@ -603,7 +603,7 @@ const UserDashboard = ({
           }
         },
         {
-          generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800',
+          generatedImage: '/ai-results/living_room.png',
           aiSuggestion: {
             furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
             materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
@@ -612,7 +612,7 @@ const UserDashboard = ({
           }
         },
         {
-          generatedImage: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800',
+          generatedImage: '/ai-results/kitchen.png',
           aiSuggestion: {
             furniture: ['Open Shelving Unit', 'Farmhouse Table', 'Pendant Lights'],
             materials: ['Reclaimed Wood', 'Wrought Iron', 'Ceramic'],
