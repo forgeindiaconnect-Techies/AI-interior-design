@@ -97,33 +97,16 @@ const LandingPage = () => {
     navigate('/register');
   };
 
-  const handleContactSubmit = (e) => {
+  const handleContactSubmit = async (e) => {
     e.preventDefault();
-    const newMsg = {
-      _id: `contact_${Date.now()}`,
-      name: contactForm.name,
-      email: contactForm.email,
-      message: contactForm.message,
-      status: 'open',
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to contact messages store (for admin inbox)
-    const existing = JSON.parse(localStorage.getItem('mockContactMessages') || '[]');
-    localStorage.setItem('mockContactMessages', JSON.stringify([newMsg, ...existing]));
-
-    // Push a notification to admin notifications feed
-    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    const notif = {
-      _id: `notif_contact_${Date.now()}`,
-      message: `📩 New contact message from ${contactForm.name} (${contactForm.email}): "${contactForm.message.slice(0, 60)}${contactForm.message.length > 60 ? '...' : ''}"`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    };
-    localStorage.setItem('mockAdminNotifications', JSON.stringify([notif, ...adminNotifs]));
-
-    setContactSuccess(true);
+    try {
+      await axios.post('/api/contact', contactForm);
+      setContactSuccess(true);
+      setContactForm({ name: '', email: '', message: '' });
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      alert('Failed to send message. Please try again later.');
+    }
   };
 
   useEffect(() => {

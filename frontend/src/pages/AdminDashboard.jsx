@@ -8,6 +8,7 @@ import {
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
   Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare
 } from 'lucide-react';
+import AdminContactMessages from './admin/AdminContactMessages';
 
 const AdminDashboard = ({ 
   activeTab = 'overview', 
@@ -9100,6 +9101,8 @@ const AdminDashboard = ({
           </div>
         );
       })()}
+      {/* TAB: CONTACT MESSAGES */}
+      {activeTab === 'contact_messages' && <AdminContactMessages />}
 
     </div>
   );
