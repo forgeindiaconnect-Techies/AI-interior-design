@@ -2658,21 +2658,26 @@ const VendorDashboard = ({
           {/* AI Design Orders Section */}
           {(() => {
             const showAiOrders = customRequestFilter === 'All' || customRequestFilter === 'AI Generated';
-            if (!showAiOrders || aiDesignOrders.length === 0) return null;
+            if (!showAiOrders) return null;
             return (
               <div className="space-y-6 mt-8">
                 <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
                   <Bot className="w-4 h-4 text-[#2A9D8F]" /> AI Design Orders ({aiDesignOrders.length})
                 </h3>
-                {aiDesignOrders.map((order) => {
-                  const isOrderDetailsOpen = viewDetailsId === order._id;
-                  const isOrderQuoteOpen = selectedRequestId === order._id;
-                  const orderStatusColor =
-                    order.orderStatus === 'quotation_sent' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-                    order.orderStatus === 'quotation_pending' ? 'bg-[#E9C46A]/20 text-[#8B5E3C]' :
-                    'bg-gray-100 text-gray-600';
-                  return (
-                    <div key={order._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#2A9D8F]/30 space-y-6 hover:shadow-md transition-all">
+                {aiDesignOrders.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl border border-[#D4A373]/30 text-center text-gray-500 font-medium">
+                    No AI Design orders available.
+                  </div>
+                ) : (
+                  aiDesignOrders.map((order) => {
+                    const isOrderDetailsOpen = viewDetailsId === order._id;
+                    const isOrderQuoteOpen = selectedRequestId === order._id;
+                    const orderStatusColor =
+                      order.orderStatus === 'quotation_sent' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
+                      order.orderStatus === 'quotation_pending' ? 'bg-[#E9C46A]/20 text-[#8B5E3C]' :
+                      'bg-gray-100 text-gray-600';
+                    return (
+                      <div key={order._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#2A9D8F]/30 space-y-6 hover:shadow-md transition-all">
                       {/* Header with AI Images */}
                       <div className="flex flex-col sm:flex-row items-start gap-4 border-b border-gray-100 pb-6">
                         <div className="flex gap-3 shrink-0">
