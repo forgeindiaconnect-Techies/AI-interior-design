@@ -123,7 +123,7 @@ const UserDashboard = ({
     if (activeTab === 'reviews') {
       const loadUserReviews = async () => {
         try {
-          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/reviews/user`, {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api'}/orders/reviews/user`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
           if (res.data && res.data.success) {
@@ -1242,7 +1242,7 @@ Thank you for shopping with Artisan Studio!
     const vendorTarget = reviewTargetId;
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api'}/orders/review`, {
         vendorId: vendorTarget,
         productId: 'prod_1', // Using placeholder product for vendor review
         rating: reviewRating,
