@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 import { Moon, Sun, Bell, Search, User as UserIcon, LogOut, Settings, HelpCircle, ChevronRight, CheckCircle, X, Sparkles, ShoppingBag, Package, Hammer, Truck, LayoutDashboard, FileText, CreditCard, Star, Store, Users, BarChart2, ShieldCheck, MessageSquare } from 'lucide-react';
 import UserSidebar from './UserSidebar';
 import VendorSidebar from './VendorSidebar';
@@ -60,19 +61,29 @@ const DashboardLayout = ({ children }) => {
     return 'mockUserNotifications';
   };
 
-  const loadNotifications = () => {
-    const key = getNotifKey();
-    const stored = JSON.parse(localStorage.getItem(key) || '[]');
-    if (stored.length === 0) {
-      // Seed some nice initial notifications for presentation
-      const initial = [
-        { _id: 'n1', message: 'Welcome to your premium dashboard workspace.', type: 'info', createdAt: new Date().toISOString(), read: false },
-        { _id: 'n2', message: 'System optimization is complete.', type: 'success', createdAt: new Date(Date.now() - 3600000).toISOString(), read: true }
-      ];
-      
-      setNotifications(initial);
-    } else {
-      setNotifications(stored);
+  const loadNotifications = async () => {
+    try {
+      const res = await axios.get('/notifications');
+      if (res.data && res.data.success) {
+        // Map backend isRead to frontend read
+        const mapped = res.data.data.map(n => ({ ...n, read: n.isRead }));
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.warn("API notifications fetch failed, falling back to local:", err);
+      const key = getNotifKey();
+      const stored = JSON.parse(localStorage.getItem(key) || '[]');
+      if (stored.length === 0) {
+        // Seed some nice initial notifications for presentation
+        const initial = [
+          { _id: 'n1', message: 'Welcome to your premium dashboard workspace.', type: 'info', createdAt: new Date().toISOString(), read: false },
+          { _id: 'n2', message: 'System optimization is complete.', type: 'success', createdAt: new Date(Date.now() - 3600000).toISOString(), read: true }
+        ];
+        
+        setNotifications(initial);
+      } else {
+        setNotifications(stored);
+      }
     }
   };
 
@@ -94,25 +105,30 @@ const DashboardLayout = ({ children }) => {
     }
   }, [user?.email, isVendor]);
 
-  const handleMarkAllRead = () => {
-    const key = getNotifKey();
+  const handleMarkAllRead = async () => {
     const updated = notifications.map(n => ({ ...n, read: true }));
-    
     setNotifications(updated);
+    
+    // Also try to update via API if they are real DB objects
+    notifications.forEach(async (n) => {
+      if (!n.read && n._id && n._id.length === 24) {
+        try { await axios.put(`/notifications/${n._id}/read`); } catch(e){}
+      }
+    });
   };
 
-  const handleNotifClick = (notif) => {
-    const key = getNotifKey();
+  const handleNotifClick = async (notif) => {
     const updated = notifications.map(n => n._id === notif._id ? { ...n, read: true } : n);
-    
     setNotifications(updated);
     setSelectedNotif({ ...notif, read: true });
     setShowNotifDropdown(false);
+
+    if (notif._id && notif._id.length === 24) {
+      try { await axios.put(`/notifications/${notif._id}/read`); } catch(e){}
+    }
   };
 
   const handleClearNotifications = () => {
-    const key = getNotifKey();
-    
     setNotifications([]);
   };
 
