@@ -1238,8 +1238,21 @@ Thank you for shopping with Artisan Studio!
   // Review Action
   const handlePublishReview = async (e) => {
     e.preventDefault();
-    const vendorTarget = reviewTargetId;
     const productTarget = reviewProductId || undefined;
+    
+    // Determine the vendorId based on the selected product
+    let vendorTarget = '';
+    if (productTarget) {
+      const order = orders.find(o => o.productDetails && o.productDetails._id === productTarget);
+      if (order && order.vendorId) {
+         vendorTarget = order.vendorId._id || order.vendorId;
+      }
+    }
+
+    if (!vendorTarget) {
+      alert('Please select a product to submit a review.');
+      return;
+    }
 
     try {
       const payload = {
@@ -3203,41 +3216,24 @@ Thank you for shopping with Artisan Studio!
           </div>
           <form onSubmit={handlePublishReview} className="space-y-6">
             <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Vendor / Artisan</label>
-              <select 
-                required 
-                value={reviewTargetId} 
-                onChange={(e) => setReviewTargetId(e.target.value)} 
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product</label>
+              <select
+                required
+                value={reviewProductId}
+                onChange={(e) => setReviewProductId(e.target.value)}
                 className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
               >
-                <option value="">-- Select a Vendor to Review --</option>
-                {Array.from(new Map(orders.filter(o => o.vendorId && o.vendorId._id).map(o => [o.vendorId._id, o.vendorId])).values()).map(v => (
-                  <option key={v._id} value={v._id}>{v.companyName || v.name || 'Vendor'}</option>
+                <option value="">-- Select a Product to Review --</option>
+                {Array.from(new Map(
+                  orders
+                    .filter(o => o.productDetails && o.productDetails._id)
+                    .map(o => [o.productDetails._id, o.productDetails])
+                ).values()).map(p => (
+                  <option key={p._id} value={p._id}>{p.title}</option>
                 ))}
               </select>
-              <p className="text-[10px] text-gray-400 mt-1">Only vendors you have ordered from appear here.</p>
+              <p className="text-[10px] text-gray-400 mt-1">Select a specific product you purchased to leave a review.</p>
             </div>
-            {reviewTargetId && (
-              <div className="animate-fade-in">
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product</label>
-                <select
-                  value={reviewProductId}
-                  onChange={(e) => setReviewProductId(e.target.value)}
-                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
-                >
-                  <option value="">-- General Store Review --</option>
-                  {Array.from(new Map(
-                    orders
-                      .filter(o => o.vendorId && o.vendorId._id === reviewTargetId && o.productDetails && o.productDetails._id)
-                      .map(o => [o.productDetails._id, o.productDetails])
-                  ).values()).map(p => (
-                    <option key={p._id} value={p._id}>{p.title}</option>
-                  ))}
-                </select>
-                <p className="text-[10px] text-gray-400 mt-1">Optional: Select a specific product you purchased from this vendor.</p>
-              </div>
-            )}
-            <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
