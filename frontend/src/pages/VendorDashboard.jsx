@@ -168,27 +168,22 @@ const VendorDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'reviews') {
-      // Load static mock reviews for demo purposes
-      const staticReviews = [
-        {
-          _id: 'rev1',
-          rating: 5,
-          comment: 'Excellent product! Highly recommended.',
-          createdAt: new Date().toISOString(),
-          userId: { name: 'Alice Demo', email: 'alice@example.com' },
-          productId: { title: 'Modern Sofa', images: [] }
-        },
-        {
-          _id: 'rev2',
-          rating: 4,
-          comment: 'Great quality, but delivery was a bit slow.',
-          createdAt: new Date().toISOString(),
-          userId: { name: 'Bob Demo', email: 'bob@example.com' },
-          productId: { title: 'Vintage Lamp', images: [] }
+      const fetchVendorReviews = async () => {
+        setReviewsLoading(true);
+        setReviewsError(null);
+        try {
+          const res = await axios.get('/vendor/reviews');
+          if (res.data && res.data.success) {
+            setVendorReviews(res.data.data);
+          }
+        } catch (err) {
+          console.warn('Failed to load vendor reviews:', err);
+          setReviewsError('Failed to load reviews. Please try again.');
+        } finally {
+          setReviewsLoading(false);
         }
-      ];
-      setVendorReviews(staticReviews);
-      setReviewsLoading(false);
+      };
+      fetchVendorReviews();
     }
   }, [activeTab]);
 
