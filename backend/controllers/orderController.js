@@ -182,6 +182,17 @@ exports.createReview = async (req, res) => {
     }
 
     const review = await Review.create({ userId: req.user.id, vendorId, productId, rating, comment });
+    
+    try {
+      const vendor = await Vendor.findById(vendorId);
+      if (vendor) {
+        await Notification.create({ userId: vendor.userId, message: `New ${rating}-star review received for your profile!`, type: 'info' });
+      }
+      await Notification.create({ isAdmin: true, message: `A vendor received a new ${rating}-star review.`, type: 'info' });
+    } catch (notifErr) {
+      console.warn("Notification error (non-fatal):", notifErr);
+    }
+
     res.status(201).json({ success: true, data: review });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

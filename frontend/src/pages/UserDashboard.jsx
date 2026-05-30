@@ -3175,6 +3175,21 @@ Thank you for shopping with Artisan Studio!
           </div>
           <form onSubmit={handlePublishReview} className="space-y-6">
             <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Vendor / Artisan</label>
+              <select 
+                required 
+                value={reviewTargetId} 
+                onChange={(e) => setReviewTargetId(e.target.value)} 
+                className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
+              >
+                <option value="">-- Select a Vendor to Review --</option>
+                {Array.from(new Map(orders.filter(o => o.vendorId && o.vendorId._id).map(o => [o.vendorId._id, o.vendorId])).values()).map(v => (
+                  <option key={v._id} value={v._id}>{v.companyName || v.name || 'Vendor'}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-gray-400 mt-1">Only vendors you have ordered from appear here.</p>
+            </div>
+            <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
