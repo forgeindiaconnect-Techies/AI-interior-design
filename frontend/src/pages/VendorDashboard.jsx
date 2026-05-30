@@ -227,16 +227,23 @@ const VendorDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'support') {
-      const loadHelpMessages = () => {
-        const msgs = [];
-        setHelpMessages(msgs);
-        
-        // Auto-select first customer support chat if none is selected
-        if (msgs.length > 0 && !selectedHelpUser) {
-          const uniqueUsers = Array.from(new Set(msgs.map(m => m.userName)));
-          if (uniqueUsers.length > 0) {
-            setSelectedHelpUser(uniqueUsers[0]);
+      const loadHelpMessages = async () => {
+        try {
+          const res = await axios.get('/chat/sync');
+          if (res.data && res.data.success) {
+            const msgs = res.data.data;
+            setHelpMessages(msgs);
+            
+            // Auto-select first customer support chat if none is selected
+            if (msgs.length > 0 && !selectedHelpUser) {
+              const uniqueUsers = Array.from(new Set(msgs.map(m => m.userName)));
+              if (uniqueUsers.length > 0) {
+                setSelectedHelpUser(uniqueUsers[0]);
+              }
+            }
           }
+        } catch (err) {
+          console.warn('Failed to load chat messages:', err);
         }
       };
       loadHelpMessages();
@@ -314,11 +321,16 @@ const VendorDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = [];
-    const updated = [...existing, newMsg];
+    const updated = [...helpMessages, newMsg];
     
     setHelpMessages(updated);
     setHelpInput('');
+
+    try {
+      await axios.put('/chat/sync', { chat: updated });
+    } catch (err) {
+      console.warn('Failed to sync chat messages:', err);
+    }
 
     // Trigger notification to user
     const notifObj = {

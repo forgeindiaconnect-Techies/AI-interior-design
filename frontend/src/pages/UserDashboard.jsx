@@ -145,9 +145,15 @@ const UserDashboard = ({
   const [helpInput, setHelpInput] = useState('');
   const chatEndRef = useRef(null);
 
-  const loadHelpMessages = () => {
-    const msgs = [];
-    setHelpMessages(msgs);
+  const loadHelpMessages = async () => {
+    try {
+      const res = await axios.get('/chat/sync');
+      if (res.data && res.data.success) {
+        setHelpMessages(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to load chat messages:', err);
+    }
   };
 
   useEffect(() => {
@@ -219,11 +225,16 @@ const UserDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const existing = [];
-    const updated = [...existing, newMsg];
+    const updated = [...helpMessages, newMsg];
     
     setHelpMessages(updated);
     setHelpInput('');
+
+    try {
+      await axios.put('/chat/sync', { chat: updated });
+    } catch (err) {
+      console.warn('Failed to sync chat messages:', err);
+    }
 
     // Trigger notification to vendor
     const notifMsg = `[Help Center] New message from customer ${name}: "${helpInput.substring(0, 30)}..."`;
