@@ -186,8 +186,6 @@ const VendorDashboard = ({
         }
       };
       loadReviews();
-      const interval = setInterval(loadReviews, 3000); // 3s interval
-      return () => clearInterval(interval);
     }
   }, [activeTab, profile]);
 
