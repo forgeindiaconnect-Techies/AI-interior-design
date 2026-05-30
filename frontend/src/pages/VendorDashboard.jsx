@@ -163,19 +163,28 @@ const VendorDashboard = ({
 
   // Store Reviews
   const [vendorReviews, setVendorReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [reviewsError, setReviewsError] = useState(null);
 
   useEffect(() => {
     if (activeTab === 'reviews') {
       const loadReviews = async () => {
+        setReviewsLoading(true);
+        setReviewsError(null);
         try {
           const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/vendor/reviews`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
           if (res.data && res.data.success) {
             setVendorReviews(res.data.data);
+          } else {
+            setReviewsError('Could not load reviews.');
           }
         } catch (err) {
           console.warn('Failed to fetch vendor reviews from API', err);
+          setReviewsError(`Failed to connect to backend: ${err?.response?.data?.message || err.message}`);
+        } finally {
+          setReviewsLoading(false);
         }
       };
       loadReviews();
@@ -3021,11 +3030,25 @@ const VendorDashboard = ({
 
         return (
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 animate-fade-in">
-          <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Customer Reviews</h2>
-          
-          {vendorReviews.length === 0 ? (
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Customer Reviews</h2>
+            <span className="text-xs font-bold text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-xl">{vendorReviews.length} Total</span>
+          </div>
+
+          {reviewsLoading ? (
+            <div className="text-center p-12 flex flex-col items-center gap-3">
+              <div className="w-10 h-10 border-4 border-[#D4A373] border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm text-gray-400 font-medium">Loading reviews from database...</p>
+            </div>
+          ) : reviewsError ? (
+            <div className="text-center p-12 border border-dashed border-red-200 rounded-2xl bg-red-50/30">
+              <p className="text-sm font-bold text-red-500">⚠ Connection Error</p>
+              <p className="text-xs text-gray-400 mt-2 max-w-sm mx-auto">{reviewsError}</p>
+              <p className="text-xs text-gray-400 mt-1">Make sure the backend server is running and you are logged in.</p>
+            </div>
+          ) : vendorReviews.length === 0 ? (
             <div className="text-center p-12 text-gray-400 border border-dashed border-gray-200 rounded-2xl">
-               No reviews received yet.
+               No reviews found in the database yet.
             </div>
           ) : (
             <div className="space-y-6">
@@ -3058,13 +3081,26 @@ const VendorDashboard = ({
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1 text-[#E9C46A]">
                             {[1,2,3,4,5].map(s => <Star key={s} className={`w-3 h-3 ${s <= review.rating ? 'fill-current' : 'text-gray-200'}`}/>)}
+                            <span className="text-xs font-bold text-gray-600 ml-1">{review.rating}/5</span>
                           </div>
                           <span className="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-md">{new Date(review.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <p className="italic text-gray-600 text-sm leading-relaxed">"{review.comment}"</p>
-                        <div className="text-xs font-bold text-[#8B5E3C] mt-3 flex items-center gap-2">
-                          <div className="w-5 h-5 rounded-full bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C]">{review.userId?.name?.charAt(0) || 'C'}</div>
-                          {review.userId?.name || 'Customer'}
+                        <p className="italic text-gray-600 text-sm leading-relaxed mt-2">"{review.comment}"</p>
+                        <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 rounded-full bg-[#8B5E3C]/10 flex items-center justify-center text-[#8B5E3C] text-xs font-bold">
+                              {review.userId?.name?.charAt(0) || 'C'}
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-[#8B5E3C]">{review.userId?.name || 'Customer'}</p>
+                              {review.userId?.email && <p className="text-[10px] text-gray-400">{review.userId.email}</p>}
+                            </div>
+                          </div>
+                          {review.vendorId?.companyName && (
+                            <span className="text-[10px] bg-[#8B5E3C]/5 text-[#8B5E3C] px-2 py-0.5 rounded-full font-bold border border-[#8B5E3C]/10">
+                              → {review.vendorId.companyName}
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}

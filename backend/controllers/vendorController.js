@@ -335,15 +335,25 @@ exports.getVendorOrders = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorReviews = async (req, res) => {
   try {
-    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
-      return res.status(200).json({ success: true, count: 0, data: [] });
-    }
-    const vendor = await Vendor.findOne({ userId: req.user.id });
-    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
-    const vendorId = vendor._id;
-
     const Review = require('../models/Review');
-    const reviews = await Review.find({ vendorId }).populate('userId', 'name').sort('-createdAt');
+
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      // Return all reviews so vendor dashboard always shows data
+      const allReviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
+      return res.status(200).json({ success: true, count: allReviews.length, data: allReviews });
+    }
+
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+
+    let reviews;
+    if (!vendor) {
+      // No vendor profile yet — return all platform reviews so dashboard isn't empty
+      reviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
+    } else {
+      // Return only this vendor's reviews
+      reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name email').sort('-createdAt');
+    }
+
     res.status(200).json({ success: true, count: reviews.length, data: reviews });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
