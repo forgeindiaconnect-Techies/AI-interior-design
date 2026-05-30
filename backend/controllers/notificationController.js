@@ -23,7 +23,7 @@ exports.markAsRead = async (req, res) => {
   try {
 
 
-    const notification = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { new: true });
+    const notification = await Notification.findByIdAndUpdate(req.params.id, { isRead: true }, { returnDocument: 'after' });
     res.status(200).json({ success: true, data: notification });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

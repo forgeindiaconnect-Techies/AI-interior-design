@@ -75,7 +75,7 @@ exports.updateProduct = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to update this product' });
     }
 
-    product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    product = await Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
     res.status(200).json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -759,7 +759,7 @@ exports.verifyVendor = async (req, res) => {
 
 
     const { isVerified } = req.body;
-    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isVerified }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isVerified }, { returnDocument: 'after' });
     await AdminLog.create({ adminId: req.user.id, action: `Updated verification of vendor` });
     await Notification.create({ userId: vendor.userId, message: `Your verification status updated.` });
     res.status(200).json({ success: true, data: vendor });
@@ -1162,7 +1162,7 @@ exports.updateTicketStatus = async (req, res) => {
 
 
 
-    const ticket = await SupportTicket.findByIdAndUpdate(req.params.id, { status }, { new: true });
+    const ticket = await SupportTicket.findByIdAndUpdate(req.params.id, { status }, { returnDocument: 'after' });
     res.status(200).json({ success: true, data: ticket });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1422,10 +1422,10 @@ exports.updateVerificationStatus = async (req, res) => {
 
 
 
-    const verification = await VendorVerification.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { new: true });
+    const verification = await VendorVerification.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { returnDocument: 'after' });
     if (!verification) return res.status(404).json({ success: false, message: 'Verification record not found' });
 
-    const vendor = await Vendor.findByIdAndUpdate(verification.vendorId, { verificationStatus: status }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(verification.vendorId, { verificationStatus: status }, { returnDocument: 'after' });
     if (vendor) {
       if (status === 'Approved') {
         vendor.accountActivationStatus = 'Store Setup Pending';
@@ -1512,7 +1512,7 @@ exports.updateStoreApprovalStatus = async (req, res) => {
 
 
 
-    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { storeSetupStatus: status }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { storeSetupStatus: status }, { returnDocument: 'after' });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor record not found' });
 
     if (status === 'Approved') {
@@ -1558,7 +1558,7 @@ exports.updateProductReviewStatus = async (req, res) => {
 
 
 
-    const product = await Product.findByIdAndUpdate(req.params.id, { approvalStatus }, { new: true });
+    const product = await Product.findByIdAndUpdate(req.params.id, { approvalStatus }, { returnDocument: 'after' });
     if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
 
     res.status(200).json({ success: true, data: product });
@@ -1576,7 +1576,7 @@ exports.updateVendorActivation = async (req, res) => {
 
 
 
-    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isActive }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isActive }, { returnDocument: 'after' });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     await Notification.create({ userId: vendor.userId, message: `Your partner account activation status is now: ${isActive ? 'ACTIVATED (Live)' : 'SUSPENDED'}.` });
@@ -1666,7 +1666,7 @@ exports.approveManufacturer = async (req, res) => {
       isActive: true,
       storeSetupStatus: 'Approved',
       accountActivationStatus: 'Active'
-    }, { new: true });
+    }, { returnDocument: 'after' });
 
     if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
@@ -1701,7 +1701,7 @@ exports.suspendManufacturer = async (req, res) => {
 
 
 
-    const vendor = await Vendor.findByIdAndUpdate(id, { isActive: false }, { new: true });
+    const vendor = await Vendor.findByIdAndUpdate(id, { isActive: false }, { returnDocument: 'after' });
     if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
     await Notification.create({
@@ -2375,7 +2375,7 @@ exports.updateSubAdminPermissions = async (req, res) => {
     const subAdmin = await AdminPermission.findByIdAndUpdate(
       req.params.id,
       { roleName, permissions, updatedAt: Date.now() },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('userId', 'name email phone role');
 
     if (!subAdmin) {

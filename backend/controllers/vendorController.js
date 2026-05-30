@@ -186,7 +186,7 @@ exports.acceptRequest = async (req, res) => {
   try {
 
 
-    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Vendor Review' }, { new: true });
+    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Vendor Review' }, { returnDocument: 'after' });
     if (request) {
       await Notification.create({ userId: request.userId, message: `Vendor accepted your design request and is reviewing it.` });
     }
@@ -203,7 +203,7 @@ exports.rejectRequest = async (req, res) => {
   try {
 
 
-    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { new: true });
+    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { returnDocument: 'after' });
     if (request) {
       await Notification.create({ userId: request.userId, message: `Vendor rejected your design request.` });
     }
