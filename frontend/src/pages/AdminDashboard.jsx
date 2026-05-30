@@ -211,7 +211,7 @@ const AdminDashboard = ({
       _id: 'hm_' + Date.now(),
       userName: selectedHelpUser,
       userEmail: userEmail,
-      sender: 'admin',
+      senderRole: 'admin',
       senderName: 'Platform Admin',
       message: helpInput,
       createdAt: new Date().toISOString()
@@ -4976,7 +4976,7 @@ const AdminDashboard = ({
                   {/* Chat message content */}
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {activeUserHelpMsgs.map((msg) => {
-                      const isMe = msg.sender === 'admin';
+                      const isMe = msg.senderRole === 'admin';
                       let bubbleStyle, align, senderLabel, timeColor;
 
                       if (isMe) {
@@ -4984,7 +4984,7 @@ const AdminDashboard = ({
                         align = 'justify-end';
                         senderLabel = 'You (Admin)';
                         timeColor = 'text-white/70';
-                      } else if (msg.sender === 'vendor') {
+                      } else if (msg.senderRole === 'vendor') {
                         bubbleStyle = 'bg-[#2A9D8F] text-white rounded-tl-none border border-emerald-600';
                         align = 'justify-start';
                         senderLabel = `Vendor (${msg.senderName})`;

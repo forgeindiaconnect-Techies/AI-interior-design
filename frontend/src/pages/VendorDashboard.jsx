@@ -315,7 +315,7 @@ const VendorDashboard = ({
       _id: 'hm_' + Date.now(),
       userName: selectedHelpUser,
       userEmail: userEmail,
-      sender: 'vendor',
+      senderRole: 'vendor',
       senderName: companyName,
       message: helpInput,
       createdAt: new Date().toISOString()
@@ -3205,7 +3205,7 @@ const VendorDashboard = ({
                   {/* Chat message content */}
                   <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-gray-50/20">
                     {activeUserHelpMsgs.map((msg) => {
-                      const isMe = msg.sender === 'vendor' && msg.senderName === companyName;
+                      const isMe = msg.senderRole === 'vendor' && msg.senderName === companyName;
                       let bubbleStyle, align, senderLabel, timeColor;
 
                       if (isMe) {
@@ -3213,12 +3213,12 @@ const VendorDashboard = ({
                         align = 'justify-end';
                         senderLabel = 'You (Vendor)';
                         timeColor = 'text-white/70';
-                      } else if (msg.sender === 'vendor') {
+                      } else if (msg.senderRole === 'vendor') {
                         bubbleStyle = 'bg-white text-gray-800 border border-gray-100 rounded-tl-none';
                         align = 'justify-start';
                         senderLabel = `Vendor (${msg.senderName})`;
                         timeColor = 'text-gray-400';
-                      } else if (msg.sender === 'admin') {
+                      } else if (msg.senderRole === 'admin') {
                         bubbleStyle = 'bg-amber-500 text-white rounded-tl-none border border-amber-600';
                         align = 'justify-start';
                         senderLabel = 'Admin';
