@@ -22,7 +22,7 @@ exports.getVendorProfile = async (req, res) => {
         success: true, 
         data: {
           vendor: {
-            _id: 'mock_vendor_id_123',
+            _id: '65c2b18a7c6b4b1c92949765',
             userId: req.user.id,
             companyName: 'Artisan Workshop Demo',
             businessType: req.user.role === 'admin' ? 'seller' : (req.user.role || 'seller'),
@@ -335,14 +335,17 @@ exports.getVendorOrders = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorReviews = async (req, res) => {
   try {
+    let vendorId;
     if (String(req.user.id).startsWith('mock_')) {
-      return res.status(200).json({ success: true, count: 0, data: [] });
+      vendorId = '65c2b18a7c6b4b1c92949765';
+    } else {
+      const vendor = await Vendor.findOne({ userId: req.user.id });
+      if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+      vendorId = vendor._id;
     }
-    const vendor = await Vendor.findOne({ userId: req.user.id });
-    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     const Review = require('../models/Review');
-    const reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name').sort('-createdAt');
+    const reviews = await Review.find({ vendorId }).populate('userId', 'name').sort('-createdAt');
     res.status(200).json({ success: true, count: reviews.length, data: reviews });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

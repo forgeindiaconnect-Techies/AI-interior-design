@@ -177,7 +177,7 @@ const VendorDashboard = ({
           console.warn('Failed to fetch vendor reviews from API', err);
         }
         
-        const allReviews = [];
+        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
         const myLocalReviews = allReviews.filter(r => r.vendorId === (profile?._id));
         
         // Merge deduplicated by _id
@@ -886,7 +886,7 @@ const VendorDashboard = ({
       size: newSize || '32x32x30', 
       images: [newImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
       stockStatus: 'In Stock',
-      vendorId: { _id: 'mock_vendor_id_123', companyName: profile?.companyName || 'Artisan Partner' }
+      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: profile?.companyName || 'Artisan Partner' }
     };
     
     const localProducts = [];

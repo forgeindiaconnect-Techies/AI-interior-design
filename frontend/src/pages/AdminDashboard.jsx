@@ -550,7 +550,7 @@ const AdminDashboard = ({
       }
       if (!mockMgmtData.vendors || mockMgmtData.vendors.length === 0) {
         mockMgmtData.vendors = [
-          { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, verificationStatus: 'Submitted', storeSetupStatus: 'Submitted', isActive: false },
+          { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, verificationStatus: 'Submitted', storeSetupStatus: 'Submitted', isActive: false },
           { _id: 'v2', companyName: 'Elite Woodworks', businessType: 'manufacturer', userId: { email: 'wood@example.com' }, isVerified: false, verificationStatus: 'Pending', storeSetupStatus: 'Pending', isActive: false },
           {
             _id: 'del_mock_1',
@@ -632,7 +632,7 @@ const AdminDashboard = ({
             _id: 'ord_d_9182',
             orderType: 'AI Design',
             userId: { name: 'Alice Smith', email: 'alice@example.com' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: null,
             installationPartnerId: null,
@@ -647,7 +647,7 @@ const AdminDashboard = ({
             _id: 'ord_m_2210',
             orderType: 'Manual Design',
             userId: { name: 'John Doe', email: 'john@example.com' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
             deliveryPartnerId: null,
             installationPartnerId: null,
@@ -662,7 +662,7 @@ const AdminDashboard = ({
             _id: 'ord_p_1044',
             orderType: 'Marketplace Product',
             userId: { name: 'Charlie Chaplin', email: 'charlie@example.com' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: { _id: 'del_mock_1', companyName: 'Swift Logistics Solutions' },
             installationPartnerId: null,
@@ -677,7 +677,7 @@ const AdminDashboard = ({
             _id: 'ord_d_3320',
             orderType: 'AI Design',
             userId: { name: 'John Doe', email: 'john@example.com' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
             deliveryPartnerId: { _id: 'del_mock_2', companyName: 'Apex Delivery & Assembly' },
             installationPartnerId: { _id: 'del_mock_4', companyName: 'Elite Installers & Movers' },
@@ -692,7 +692,7 @@ const AdminDashboard = ({
             _id: 'ord_p_5541',
             orderType: 'Marketplace Product',
             userId: { name: 'Alice Smith', email: 'alice@example.com' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: null,
             installationPartnerId: null,
@@ -799,7 +799,7 @@ const AdminDashboard = ({
       if (mergedVer.length === 0) {
         mergedVer.push({
           _id: 'verification_mock_1',
-          vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+          vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
           businessName: 'Artisan Workshop Private Limited',
           ownerName: 'Rajesh Kumar',
           phone: '+91 98765 43210',
@@ -820,7 +820,7 @@ const AdminDashboard = ({
         setStoreSetupSubmissions([
           {
             _id: 'store_mock_1',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             description: 'Expert hand-crafted wooden furniture workshops specialized in mid-century tables.',
             specialization: 'Woodworks',
             monthlyCapacity: 40,
@@ -838,7 +838,7 @@ const AdminDashboard = ({
         setProductReviewSubmissions([
           {
             _id: 'prod_rev_mock_1',
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             title: 'Vintage Oak Coffee Table',
             description: 'Beautiful hand-polished coffee table made of sustainably sourced oak.',
             price: 349,
@@ -1854,7 +1854,7 @@ const AdminDashboard = ({
       const updatedAi = localAi.map(d => d._id === convertOrderAIDesign._id ? {
         ...d,
         orderStatus: 'Pending Manufacturing',
-        assignedVendor: d.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+        assignedVendor: d.assignedVendor || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
       } : d);
       
 
@@ -1862,7 +1862,7 @@ const AdminDashboard = ({
         _id: 'ord_ai_' + Date.now(),
         orderType: 'AI Generated',
         userId: convertOrderAIDesign.userId || { _id: 'u_local', name: 'Customer Demo', email: 'user@example.com' },
-        vendorId: convertOrderAIDesign.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+        vendorId: convertOrderAIDesign.assignedVendor || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
         manufacturerId: { _id: selectedAIDesignManufacturerId, companyName: 'Assigned Manufacturer' },
         deliveryPartnerId: null,
         installationPartnerId: null,
@@ -1885,7 +1885,7 @@ const AdminDashboard = ({
           aiDesigns: (prev.aiDesigns || []).map(d => d._id === convertOrderAIDesign._id ? {
             ...d,
             orderStatus: 'Pending Manufacturing',
-            assignedVendor: d.assignedVendor || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' }
+            assignedVendor: d.assignedVendor || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
           } : d),
           orders: [newOrder, ...localOrders]
         };

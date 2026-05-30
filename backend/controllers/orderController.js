@@ -231,3 +231,18 @@ exports.updateSyncedOrder = (req, res) => {
   // Route disabled
   res.status(400).json({ success: false, message: 'Sync not supported in prod DB' });
 };
+
+// @desc    Get user's reviews
+// @route   GET /api/orders/reviews/user
+// @access  Private
+exports.getUserReviews = async (req, res) => {
+  try {
+    if (String(req.user.id).startsWith('mock_')) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+    const reviews = await Review.find({ userId: req.user.id }).populate('vendorId', 'companyName').sort('-createdAt');
+    res.status(200).json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

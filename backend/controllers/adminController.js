@@ -160,7 +160,7 @@ let mockTransactions = [
 
 let mockVendors = [
   {
-    _id: 'mock_vendor_id_123',
+    _id: '65c2b18a7c6b4b1c92949765',
     companyName: 'Artisan Workshop',
     businessType: 'vendor',
     description: 'Expert hand-crafted wooden furniture workshops.',
@@ -448,7 +448,7 @@ let mockManualDesigns = [
     vendorPreference: 'Top Rated Vendor',
     quotationType: 'Open Bidding',
     status: 'User Approved',
-    assignedVendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     assignedDesignerId: { _id: 'designer_mock_2', companyName: 'Aura Luxury Interiors' },
     createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
   },
@@ -528,7 +528,7 @@ let mockManufacturingOrders = [
 let mockVerificationList = [
   {
     _id: 'verification_mock_1',
-    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     businessName: 'Artisan Workshop Private Limited',
     ownerName: 'Rajesh Kumar',
     phone: '+91 98765 43210',
@@ -547,7 +547,7 @@ let mockVerificationList = [
 let mockStoreSetupList = [
   {
     _id: 'store_mock_1',
-    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     description: 'Expert hand-crafted wooden furniture workshops specialized in mid-century tables.',
     specialization: 'Woodworks',
     monthlyCapacity: 40,
@@ -561,7 +561,7 @@ let mockStoreSetupList = [
 let mockProductsForReview = [
   {
     _id: 'prod_rev_1',
-    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     title: 'Vintage Oak Coffee Table',
     description: 'Beautiful hand-polished coffee table made of sustainably sourced oak.',
     price: 349,
@@ -575,7 +575,7 @@ let mockProductsForReview = [
   },
   {
     _id: 'prod_rev_2',
-    vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     title: 'Minimalist Walnut Bookshelf',
     description: 'Multi-tiered storage rack for books and decor.',
     price: 599,
@@ -658,7 +658,7 @@ let mockAIDesigns = [
       budgetEstimate: 5400
     },
     status: 'accepted',
-    assignedVendor: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+    assignedVendor: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
     additionalVendors: [{ _id: 'v2', companyName: 'Elite Woodworks' }],
     orderStatus: 'Pending Manufacturing',
     orderId: { _id: 'ord_102', orderStatus: 'Manufacturing', totalAmount: 5400 },

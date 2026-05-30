@@ -46,7 +46,7 @@ const protect = async (req, res, next) => {
           role: decoded.role || 'user',
           status: isMockSuspended ? 'Suspended' : (isMockBlocked ? 'Blocked' : 'Active'),
           suspensionReason: isMockSuspended ? 'Mock policy violation' : '',
-          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(decoded.role) ? 'mock_vendor_id_123' : null
+          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(decoded.role) ? '65c2b18a7c6b4b1c92949765' : null
         };
       } else {
         req.user = await User.findById(decoded.id).select('-password');

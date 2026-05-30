@@ -102,7 +102,7 @@ exports.login = async (req, res) => {
           name: userRole.charAt(0).toUpperCase() + userRole.slice(1) + ' Demo',
           email: email,
           role: userRole,
-          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(userRole) ? 'mock_vendor_id_123' : null
+          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(userRole) ? '65c2b18a7c6b4b1c92949765' : null
         }
       });
     }

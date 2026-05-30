@@ -332,7 +332,7 @@ const UserDashboard = ({
             timeline: 'Within 1 Month',
             ownMaterialsAvailable: 'No',
             status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
             createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
           },
           {
@@ -352,7 +352,7 @@ const UserDashboard = ({
             materialPickupNeeded: 'Yes',
             pickupAddress: 'Block 4B, Sector 62, Noida',
             status: 'Submitted',
-            assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
             createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
           }
         ];
@@ -395,7 +395,7 @@ const UserDashboard = ({
             _id: 'ord_d_9182',
             orderType: 'AI Design',
             userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: null,
             installationPartnerId: null,
@@ -410,7 +410,7 @@ const UserDashboard = ({
             _id: 'ord_m_2210',
             orderType: 'Manual Design',
             userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
             deliveryPartnerId: null,
             installationPartnerId: null,
@@ -425,7 +425,7 @@ const UserDashboard = ({
             _id: 'ord_p_1044',
             orderType: 'Marketplace Product',
             userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: { _id: 'del_mock_1', companyName: 'Swift Logistics Solutions' },
             installationPartnerId: null,
@@ -440,6 +440,38 @@ const UserDashboard = ({
         
       }
 
+      // Fetch backend orders
+      try {
+        const ordersRes = await axios.get('/orders/user');
+        if (ordersRes.data && ordersRes.data.success) {
+          const dbOrders = ordersRes.data.data;
+          const mergedMap = new Map();
+          dbOrders.forEach(o => mergedMap.set(o._id, o));
+          localOrders.forEach(o => mergedMap.set(o._id, o));
+          localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+      } catch (err) {
+        console.warn('Backend orders fetch failed in UserDashboard:', err);
+      }
+
+      // Fetch user reviews
+      let dbReviews = [];
+      try {
+        const reviewsRes = await axios.get('/orders/reviews/user');
+        if (reviewsRes.data && reviewsRes.data.success) {
+          dbReviews = reviewsRes.data.data;
+        }
+      } catch (err) {
+        console.warn('Backend reviews fetch failed in UserDashboard:', err);
+      }
+
+      // Load mock reviews from localStorage
+      const localReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+      const reviewsMap = new Map();
+      dbReviews.forEach(r => reviewsMap.set(r._id, r));
+      localReviews.forEach(r => reviewsMap.set(r._id, r));
+      const mergedReviews = Array.from(reviewsMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
       const localCart = [];
 
       setAiDesigns(localAi);
@@ -447,6 +479,7 @@ const UserDashboard = ({
       setProducts(localProducts);
       setOrders(localOrders);
       setCartItems(localCart);
+      setUserReviews(mergedReviews);
 
       const aiQuoteOrders = localOrders.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
       setAiQuotationOrders(aiQuoteOrders);
@@ -651,7 +684,7 @@ const UserDashboard = ({
           requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
           referenceImages: [updatedDesign.generatedImage],
           status: 'Submitted',
-          assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+          assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
           createdAt: new Date().toISOString()
         };
         if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
@@ -722,7 +755,7 @@ Thank you for shopping with Artisan Studio!
       orderType: 'AI Design',
       orderStatus: 'quotation_pending',
       userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
       totalAmount: design.aiSuggestion?.budgetEstimate || 0,
       paymentStatus: 'pending',
       aiDesignData: {
@@ -781,7 +814,7 @@ Thank you for shopping with Artisan Studio!
       timeline, needDesignerHelp: needDesigner,
       serviceAddress, vendorPreference: vendorPref, quotationType,
       status: 'Submitted',
-      assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+      assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
       createdAt: new Date().toISOString()
     };
 
@@ -856,7 +889,7 @@ Thank you for shopping with Artisan Studio!
       requirements: fallbackRequest.details || '',
       referenceImages: [],
       status: 'Pending',
-      assignedVendorId: { _id: 'mock_vendor_id_123', name: 'Artisan Workshop' },
+      assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
       createdAt: fallbackRequest.createdAt
     };
     
@@ -875,7 +908,7 @@ Thank you for shopping with Artisan Studio!
       _id: 'ord_p_' + Date.now(),
       orderType: 'Marketplace Product',
       userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: product.vendorId || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      vendorId: product.vendorId || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
       manufacturerId: null,
       deliveryPartnerId: null,
       installationPartnerId: null,
@@ -946,7 +979,7 @@ Thank you for shopping with Artisan Studio!
       _id: 'ord_q_' + Date.now(),
       orderType: requestObj?.requestType || 'Manual Design',
       userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
       manufacturerId: null,
       deliveryPartnerId: null,
       installationPartnerId: null,
@@ -1202,19 +1235,23 @@ Thank you for shopping with Artisan Studio!
   const handlePublishReview = async (e) => {
     e.preventDefault();
     const vendorTarget = reviewTargetId;
+    let createdReviewBackend = null;
 
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
+      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
         vendorId: vendorTarget,
         productId: 'prod_1',
         rating: reviewRating,
         comment: reviewComment
       }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+      if (res.data && res.data.success) {
+        createdReviewBackend = res.data.data;
+      }
     } catch (err) {
       console.warn("Backend API publish review failed:", err);
     }
 
-    const newReview = {
+    const newReview = createdReviewBackend || {
       _id: 'review_' + Date.now(),
       vendorId: vendorTarget,
       productId: 'prod_1',
@@ -1223,16 +1260,36 @@ Thank you for shopping with Artisan Studio!
       userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
       createdAt: new Date().toISOString()
     };
-    const localReviews = [];
-    
+
+    // Save to local storage for demo mode
+    const mockReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
+    mockReviews.unshift(newReview);
+    localStorage.setItem('mockReviews', JSON.stringify(mockReviews));
+
+    // Update state
+    setUserReviews(prev => [newReview, ...prev]);
 
     // 1. Notify Vendor Dashboard
-    const vendorNotifs = [];
-    
+    const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    vendorNotifs.unshift({
+      _id: `notif_${Date.now()}_v`,
+      message: `New ${reviewRating}-star review received: "${reviewComment.substring(0, 40)}..."`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockVendorNotifications', JSON.stringify(vendorNotifs));
 
     // 2. Notify Admin Dashboard
-    const adminNotifs = [];
-    
+    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    adminNotifs.unshift({
+      _id: `notif_${Date.now()}_a`,
+      message: `A customer submitted a new review for Artisan Workshop.`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockAdminNotifications', JSON.stringify(adminNotifs));
 
     alert('✅ Review published successfully! Vendors and Admins have been notified.');
     setReviewComment('');
@@ -1917,7 +1974,7 @@ Thank you for shopping with Artisan Studio!
             _id: 'ord_p_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
             orderType: 'Marketplace Product',
             userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: item.vendorId || { _id: 'mock_vendor_id_123', companyName: 'Artisan Workshop' },
+            vendorId: item.vendorId || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
             manufacturerId: null,
             deliveryPartnerId: null,
             installationPartnerId: null,

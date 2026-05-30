@@ -9,6 +9,7 @@ const {
   updateInstallationStatus,
   createPayment,
   createReview,
+  getUserReviews,
   createTicket,
   getSyncedOrders,
   updateSyncedOrder
@@ -31,6 +32,7 @@ router.put('/installation/:id', authorize('vendor', 'installation', 'admin', 'us
 
 router.post('/payment', createPayment);
 router.post('/review', createReview);
+router.get('/reviews/user', getUserReviews);
 router.post('/ticket', createTicket);
 
 module.exports = router;
