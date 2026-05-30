@@ -206,7 +206,7 @@ const UserDashboard = ({
     
   };
 
-  const handleSendHelpMessage = (e) => {
+  const handleSendHelpMessage = async (e) => {
     e.preventDefault();
     if (!helpInput.trim()) return;
 

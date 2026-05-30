@@ -301,7 +301,7 @@ const VendorDashboard = ({
     
   };
 
-  const handleSendVendorHelpMessage = (e) => {
+  const handleSendVendorHelpMessage = async (e) => {
     e.preventDefault();
     if (!helpInput.trim() || !selectedHelpUser) return;
 

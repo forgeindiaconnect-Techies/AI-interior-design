@@ -199,7 +199,7 @@ const AdminDashboard = ({
     setAdminMsgInput('');
   };
 
-  const handleSendAdminHelpMessage = (e) => {
+  const handleSendAdminHelpMessage = async (e) => {
     e.preventDefault();
     if (!helpInput.trim() || !selectedHelpUser) return;
 
