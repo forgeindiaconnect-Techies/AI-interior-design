@@ -1,80 +1,70 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 
 const AuthContext = createContext();
 
-export const API_URL = import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api';
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token') || null);
   const [loading, setLoading] = useState(true);
 
-  axios.defaults.baseURL = API_URL;
-
-  useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      localStorage.setItem('token', token);
-      fetchUser();
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-      localStorage.removeItem('token');
-      setUser(null);
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const res = await axios.get('/auth/me');
-      setUser(res.data.user);
-    } catch (error) {
-      console.error('Backend fetchUser failed.', error);
-      delete axios.defaults.headers.common['Authorization'];
-      localStorage.removeItem('token');
-      setUser(null);
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Set base URL for all axios calls (frontend knows where API lives)
+  axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://ai-interior-final-project.onrender.com/api';
+  // Attach token on every request if present
+  axios.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
 
   const login = async (email, password) => {
-    setLoading(true);
     try {
       const res = await axios.post('/auth/login', { email, password });
-      setToken(res.data.token);
-      setUser(res.data.user);
-      return { success: true, user: res.data.user };
-    } catch (error) {
-      console.error('Backend login failed.', error);
-      setLoading(false);
-      return { success: false, error: error.response?.data?.message || 'Login failed' };
-    }
-  };
-
-  const register = async (userData) => {
-    setLoading(true);
-    try {
-      const res = await axios.post('/auth/register', userData);
-      setToken(res.data.token);
-      setUser(res.data.user);
-      return { success: true, user: res.data.user };
-    } catch (error) {
-      console.error('Backend register failed.', error);
-      setLoading(false);
-      return { success: false, error: error.response?.data?.message || 'Registration failed' };
+      if (res.data && res.data.success) {
+        const { token, user: userData } = res.data;
+        localStorage.setItem('token', token);
+        setUser(userData);
+        return { success: true, user: userData };
+      }
+      return { success: false, message: res.data?.message || 'Login failed' };
+    } catch (err) {
+      console.warn('Login request failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
     }
   };
 
   const logout = () => {
-    setToken(null);
+    localStorage.removeItem('token');
     setUser(null);
   };
 
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Verify token & fetch user details
+      axios.get('/auth/me')
+        .then((res) => {
+          if (res.data && res.data.success) {
+            setUser(res.data.user);
+          }
+        })
+        .catch(() => {
+          // token invalid/expired – clear it
+          localStorage.removeItem('token');
+          setUser(null);
+        });
+    }
+    setLoading(false);
+  }, []);
+
+  const value = { user, login, logout, loading };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, setUser }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
