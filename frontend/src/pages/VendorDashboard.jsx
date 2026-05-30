@@ -168,7 +168,9 @@ const VendorDashboard = ({
     if (activeTab === 'reviews') {
       const loadReviews = async () => {
         try {
-          const res = await axios.get('/vendor/reviews');
+          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/vendor/reviews`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
           if (res.data && res.data.success) {
             setVendorReviews(res.data.data);
           }
