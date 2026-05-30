@@ -181,14 +181,29 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid vendorId' });
     }
 
-    const review = await Review.create({ userId: req.user.id, vendorId, productId, rating, comment });
+    const reviewData = { userId: req.user.id, vendorId, rating, comment };
+    if (productId && mongoose.Types.ObjectId.isValid(productId)) {
+      reviewData.productId = productId;
+    }
+
+    const review = await Review.create(reviewData);
     
     try {
       const vendor = await Vendor.findById(vendorId);
-      if (vendor) {
-        await Notification.create({ userId: vendor.userId, message: `New ${rating}-star review received for your profile!`, type: 'info' });
+      
+      let productName = "a product";
+      if (reviewData.productId) {
+        const Product = require('../models/Product');
+        const product = await Product.findById(reviewData.productId);
+        if (product) productName = product.title;
       }
-      await Notification.create({ isAdmin: true, message: `A vendor received a new ${rating}-star review.`, type: 'info' });
+
+      if (vendor) {
+        await Notification.create({ userId: vendor.userId, message: `New ${rating}-star review received for ${productName}!`, type: 'info' });
+      }
+      
+      const adminMessage = `New Product Review: Customer reviewed ${productName} (Vendor: ${vendor?.companyName || 'Vendor'}) with ${rating} stars: "${comment.substring(0, 50)}${comment.length > 50 ? '...' : ''}"`;
+      await Notification.create({ isAdmin: true, message: adminMessage, type: 'info' });
     } catch (notifErr) {
       console.warn("Notification error (non-fatal):", notifErr);
     }

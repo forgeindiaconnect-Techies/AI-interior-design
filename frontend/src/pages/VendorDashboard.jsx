@@ -3094,11 +3094,18 @@ const VendorDashboard = ({
                               {review.userId?.email && <p className="text-[10px] text-gray-400">{review.userId.email}</p>}
                             </div>
                           </div>
-                          {review.vendorId?.companyName && (
+                          {review.productId && review.productId.title ? (
+                            <div className="flex items-center gap-2 mt-2 bg-gray-50 p-2 rounded-lg border border-gray-100">
+                              {review.productId.images && review.productId.images[0] && (
+                                <img src={review.productId.images[0]} alt={review.productId.title} className="w-8 h-8 object-cover rounded-md" />
+                              )}
+                              <span className="text-xs font-semibold text-gray-700">Product: {review.productId.title}</span>
+                            </div>
+                          ) : review.vendorId?.companyName ? (
                             <span className="text-[10px] bg-[#8B5E3C]/5 text-[#8B5E3C] px-2 py-0.5 rounded-full font-bold border border-[#8B5E3C]/10">
                               → {review.vendorId.companyName}
                             </span>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     ))}

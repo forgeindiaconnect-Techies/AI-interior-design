@@ -368,10 +368,10 @@ exports.getVendorReviews = async (req, res) => {
     let reviews;
     if (!vendor) {
       // No vendor profile yet — return all platform reviews so dashboard isn't empty
-      reviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
+      reviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').populate('productId', 'title images').sort('-createdAt');
     } else {
       // Return only this vendor's reviews
-      reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
+      reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name email').populate('vendorId', 'companyName').populate('productId', 'title images').sort('-createdAt');
     }
 
     res.status(200).json({ success: true, count: reviews.length, data: reviews });

@@ -116,6 +116,7 @@ const UserDashboard = ({
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewTargetId, setReviewTargetId] = useState('');
+  const [reviewProductId, setReviewProductId] = useState('');
   const [userReviews, setUserReviews] = useState([]);
 
 
@@ -1238,40 +1239,21 @@ Thank you for shopping with Artisan Studio!
   const handlePublishReview = async (e) => {
     e.preventDefault();
     const vendorTarget = reviewTargetId;
+    const productTarget = reviewProductId || undefined;
 
     try {
-      const res = await axios.post('/orders/review', {
+      const payload = {
         vendorId: vendorTarget,
-        productId: 'prod_1', // Using placeholder product for vendor review
         rating: reviewRating,
         comment: reviewComment
-      }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+      };
+      if (productTarget) payload.productId = productTarget;
+
+      const res = await axios.post('/orders/review', payload);
       
       if (res.data && res.data.success) {
         const createdReviewBackend = res.data.data;
         setUserReviews(prev => [createdReviewBackend, ...prev]);
-        
-        // 1. Notify Vendor Dashboard
-        const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-        vendorNotifs.unshift({
-          _id: `notif_${Date.now()}_v`,
-          message: `New ${reviewRating}-star review received: "${reviewComment.substring(0, 40)}..."`,
-          type: 'info',
-          createdAt: new Date().toISOString(),
-          read: false
-        });
-        localStorage.setItem('mockVendorNotifications', JSON.stringify(vendorNotifs));
-
-        // 2. Notify Admin Dashboard
-        const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-        adminNotifs.unshift({
-          _id: `notif_${Date.now()}_a`,
-          message: `A customer submitted a new review for Artisan Workshop.`,
-          type: 'info',
-          createdAt: new Date().toISOString(),
-          read: false
-        });
-        localStorage.setItem('mockAdminNotifications', JSON.stringify(adminNotifs));
 
         alert('✅ Review published successfully!');
         setReviewComment('');
@@ -1283,6 +1265,7 @@ Thank you for shopping with Artisan Studio!
 
     setReviewRating(5);
     setReviewTargetId('');
+    setReviewProductId('');
   };
 
 
@@ -3234,6 +3217,26 @@ Thank you for shopping with Artisan Studio!
               </select>
               <p className="text-[10px] text-gray-400 mt-1">Only vendors you have ordered from appear here.</p>
             </div>
+            {reviewTargetId && (
+              <div className="animate-fade-in">
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Product</label>
+                <select
+                  value={reviewProductId}
+                  onChange={(e) => setReviewProductId(e.target.value)}
+                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
+                >
+                  <option value="">-- General Store Review --</option>
+                  {Array.from(new Map(
+                    orders
+                      .filter(o => o.vendorId && o.vendorId._id === reviewTargetId && o.productDetails && o.productDetails._id)
+                      .map(o => [o.productDetails._id, o.productDetails])
+                  ).values()).map(p => (
+                    <option key={p._id} value={p._id}>{p.title}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-gray-400 mt-1">Optional: Select a specific product you purchased from this vendor.</p>
+              </div>
+            )}
             <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
               <div className="flex items-center gap-2">
