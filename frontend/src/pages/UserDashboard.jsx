@@ -310,7 +310,7 @@ const UserDashboard = ({
   const fetchUserData = async () => {
     try {
       // 1. AI Designs
-      let localAi = JSON.parse(null || 'null');
+      let localAi = JSON.parse(localStorage.getItem('aiDesigns') || 'null');
       if (!localAi) {
         localAi = [
           { 
@@ -327,6 +327,7 @@ const UserDashboard = ({
             createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
           }
         ];
+        localStorage.setItem('aiDesigns', JSON.stringify(localAi));
         
       }
 
@@ -614,19 +615,24 @@ const UserDashboard = ({
       createdAt: new Date().toISOString()
     };
 
-    const localAi = [];
+    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const updated = [newDesign, ...localAi];
     
     setAiDesigns(updated);
+    localStorage.setItem('aiDesigns', JSON.stringify(updated));
     setLoadingAi(false);
     alert('AI Design Generated Successfully!');
+    setTimeout(() => {
+      document.getElementById('ai-history-section')?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   const handleAiStatus = async (id, status) => {
-    const localAi = [];
+    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const updated = localAi.map(d => d._id === id ? { ...d, status } : d);
     
     setAiDesigns(updated);
+    localStorage.setItem('aiDesigns', JSON.stringify(updated));
     
     const updatedDesign = updated.find(d => d._id === id);
 
@@ -660,7 +666,7 @@ const UserDashboard = ({
           }
         }
       ];
-      const variantIndex = localAi.filter(d => d._id.startsWith('ai_reg_')).length % regenerateVariants.length;
+      const variantIndex = updated.filter(d => d._id.startsWith('ai_reg_')).length % regenerateVariants.length;
       const variant = regenerateVariants[variantIndex];
       const regeneratedDesign = {
         _id: 'ai_reg_' + Date.now(),
@@ -672,9 +678,9 @@ const UserDashboard = ({
         status: 'pending',
         createdAt: new Date().toISOString()
       };
-      const withRegen = [regeneratedDesign, ...localAi];
-      
+      const withRegen = [regeneratedDesign, ...updated];
       setAiDesigns(withRegen);
+      localStorage.setItem('aiDesigns', JSON.stringify(withRegen));
       alert('✨ AI Design regenerated with new style! Check the new design above.');
     }
 
@@ -724,17 +730,19 @@ const UserDashboard = ({
 
   const handleDeleteDesign = (id) => {
     if (!confirm('Delete this AI design?')) return;
-    const localAi = [];
+    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const filtered = localAi.filter(d => d._id !== id);
     
     setAiDesigns(filtered);
+    localStorage.setItem('aiDesigns', JSON.stringify(filtered));
   };
 
   const handleToggleBookmark = (id) => {
-    const localAi = [];
+    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const updated = localAi.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d);
     
     setAiDesigns(updated);
+    localStorage.setItem('aiDesigns', JSON.stringify(updated));
   };
 
   const handleDownloadReceipt = (order) => {
@@ -789,10 +797,11 @@ Thank you for shopping with Artisan Studio!
     const updatedOrders = [newOrder, ...localOrders];
     
     setOrders(updatedOrders);
-    const localAi = [];
+    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const updatedAi = localAi.map(d => d._id === design._id ? { ...d, status: 'execution' } : d);
     
     setAiDesigns(updatedAi);
+    localStorage.setItem('aiDesigns', JSON.stringify(updatedAi));
     const localVendorNotifs = [];
     
     alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
@@ -1552,7 +1561,7 @@ Thank you for shopping with Artisan Studio!
           </div>
 
           {/* Generated Designs List */}
-          <div className="lg:col-span-7 space-y-6">
+          <div id="ai-history-section" className="lg:col-span-7 space-y-6">
             <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Your AI Design History</h2>
             {aiDesigns.length === 0 ? (
               <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
@@ -1563,7 +1572,16 @@ Thank you for shopping with Artisan Studio!
               filteredAiDesigns.map((design) => (
                 <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                   <div className="flex flex-col sm:flex-row items-center gap-6">
-                    <img src={design.generatedImage} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner" />
+                    {design.originalImage && (
+                      <div className="flex-1 w-full sm:w-auto relative group">
+                        <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
+                        <img src={design.originalImage} alt="Original" className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
+                      </div>
+                    )}
+                    <div className="flex-1 w-full sm:w-auto relative group">
+                      <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
+                      <img src={design.generatedImage} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+                    </div>
                     <div className="space-y-4 flex-1 w-full">
                       <div className="flex items-center justify-between">
                         <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{design.roomType}</span>
