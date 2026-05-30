@@ -43,8 +43,23 @@ exports.getVendorProfile = async (req, res) => {
       });
     }
 
-    const vendor = await Vendor.findOne({ userId: req.user.id });
-    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+    let vendor = await Vendor.findOne({ userId: req.user.id });
+
+    // If no vendor profile exists yet, auto-create one for this user
+    if (!vendor) {
+      const User = require('../models/User');
+      const dbUser = await User.findById(req.user.id);
+      vendor = await Vendor.create({
+        userId: req.user.id,
+        companyName: dbUser?.name ? `${dbUser.name}'s Store` : 'My Store',
+        businessType: 'seller',
+        isVerified: false,
+        accountActivationStatus: 'Pending Verification',
+        verificationStatus: 'Pending',
+        storeSetupStatus: 'Pending',
+        isActive: false,
+      });
+    }
 
     const orders = await Order.find({ vendorId: vendor._id });
     const quotations = await Quotation.find({ vendorId: vendor._id });

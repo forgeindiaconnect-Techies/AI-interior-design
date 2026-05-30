@@ -123,9 +123,7 @@ const UserDashboard = ({
     if (activeTab === 'reviews') {
       const loadUserReviews = async () => {
         try {
-          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api'}/orders/reviews/user`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-          });
+          const res = await axios.get('/orders/reviews/user');
           if (res.data && res.data.success) {
             setUserReviews(res.data.data);
           }
@@ -1242,7 +1240,7 @@ Thank you for shopping with Artisan Studio!
     const vendorTarget = reviewTargetId;
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api'}/orders/review`, {
+      const res = await axios.post('/orders/review', {
         vendorId: vendorTarget,
         productId: 'prod_1', // Using placeholder product for vendor review
         rating: reviewRating,

@@ -172,9 +172,7 @@ const VendorDashboard = ({
         setReviewsLoading(true);
         setReviewsError(null);
         try {
-          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api'}/vendor/reviews`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-          });
+          const res = await axios.get('/vendor/reviews');
           if (res.data && res.data.success) {
             setVendorReviews(res.data.data);
           } else {
