@@ -12,6 +12,25 @@ const VendorVerification = require('../models/VendorVerification');
 let mockVerification = {};
 let mockStoreSetup = {};
 
+const findOrCreateVendorHelper = async (userId) => {
+  let vendor = await Vendor.findOne({ userId });
+  if (!vendor && mongoose.Types.ObjectId.isValid(userId)) {
+    const User = require('../models/User');
+    const dbUser = await User.findById(userId);
+    vendor = await Vendor.create({
+      userId: userId,
+      companyName: dbUser?.name ? `${dbUser.name}'s Store` : 'My Store',
+      businessType: 'seller',
+      isVerified: false,
+      accountActivationStatus: 'Pending Verification',
+      verificationStatus: 'Pending',
+      storeSetupStatus: 'Pending',
+      isActive: false,
+    });
+  }
+  return vendor;
+};
+
 // @desc    Get vendor profile & stats
 // @route   GET /api/vendor/profile
 // @access  Private (Vendor)
@@ -43,23 +62,9 @@ exports.getVendorProfile = async (req, res) => {
       });
     }
 
-    let vendor = await Vendor.findOne({ userId: req.user.id });
+    let vendor = await findOrCreateVendorHelper(req.user.id);
 
-    // If no vendor profile exists yet, auto-create one for this user
-    if (!vendor) {
-      const User = require('../models/User');
-      const dbUser = await User.findById(req.user.id);
-      vendor = await Vendor.create({
-        userId: req.user.id,
-        companyName: dbUser?.name ? `${dbUser.name}'s Store` : 'My Store',
-        businessType: 'seller',
-        isVerified: false,
-        accountActivationStatus: 'Pending Verification',
-        verificationStatus: 'Pending',
-        storeSetupStatus: 'Pending',
-        isActive: false,
-      });
-    }
+
 
     const orders = await Order.find({ vendorId: vendor._id });
     const quotations = await Quotation.find({ vendorId: vendor._id });
@@ -113,7 +118,7 @@ exports.sendQuotation = async (req, res) => {
   try {
     const { userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime } = req.body;
     if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, data: { status: 'pending' } });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
 
     const quotation = await Quotation.create({ vendorId: vendor._id, userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime, status: 'pending' });
@@ -214,7 +219,7 @@ exports.rejectRequest = async (req, res) => {
 exports.submitVerification = async (req, res) => {
   try {
     if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, message: 'Mock verification submitted', data: { status: 'Under Review' } });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     let verification = await VendorVerification.findOne({ vendorId: vendor._id });
@@ -267,7 +272,7 @@ exports.submitVerification = async (req, res) => {
 exports.getVerificationStatus = async (req, res) => {
   try {
     if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, data: { status: 'Not Submitted' } });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     const verification = await VendorVerification.findOne({ vendorId: vendor._id });
@@ -284,7 +289,7 @@ exports.submitStoreSetup = async (req, res) => {
   try {
     const { description, specialization, monthlyCapacity, serviceAreas } = req.body;
     if (String(req.user.id).startsWith('mock_')) return res.status(201).json({ success: true, message: 'Mock store setup submitted', data: { storeSetupStatus: 'Submitted' } });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     vendor.description = description || vendor.description;
@@ -309,7 +314,7 @@ exports.submitStoreSetup = async (req, res) => {
 exports.getStoreSetupStatus = async (req, res) => {
   try {
     if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, data: { status: 'Pending', description: '', specialization: 'Woodworks', monthlyCapacity: 50, serviceAreas: [] } });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     res.status(200).json({ 
@@ -334,7 +339,7 @@ exports.getStoreSetupStatus = async (req, res) => {
 exports.getVendorOrders = async (req, res) => {
   try {
     if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, count: 0, data: [] });
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     const standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
@@ -358,7 +363,7 @@ exports.getVendorReviews = async (req, res) => {
       return res.status(200).json({ success: true, count: allReviews.length, data: allReviews });
     }
 
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    const vendor = await findOrCreateVendorHelper(req.user.id);
 
     let reviews;
     if (!vendor) {
@@ -366,7 +371,7 @@ exports.getVendorReviews = async (req, res) => {
       reviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
     } else {
       // Return only this vendor's reviews
-      reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name email').sort('-createdAt');
+      reviews = await Review.find({ vendorId: vendor._id }).populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
     }
 
     res.status(200).json({ success: true, count: reviews.length, data: reviews });
