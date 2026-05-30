@@ -190,8 +190,7 @@ const VendorDashboard = ({
       setVendorReviews(staticReviews);
       setReviewsLoading(false);
     }
-    }
-  }, [activeTab, profile]);
+  }, [activeTab]);
 
   const chatEndRef = useRef(null);
 
@@ -342,12 +341,10 @@ const VendorDashboard = ({
 
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
-    const interval = setInterval(fetchPartnerData, 3000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
-      clearInterval(interval);
     };
   }, []);
 
