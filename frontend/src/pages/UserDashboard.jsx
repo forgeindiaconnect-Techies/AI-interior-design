@@ -772,7 +772,7 @@ Thank you for shopping with Artisan Studio!
   };
 
   const handleProceedToExecution = (design) => {
-    const localOrders = [];
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const newOrder = {
       _id: 'ord_ai_' + Date.now(),
       orderType: 'AI Design',
@@ -797,12 +797,23 @@ Thank you for shopping with Artisan Studio!
     const updatedOrders = [newOrder, ...localOrders];
     
     setOrders(updatedOrders);
+    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
+    window.dispatchEvent(new Event('mockOrdersUpdated'));
     const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
     const updatedAi = localAi.map(d => d._id === design._id ? { ...d, status: 'execution' } : d);
     
     setAiDesigns(updatedAi);
     localStorage.setItem('aiDesigns', JSON.stringify(updatedAi));
-    const localVendorNotifs = [];
+    
+    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localVendorNotifs.unshift({
+      _id: `notif_${Date.now()}`,
+      message: `New AI Design Execution Request for ${design.roomType}`,
+      type: 'order',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
     
     alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
   };
