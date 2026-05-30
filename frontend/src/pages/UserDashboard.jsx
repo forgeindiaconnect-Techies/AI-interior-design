@@ -3234,6 +3234,7 @@ Thank you for shopping with Artisan Studio!
               </select>
               <p className="text-[10px] text-gray-400 mt-1">Select a specific product you purchased to leave a review.</p>
             </div>
+            <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4, 5].map((star) => (
