@@ -9,6 +9,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000,  // 10s — enough for Render cold starts
       connectTimeoutMS: 10000,
       socketTimeoutMS: 30000,
+      family: 4, // Force IPv4 to avoid ECONNREFUSED on some networks with SRV records
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     global.MOCK_DB = false;
