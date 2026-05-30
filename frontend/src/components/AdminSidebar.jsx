@@ -184,7 +184,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           <SectionLabel label="Support" group="support" />
           {openGroups.support && (
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Messages" icon={MessageSquare} tab="messages" />
+              <NavItem name="Live Chat" icon={MessageSquare} tab="support" />
               <NavItem name="Contact Messages" icon={MessageSquare} tab="contact_messages" />
             </div>
           )}
