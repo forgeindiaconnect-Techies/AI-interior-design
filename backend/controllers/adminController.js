@@ -2414,3 +2414,30 @@ exports.deleteSubAdmin = async (req, res) => {
   }
 };
 
+// @desc    Get all platform reviews
+// @route   GET /api/admin/reviews
+// @access  Private (Admin)
+exports.getAllReviews = async (req, res) => {
+  try {
+    const Review = require('../models/Review');
+    const reviews = await Review.find().populate('userId', 'name email').populate('vendorId', 'companyName').sort('-createdAt');
+    res.status(200).json({ success: true, count: reviews.length, data: reviews });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete a review
+// @route   DELETE /api/admin/reviews/:id
+// @access  Private (Admin)
+exports.deleteReview = async (req, res) => {
+  try {
+    const Review = require('../models/Review');
+    const review = await Review.findByIdAndDelete(req.params.id);
+    if (!review) return res.status(404).json({ success: false, message: 'Review not found' });
+    res.status(200).json({ success: true, message: 'Review deleted' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

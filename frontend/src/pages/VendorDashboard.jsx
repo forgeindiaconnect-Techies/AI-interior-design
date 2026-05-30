@@ -167,28 +167,14 @@ const VendorDashboard = ({
   useEffect(() => {
     if (activeTab === 'reviews') {
       const loadReviews = async () => {
-        let backendReviews = [];
         try {
           const res = await axios.get('/vendor/reviews');
           if (res.data && res.data.success) {
-            backendReviews = res.data.data;
+            setVendorReviews(res.data.data);
           }
         } catch (err) {
           console.warn('Failed to fetch vendor reviews from API', err);
         }
-        
-        const allReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-        const myLocalReviews = allReviews.filter(r => r.vendorId === (profile?._id));
-        
-        // Merge deduplicated by _id
-        const merged = [...backendReviews];
-        myLocalReviews.forEach(lr => {
-          if (!merged.some(mr => mr._id === lr._id)) {
-            merged.push(lr);
-          }
-        });
-        
-        setVendorReviews(merged);
       };
       loadReviews();
       const interval = setInterval(loadReviews, 3000); // 3s interval
@@ -3026,6 +3012,10 @@ const VendorDashboard = ({
         const avgRating = vendorReviews.length > 0 
           ? (vendorReviews.reduce((sum, r) => sum + r.rating, 0) / vendorReviews.length).toFixed(1) 
           : '0.0';
+          
+        const ratingCounts = {5:0, 4:0, 3:0, 2:0, 1:0};
+        vendorReviews.forEach(r => { if (ratingCounts[r.rating] !== undefined) ratingCounts[r.rating]++; });
+        const getPct = (count) => vendorReviews.length > 0 ? `${(count / vendorReviews.length) * 100}%` : '0%';
 
         return (
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 animate-fade-in">
@@ -3045,7 +3035,20 @@ const VendorDashboard = ({
                   </div>
                   <p className="text-sm font-bold text-gray-500 mt-2">{vendorReviews.length} Reviews</p>
                 </div>
-                <div className="flex-1 md:pl-4">
+                
+                <div className="flex-1 md:px-8 md:border-r border-gray-200 flex flex-col justify-center">
+                  {[5, 4, 3, 2, 1].map(star => (
+                    <div key={star} className="flex items-center gap-3 text-sm text-gray-600 mb-2 last:mb-0">
+                      <span className="w-12 flex items-center justify-end gap-1 font-bold">{star} <Star className="w-3 h-3 text-[#E9C46A] fill-current" /></span>
+                      <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                        <div className="h-full bg-[#E9C46A] rounded-full transition-all duration-1000 ease-out" style={{ width: getPct(ratingCounts[star]) }}></div>
+                      </div>
+                      <span className="w-8 text-xs font-bold text-gray-400 text-right">{ratingCounts[star]}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex-[1.5] md:pl-4">
                   <h4 className="font-bold text-[#1F2937] mb-4 border-b border-gray-200 pb-2">Recent Feedback</h4>
                   <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                     {vendorReviews.map(review => (

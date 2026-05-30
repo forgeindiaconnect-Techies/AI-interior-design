@@ -335,14 +335,12 @@ exports.getVendorOrders = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorReviews = async (req, res) => {
   try {
-    let vendorId;
-    if (String(req.user.id).startsWith('mock_')) {
-      vendorId = '65c2b18a7c6b4b1c92949765';
-    } else {
-      const vendor = await Vendor.findOne({ userId: req.user.id });
-      if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
-      vendorId = vendor._id;
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
     }
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+    const vendorId = vendor._id;
 
     const Review = require('../models/Review');
     const reviews = await Review.find({ vendorId }).populate('userId', 'name').sort('-createdAt');

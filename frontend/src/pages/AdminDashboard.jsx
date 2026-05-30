@@ -76,6 +76,10 @@ const AdminDashboard = ({
   const [adminDirectMessages, setAdminDirectMessages] = useState([]);
   const [adminMsgInput, setAdminMsgInput] = useState('');
   
+  // Reviews Management State
+  const [adminReviews, setAdminReviews] = useState([]);
+  const [loadingAdminReviews, setLoadingAdminReviews] = useState(false);
+
   const [selectedMsgUser, setSelectedMsgUser] = useState('');
   const [customDesignFilter, setCustomDesignFilter] = useState('All');
   const [customRequestSearch, setCustomRequestSearch] = useState('');
@@ -458,6 +462,39 @@ const AdminDashboard = ({
       return () => clearInterval(verifInterval);
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'reviews_management') {
+      const loadReviews = async () => {
+        setLoadingAdminReviews(true);
+        try {
+          const res = await axios.get('/admin/reviews');
+          if (res.data && res.data.success) {
+            setAdminReviews(res.data.data);
+          }
+        } catch (err) {
+          console.warn('Failed to load admin reviews:', err);
+        } finally {
+          setLoadingAdminReviews(false);
+        }
+      };
+      loadReviews();
+    }
+  }, [activeTab]);
+
+  const handleDeleteReview = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return;
+    try {
+      const res = await axios.delete(`/admin/reviews/${id}`);
+      if (res.data.success) {
+        setAdminReviews(prev => prev.filter(r => r._id !== id));
+        alert('Review deleted successfully');
+      }
+    } catch (err) {
+      console.error('Failed to delete review:', err);
+      alert('Failed to delete review');
+    }
+  };
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -8556,6 +8593,83 @@ const AdminDashboard = ({
             <div className="bg-gray-50 p-6 border-t border-gray-100 flex justify-end">
               <button onClick={() => setTrackOrder(null)} className="px-6 py-3 bg-[#1F2937] hover:bg-[#2d3a4f] text-white rounded-xl font-bold text-xs shadow-md transition-all">Close Roadmap</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CUSTOMER REVIEWS MANAGEMENT */}
+      {activeTab === 'reviews_management' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Platform Reviews Oversight</h2>
+              <p className="text-sm text-gray-500 mt-1">Monitor and manage all customer reviews submitted across the platform.</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-100">
+                <BarChart2 className="w-5 h-5 text-gray-400" />
+                <div className="text-left">
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Total Reviews</p>
+                  <p className="font-bold text-sm text-[#1F2937]">{adminReviews.length}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            {loadingAdminReviews ? (
+              <div className="p-12 text-center text-gray-400">Loading reviews...</div>
+            ) : adminReviews.length === 0 ? (
+              <div className="p-12 text-center text-gray-400">No reviews found on the platform.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500">
+                      <th className="p-4 font-bold">Date</th>
+                      <th className="p-4 font-bold">Customer</th>
+                      <th className="p-4 font-bold">Vendor</th>
+                      <th className="p-4 font-bold">Rating</th>
+                      <th className="p-4 font-bold">Comment</th>
+                      <th className="p-4 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm divide-y divide-gray-50">
+                    {adminReviews.map(review => (
+                      <tr key={review._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-4 text-gray-500 text-xs">
+                          {new Date(review.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="p-4 font-bold text-[#1F2937]">
+                          {review.userId?.name || 'Unknown User'}
+                        </td>
+                        <td className="p-4 text-[#8B5E3C] font-semibold">
+                          {review.vendorId?.companyName || 'Unknown Vendor'}
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-1 text-[#E9C46A]">
+                            <span className="font-bold text-xs text-gray-700 mr-1">{review.rating}.0</span>
+                            <Sparkles className="w-3 h-3 fill-current text-[#E9C46A]" />
+                          </div>
+                        </td>
+                        <td className="p-4 text-gray-600 max-w-xs truncate" title={review.comment}>
+                          "{review.comment}"
+                        </td>
+                        <td className="p-4 text-right">
+                          <button 
+                            onClick={() => handleDeleteReview(review._id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete Review"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

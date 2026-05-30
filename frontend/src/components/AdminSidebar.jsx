@@ -203,6 +203,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
               <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" />
               <NavItem name="Store Approval" icon={Store} tab="store-approvals" />
               <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" />
+              <NavItem name="Customer Reviews" icon={Sparkles} tab="reviews_management" />
             </div>
           )}
         </div>

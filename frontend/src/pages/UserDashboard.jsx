@@ -121,14 +121,19 @@ const UserDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'reviews') {
-      const loadUserReviews = () => {
-        const allReviews = [];
-        const myReviews = allReviews.filter(r => r.userId?.email === (user?.email || 'user@example.com'));
-        setUserReviews(myReviews);
+      const loadUserReviews = async () => {
+        try {
+          const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/reviews/user`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          });
+          if (res.data && res.data.success) {
+            setUserReviews(res.data.data);
+          }
+        } catch (err) {
+          console.warn('Failed to load user reviews from DB', err);
+        }
       };
       loadUserReviews();
-      const interval = setInterval(loadUserReviews, 1000);
-      return () => clearInterval(interval);
     }
   }, [activeTab, user]);
 
@@ -1235,64 +1240,49 @@ Thank you for shopping with Artisan Studio!
   const handlePublishReview = async (e) => {
     e.preventDefault();
     const vendorTarget = reviewTargetId;
-    let createdReviewBackend = null;
 
     try {
       const res = await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/orders/review`, {
         vendorId: vendorTarget,
-        productId: 'prod_1',
+        productId: 'prod_1', // Using placeholder product for vendor review
         rating: reviewRating,
         comment: reviewComment
       }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+      
       if (res.data && res.data.success) {
-        createdReviewBackend = res.data.data;
+        const createdReviewBackend = res.data.data;
+        setUserReviews(prev => [createdReviewBackend, ...prev]);
+        
+        // 1. Notify Vendor Dashboard
+        const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+        vendorNotifs.unshift({
+          _id: `notif_${Date.now()}_v`,
+          message: `New ${reviewRating}-star review received: "${reviewComment.substring(0, 40)}..."`,
+          type: 'info',
+          createdAt: new Date().toISOString(),
+          read: false
+        });
+        localStorage.setItem('mockVendorNotifications', JSON.stringify(vendorNotifs));
+
+        // 2. Notify Admin Dashboard
+        const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+        adminNotifs.unshift({
+          _id: `notif_${Date.now()}_a`,
+          message: `A customer submitted a new review for Artisan Workshop.`,
+          type: 'info',
+          createdAt: new Date().toISOString(),
+          read: false
+        });
+        localStorage.setItem('mockAdminNotifications', JSON.stringify(adminNotifs));
+
+        alert('✅ Review published successfully!');
+        setReviewComment('');
       }
     } catch (err) {
       console.warn("Backend API publish review failed:", err);
+      alert('Failed to publish review. Please ensure you are logged in with a real account.');
     }
 
-    const newReview = createdReviewBackend || {
-      _id: 'review_' + Date.now(),
-      vendorId: vendorTarget,
-      productId: 'prod_1',
-      rating: reviewRating,
-      comment: reviewComment,
-      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to local storage for demo mode
-    const mockReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-    mockReviews.unshift(newReview);
-    localStorage.setItem('mockReviews', JSON.stringify(mockReviews));
-
-    // Update state
-    setUserReviews(prev => [newReview, ...prev]);
-
-    // 1. Notify Vendor Dashboard
-    const vendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    vendorNotifs.unshift({
-      _id: `notif_${Date.now()}_v`,
-      message: `New ${reviewRating}-star review received: "${reviewComment.substring(0, 40)}..."`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockVendorNotifications', JSON.stringify(vendorNotifs));
-
-    // 2. Notify Admin Dashboard
-    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    adminNotifs.unshift({
-      _id: `notif_${Date.now()}_a`,
-      message: `A customer submitted a new review for Artisan Workshop.`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockAdminNotifications', JSON.stringify(adminNotifs));
-
-    alert('✅ Review published successfully! Vendors and Admins have been notified.');
-    setReviewComment('');
     setReviewRating(5);
     setReviewTargetId('');
   };

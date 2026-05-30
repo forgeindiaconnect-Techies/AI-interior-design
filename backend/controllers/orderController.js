@@ -172,9 +172,9 @@ exports.createReview = async (req, res) => {
   try {
     const { vendorId, productId, rating, comment } = req.body;
 
-    // Guard: mock users cannot write real ObjectIds to MongoDB
-    if (String(req.user.id).startsWith('mock_')) {
-      return res.status(201).json({ success: true, data: { _id: 'mock_rev_' + Date.now(), vendorId, productId, rating, comment, userId: req.user.id, createdAt: new Date() } });
+    // Enforce real database accounts
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid user account. A real database account is required to submit reviews.' });
     }
 
     if (!mongoose.Types.ObjectId.isValid(vendorId)) {
@@ -237,7 +237,7 @@ exports.updateSyncedOrder = (req, res) => {
 // @access  Private
 exports.getUserReviews = async (req, res) => {
   try {
-    if (String(req.user.id).startsWith('mock_')) {
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
       return res.status(200).json({ success: true, count: 0, data: [] });
     }
     const reviews = await Review.find({ userId: req.user.id }).populate('vendorId', 'companyName').sort('-createdAt');

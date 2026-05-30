@@ -47,7 +47,9 @@ const {
   deleteSubAdmin,
   deleteManualDesign,
   deleteDesignerRequest,
-  deleteOrder
+  deleteOrder,
+  getAllReviews,
+  deleteReview
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -125,5 +127,9 @@ router.get('/permissions', getSubAdmins);
 router.post('/permissions', addSubAdmin);
 router.put('/permissions/:id', updateSubAdminPermissions);
 router.delete('/permissions/:id', deleteSubAdmin);
+
+// Platform Reviews Management Routes
+router.get('/reviews', getAllReviews);
+router.delete('/reviews/:id', deleteReview);
 
 module.exports = router;
