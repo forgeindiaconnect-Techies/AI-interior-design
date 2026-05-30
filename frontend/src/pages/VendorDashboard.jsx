@@ -168,24 +168,28 @@ const VendorDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'reviews') {
-      const loadReviews = async () => {
-        setReviewsLoading(true);
-        setReviewsError(null);
-        try {
-          const res = await axios.get('/vendor/reviews');
-          if (res.data && res.data.success) {
-            setVendorReviews(res.data.data);
-          } else {
-            setReviewsError('Could not load reviews.');
-          }
-        } catch (err) {
-          console.warn('Failed to fetch vendor reviews from API', err);
-          setReviewsError(`Failed to connect to backend: ${err?.response?.data?.message || err.message}`);
-        } finally {
-          setReviewsLoading(false);
+      // Load static mock reviews for demo purposes
+      const staticReviews = [
+        {
+          _id: 'rev1',
+          rating: 5,
+          comment: 'Excellent product! Highly recommended.',
+          createdAt: new Date().toISOString(),
+          userId: { name: 'Alice Demo', email: 'alice@example.com' },
+          productId: { title: 'Modern Sofa', images: [] }
+        },
+        {
+          _id: 'rev2',
+          rating: 4,
+          comment: 'Great quality, but delivery was a bit slow.',
+          createdAt: new Date().toISOString(),
+          userId: { name: 'Bob Demo', email: 'bob@example.com' },
+          productId: { title: 'Vintage Lamp', images: [] }
         }
-      };
-      loadReviews();
+      ];
+      setVendorReviews(staticReviews);
+      setReviewsLoading(false);
+    }
     }
   }, [activeTab, profile]);
 
