@@ -12,7 +12,20 @@ const app = express();
 // Init Middleware
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'https://ai-interior-final-project.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    /\.vercel\.app$/
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight for all routes
 
 // Define Routes
 app.use('/api/auth', require('./routes/authRoutes'));
