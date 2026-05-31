@@ -4,12 +4,6 @@ const {
   getVendorProfile, 
   getCustomRequests, 
   sendQuotation, 
-const express = require('express');
-const router = express.Router();
-const { 
-  getVendorProfile, 
-  getCustomRequests, 
-  sendQuotation, 
   suggestVendor, 
   forwardToManufacturer,
   acceptRequest,
