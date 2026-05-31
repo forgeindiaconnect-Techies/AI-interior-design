@@ -117,6 +117,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    if (user.status === 'Pending') {
+      return res.status(401).json({ success: false, message: 'Your account is pending admin approval.' });
+    }
+
+    if (user.status === 'Rejected') {
+      return res.status(401).json({ success: false, message: 'Your account has been rejected. Please contact support.' });
+    }
+
     const token = generateToken(user._id, user.role);
 
     let vendorProfile = null;

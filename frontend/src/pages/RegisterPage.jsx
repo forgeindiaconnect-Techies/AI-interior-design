@@ -11,6 +11,19 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(initialRole);
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { UserPlus, CheckCircle, ArrowRight, ShieldCheck, FileText, CreditCard, Armchair, Sparkles } from 'lucide-react';
+
+const RegisterPage = () => {
+  const [searchParams] = useSearchParams();
+  const initialRole = searchParams.get('role') || 'user';
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [role, setRole] = useState(initialRole);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -18,8 +31,7 @@ const RegisterPage = () => {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
-  const [registeredRole, setRegisteredRole] = useState('');
+  const [modalInfo, setModalInfo] = useState({ show: false, title: '', message: '', type: 'success' });
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -34,6 +46,16 @@ const RegisterPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!name || !email || !password || (role !== 'user' && !companyName)) {
+      setModalInfo({
+        show: true,
+        title: 'Missing Information',
+        message: 'Please fill all required fields.',
+        type: 'error'
+      });
+      return;
+    }
+
     setError('');
     setLoading(true);
 
@@ -48,75 +70,36 @@ const RegisterPage = () => {
     };
 
     const res = await register(userData);
+    setLoading(false);
+
     if (res.success) {
-      if (finalRole === 'user' || finalRole === 'admin') {
-        // Redirect to login after successful sign-up (user/admin roles)
-        navigate('/login', { state: { registeredSuccess: true, registeredRole: finalRole } });
-      } else {
-        setRegisteredRole(finalRole);
-        setIsRegistered(true);
-      }
+      setModalInfo({
+        show: true,
+        title: 'Registration Successful',
+        message: 'Your account has been created successfully. It is pending admin approval. You will be able to access all features once approved.',
+        type: 'success'
+      });
     } else {
-      setError(res.message);
-      setLoading(false);
+      let errorMsg = res.message || 'Something went wrong. Please try again later.';
+      if (errorMsg.toLowerCase().includes('already exists')) {
+        errorMsg = 'An account with this email already exists.';
+      }
+      setModalInfo({
+        show: true,
+        title: 'Registration Failed',
+        message: errorMsg,
+        type: 'error'
+      });
     }
   };
 
-  if (isRegistered) {
-    return (
-      <div className="min-h-screen bg-[#F8F5F0] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-2xl text-center animate-fadeIn">
-          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border-4 border-white">
-            <CheckCircle className="w-10 h-10 text-emerald-600" />
-          </div>
-          <h2 className="font-['Playfair_Display'] text-4xl font-extrabold text-[#1F2937]">Account Created Successfully!</h2>
-          <p className="mt-3 text-lg text-[#6B7280]">Welcome to ArtisanStudio, {name}. Let's get your business online.</p>
-          
-          <div className="mt-10 bg-white p-8 rounded-3xl shadow-xl border border-[#D4A373]/30 text-left">
-            <h3 className="font-bold text-xl text-[#1F2937] mb-6 border-b border-gray-100 pb-4">Your Onboarding Roadmap</h3>
-            
-            <div className="space-y-6">
-              <div className="flex gap-4 items-start">
-                <div className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0"><CheckCircle size={20}/></div>
-                <div>
-                  <h4 className="font-bold text-[#1F2937]">Step 1: Account Registration</h4>
-                  <p className="text-sm text-gray-500">Your partner account has been successfully created.</p>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
-                <div className="w-10 h-10 rounded-full bg-white border-2 border-[#8B5E3C] text-[#8B5E3C] flex items-center justify-center shrink-0"><FileText size={20}/></div>
-                <div>
-                  <h4 className="font-bold text-[#1F2937]">Step 2: Business Verification</h4>
-                  <p className="text-sm text-gray-500">Verify your business identity via the dashboard to unlock platform features.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
-                <div className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center shrink-0"><CreditCard size={20}/></div>
-                <div>
-                  <h4 className="font-bold text-gray-400">Step 3: Store/Profile Setup</h4>
-                  <p className="text-sm text-gray-400">Set up your brand profile, store information, and catalog details.</p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 items-start relative before:absolute before:left-5 before:top-[-16px] before:bottom-[-16px] before:w-[2px] before:bg-gray-100 before:-z-10">
-                <div className="w-10 h-10 rounded-full bg-white border-2 border-gray-200 text-gray-400 flex items-center justify-center shrink-0"><ShieldCheck size={20}/></div>
-                <div>
-                  <h4 className="font-bold text-gray-400">Step 4: Admin Review & Go Live</h4>
-                  <p className="text-sm text-gray-400">Our team will review your profile and verifications. You will go live shortly.</p>
-                </div>
-              </div>
-            </div>
-
-            <button onClick={() => navigate('/dashboard/vendor')} className="w-full mt-10 flex items-center justify-center gap-2 py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md transition-all group">
-              Proceed to Dashboard <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleModalClose = () => {
+    if (modalInfo.type === 'success') {
+      navigate('/login');
+    } else {
+      setModalInfo({ ...modalInfo, show: false });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8F5F0] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -149,7 +132,6 @@ const RegisterPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Role Selection Tabs */}
             <div>
               <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2 text-center">
                 Select Account Type
@@ -245,6 +227,32 @@ const RegisterPage = () => {
           </div>
         </div>
       </div>
+
+      {modalInfo.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl transform transition-all animate-scaleIn text-center border border-gray-100">
+            <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-6 ${modalInfo.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+              {modalInfo.type === 'success' ? <CheckCircle className="w-8 h-8" /> : <ShieldCheck className="w-8 h-8" />}
+            </div>
+            <h3 className="text-2xl font-bold text-[#1F2937] mb-2 font-['Playfair_Display']">
+              {modalInfo.title}
+            </h3>
+            <p className="text-[#6B7280] mb-8 text-sm leading-relaxed">
+              {modalInfo.message}
+            </p>
+            <button
+              onClick={handleModalClose}
+              className={`w-full py-3 px-4 rounded-xl font-bold text-white shadow-md transition-all ${
+                modalInfo.type === 'success' 
+                  ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg' 
+                  : 'bg-red-600 hover:bg-red-700 hover:shadow-lg'
+              }`}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

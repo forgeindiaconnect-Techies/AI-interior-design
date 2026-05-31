@@ -134,10 +134,10 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
 
         {/* Collapsible: USER & VENDOR MANAGEMENT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <SectionLabel label="User & Vendor Management" group="users" />
+          <SectionLabel label="User Management" group="users" />
           {openGroups.users && (
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Users" icon={Users} tab="users" />
+              <NavItem name="Customers" icon={Users} tab="users" />
               <NavItem name="Vendors" icon={Store} tab="vendors" />
               <NavItem name="Manufacturers" icon={Factory} tab="manufacturers" />
               <NavItem name="Delivery Partners" icon={Truck} tab="delivery" />

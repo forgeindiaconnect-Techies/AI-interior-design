@@ -49,7 +49,9 @@ const {
   deleteDesignerRequest,
   deleteOrder,
   getAllReviews,
-  deleteReview
+  deleteReview,
+  getAllUsers,
+  updateUserStatus
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -64,6 +66,8 @@ router.put('/reactivate-user/:id', reactivateUser);
 router.put('/block-user/:id', blockUser);
 router.delete('/delete-user/:id', deleteUser);
 router.get('/users/:id/orders', getUserOrders);
+router.get('/users', getAllUsers);
+router.put('/users/:id/status', updateUserStatus);
 router.post('/assign-partner', assignPartner);
 router.post('/system-notification', sendSystemNotification);
 router.get('/tickets', getTickets);

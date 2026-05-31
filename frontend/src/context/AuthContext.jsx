@@ -8,7 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Set base URL for all axios calls (frontend knows where API lives)
-  axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://ai-interior-final-project.onrender.com/api';
+  axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api';
   // Attach token on every request if present
   axios.interceptors.request.use(
     (config) => {

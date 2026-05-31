@@ -2441,3 +2441,37 @@ exports.deleteReview = async (req, res) => {
   }
 };
 
+// @desc    Get all users
+// @route   GET /api/admin/users
+// @access  Private (Admin)
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort('-createdAt');
+    res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update user status
+// @route   PUT /api/admin/users/:id/status
+// @access  Private (Admin)
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = status;
+    await user.save();
+
+    await AdminLog.create({ 
+      adminId: req.user.id, 
+      action: `Updated status of user ${user.name} to ${status}`
+    });
+
+    res.status(200).json({ success: true, data: user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -14,8 +14,8 @@ const UserSchema = new mongoose.Schema({
   address: { type: String },
   status: { 
     type: String, 
-    enum: ['Active', 'Suspended', 'Blocked'], 
-    default: 'Active' 
+    enum: ['Active', 'Suspended', 'Blocked', 'Pending', 'Rejected'], 
+    default: 'Pending' 
   },
   suspensionReason: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now }

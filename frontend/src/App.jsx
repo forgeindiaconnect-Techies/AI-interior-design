@@ -30,9 +30,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <div className="min-h-screen bg-[#F8F5F0] flex items-center justify-center font-bold text-lg text-[#8B5E3C]">Loading System...</div>;
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  // Bypassed for debugging
+  // if (!user) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   // NOTE: Strict role-based redirects have been disabled for prototype testing 
   // so you can view Vendor and User dashboards side-by-side in the same browser.

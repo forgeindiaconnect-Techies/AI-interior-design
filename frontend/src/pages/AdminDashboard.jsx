@@ -1258,6 +1258,35 @@ const AdminDashboard = ({
     }
   };
 
+  // Update User Status (Approve/Reject/Active)
+  const handleUpdateUserStatus = async (userId, newStatus) => {
+    try {
+      const res = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/${userId}/status`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      const updatedUsers = managementData.users.map(u => 
+        u._id === userId ? { ...u, status: res.data.user.status } : u
+      );
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          ...managementData.userStats,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
+        }
+      });
+      
+      alert(`User status updated to ${newStatus} successfully.`);
+      setConfirmActionModal(null);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Error updating user status');
+    }
+  };
+
+
   // Reactivate User Action
   const handleReactivateUser = async (userId) => {
     try {
@@ -2700,6 +2729,8 @@ const AdminDashboard = ({
                             <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
                               u.status === 'Active' ? 'bg-green-50 text-green-700 border-green-200' :
                               u.status === 'Suspended' ? 'bg-[#E76F51]/10 text-[#E76F51] border-[#E76F51]/20' :
+                              u.status === 'Pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                              u.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
                               'bg-gray-100 text-gray-600 border-gray-200'
                             }`}>
                               {u.status || 'Active'}
@@ -2730,6 +2761,21 @@ const AdminDashboard = ({
                                 >
                                   Restore
                                 </button>
+                              ) : u.status === 'Pending' ? (
+                                <>
+                                  <button
+                                    onClick={() => setConfirmActionModal({ type: 'approve', user: u })}
+                                    className="px-2.5 py-1.5 bg-green-50 hover:bg-green-600 text-green-700 hover:text-white rounded-xl font-bold text-xs transition-all border border-green-200 shadow-sm"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={() => setConfirmActionModal({ type: 'reject', user: u })}
+                                    className="px-2.5 py-1.5 bg-red-50 hover:bg-red-600 text-red-700 hover:text-white rounded-xl font-bold text-xs transition-all border border-red-200 shadow-sm"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
                               ) : (
                                 <button
                                   onClick={() => setSuspendModalUser(u)}
@@ -6757,10 +6803,10 @@ const AdminDashboard = ({
           <div className="bg-white max-w-sm w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fade-in p-8 space-y-6">
             <div className="text-center space-y-3">
               <div className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center ${
-                confirmActionModal.type === 'reactivate' ? 'bg-green-50 text-green-600' :
+                confirmActionModal.type === 'reactivate' || confirmActionModal.type === 'approve' ? 'bg-green-50 text-green-600' :
                 confirmActionModal.type === 'block' ? 'bg-gray-50 text-gray-600' : 'bg-red-50 text-red-600'
               }`}>
-                {confirmActionModal.type === 'reactivate' ? <Unlock className="w-7 h-7" /> :
+                {confirmActionModal.type === 'reactivate' || confirmActionModal.type === 'approve' ? <Unlock className="w-7 h-7" /> :
                  confirmActionModal.type === 'block' ? <Lock className="w-7 h-7" /> : <Trash2 className="w-7 h-7" />}
               </div>
               <h3 className="font-['Playfair_Display'] font-extrabold text-xl text-[#1F2937] capitalize">
@@ -6768,6 +6814,8 @@ const AdminDashboard = ({
               </h3>
               <p className="text-xs text-gray-500 font-semibold leading-relaxed">
                 {confirmActionModal.type === 'reactivate' && `Are you sure you want to restore status for ${confirmActionModal.user?.name}? They will immediately be authorized to log in again.`}
+                {confirmActionModal.type === 'approve' && `Are you sure you want to approve ${confirmActionModal.user?.name}? They will immediately be authorized to log in.`}
+                {confirmActionModal.type === 'reject' && `Are you sure you want to reject ${confirmActionModal.user?.name}? Their registration will be denied.`}
                 {confirmActionModal.type === 'block' && `Are you sure you want to block ${confirmActionModal.user?.name}? They will be blocked from logging in or registering until active review.`}
                 {confirmActionModal.type === 'delete' && `Warning: This will permanently delete user ${confirmActionModal.user?.name} from the database. This action is irreversible.`}
               </p>
@@ -6785,11 +6833,13 @@ const AdminDashboard = ({
                 type="button"
                 onClick={() => {
                   if (confirmActionModal.type === 'reactivate') handleReactivateUser(confirmActionModal.user?._id);
+                  if (confirmActionModal.type === 'approve') handleUpdateUserStatus(confirmActionModal.user?._id, 'Active');
+                  if (confirmActionModal.type === 'reject') handleUpdateUserStatus(confirmActionModal.user?._id, 'Rejected');
                   if (confirmActionModal.type === 'block') handleBlockUser(confirmActionModal.user?._id);
                   if (confirmActionModal.type === 'delete') handleDeleteUser(confirmActionModal.user?._id);
                 }}
                 className={`flex-1 py-3 text-white rounded-xl font-bold transition-all text-xs shadow-md ${
-                  confirmActionModal.type === 'reactivate' ? 'bg-green-600 hover:bg-green-700' :
+                  confirmActionModal.type === 'reactivate' || confirmActionModal.type === 'approve' ? 'bg-green-600 hover:bg-green-700' :
                   confirmActionModal.type === 'block' ? 'bg-gray-800 hover:bg-black' : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
