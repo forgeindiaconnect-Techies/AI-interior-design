@@ -414,7 +414,7 @@ const VendorDashboard = ({
         if (reqRes.data.success) backendRequests = reqRes.data.data;
       } catch (err) { console.warn('Backend custom requests fetch failed'); }
       
-      const localManual = [];
+      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
       const finalRequests = [...localManual];
       backendRequests.forEach(br => {
         if (!finalRequests.find(lr => lr._id === br._id)) {
@@ -430,7 +430,7 @@ const VendorDashboard = ({
         if (ordersRes.data.success) localOrders = ordersRes.data.data;
       } catch (err) { console.warn('Backend orders fetch failed'); }
       
-      const mockOrdersData = [];
+      const mockOrdersData = JSON.parse(localStorage.getItem('mockOrders') || '[]');
       const finalOrders = [...mockOrdersData];
       localOrders.forEach(bo => {
         if (!finalOrders.find(lo => lo._id === bo._id)) {
@@ -494,22 +494,21 @@ const VendorDashboard = ({
     };
     
     if (recipient === 'vendor') {
-      const existing = [];
-      
+      const existing = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+      localStorage.setItem('mockVendorNotifications', JSON.stringify([notifObj, ...existing]));
     } else if (recipient === 'admin') {
-      const existing = [];
-      
+      const existing = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+      localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...existing]));
     } else if (recipient === 'user') {
-      const existing = [];
-      
+      const existing = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
+      localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...existing]));
     } else if (recipient === 'delivery') {
-      const existing = [];
-      
+      // Mock delivery
     }
   };
 
   const handleOrderStatusUpdate = (orderId, newStatus) => {
-    const localOrders = [];
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
@@ -542,7 +541,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -560,7 +559,7 @@ const VendorDashboard = ({
       return;
     }
     
-    const localOrders = [];
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
@@ -580,7 +579,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {
@@ -596,7 +595,7 @@ const VendorDashboard = ({
   };
 
   const handleApproveReturn = (orderId) => {
-    const localOrders = [];
+    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
     const currentVendorId = profile?._id;
     
     const updated = localOrders.map(o => {
@@ -608,7 +607,7 @@ const VendorDashboard = ({
       return o;
     });
     
-    
+    localStorage.setItem('mockOrders', JSON.stringify(updated));
     setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
     
     if (selectedOrder && selectedOrder._id === orderId) {

@@ -101,15 +101,7 @@ const AppRoutes = () => {
 
 function App() {
   useEffect(() => {
-    // Clear all mock localStorage keys on app startup
-    const keysToRemove = [
-      'mockOrders', 'mockSharedChat', 'mockProducts', 'mockReviews',
-      'mockCart', 'mockUserNotifications', 'mockVendorNotifications',
-      'mockAdminNotifications', 'mockManualRequests', 'mockDesignerRequests',
-      'mockVerificationSubmissions', 'mockStoreSetupSubmissions', 'mockPayoutHistory',
-      'mockPlatformMetrics', 'mockUsers', 'mockDesigns'
-    ];
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    // Local storage clearing removed to persist mock data across dashboard reloads.
   }, []);
 
   return (
