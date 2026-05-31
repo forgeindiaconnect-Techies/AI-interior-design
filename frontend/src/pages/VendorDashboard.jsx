@@ -2330,7 +2330,7 @@ const VendorDashboard = ({
       {activeTab === 'custom_requests' && (
         <div className="space-y-8">
           <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Custom Design Requests</h2>
+            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Custom Orders</h2>
             <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-4 py-1.5 rounded-full text-xs font-bold">
               {customRequests.length} {customRequests.length === 1 ? 'Request' : 'Requests'}
             </span>
@@ -2576,6 +2576,30 @@ const VendorDashboard = ({
                           <div><strong className="text-[#1F2937]">Dimensions / Area:</strong> {req.size || '400 sq ft'}</div>
                           <div><strong className="text-[#1F2937]">Target Completion:</strong> {req.timeline || req.estimatedTime || 'Within 1 Month'}</div>
                           <div><strong className="text-[#1F2937]">Current Lifecycle Status:</strong> {req.status}</div>
+                          <div className="sm:col-span-2"><strong className="text-[#1F2937]">Design Requirements:</strong> {req.requirements || req.details || 'Standard'}</div>
+                          
+                          {req.ownMaterialsAvailable === 'Yes' && (
+                            <>
+                              <div className="sm:col-span-2"><strong className="text-[#1F2937]">Own Materials Details:</strong> {req.materialDetails}</div>
+                              <div><strong className="text-[#1F2937]">Material Quantity:</strong> {req.materialQuantity}</div>
+                              <div><strong className="text-[#1F2937]">Pickup Required:</strong> {req.materialPickupNeeded}</div>
+                              {req.materialPickupNeeded === 'Yes' && (
+                                <div className="sm:col-span-2"><strong className="text-[#1F2937]">Pickup Address:</strong> {req.pickupAddress}</div>
+                              )}
+                            </>
+                          )}
+                          
+                          {req.needDesignerHelp === 'Yes' && (
+                            <div className="sm:col-span-2"><strong className="text-[#1F2937]">Designer Help:</strong> Customer requested interior designer consultation.</div>
+                          )}
+                          
+                          {(req.serviceAddress || req.vendorPreference || req.quotationType) && (
+                            <>
+                              <div className="sm:col-span-2"><strong className="text-[#1F2937]">Service Address:</strong> {req.serviceAddress || 'Default'}</div>
+                              <div><strong className="text-[#1F2937]">Vendor Preference:</strong> {req.vendorPreference || 'Any'}</div>
+                              <div><strong className="text-[#1F2937]">Quotation Type:</strong> {req.quotationType || 'Standard'}</div>
+                            </>
+                          )}
                         </div>
                       </div>
                     )}

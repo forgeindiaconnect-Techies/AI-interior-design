@@ -2432,29 +2432,34 @@ const AdminDashboard = ({
                 </div>
               </div>
 
-              {/* Recent Activity Feed */}
+              {/* Recent System Notifications */}
               <div className="bg-white p-7 rounded-3xl border border-[#D4A373]/30 shadow-sm">
-                <div className="flex items-center gap-3 mb-6 border-b border-gray-100 pb-4">
-                  <div className="p-2 bg-indigo-50 rounded-xl"><Activity className="w-5 h-5 text-indigo-500" /></div>
-                  <div>
-                    <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Recent Activity</h3>
-                    <p className="text-[11px] text-gray-400">Live platform event timeline</p>
+                <div className="flex items-center justify-between gap-3 mb-6 border-b border-gray-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-xl"><Bell className="w-5 h-5 text-indigo-500" /></div>
+                    <div>
+                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">System Notifications</h3>
+                      <p className="text-[11px] text-gray-400">Latest platform alerts and messages</p>
+                    </div>
                   </div>
+                  <button onClick={() => setActiveTab && setActiveTab('notifications')} className="text-xs font-bold text-[#1D3557] hover:underline">View All</button>
                 </div>
-                {activityFeed.length === 0 ? (
-                  <div className="py-10 text-center text-gray-300 text-sm">No recent activity to display.</div>
+                {notifications.length === 0 ? (
+                  <div className="py-10 text-center text-gray-300 text-sm">No recent notifications to display.</div>
                 ) : (
                   <div className="space-y-1">
-                    {activityFeed.map((event, idx) => (
-                      <div key={idx} className="flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-all">
-                        <div className={`w-8 h-8 rounded-xl ${event.color} flex items-center justify-center text-sm shrink-0`}>{event.icon}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500">{event.label}</p>
-                          <p className="text-sm font-bold text-[#1F2937] truncate">{event.name}</p>
+                    {notifications.slice(0, 5).map((notif, idx) => (
+                      <div key={notif._id || idx} className={`flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-all ${!notif.read ? 'bg-[#1D3557]/5' : ''}`}>
+                        <div className={`w-8 h-8 rounded-xl ${!notif.read ? 'bg-[#1D3557] text-white' : 'bg-gray-100 text-gray-500'} flex items-center justify-center text-sm shrink-0`}>
+                          <Bell size={14} />
                         </div>
-                        <span className="text-[10px] text-gray-400 shrink-0 mt-1">
-                          {new Date(event.time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm ${!notif.read ? 'font-extrabold text-[#1F2937]' : 'font-bold text-gray-600'} truncate`}>{notif.message}</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                          </p>
+                        </div>
+                        {!notif.read && <span className="w-2 h-2 rounded-full bg-[#1D3557] shrink-0 mt-2"></span>}
                       </div>
                     ))}
                   </div>
