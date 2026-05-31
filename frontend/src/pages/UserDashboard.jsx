@@ -686,7 +686,7 @@ const UserDashboard = ({
 
     if (status === 'accepted') {
       try {
-        const localRequests = [];
+        const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
         const aiCustomRequest = {
           _id: 'man_from_ai_' + updatedDesign._id,
           requestType: 'AI Generated',
@@ -710,11 +710,29 @@ const UserDashboard = ({
         };
         if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
           const updatedManuals = [aiCustomRequest, ...localRequests];
-          
+          localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
           setManualDesigns(updatedManuals);
         }
         
-        const localAdminNotifs = [];
+        const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+        localVendorNotifs.unshift({
+          _id: `notif_v_${Date.now()}`,
+          message: `New AI Design Request received: #${aiCustomRequest._id.slice(-6)}`,
+          type: 'info',
+          createdAt: new Date().toISOString(),
+          read: false
+        });
+        localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
+
+        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+        localAdminNotifs.unshift({
+          _id: `notif_a_${Date.now()}`,
+          message: `AI Design Accepted & Forwarded to Vendor: #${aiCustomRequest._id.slice(-6)}`,
+          type: 'info',
+          createdAt: new Date().toISOString(),
+          read: false
+        });
+        localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
         
       } catch (err) {
         console.error('Failed to forward AI request to vendor', err);
@@ -853,13 +871,13 @@ Thank you for shopping with Artisan Studio!
       createdAt: new Date().toISOString()
     };
 
-    const localRequests = [];
+    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
     const updated = [fallbackRequest, ...localRequests];
-    
+    localStorage.setItem('mockManualRequests', JSON.stringify(updated));
     setManualDesigns(updated);
 
     if (needDesigner === 'Yes') {
-      const localDesReqs = [];
+      const localDesReqs = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
       const desEntry = {
         _id: 'des_from_manual_' + Date.now(),
         userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
@@ -870,14 +888,29 @@ Thank you for shopping with Artisan Studio!
         roomType, style: manualStyle,
         createdAt: new Date().toISOString()
       };
-      
+      const updatedDes = [desEntry, ...localDesReqs];
+      localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDes));
     }
 
-    const localVendorNotifs = [];
-    
+    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
+    localVendorNotifs.unshift({
+      _id: `notif_v_${Date.now()}`,
+      message: `New Manual Design Request received: #${fallbackRequest._id.slice(-6)}`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
 
-    const localAdminNotifs = [];
-    
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localAdminNotifs.unshift({
+      _id: `notif_a_${Date.now()}`,
+      message: `Manual Design Request Submitted: #${fallbackRequest._id.slice(-6)}`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
 
     alert('✅ Manual Design Request Submitted Successfully! Vendors have been notified.');
     setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
@@ -901,11 +934,11 @@ Thank you for shopping with Artisan Studio!
       createdAt: new Date().toISOString()
     };
 
-    const localRequests = [];
+    const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
     const updatedDesigner = [fallbackRequest, ...localRequests];
-    
+    localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
 
-    const localManualRequests = [];
+    const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
     const manualRequestFromDesigner = {
       _id: 'man_from_des_' + fallbackRequest._id,
       requestType: 'Interior Designer Help',
@@ -928,10 +961,19 @@ Thank you for shopping with Artisan Studio!
       createdAt: fallbackRequest.createdAt
     };
     
+    const updatedManual = [manualRequestFromDesigner, ...localManualRequests];
+    localStorage.setItem('mockManualRequests', JSON.stringify(updatedManual));
     setManualDesigns([manualRequestFromDesigner, ...manualDesigns]);
 
-    const localAdminNotifs = [];
-    
+    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localAdminNotifs.unshift({
+      _id: `notif_a_${Date.now()}`,
+      message: `Interior Designer Request Submitted: #${fallbackRequest._id.slice(-6)}`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    });
+    localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
 
     alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
     setDesignerDetails(''); setDesignerBudget('');
