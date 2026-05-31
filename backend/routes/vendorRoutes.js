@@ -4,6 +4,12 @@ const {
   getVendorProfile, 
   getCustomRequests, 
   sendQuotation, 
+const express = require('express');
+const router = express.Router();
+const { 
+  getVendorProfile, 
+  getCustomRequests, 
+  sendQuotation, 
   suggestVendor, 
   forwardToManufacturer,
   acceptRequest,
@@ -11,7 +17,10 @@ const {
   getVerificationStatus,
   submitVerification,
   getStoreSetupStatus,
-  submitStoreSetup
+  submitStoreSetup,
+  updateOrderStatus,
+  dispatchOrder,
+  approveReturn
 } = require('../controllers/vendorController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -36,7 +45,10 @@ router.post('/store-setup', submitStoreSetup);
 
 // Vendor Orders route
 router.get('/orders', require('../controllers/vendorController').getVendorOrders);
+router.put('/orders/:id/status', updateOrderStatus);
+router.put('/orders/:id/dispatch', dispatchOrder);
+router.put('/orders/:id/return', approveReturn);
+
 router.get('/reviews', require('../controllers/vendorController').getVendorReviews);
 
 module.exports = router;
-

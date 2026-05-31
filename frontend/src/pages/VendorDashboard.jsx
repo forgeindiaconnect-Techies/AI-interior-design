@@ -429,15 +429,6 @@ const VendorDashboard = ({
         const ordersRes = await axios.get('/vendor/orders');
         if (ordersRes.data.success) localOrders = ordersRes.data.data;
       } catch (err) { console.warn('Backend orders fetch failed'); }
-      
-      const mockOrdersData = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-      const finalOrders = [...mockOrdersData];
-      localOrders.forEach(bo => {
-        if (!finalOrders.find(lo => lo._id === bo._id)) {
-          finalOrders.push(bo);
-        }
-      });
-      localOrders = finalOrders;
 
       if (localOrders.length > 0) {
         let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
@@ -485,135 +476,71 @@ const VendorDashboard = ({
   };
   // Ready-made Orders Action Handlers
   const triggerNotification = (recipient, message, type = 'info') => {
-    const notifObj = {
-      _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      message,
-      type,
-      createdAt: new Date().toISOString(),
-      read: false
-    };
-    
-    if (recipient === 'vendor') {
-      const existing = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-      localStorage.setItem('mockVendorNotifications', JSON.stringify([notifObj, ...existing]));
-    } else if (recipient === 'admin') {
-      const existing = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-      localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...existing]));
-    } else if (recipient === 'user') {
-      const existing = JSON.parse(localStorage.getItem('mockUserNotifications') || '[]');
-      localStorage.setItem('mockUserNotifications', JSON.stringify([notifObj, ...existing]));
-    } else if (recipient === 'delivery') {
-      // Mock delivery
-    }
+    // API based notifications should ideally be triggered by the backend controllers during the update process.
+    // The UI can rely on the backend to create them, so we no longer manually manipulate localStorage here.
   };
 
-  const handleOrderStatusUpdate = (orderId, newStatus) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id;
-    
-    const updated = localOrders.map(o => {
-      if (o._id === orderId) {
-        let updatedOrder = { ...o, orderStatus: newStatus };
-        
-        // Notification Triggers based on transition
-        if (newStatus === 'Processing') {
-          triggerNotification('user', `Vendor accepted your order #${orderId.slice(-6)}. It is now being processed.`, 'success');
-        } else if (newStatus === 'Pending Dispatch') {
-          triggerNotification('user', `Your order #${orderId.slice(-6)} has been packed and is ready for dispatch.`, 'info');
-        } else if (newStatus === 'Dispatched') {
-          triggerNotification('user', `Your order #${orderId.slice(-6)} has been dispatched.`, 'info');
-          triggerNotification('admin', `Vendor dispatched order #${orderId.slice(-6)}`, 'info');
-        } else if (newStatus === 'Out For Delivery') {
-          triggerNotification('user', `Your order #${orderId.slice(-6)} is out for delivery!`, 'success');
-        } else if (newStatus === 'Delivered') {
-          triggerNotification('user', `Your order #${orderId.slice(-6)} has been successfully delivered.`, 'success');
-          triggerNotification('admin', `Order #${orderId.slice(-6)} has been delivered.`, 'success');
-        } else if (newStatus === 'Completed') {
-          triggerNotification('user', `Thank you! Order #${orderId.slice(-6)} has been marked as Completed.`, 'success');
-          triggerNotification('admin', `Order #${orderId.slice(-6)} completed. Workflow closed.`, 'success');
-        } else if (newStatus === 'Cancelled') {
-          triggerNotification('user', `Order #${orderId.slice(-6)} has been cancelled.`, 'error');
-          triggerNotification('admin', `Order #${orderId.slice(-6)} was cancelled.`, 'error');
+  const handleOrderStatusUpdate = async (orderId, newStatus) => {
+    try {
+      const res = await axios.put(`/vendor/orders/${orderId}/status`, { status: newStatus });
+      if (res.data.success) {
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder(prev => ({ ...prev, orderStatus: newStatus }));
         }
-        
-        return updatedOrder;
+        await fetchPartnerData(); // Refresh the list from the backend
       }
-      return o;
-    });
-    
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
-    
-    if (selectedOrder && selectedOrder._id === orderId) {
-      setSelectedOrder(prev => ({ ...prev, orderStatus: newStatus }));
+    } catch (err) {
+      console.error('Failed to update order status', err);
+      alert('Error updating order status.');
     }
   };
 
-  const handleDispatchOrder = (orderId, partner, trackingId, installationReq) => {
-    if (!partner) {
-      alert('Please select a delivery partner.');
-      return;
-    }
-    if (!trackingId.trim()) {
-      alert('Please enter a tracking ID.');
+  const handleDispatchOrder = async (orderId, partner, trackingId, installationReq) => {
+    if (!partner || !trackingId.trim()) {
+      alert('Please select a delivery partner and enter a tracking ID.');
       return;
     }
     
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id;
-    
-    const updated = localOrders.map(o => {
-      if (o._id === orderId) {
-        triggerNotification('user', `Your order #${orderId.slice(-6)} has been dispatched via ${partner}. Tracking ID: ${trackingId}`, 'info');
-        triggerNotification('admin', `Vendor dispatched order #${orderId.slice(-6)} via ${partner}`, 'info');
-        triggerNotification('delivery', `New delivery assigned: order #${orderId.slice(-6)}`, 'warning');
-        
-        return {
-          ...o,
-          orderStatus: 'Dispatched',
-          deliveryPartnerId: { _id: 'del_mock_' + Date.now(), companyName: partner },
-          trackingId: trackingId,
-          installationRequired: installationReq
-        };
+    try {
+      const res = await axios.put(`/vendor/orders/${orderId}/dispatch`, { 
+        deliveryPartner: partner, 
+        trackingId, 
+        installationRequired: installationReq 
+      });
+      
+      if (res.data.success) {
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder(prev => ({
+            ...prev,
+            orderStatus: 'Dispatched',
+            deliveryPartnerId: { companyName: partner },
+            trackingId,
+            installationRequired: installationReq
+          }));
+        }
+        await fetchPartnerData();
+        alert('✅ Order marked as Dispatched. Delivery partner assigned.');
       }
-      return o;
-    });
-    
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
-    
-    if (selectedOrder && selectedOrder._id === orderId) {
-      setSelectedOrder(prev => ({
-        ...prev,
-        orderStatus: 'Dispatched',
-        deliveryPartnerId: { companyName: partner },
-        trackingId: trackingId,
-        installationRequired: installationReq
-      }));
+    } catch (err) {
+      console.error('Failed to dispatch order', err);
+      alert('Error dispatching order.');
     }
-    alert('✅ Order marked as Dispatched. Delivery partner assigned.');
   };
 
-  const handleApproveReturn = (orderId) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const currentVendorId = profile?._id;
-    
-    const updated = localOrders.map(o => {
-      if (o._id === orderId) {
-        triggerNotification('user', `Your return request for order #${orderId.slice(-6)} has been approved. Refund initiated.`, 'success');
-        triggerNotification('admin', `Return approved by vendor for order #${orderId.slice(-6)}`, 'success');
-        return { ...o, orderStatus: 'Cancelled', returnStatus: 'Approved', hasReturnRequest: false };
+  const handleApproveReturn = async (orderId) => {
+    try {
+      const res = await axios.put(`/vendor/orders/${orderId}/return`);
+      if (res.data.success) {
+        if (selectedOrder && selectedOrder._id === orderId) {
+          setSelectedOrder(prev => ({ ...prev, orderStatus: 'Cancelled', returnStatus: 'Approved', hasReturnRequest: false }));
+        }
+        await fetchPartnerData();
+        alert('Return request approved. Status set to Cancelled.');
       }
-      return o;
-    });
-    
-    localStorage.setItem('mockOrders', JSON.stringify(updated));
-    setReadyMadeOrders(updated.filter(o => o.orderType === 'Marketplace Product' && (o.vendorId?._id === currentVendorId || o.vendorId === currentVendorId)));
-    
-    if (selectedOrder && selectedOrder._id === orderId) {
-      setSelectedOrder(prev => ({ ...prev, orderStatus: 'Cancelled', returnStatus: 'Approved', hasReturnRequest: false }));
+    } catch (err) {
+      console.error('Failed to approve return', err);
+      alert('Error approving return.');
     }
-    alert('Return request approved. Status set to Cancelled.');
   };
 
   const handleRejectReturn = (orderId) => {

@@ -89,23 +89,8 @@ exports.getVendorProfile = async (req, res) => {
 // @access  Private (Vendor)
 exports.getCustomRequests = async (req, res) => {
   try {
-    let requests = [];
-    if (!global.MOCK_DB && mongoose.connection.readyState === 1) {
-      try {
-        requests = await ManualDesignRequest.find({}).populate('userId', 'name email phone').sort('-createdAt').lean();
-      } catch (err) {
-        console.error('DB fetch failed in getCustomRequests:', err);
-      }
-    }
-
-    const merged = [...mockManualDesigns];
-    requests.forEach(r => {
-      if (!merged.some(m => m._id.toString() === r._id.toString())) {
-        merged.push(r);
-      }
-    });
-
-    res.status(200).json({ success: true, data: merged });
+    const requests = await ManualDesignRequest.find({}).populate('userId', 'name email phone').sort('-createdAt').lean();
+    res.status(200).json({ success: true, data: requests });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -386,3 +371,61 @@ exports.getVendorReviews = async (req, res) => {
 };
 
 
+// @desc    Update order status
+// @route   PUT /api/vendor/orders/:id/status
+// @access  Private (Vendor)
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const order = await Order.findByIdAndUpdate(req.params.id, { orderStatus: status }, { new: true });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    
+    // Notifications logic is simplified here; full logic can be enhanced if needed
+    await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} status updated to ${status}.` });
+    
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Dispatch order
+// @route   PUT /api/vendor/orders/:id/dispatch
+// @access  Private (Vendor)
+exports.dispatchOrder = async (req, res) => {
+  try {
+    const { deliveryPartner, trackingId, installationRequired } = req.body;
+    const order = await Order.findByIdAndUpdate(req.params.id, { 
+      orderStatus: 'Dispatched',
+      trackingId,
+      installationRequired
+    }, { new: true });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    
+    await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} has been dispatched.` });
+    
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Approve return
+// @route   PUT /api/vendor/orders/:id/return
+// @access  Private (Vendor)
+exports.approveReturn = async (req, res) => {
+  try {
+    const order = await Order.findByIdAndUpdate(req.params.id, { 
+      orderStatus: 'Cancelled',
+      returnStatus: 'Approved',
+      hasReturnRequest: false
+    }, { new: true });
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+    
+    await Notification.create({ userId: order.userId, message: `Your return request for order #${order._id.toString().slice(-6)} has been approved.` });
+    
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

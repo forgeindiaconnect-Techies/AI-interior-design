@@ -666,73 +666,38 @@ const UserDashboard = ({
           }
         }
       ];
-      const variantIndex = updated.filter(d => d._id.startsWith('ai_reg_')).length % regenerateVariants.length;
-      const variant = regenerateVariants[variantIndex];
-      const regeneratedDesign = {
-        _id: 'ai_reg_' + Date.now(),
-        userId: user?._id || 'u_local',
-        roomType: updatedDesign?.roomType || 'Living Room',
-        originalImage: updatedDesign?.originalImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800',
-        generatedImage: variant.generatedImage,
-        aiSuggestion: variant.aiSuggestion,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-      };
-      const withRegen = [regeneratedDesign, ...updated];
-      setAiDesigns(withRegen);
-      localStorage.setItem('aiDesigns', JSON.stringify(withRegen));
-      alert('✨ AI Design regenerated with new style! Check the new design above.');
+      try {
+        const res = await axios.put(`/designs/ai/${id}`, { status: 'regenerated' });
+        if (res.data.success) {
+          setAiDesigns(aiDesigns.map(d => d._id === id ? res.data.data : d));
+          alert('✨ AI Design regenerated with new style! Check the new design above.');
+        }
+      } catch (err) {
+        console.error('Failed to regenerate AI design', err);
+        alert('Error regenerating design.');
+      }
     }
 
     if (status === 'accepted') {
       try {
-        const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-        const aiCustomRequest = {
-          _id: 'man_from_ai_' + updatedDesign._id,
+        await axios.put(`/designs/ai/${id}`, { status: 'accepted' });
+        
+        const payload = {
           requestType: 'AI Generated',
-          userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
           roomType: updatedDesign.roomType || 'Living Room',
           style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
           budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
           size: 'Standard',
           timeline: 'Flexible',
           ownMaterialsAvailable: 'No',
-          materialDetails: '',
-          materialQuantity: '',
-          materialPickupNeeded: 'No',
-          pickupAddress: '',
-          materialImages: [],
           requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
           referenceImages: [updatedDesign.generatedImage],
-          status: 'Submitted',
-          assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
-          createdAt: new Date().toISOString()
         };
-        if (!localRequests.find(r => r._id === aiCustomRequest._id)) {
-          const updatedManuals = [aiCustomRequest, ...localRequests];
-          localStorage.setItem('mockManualRequests', JSON.stringify(updatedManuals));
-          setManualDesigns(updatedManuals);
-        }
         
-        const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-        localVendorNotifs.unshift({
-          _id: `notif_v_${Date.now()}`,
-          message: `New AI Design Request received: #${aiCustomRequest._id.slice(-6)}`,
-          type: 'info',
-          createdAt: new Date().toISOString(),
-          read: false
-        });
-        localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
-
-        const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-        localAdminNotifs.unshift({
-          _id: `notif_a_${Date.now()}`,
-          message: `AI Design Accepted & Forwarded to Vendor: #${aiCustomRequest._id.slice(-6)}`,
-          type: 'info',
-          createdAt: new Date().toISOString(),
-          read: false
-        });
-        localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
+        const res = await axios.post('/designs/manual', payload);
+        if (res.data.success) {
+          setManualDesigns([res.data.data, ...manualDesigns]);
+        }
         
       } catch (err) {
         console.error('Failed to forward AI request to vendor', err);
@@ -741,6 +706,11 @@ const UserDashboard = ({
     }
     
     if (status === 'rejected') {
+      try {
+        await axios.put(`/designs/ai/${id}`, { status: 'rejected' });
+      } catch (err) {
+        console.error(err);
+      }
       alert('AI Design rejected. You can now submit a manual design request.');
       if (setActiveTab) setActiveTab('manual');
     }
@@ -851,180 +821,105 @@ Thank you for shopping with Artisan Studio!
     setManualSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 500));
 
-    const fallbackRequest = {
-      _id: 'man_local_' + Date.now(),
-      requestType: 'Manual Design',
-      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      roomType, style: manualStyle, budget: manualBudget, size: manualSize,
-      materials: manualMaterials, requirements: manualRequirements,
-      referenceImages,
-      ownMaterialsAvailable: ownMaterials,
-      materialDetails: ownMaterials === 'Yes' ? materialDetails : '',
-      materialQuantity: ownMaterials === 'Yes' ? materialQuantity : '',
-      materialImages: ownMaterials === 'Yes' ? materialImages : [],
-      pickupAddress: ownMaterials === 'Yes' ? pickupAddress : '',
-      materialPickupNeeded: ownMaterials === 'Yes' ? pickupNeeded : 'No',
-      timeline, needDesignerHelp: needDesigner,
-      serviceAddress, vendorPreference: vendorPref, quotationType,
-      status: 'Submitted',
-      assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
-      createdAt: new Date().toISOString()
-    };
-
-    const localRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-    const updated = [fallbackRequest, ...localRequests];
-    localStorage.setItem('mockManualRequests', JSON.stringify(updated));
-    setManualDesigns(updated);
-
-    if (needDesigner === 'Yes') {
-      const localDesReqs = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
-      const desEntry = {
-        _id: 'des_from_manual_' + Date.now(),
-        userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-        details: manualRequirements || '',
-        budget: Number(String(manualBudget).replace(/[^0-9]/g, '')) || 0,
-        status: 'pending',
-        assignedDesignerId: null,
-        roomType, style: manualStyle,
-        createdAt: new Date().toISOString()
+    try {
+      const payload = {
+        requestType: 'Manual Design',
+        roomType, style: manualStyle, budget: manualBudget, size: manualSize,
+        materials: manualMaterials, requirements: manualRequirements,
+        referenceImages,
+        ownMaterialsAvailable: ownMaterials,
+        materialDetails: ownMaterials === 'Yes' ? materialDetails : '',
+        materialQuantity: ownMaterials === 'Yes' ? materialQuantity : '',
+        materialImages: ownMaterials === 'Yes' ? materialImages : [],
+        pickupAddress: ownMaterials === 'Yes' ? pickupAddress : '',
+        materialPickupNeeded: ownMaterials === 'Yes' ? pickupNeeded : 'No',
+        timeline, needDesignerHelp: needDesigner,
+        serviceAddress, vendorPreference: vendorPref, quotationType,
       };
-      const updatedDes = [desEntry, ...localDesReqs];
-      localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDes));
+
+      const res = await axios.post('/designs/manual', payload);
+      
+      if (res.data.success) {
+        setManualDesigns([res.data.data, ...manualDesigns]);
+
+        if (needDesigner === 'Yes') {
+          await axios.post('/designs/designer', {
+            details: manualRequirements || '',
+            budget: Number(String(manualBudget).replace(/[^0-9]/g, '')) || 0,
+            roomType, style: manualStyle
+          });
+        }
+
+        alert('✅ Manual Design Request Submitted Successfully! Vendors have been notified.');
+        setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
+        setOwnMaterials('No'); setMaterialDetails(''); setMaterialQuantity(''); setMaterialImages([]); setPickupAddress('');
+        setPickupNeeded('No'); setTimeline('Flexible'); setNeedDesigner('No');
+        setServiceAddress(''); setVendorPref('Any Vendor'); setQuotationType('Fixed Budget');
+      }
+    } catch (err) {
+      console.error('Failed to submit manual design', err);
+      alert('Error submitting request. Please try again.');
+    } finally {
+      setManualSubmitting(false);
     }
-
-    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localVendorNotifs.unshift({
-      _id: `notif_v_${Date.now()}`,
-      message: `New Manual Design Request received: #${fallbackRequest._id.slice(-6)}`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
-
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localAdminNotifs.unshift({
-      _id: `notif_a_${Date.now()}`,
-      message: `Manual Design Request Submitted: #${fallbackRequest._id.slice(-6)}`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
-
-    alert('✅ Manual Design Request Submitted Successfully! Vendors have been notified.');
-    setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
-    setOwnMaterials('No'); setMaterialDetails(''); setMaterialQuantity(''); setMaterialImages([]); setPickupAddress('');
-    setPickupNeeded('No'); setTimeline('Flexible'); setNeedDesigner('No');
-    setServiceAddress(''); setVendorPref('Any Vendor'); setQuotationType('Fixed Budget');
-    setManualSubmitting(false);
   };
 
   // Designer Request Actions
   const handleDesignerSubmit = async (e) => {
     e.preventDefault();
     const budgetNum = Number(designerBudget);
-    const fallbackRequest = {
-      _id: 'des_req_local_' + Date.now(),
-      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      details: designerDetails,
-      budget: budgetNum,
-      status: 'pending',
-      assignedDesignerId: null,
-      createdAt: new Date().toISOString()
-    };
-
-    const localRequests = JSON.parse(localStorage.getItem('mockDesignerRequests') || '[]');
-    const updatedDesigner = [fallbackRequest, ...localRequests];
-    localStorage.setItem('mockDesignerRequests', JSON.stringify(updatedDesigner));
-
-    const localManualRequests = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-    const manualRequestFromDesigner = {
-      _id: 'man_from_des_' + fallbackRequest._id,
-      requestType: 'Interior Designer Help',
-      userId: fallbackRequest.userId,
-      roomType: 'Interior Design',
-      style: 'Consultation',
-      budget: fallbackRequest.budget ? `₹${fallbackRequest.budget}` : '500',
-      size: 'Full Space',
-      timeline: 'Flexible',
-      ownMaterialsAvailable: 'No',
-      materialDetails: '',
-      materialQuantity: '',
-      materialPickupNeeded: 'No',
-      pickupAddress: '',
-      materialImages: [],
-      requirements: fallbackRequest.details || '',
-      referenceImages: [],
-      status: 'Pending',
-      assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
-      createdAt: fallbackRequest.createdAt
-    };
     
-    const updatedManual = [manualRequestFromDesigner, ...localManualRequests];
-    localStorage.setItem('mockManualRequests', JSON.stringify(updatedManual));
-    setManualDesigns([manualRequestFromDesigner, ...manualDesigns]);
-
-    const localAdminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-    localAdminNotifs.unshift({
-      _id: `notif_a_${Date.now()}`,
-      message: `Interior Designer Request Submitted: #${fallbackRequest._id.slice(-6)}`,
-      type: 'info',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockAdminNotifications', JSON.stringify(localAdminNotifs));
-
-    alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
-    setDesignerDetails(''); setDesignerBudget('');
+    try {
+      const res = await axios.post('/designs/designer', {
+        details: designerDetails,
+        budget: budgetNum
+      });
+      
+      if (res.data.success) {
+        alert('✅ Interior Designer Request Submitted Successfully! Admin has been notified.');
+        setDesignerDetails(''); setDesignerBudget('');
+      }
+    } catch (err) {
+      console.error('Failed to submit designer request', err);
+      alert('Error submitting request. Please try again.');
+    }
   };
 
   // Marketplace Order Action
   const handleProductOrder = async (product) => {
-    const newOrder = {
-      _id: 'ord_p_' + Date.now(),
-      orderType: 'Marketplace Product',
-      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: product.vendorId || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-      manufacturerId: null,
-      deliveryPartnerId: null,
-      installationPartnerId: null,
-      totalAmount: product.price,
-      paymentStatus: 'paid',
-      orderStatus: 'Pending Confirmation',
-      expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
-      createdAt: new Date().toISOString(),
-      shippingAddress: user?.address || '123 Default User St',
-      productDetails: {
-        _id: product._id,
-        title: product.title,
-        price: product.price,
-        images: product.images
-      }
-    };
-    const localOrders = [];
-    const updated = [newOrder, ...localOrders];
-    
-    setOrders(updated);
-
-    // Trigger Notifications
-    const triggerNotif = (recipient, message) => {
-      const notifObj = {
-        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        message,
-        type: 'success',
-        createdAt: new Date().toISOString(),
-        read: false
+    try {
+      const payload = {
+        orderItems: [{
+          product: product._id,
+          name: product.title,
+          qty: 1,
+          price: product.price,
+          image: product.images[0]
+        }],
+        shippingAddress: {
+          address: user?.address || '123 Default St',
+          city: 'Metropolis',
+          postalCode: '10001',
+          country: 'USA'
+        },
+        paymentMethod: 'Credit Card',
+        itemsPrice: product.price,
+        taxPrice: 0,
+        shippingPrice: 0,
+        totalPrice: product.price,
       };
-      const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
       
-    };
-    triggerNotif('vendor', `New marketplace order received for $${product.price}`);
-    triggerNotif('admin', `New marketplace purchase placed: Order #${newOrder._id.slice(-6)}`);
-
-    alert('✅ Order placed successfully! (Mock Order Placed)');
-    if (setActiveTab) setActiveTab('orders');
+      const res = await axios.post('/marketplace-orders', payload);
+      
+      if (res.data.success) {
+        setOrders([res.data.data, ...orders]);
+        alert('✅ Order placed successfully!');
+        if (setActiveTab) setActiveTab('orders');
+      }
+    } catch (err) {
+      console.error('Failed to submit product order', err);
+      alert('Error placing order. Please try again.');
+    }
   };
 
   // Open Quotation Payment Modal

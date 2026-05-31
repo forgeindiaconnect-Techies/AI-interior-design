@@ -385,71 +385,15 @@ const AdminDashboard = ({
     setDesignerRequestSearch(searchQuery);
   }, [searchQuery]);
 
-  const syncLocalDataToAdminState = () => {
-    setManagementData(prev => {
-      if (!prev) return prev;
-      
-      const getArray = (key) => {
-        try {
-          const val = localStorage.getItem(key);
-          if (!val) return [];
-          const parsed = JSON.parse(val);
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (_) {
-          return [];
-        }
-      };
-      
-      const localManual = getArray('mockManualRequests');
-      const mergedManual = [...localManual];
-      (prev.manualDesigns || []).forEach(br => {
-        if (!mergedManual.find(lr => lr._id === br._id)) mergedManual.push(br);
-      });
-
-      const localOrders = getArray('mockOrders');
-      const mergedOrders = [...localOrders];
-      (prev.orders || []).forEach(bo => {
-        if (!mergedOrders.find(lo => lo._id === bo._id)) mergedOrders.push(bo);
-      });
-
-      const localAi = getArray('mockAiDesigns');
-      const mergedAi = [...localAi];
-      (prev.aiDesigns || []).forEach(bd => {
-        if (!mergedAi.find(ld => ld._id === bd._id)) mergedAi.push(bd);
-      });
-
-      const localDesigner = getArray('mockDesignerRequests');
-      const mergedDesigner = [...localDesigner];
-      (prev.designerRequests || []).forEach(br => {
-        if (!mergedDesigner.find(lr => lr._id === br._id)) mergedDesigner.push(br);
-      });
-
-      return {
-        ...prev,
-        manualDesigns: mergedManual,
-        orders: mergedOrders,
-        aiDesigns: mergedAi,
-        designerRequests: mergedDesigner
-      };
-    });
-  };
-
   useEffect(() => {
     fetchAdminData();
     loadContactMessages();
     const interval = setInterval(loadContactMessages, 5000);
-
-    window.addEventListener('storage', syncLocalDataToAdminState);
-    window.addEventListener('focus', syncLocalDataToAdminState);
-    window.addEventListener('mockOrdersUpdated', syncLocalDataToAdminState);
-    const syncInterval = setInterval(syncLocalDataToAdminState, 3000);
+    const dataInterval = setInterval(fetchAdminData, 10000); // periodically refresh data from backend instead of localstorage
 
     return () => {
       clearInterval(interval);
-      clearInterval(syncInterval);
-      window.removeEventListener('storage', syncLocalDataToAdminState);
-      window.removeEventListener('focus', syncLocalDataToAdminState);
-      window.removeEventListener('mockOrdersUpdated', syncLocalDataToAdminState);
+      clearInterval(dataInterval);
     };
   }, []);
 

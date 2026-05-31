@@ -135,18 +135,6 @@ exports.updateAIDesignStatus = async (req, res) => {
 // @access  Private
 exports.createManualDesign = async (req, res) => {
   try {
-    if (req.user?.id?.startsWith('mock_user_id') || global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const newMan = { 
-        _id: 'man_' + Date.now(), 
-        userId: { name: req.user?.name || 'Customer Demo', email: req.user?.email || 'user@example.com', phone: '+1 (555) 019-2834' },
-        ...req.body, 
-        status: 'Submitted',
-        createdAt: new Date().toISOString()
-      };
-      mockManualDesigns.unshift(newMan);
-      return res.status(201).json({ success: true, data: newMan });
-    }
-
     const manualDesign = await ManualDesignRequest.create({ userId: req.user.id, requestType: req.body.requestType || 'Manual Design', ...req.body, status: 'Submitted' });
     
     // Notify Admin
@@ -173,23 +161,8 @@ exports.createManualDesign = async (req, res) => {
 // @access  Private
 exports.getUserManualDesigns = async (req, res) => {
   try {
-    let designs = [];
-    if (!req.user?.id?.startsWith('mock_user_id') && !global.MOCK_DB && mongoose.connection.readyState === 1) {
-      try {
-        designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').sort('-createdAt').lean();
-      } catch (err) {
-        console.error('DB fetch failed in getUserManualDesigns:', err);
-      }
-    }
-
-    const merged = [...mockManualDesigns];
-    designs.forEach(d => {
-      if (!merged.some(m => m._id.toString() === d._id.toString())) {
-        merged.push(d);
-      }
-    });
-
-    res.status(200).json({ success: true, data: merged });
+    const designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').sort('-createdAt').lean();
+    res.status(200).json({ success: true, data: designs });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
