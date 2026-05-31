@@ -398,9 +398,6 @@ const AdminDashboard = ({
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'custom_design_requests' || activeTab === 'manual_designs' || activeTab === 'orders' || activeTab === 'ai_designs' || activeTab === 'designer_requests') {
-      syncLocalDataToAdminState();
-    }
     // Live-refresh verification submissions from localStorage when admin is on verifications tab
     if (activeTab === 'verifications') {
       const loadVerifFromStorage = () => {
@@ -2008,7 +2005,7 @@ const AdminDashboard = ({
     alert('✅ Vendor assigned successfully!');
     setAssignVendorManualDesign(null);
     setSelectedManualDesignVendorId('');
-    syncLocalDataToAdminState();
+
   };
 
   const handleAssignManualDesignDesignerSubmit = async (e) => {
@@ -2044,7 +2041,7 @@ const AdminDashboard = ({
     alert('🎨 Interior Designer assigned successfully!');
     setAssignDesignerManualDesign(null);
     setSelectedManualDesignDesignerId('');
-    syncLocalDataToAdminState();
+
   };
 
   const handleApproveManualDesign = async (id) => {
@@ -2053,7 +2050,7 @@ const AdminDashboard = ({
     } catch (_) { /* offline fallback */ }
     updateManualDesignInStorage(id, { status: 'Under Review' });
     alert('🎉 Manual request approved and under review!');
-    syncLocalDataToAdminState();
+
   };
 
   const handleRejectManualDesign = async (id) => {
@@ -2062,7 +2059,7 @@ const AdminDashboard = ({
     } catch (_) { /* offline fallback */ }
     updateManualDesignInStorage(id, { status: 'Rejected' });
     alert('❌ Manual request rejected/reset.');
-    syncLocalDataToAdminState();
+
   };
 
   const handleAdminUpdateStatus = async (id, status) => {
@@ -2105,7 +2102,7 @@ const AdminDashboard = ({
       if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(null);
       if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(null);
 
-      syncLocalDataToAdminState();
+  
       return;
     }
 
@@ -2158,7 +2155,7 @@ const AdminDashboard = ({
       setSelectedDesignerRequest(prev => prev ? { ...prev, status } : null);
     }
 
-    syncLocalDataToAdminState();
+
   };
 
   const handleUpdateManualDesignStatus = async (id, status) => {
@@ -2187,7 +2184,7 @@ const AdminDashboard = ({
     alert('🎨 Interior Designer assigned successfully to consultation request!');
     setAssignDesignerRequestObj(null);
     setSelectedRequestDesignerId('');
-    syncLocalDataToAdminState();
+
   };
 
   const handleUpdateDesignerRequestStatus = async (id, status) => {
