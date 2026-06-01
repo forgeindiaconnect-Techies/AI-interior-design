@@ -22,6 +22,8 @@ const AdminDashboard = ({
   const [stats, setStats] = useState(null);
   const [managementData, setManagementData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [adminTrackingData, setAdminTrackingData] = useState({});
+  const [expandedTrackingOrder, setExpandedTrackingOrder] = useState(null);
 
   // System Notification State
   const [broadcastMessage, setBroadcastMessage] = useState('');
@@ -435,6 +437,17 @@ const AdminDashboard = ({
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'delivery' && managementData?.orders) {
+      const trackingStatuses = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+      const needsFetch = managementData.orders
+        .filter(o => trackingStatuses.includes(o.orderStatus))
+        .filter(o => !adminTrackingData[o._id])
+        .map(o => o._id);
+      needsFetch.forEach(id => fetchOrderTrackingAdmin(id));
+    }
+  }, [activeTab, managementData]);
+
   const handleDeleteReview = async (id) => {
     if (!window.confirm('Are you sure you want to delete this review?')) return;
     try {
@@ -845,6 +858,17 @@ const AdminDashboard = ({
       console.error('Error fetching admin data', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrderTrackingAdmin = async (orderId) => {
+    try {
+      const res = await axios.get(`/orders/tracking/${orderId}`);
+      if (res.data?.success) {
+        setAdminTrackingData(prev => ({ ...prev, [orderId]: res.data.data }));
+      }
+    } catch (err) {
+      // silently ignore — order may not have tracking yet
     }
   };
 
@@ -3436,11 +3460,17 @@ const AdminDashboard = ({
               return (
                 <div className="space-y-4">
                   {trackingOrders.map(order => {
+                    const tr = adminTrackingData[order._id];
+                    const stagesList = tr?.stages || [];
+                    const progressImages = tr?.tracking?.progressImages || tr?.progressImages || [];
+                    const delDetails = tr?.tracking?.deliveryDetails || {};
+                    const installDetails = tr?.tracking?.installationDetails || {};
                     const currentIdx = trackingStages.indexOf(order.orderStatus);
+                    const isExpanded = expandedTrackingOrder === order._id;
                     return (
                       <div key={order._id} className="border border-gray-100 rounded-2xl p-4 space-y-3 hover:shadow-sm transition-shadow">
                         <div className="flex justify-between items-center">
-                          <div>
+                          <div className="flex-1 cursor-pointer" onClick={() => setExpandedTrackingOrder(isExpanded ? null : order._id)}>
                             <p className="font-bold text-sm text-[#1F2937]">{order.designDetails || 'Order'} <span className="text-gray-400 font-mono text-xs">#{order._id?.slice(-6)}</span></p>
                             <p className="text-xs text-gray-400">Customer: {order.userId?.name || order.customerName || 'N/A'} • ${order.quotationAmount || order.totalAmount || '0'}</p>
                           </div>
@@ -3459,8 +3489,70 @@ const AdminDashboard = ({
                         </div>
                         <div className="flex items-center gap-4 text-xs text-gray-500">
                           <span className="font-bold">Progress: {currentIdx + 1}/{trackingStages.length}</span>
-                          {order.expectedDeliveryDate && <span>Expected: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>}
+                          {tr?.tracking?.expectedDeliveryDate && <span>Expected: {new Date(tr.tracking.expectedDeliveryDate).toLocaleDateString()}</span>}
                         </div>
+
+                        {isExpanded && tr && (
+                          <div className="border-t border-gray-100 pt-4 space-y-4">
+                            {/* Timeline with timestamps */}
+                            <div className="space-y-3">
+                              <h4 className="font-bold text-xs text-[#1F2937] uppercase tracking-wider">Stage History</h4>
+                              {stagesList.length > 0 ? (
+                                <div className="space-y-2">
+                                  {stagesList.map((st, i) => (
+                                    <div key={i} className="flex items-center gap-3 text-xs">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-[#2A9D8F] flex-shrink-0"></div>
+                                      <span className="font-bold text-[#1F2937]">{st.status}</span>
+                                      <span className="text-gray-400">{new Date(st.timestamp).toLocaleString()}</span>
+                                      {st.updatedBy && <span className="text-gray-400">by {st.updatedBy}</span>}
+                                      {st.note && <span className="text-gray-500 italic">— {st.note}</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-xs text-gray-400">No stages recorded yet.</p>
+                              )}
+                            </div>
+
+                            {/* Progress Images */}
+                            {progressImages.length > 0 && (
+                              <div>
+                                <h4 className="font-bold text-xs text-[#1F2937] uppercase tracking-wider mb-2">Progress Photos</h4>
+                                <div className="flex gap-2 overflow-x-auto pb-2">
+                                  {progressImages.map((url, i) => (
+                                    <img key={i} src={url} alt={`Progress ${i+1}`} className="w-20 h-20 object-cover rounded-lg border border-gray-200" />
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Delivery Details */}
+                            {delDetails?.partner && (
+                              <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-200 space-y-1">
+                                <h4 className="font-bold text-xs text-blue-800">Delivery Details</h4>
+                                <p className="text-xs text-gray-600">Partner: <strong>{delDetails.partner}</strong></p>
+                                {delDetails.trackingId && <p className="text-xs text-gray-600">Tracking: <strong>{delDetails.trackingId}</strong></p>}
+                                {delDetails.notes && <p className="text-xs text-gray-600">{delDetails.notes}</p>}
+                              </div>
+                            )}
+
+                            {/* Installation Details */}
+                            {installDetails?.partner && (
+                              <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-200 space-y-1">
+                                <h4 className="font-bold text-xs text-purple-800">Installation Details</h4>
+                                <p className="text-xs text-gray-600">Partner: <strong>{installDetails.partner}</strong></p>
+                                {installDetails.scheduledDate && <p className="text-xs text-gray-600">Scheduled: <strong>{new Date(installDetails.scheduledDate).toLocaleDateString()}</strong></p>}
+                                {installDetails.notes && <p className="text-xs text-gray-600">{installDetails.notes}</p>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {isExpanded && !tr && (
+                          <div className="border-t border-gray-100 pt-4">
+                            <p className="text-xs text-gray-400">Loading tracking details...</p>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

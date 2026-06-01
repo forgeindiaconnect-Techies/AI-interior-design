@@ -318,11 +318,6 @@ exports.updateOrderTracking = async (req, res) => {
     const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    if (status) {
-      order.orderStatus = status;
-      await order.save();
-    }
-
     let tracking = await OrderTracking.findOne({ orderId });
     if (!tracking) {
       const user = await User.findById(order.userId).select('name');
@@ -336,6 +331,8 @@ exports.updateOrderTracking = async (req, res) => {
         amount: order.totalAmount || order.quotationAmount || 0,
         paymentMethod: 'UPI',
         transactionId: 'TXN' + Date.now(),
+        paymentDate: new Date(),
+        paymentStatus: 'Completed',
         orderStatus: status || order.orderStatus,
         stages: []
       });
@@ -344,6 +341,29 @@ exports.updateOrderTracking = async (req, res) => {
     const role = req.user.role === 'vendor' ? 'vendor' : req.user.role === 'admin' ? 'admin' : 'system';
 
     if (status) {
+      const newIdx = getStageIndex(status);
+      if (newIdx === -1) {
+        return res.status(400).json({ success: false, message: `Invalid tracking status "${status}"` });
+      }
+
+      const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
+      if (lastStage) {
+        const currentIdx = getStageIndex(lastStage);
+        if (newIdx <= currentIdx) {
+          return res.status(400).json({ success: false, message: `Cannot move to "${status}" — already at or past this stage` });
+        }
+        if (newIdx !== currentIdx + 1) {
+          return res.status(400).json({ success: false, message: `Cannot skip from "${lastStage}" to "${status}". Must go through "${TRACKING_STAGE_SEQUENCE[currentIdx + 1]}" first` });
+        }
+      } else {
+        if (newIdx !== 0) {
+          return res.status(400).json({ success: false, message: `First tracking stage must be "Payment Verified", not "${status}"` });
+        }
+      }
+
+      order.orderStatus = status;
+      await order.save();
+
       tracking.stages.push({ status, timestamp: new Date(), updatedBy: role, note: note || '' });
       tracking.orderStatus = status;
     }
@@ -384,6 +404,19 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
+// Valid 7-stage sequence for tracking workflow
+const TRACKING_STAGE_SEQUENCE = [
+  'Payment Verified',
+  'Production Started',
+  'Manufacturing',
+  'Ready for Delivery',
+  'Delivered',
+  'Installation Scheduled',
+  'Installation Completed'
+];
+
+const getStageIndex = (status) => TRACKING_STAGE_SEQUENCE.indexOf(status);
+
 // @desc    Get unified order tracking — returns Order + OrderTracking together
 // @route   GET /api/orders/tracking/:orderId
 // @access  Private
@@ -396,16 +429,28 @@ exports.getOrderTracking = async (req, res) => {
       .populate('vendorId', 'companyName');
     if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
 
-    const tracking = await OrderTracking.findOne({ orderId });
-    if (!tracking) return res.status(404).json({ success: false, message: 'Order tracking not found' });
+    let tracking = await OrderTracking.findOne({ orderId });
+    if (!tracking) {
+      tracking = {
+        orderId,
+        userId: order.userId,
+        vendorId: order.vendorId,
+        orderStatus: order.orderStatus,
+        stages: [],
+        progressImages: [],
+        deliveryDetails: null,
+        installationDetails: null,
+        expectedDeliveryDate: null
+      };
+    }
 
     res.status(200).json({
       success: true,
       data: {
         order,
         tracking,
-        stages: tracking.stages,
-        progressImages: tracking.progressImages
+        stages: tracking.stages || [],
+        progressImages: tracking.progressImages || []
       }
     });
   } catch (error) {

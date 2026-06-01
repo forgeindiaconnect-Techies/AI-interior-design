@@ -2772,8 +2772,8 @@ Thank you for shopping with Artisan Studio!
         const trackableOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product');
         const activeOrder = orders.find(o => o._id === trackingId) || trackableOrders[0];
         const activeTracking = trackingData[activeOrder?._id] || {};
-        const orderTracking = activeTracking.orderTracking || {};
-        const trackingStages = orderTracking.stages || [];
+        const orderTracking = activeTracking.tracking || {};
+        const trackingStages = orderTracking.stages || activeTracking.stages || [];
 
         if (!activeOrder) {
           return (
@@ -2788,7 +2788,7 @@ Thank you for shopping with Artisan Studio!
 
         const status = activeOrder.orderStatus || 'Pending';
         const expectedDate = orderTracking.expectedDeliveryDate ? new Date(orderTracking.expectedDeliveryDate).toLocaleDateString() : (activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase');
-        const progressImages = orderTracking.progressImages || activeOrder.progressImages || [];
+        const progressImages = orderTracking.progressImages || activeTracking.progressImages || activeOrder.progressImages || [];
         const delDetails = orderTracking.deliveryDetails || {};
         const installDetails = orderTracking.installationDetails || {};
         
@@ -2945,9 +2945,15 @@ Thank you for shopping with Artisan Studio!
                           <p className={`font-bold text-xs ${isPassed ? 'text-[#1F2937]' : 'text-gray-400'}`}>
                             {stage.label}
                           </p>
-                          <p className="text-[10px] text-gray-400 font-medium">
-                            {isCurrent ? 'Current Stage' : (isPassed ? 'Completed' : 'Pending')}
-                          </p>
+                          {stage.timestamp ? (
+                            <p className="text-[10px] text-gray-400 font-medium">
+                              {new Date(stage.timestamp).toLocaleDateString() + ' ' + new Date(stage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-gray-400 font-medium">
+                              {isCurrent ? 'Current Stage' : (isPassed ? 'Completed' : 'Pending')}
+                            </p>
+                          )}
                         </div>
                       </div>
                     );

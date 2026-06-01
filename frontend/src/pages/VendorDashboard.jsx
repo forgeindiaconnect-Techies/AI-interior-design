@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
 import axios from 'axios';
 import { 
   Store, Hammer, Truck, CheckCircle, PlusCircle, DollarSign, UploadCloud, 
@@ -17,6 +18,7 @@ const VendorDashboard = ({
   searchQuery = ''
 }) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
 
@@ -77,6 +79,7 @@ const VendorDashboard = ({
   const [progressImg, setProgressImg] = useState({});
   const [pendingVerificationOrders, setPendingVerificationOrders] = useState([]);
   const [verificationProcessing, setVerificationProcessing] = useState({});
+  const [trackingProcessing, setTrackingProcessing] = useState({});
 
   // Delivery State
   const [deliveryOrders, setDeliveryOrders] = useState([]);
@@ -1047,6 +1050,7 @@ const VendorDashboard = ({
 
   // Unified Tracking Update — calls backend POST /api/orders/tracking/:orderId/update
   const handleTrackingUpdate = async (id, status, extra) => {
+    setTrackingProcessing(prev => ({ ...prev, [id]: true }));
     try {
       const payload = { status };
       if (extra?.progressImage) payload.progressImage = extra.progressImage;
@@ -1070,6 +1074,8 @@ const VendorDashboard = ({
     } catch (err) {
       console.error('Tracking update failed:', err);
       showToast(err.response?.data?.message || 'Tracking update failed. Please try again.');
+    } finally {
+      setTrackingProcessing(prev => ({ ...prev, [id]: false }));
     }
   };
 
@@ -2633,7 +2639,7 @@ const VendorDashboard = ({
                     <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, mfg._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
                     {progressImg[mfg._id] && progressImg[mfg._id].startsWith('data:image') && <span className="text-[10px] font-bold text-emerald-600">✓ Image ready to upload</span>}
                   </div>
-                  <button onClick={() => handleTrackingUpdate(mfg._id, mfgStatus[mfg._id] || mfg.status, { progressImage: progressImg[mfg._id], note: `Manufacturing stage: ${mfgStatus[mfg._id] || mfg.status}` })} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage & Upload Photo</button>
+                  <button onClick={() => handleTrackingUpdate(mfg._id, mfgStatus[mfg._id] || mfg.status, { progressImage: progressImg[mfg._id], note: `Manufacturing stage: ${mfgStatus[mfg._id] || mfg.status}` })} disabled={trackingProcessing[mfg._id]} className={`${trackingProcessing[mfg._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2A9D8F] hover:bg-[#2A9D8F]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[mfg._id] ? 'Processing...' : 'Update Stage & Upload Photo'}</button>
                 </div>
               </div>
             </div>
@@ -2691,7 +2697,7 @@ const VendorDashboard = ({
                     <input type="text" placeholder="Note (optional)" value={trackingNote[del._id] || ''} onChange={(e) => setTrackingNote({ ...trackingNote, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                     <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, del._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
                     <input type="date" value={expectedDelDate[del._id] || ''} onChange={(e) => setExpectedDelDate({ ...expectedDelDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <button onClick={() => handleTrackingUpdate(del._id, delStatus[del._id] || del.status, { note: trackingNote[del._id], progressImage: progressImg[del._id], expectedDeliveryDate: expectedDelDate[del._id] || undefined })} className="w-full py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage</button>
+                    <button onClick={() => handleTrackingUpdate(del._id, delStatus[del._id] || del.status, { note: trackingNote[del._id], progressImage: progressImg[del._id], expectedDeliveryDate: expectedDelDate[del._id] || undefined })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2A9D8F] hover:bg-[#2A9D8F]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Update Stage'}</button>
                   </div>
                 </div>
 
@@ -2701,14 +2707,14 @@ const VendorDashboard = ({
                   <div className="grid grid-cols-1 gap-3">
                     <input type="text" placeholder="Delivery Partner Name" value={delPartner[del._id] || ''} onChange={(e) => setDelPartner({ ...delPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                     <input type="text" placeholder="Tracking ID" value={delTrackingId[del._id] || ''} onChange={(e) => setDelTrackingId({ ...delTrackingId, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <button onClick={() => handleTrackingUpdate(del._id, del.status, { deliveryDetails: { partner: delPartner[del._id], trackingId: delTrackingId[del._id] }, note: 'Delivery details updated' })} className="w-full py-3 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-sm shadow-md">Save Delivery Details</button>
+                    <button onClick={() => handleTrackingUpdate(del._id, del.status, { deliveryDetails: { partner: delPartner[del._id], trackingId: delTrackingId[del._id] }, note: 'Delivery details updated' })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Delivery Details'}</button>
                   </div>
 
                   <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider pt-2">Installation Scheduling</h4>
                   <div className="grid grid-cols-1 gap-3">
                     <input type="text" placeholder="Installation Partner" value={installPartner[del._id] || ''} onChange={(e) => setInstallPartner({ ...installPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                     <input type="datetime-local" placeholder="Scheduled Date" value={installDate[del._id] || ''} onChange={(e) => setInstallDate({ ...installDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <button onClick={() => handleTrackingUpdate(del._id, 'Installation Scheduled', { installationDetails: { partner: installPartner[del._id], scheduledDate: installDate[del._id] }, note: 'Installation scheduled' })} className="w-full py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-sm shadow-md">Schedule Installation</button>
+                    <button onClick={() => handleTrackingUpdate(del._id, 'Installation Scheduled', { installationDetails: { partner: installPartner[del._id], scheduledDate: installDate[del._id] }, note: 'Installation scheduled' })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E76F51] hover:bg-[#E76F51]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Schedule Installation'}</button>
                   </div>
                 </div>
               </div>

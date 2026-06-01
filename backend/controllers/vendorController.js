@@ -489,6 +489,8 @@ exports.verifyPayment = async (req, res) => {
         amount: order.totalAmount || order.quotationAmount || 0,
         paymentMethod: 'UPI',
         transactionId: 'TXN' + Date.now(),
+        paymentDate: new Date(),
+        paymentStatus: 'Completed',
         orderStatus: 'Production Started',
         stages: []
       });
