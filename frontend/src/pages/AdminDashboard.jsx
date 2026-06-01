@@ -3418,6 +3418,56 @@ const AdminDashboard = ({
                 </table>
             </div>
           </div>
+          {/* Order Tracking Timeline */}
+          <div className="bg-white rounded-3xl border border-[#D4A373]/20 shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Truck className="w-6 h-6 text-[#8B5E3C]" />
+              <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Order Tracking Timeline</h3>
+            </div>
+            {(() => {
+              const orderList = managementData?.orders || [];
+              const trackingOrders = orderList.filter(o => 
+                ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(o.orderStatus)
+              );
+              if (trackingOrders.length === 0) {
+                return <p className="text-sm text-gray-400 text-center py-8">No orders currently in tracking workflow.</p>;
+              }
+              const trackingStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+              return (
+                <div className="space-y-4">
+                  {trackingOrders.map(order => {
+                    const currentIdx = trackingStages.indexOf(order.orderStatus);
+                    return (
+                      <div key={order._id} className="border border-gray-100 rounded-2xl p-4 space-y-3 hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="font-bold text-sm text-[#1F2937]">{order.designDetails || 'Order'} <span className="text-gray-400 font-mono text-xs">#{order._id?.slice(-6)}</span></p>
+                            <p className="text-xs text-gray-400">Customer: {order.userId?.name || order.customerName || 'N/A'} • ${order.quotationAmount || order.totalAmount || '0'}</p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${currentIdx >= 4 ? 'bg-emerald-50 text-emerald-700' : currentIdx >= 2 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{order.orderStatus}</span>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {trackingStages.map((stage, idx) => {
+                            const isActive = idx === currentIdx;
+                            const isPast = idx < currentIdx;
+                            return (
+                              <div key={stage} className={`text-center p-1.5 rounded-lg text-[10px] font-bold ${isActive ? 'bg-[#2A9D8F] text-white' : isPast ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-400'}`}>
+                                {stage}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span className="font-bold">Progress: {currentIdx + 1}/{trackingStages.length}</span>
+                          {order.expectedDeliveryDate && <span>Expected: {new Date(order.expectedDeliveryDate).toLocaleDateString()}</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       );
     })()}

@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const TrackingStageSchema = new mongoose.Schema({
   status: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
-  updatedBy: { type: String, enum: ['user', 'vendor', 'admin', 'system'], default: 'system' }
+  updatedBy: { type: String, enum: ['user', 'vendor', 'admin', 'system'], default: 'system' },
+  note: { type: String, default: '' }
 }, { _id: false });
 
 const OrderTrackingSchema = new mongoose.Schema({
@@ -19,6 +20,18 @@ const OrderTrackingSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ['Completed', 'Pending', 'Failed'], default: 'Completed' },
   orderStatus: { type: String, default: 'Awaiting Vendor Verification' },
   stages: [TrackingStageSchema],
+  progressImages: [{ type: String }],
+  expectedDeliveryDate: { type: Date },
+  deliveryDetails: {
+    partner: { type: String, default: '' },
+    trackingId: { type: String, default: '' },
+    notes: { type: String, default: '' }
+  },
+  installationDetails: {
+    partner: { type: String, default: '' },
+    scheduledDate: { type: Date },
+    notes: { type: String, default: '' }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

@@ -110,6 +110,21 @@ const UserDashboard = ({
   const [aiQuotationProcessing, setAiQuotationProcessing] = useState(false);
   const [aiQuotationOrders, setAiQuotationOrders] = useState([]);
 
+  // Tracking Data State (keyed by order _id, fetched from unified backend)
+  const [trackingData, setTrackingData] = useState({});
+
+  const fetchTrackingData = async (orderId) => {
+    if (!orderId) return;
+    try {
+      const res = await axios.get(`/api/orders/tracking/${orderId}`);
+      if (res.data && res.data.success) {
+        setTrackingData(prev => ({ ...prev, [orderId]: res.data.data }));
+      }
+    } catch (err) {
+      // tracking endpoint may throw for orders without OrderTracking doc (e.g. marketplace orders)
+    }
+  };
+
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
@@ -256,7 +271,11 @@ const UserDashboard = ({
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
     window.addEventListener('mockOrdersUpdated', handleSync);
-    const interval = setInterval(fetchUserData, 3000);
+    const interval = setInterval(() => {
+      fetchUserData();
+      const tid = localStorage.getItem('activeTrackingOrderId');
+      if (tid) fetchTrackingData(tid);
+    }, 3000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
@@ -2752,6 +2771,9 @@ Thank you for shopping with Artisan Studio!
         const trackingId = localStorage.getItem('activeTrackingOrderId');
         const trackableOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product');
         const activeOrder = orders.find(o => o._id === trackingId) || trackableOrders[0];
+        const activeTracking = trackingData[activeOrder?._id] || {};
+        const orderTracking = activeTracking.orderTracking || {};
+        const trackingStages = orderTracking.stages || [];
 
         if (!activeOrder) {
           return (
@@ -2765,7 +2787,10 @@ Thank you for shopping with Artisan Studio!
         }
 
         const status = activeOrder.orderStatus || 'Pending';
-        const expectedDate = activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase';
+        const expectedDate = orderTracking.expectedDeliveryDate ? new Date(orderTracking.expectedDeliveryDate).toLocaleDateString() : (activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase');
+        const progressImages = orderTracking.progressImages || activeOrder.progressImages || [];
+        const delDetails = orderTracking.deliveryDetails || {};
+        const installDetails = orderTracking.installationDetails || {};
         
         // Dynamic status descriptions
         const getStatusMessage = () => {
@@ -2796,16 +2821,21 @@ Thank you for shopping with Artisan Studio!
 
         const currentMsg = getStatusMessage();
 
-        // Exactly 7 Stages requested: Payment Verified, Production Started, Manufacturing, Ready for Delivery, Delivered, Installation Scheduled, Installation Completed
-        const stagesList = [
-          { key: 'Payment Verified', label: 'Payment Verified', isDone: ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Production Started', label: 'Production Started', isDone: ['Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Manufacturing', label: 'Manufacturing', isDone: ['Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Ready for Delivery', label: 'Ready for Delivery', isDone: ['Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Delivered', label: 'Delivered', isDone: ['Delivered', 'Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Installation Scheduled', label: 'Installation Scheduled', isDone: ['Installation Scheduled', 'Installation Completed'].includes(status) },
-          { key: 'Installation Completed', label: 'Installation Completed', isDone: status === 'Installation Completed' }
-        ];
+        // 7 Stages from backend tracking if available, otherwise compute from orderStatus
+        const allStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+        const stagesList = trackingStages.length > 0
+          ? allStages.map((s, i) => ({
+              key: s,
+              label: s,
+              isDone: trackingStages.some(st => st.status === s) || allStages.indexOf(status) >= i,
+              timestamp: trackingStages.find(st => st.status === s)?.timestamp || null
+            }))
+          : allStages.map(s => ({
+              key: s,
+              label: s,
+              isDone: allStages.indexOf(s) <= allStages.indexOf(status),
+              timestamp: null
+            }));
 
         const handleReturnRequest = (e) => {
           e.preventDefault();
@@ -2935,11 +2965,11 @@ Thank you for shopping with Artisan Studio!
               </div>
 
               {/* Progress Images */}
-              {activeOrder.progressImages && activeOrder.progressImages.length > 0 && (
+              {progressImages.length > 0 && (
                 <div className="bg-white p-6 rounded-2xl border border-[#D4A373]/30 mt-6 space-y-4">
                   <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider">Manufacturing Progress Photos</h4>
                   <div className="flex gap-4 overflow-x-auto pb-4">
-                    {activeOrder.progressImages.map((imgUrl, i) => (
+                    {progressImages.map((imgUrl, i) => (
                       <div key={i} className="flex-shrink-0 relative group">
                         <img src={imgUrl} alt={`Progress step ${i+1}`} className="w-32 h-32 object-cover rounded-xl border border-gray-200 shadow-sm" />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
@@ -2947,6 +2977,30 @@ Thank you for shopping with Artisan Studio!
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Delivery Details */}
+              {delDetails.partner && (
+                <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-200 space-y-3">
+                  <h4 className="font-bold text-sm text-blue-800 uppercase tracking-wider">Delivery Details</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{delDetails.partner}</p></div>
+                    {delDetails.trackingId && <div><span className="text-gray-500">Tracking ID:</span><p className="font-bold text-[#1F2937]">{delDetails.trackingId}</p></div>}
+                    {delDetails.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span><p className="text-[#1F2937]">{delDetails.notes}</p></div>}
+                  </div>
+                </div>
+              )}
+
+              {/* Installation Details */}
+              {installDetails.partner && (
+                <div className="bg-purple-50/50 p-6 rounded-2xl border border-purple-200 space-y-3">
+                  <h4 className="font-bold text-sm text-purple-800 uppercase tracking-wider">Installation Details</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{installDetails.partner}</p></div>
+                    {installDetails.scheduledDate && <div><span className="text-gray-500">Scheduled:</span><p className="font-bold text-[#1F2937]">{new Date(installDetails.scheduledDate).toLocaleDateString()}</p></div>}
+                    {installDetails.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span><p className="text-[#1F2937]">{installDetails.notes}</p></div>}
                   </div>
                 </div>
               )}

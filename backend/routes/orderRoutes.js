@@ -9,6 +9,8 @@ const {
   updateInstallationStatus,
   createPayment,
   createPaymentAndOrder,
+  updateOrderTracking,
+  getOrderTracking,
   createReview,
   getUserReviews,
   createTicket,
@@ -33,6 +35,8 @@ router.put('/installation/:id', authorize('vendor', 'installation', 'admin', 'us
 
 router.post('/payment', createPayment);
 router.post('/accept-and-pay', createPaymentAndOrder);
+router.post('/tracking/:orderId/update', authorize('vendor', 'admin'), updateOrderTracking);
+router.get('/tracking/:orderId', getOrderTracking);
 router.post('/review', createReview);
 router.get('/reviews/user', getUserReviews);
 router.post('/ticket', createTicket);

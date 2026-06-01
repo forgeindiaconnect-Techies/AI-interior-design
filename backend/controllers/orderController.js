@@ -307,6 +307,97 @@ exports.createPaymentAndOrder = async (req, res) => {
   }
 };
 
+// @desc    Update unified order tracking — pushes stage, updates Order + OrderTracking
+// @route   POST /api/orders/tracking/:orderId/update
+// @access  Private (vendor, admin)
+exports.updateOrderTracking = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, progressImage, deliveryDetails, installationDetails, note } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    if (status) {
+      order.orderStatus = status;
+      await order.save();
+    }
+
+    let tracking = await OrderTracking.findOne({ orderId });
+    if (!tracking) return res.status(404).json({ success: false, message: 'Order tracking not found' });
+
+    const role = req.user.role === 'vendor' ? 'vendor' : req.user.role === 'admin' ? 'admin' : 'system';
+
+    if (status) {
+      tracking.stages.push({ status, timestamp: new Date(), updatedBy: role, note: note || '' });
+      tracking.orderStatus = status;
+    }
+
+    if (progressImage) {
+      tracking.progressImages.push(progressImage);
+    }
+
+    if (deliveryDetails) {
+      tracking.deliveryDetails = { ...tracking.deliveryDetails, ...deliveryDetails };
+    }
+
+    if (installationDetails) {
+      tracking.installationDetails = { ...tracking.installationDetails, ...installationDetails };
+    }
+
+    if (req.body.expectedDeliveryDate) {
+      tracking.expectedDeliveryDate = req.body.expectedDeliveryDate;
+    }
+
+    await tracking.save();
+
+    const shortId = order._id.toString().slice(-6);
+    await Notification.create({
+      userId: order.userId,
+      message: `Order #${shortId} updated: ${status || 'details changed'}`,
+      type: 'info'
+    });
+    await Notification.create({
+      isAdmin: true,
+      message: `Order #${shortId} tracking updated to: ${status || 'details changed'}`,
+      type: 'info'
+    });
+
+    res.status(200).json({ success: true, data: { order, tracking } });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get unified order tracking — returns Order + OrderTracking together
+// @route   GET /api/orders/tracking/:orderId
+// @access  Private
+exports.getOrderTracking = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId)
+      .populate('userId', 'name email phone')
+      .populate('vendorId', 'companyName');
+    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    const tracking = await OrderTracking.findOne({ orderId });
+    if (!tracking) return res.status(404).json({ success: false, message: 'Order tracking not found' });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        order,
+        tracking,
+        stages: tracking.stages,
+        progressImages: tracking.progressImages
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Add Review/Rating
 // @route   POST /api/orders/review
 // @access  Private

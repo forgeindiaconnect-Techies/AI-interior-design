@@ -82,6 +82,11 @@ const VendorDashboard = ({
   const [deliveryOrders, setDeliveryOrders] = useState([]);
   const [delStatus, setDelStatus] = useState({});
   const [trackingNote, setTrackingNote] = useState({});
+  const [delPartner, setDelPartner] = useState({});
+  const [delTrackingId, setDelTrackingId] = useState({});
+  const [installPartner, setInstallPartner] = useState({});
+  const [installDate, setInstallDate] = useState({});
+  const [expectedDelDate, setExpectedDelDate] = useState({});
   const [isPayoutRequested, setIsPayoutRequested] = useState(false);
 
   // Ready-made Orders Workflow States
@@ -348,10 +353,12 @@ const VendorDashboard = ({
 
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
+    const pollInterval = setInterval(fetchPartnerData, 4000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
+      clearInterval(pollInterval);
     };
   }, []);
 
@@ -1038,49 +1045,32 @@ const VendorDashboard = ({
     }
   };
 
-  // Manufacturer Actions
-  const handleMfgUpdate = async (id) => {
-    const updatedStatus = mfgStatus[id] || 'Pending';
-    const newProgressImage = progressImg[id] || 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=600&auto=format&fit=crop&q=60';
+  // Unified Tracking Update — calls backend POST /api/orders/tracking/:orderId/update
+  const handleTrackingUpdate = async (id, status, extra) => {
+    try {
+      const payload = { status };
+      if (extra?.progressImage) payload.progressImage = extra.progressImage;
+      if (extra?.deliveryDetails) payload.deliveryDetails = extra.deliveryDetails;
+      if (extra?.installationDetails) payload.installationDetails = extra.installationDetails;
+      if (extra?.expectedDeliveryDate) payload.expectedDeliveryDate = extra.expectedDeliveryDate;
+      if (extra?.note) payload.note = extra.note;
 
-    const localOrders = [];
-    const updatedOrders = localOrders.map(o => {
-      if (o._id === id) {
-        const currentImages = o.progressImages || [];
-        return {
-          ...o,
-          orderStatus: updatedStatus,
-          progressImages: [...currentImages, newProgressImage]
-        };
-      }
-      return o;
-    });
-    
+      await axios.post(`/api/orders/tracking/${id}/update`, payload);
 
-    setManufacturingOrders(manufacturingOrders.map(o => {
-      if (o._id === id) {
-        return {
-          ...o,
-          status: updatedStatus,
-          progressImages: [...o.progressImages, newProgressImage]
-        };
-      }
-      return o;
-    }));
+      // Optimistic local updates
+      setManufacturingOrders(prev => prev.map(o =>
+        o._id === id ? { ...o, status } : o
+      ));
+      setDeliveryOrders(prev => prev.map(o =>
+        o._id === id ? { ...o, status, ...(extra?.deliveryDetails && { deliveryDetails: extra.deliveryDetails }) } : o
+      ));
 
-    // Send customer notification
-    const localUserNotifs = [];
-    let userMessage = `Order status update: ${updatedStatus} for your custom furniture.`;
-    if (updatedStatus === 'Production Started') {
-      userMessage = `Order update: Your order is now in production.`;
-    } else if (updatedStatus === 'Manufacturing') {
-      userMessage = `Order update: Your custom furniture is currently being manufactured.`;
-    } else if (updatedStatus === 'Ready for Delivery') {
-      userMessage = `Order update: Your order is ready for delivery dispatch.`;
+      await fetchPartnerData();
+      showToast(`Stage updated to "${status}"`);
+    } catch (err) {
+      console.error('Tracking update failed:', err);
+      showToast(err.response?.data?.message || 'Tracking update failed. Please try again.');
     }
-    
-
-    alert('Manufacturing stage updated successfully!');
   };
 
   // Payment Verification Actions
@@ -1118,51 +1108,7 @@ const VendorDashboard = ({
     showToast('Payment rejected. Admin has been notified.');
   };
 
-  // Delivery Actions
-  const handleDelUpdate = async (id) => {
-    const updatedStatus = delStatus[id] || 'Picked Up';
-    const updatedNote = trackingNote[id] || 'In transit';
-
-    const localOrders = [];
-    const updatedOrders = localOrders.map(o => {
-      if (o._id === id) {
-        return {
-          ...o,
-          orderStatus: updatedStatus,
-          trackingNotes: updatedNote
-        };
-      }
-      return o;
-    });
-    
-
-    setDeliveryOrders(deliveryOrders.map(o => {
-      if (o._id === id) {
-        return {
-          ...o,
-          status: updatedStatus,
-          trackingNotes: updatedNote
-        };
-      }
-      return o;
-    }));
-
-    // Send customer notification
-    const localUserNotifs = [];
-    let userMessage = `Delivery update: ${updatedStatus}. Notes: ${updatedNote}`;
-    if (updatedStatus === 'Ready for Delivery') {
-      userMessage = `Delivery update: Order picked up and ready for delivery.`;
-    } else if (updatedStatus === 'Delivered') {
-      userMessage = `Delivery update: Your order has been delivered successfully!`;
-    } else if (updatedStatus === 'Installation Scheduled') {
-      userMessage = `Installation Scheduled: Technician will visit on ${new Date(Date.now() + 3600000 * 24 * 2).toLocaleDateString()}.`;
-    } else if (updatedStatus === 'Installation Completed') {
-      userMessage = `Order update: Installation completed successfully!`;
-    }
-    
-
-    alert('Delivery status updated successfully!');
-  };
+  // Delivery Actions (delegated to handleTrackingUpdate)
 
   // Payout Actions
   const handleRequestPayout = () => {
@@ -2684,7 +2630,7 @@ const VendorDashboard = ({
                     <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, mfg._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
                     {progressImg[mfg._id] && progressImg[mfg._id].startsWith('data:image') && <span className="text-[10px] font-bold text-emerald-600">✓ Image ready to upload</span>}
                   </div>
-                  <button onClick={() => handleMfgUpdate(mfg._id)} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage & Upload Photo</button>
+                  <button onClick={() => handleTrackingUpdate(mfg._id, mfgStatus[mfg._id] || mfg.status, { progressImage: progressImg[mfg._id], note: `Manufacturing stage: ${mfgStatus[mfg._id] || mfg.status}` })} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage & Upload Photo</button>
                 </div>
               </div>
             </div>
@@ -2695,31 +2641,77 @@ const VendorDashboard = ({
       {/* TAB 7: DELIVERY & INSTALLATION */}
       {activeTab === 'logistics' && (
         <div className="space-y-8">
-          <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Delivery & Logistics Dispatch</h2>
-          {deliveryOrders.filter(d => !searchQuery || d.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || d.status?.toLowerCase().includes(searchQuery.toLowerCase()) || d.trackingId?.toLowerCase().includes(searchQuery.toLowerCase())).map((del) => (
+          <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Delivery & Installation Timeline</h2>
+          {deliveryOrders.filter(d => !searchQuery || d.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || d.status?.toLowerCase().includes(searchQuery.toLowerCase()) || d.trackingId?.toLowerCase().includes(searchQuery.toLowerCase())).map((del) => {
+            const trackingStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+            const currentIdx = trackingStages.indexOf(del.status);
+            return (
             <div key={del._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
               <div className="flex justify-between items-center border-b border-gray-100 pb-4">
                 <div>
-                  <span className="bg-[#E9C46A]/20 text-[#E9C46A] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Logistics Dispatch</span>
-                  <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-1">Destination: {del.shippingAddress}</h3>
+                  <span className="bg-[#E9C46A]/20 text-[#E9C46A] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Order Timeline</span>
+                  <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] mt-1">{del.designDetails || 'Custom Order'} — Destination: {del.shippingAddress || 'N/A'}</h3>
+                  <p className="text-xs text-gray-400 mt-1">Order #{del._id?.slice(-6)} • Customer: {del.userId?.name || del.customerName || 'N/A'}</p>
                 </div>
                 <span className="bg-[#E76F51] text-white px-4 py-1.5 rounded-full text-xs font-bold">{del.status}</span>
               </div>
-              <div className="space-y-4 pt-4 border-t border-gray-100">
-                <h4 className="font-bold text-sm text-[#1F2937]">Update Transit Status</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <select value={delStatus[del._id] || del.status} onChange={(e) => setDelStatus({ ...delStatus, [del._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
-                    <option value="Ready for Delivery">Ready for Delivery</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Installation Scheduled">Installation Scheduled</option>
-                    <option value="Installation Completed">Installation Completed</option>
-                  </select>
-                  <input type="text" placeholder="Tracking Notes" value={trackingNote[del._id] || ''} onChange={(e) => setTrackingNote({ ...trackingNote, [del._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                  <button onClick={() => handleDelUpdate(del._id)} className="bg-[#2A9D8F] text-white rounded-xl font-bold text-sm shadow-md">Update Status</button>
+
+              {/* 7-Stage Timeline */}
+              <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/20">
+                <div className="grid grid-cols-7 gap-2">
+                  {trackingStages.map((stage, idx) => {
+                    const isActive = idx === currentIdx;
+                    const isPast = idx < currentIdx;
+                    return (
+                      <div key={stage} className={`text-center p-2 rounded-xl ${isActive ? 'bg-[#2A9D8F] text-white scale-105 shadow-md' : isPast ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                        <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center font-bold text-xs mb-1 ${isActive ? 'bg-white text-[#2A9D8F]' : isPast ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                          {isPast ? '✓' : idx + 1}
+                        </div>
+                        <p className="text-[10px] font-bold leading-tight">{stage}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Stage Update Controls */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                {/* Left: Stage Progress */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider">Update Stage</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <select value={delStatus[del._id] || del.status} onChange={(e) => setDelStatus({ ...delStatus, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
+                      {trackingStages.slice(2).map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                    <input type="text" placeholder="Note (optional)" value={trackingNote[del._id] || ''} onChange={(e) => setTrackingNote({ ...trackingNote, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, del._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
+                    <input type="date" value={expectedDelDate[del._id] || ''} onChange={(e) => setExpectedDelDate({ ...expectedDelDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <button onClick={() => handleTrackingUpdate(del._id, delStatus[del._id] || del.status, { note: trackingNote[del._id], progressImage: progressImg[del._id], expectedDeliveryDate: expectedDelDate[del._id] || undefined })} className="w-full py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-sm shadow-md">Update Stage</button>
+                  </div>
+                </div>
+
+                {/* Right: Delivery & Installation Details */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider">Delivery Details</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <input type="text" placeholder="Delivery Partner Name" value={delPartner[del._id] || ''} onChange={(e) => setDelPartner({ ...delPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="text" placeholder="Tracking ID" value={delTrackingId[del._id] || ''} onChange={(e) => setDelTrackingId({ ...delTrackingId, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <button onClick={() => handleTrackingUpdate(del._id, del.status, { deliveryDetails: { partner: delPartner[del._id], trackingId: delTrackingId[del._id] }, note: 'Delivery details updated' })} className="w-full py-3 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold text-sm shadow-md">Save Delivery Details</button>
+                  </div>
+
+                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider pt-2">Installation Scheduling</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    <input type="text" placeholder="Installation Partner" value={installPartner[del._id] || ''} onChange={(e) => setInstallPartner({ ...installPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="datetime-local" placeholder="Scheduled Date" value={installDate[del._id] || ''} onChange={(e) => setInstallDate({ ...installDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <button onClick={() => handleTrackingUpdate(del._id, 'Installation Scheduled', { installationDetails: { partner: installPartner[del._id], scheduledDate: installDate[del._id] }, note: 'Installation scheduled' })} className="w-full py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-sm shadow-md">Schedule Installation</button>
+                  </div>
                 </div>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
 
