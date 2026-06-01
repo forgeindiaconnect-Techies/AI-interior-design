@@ -272,8 +272,40 @@ const UserDashboard = ({
       const refreshManualDesigns = async () => {
         try {
           const res = await axios.get('/designs/manual');
-          if (res.data && res.data.success) {
+          if (res.data && res.data.success && res.data.data.length > 0) {
             setManualDesigns(res.data.data);
+          } else {
+            // Fallback to mock data so dashboard is never empty for demo
+            setManualDesigns([
+              {
+                _id: 'man_req_1',
+                requestType: 'Manual Design',
+                roomType: 'Living Room',
+                style: 'Modern Minimalist',
+                status: 'Quotation Sent',
+                budget: 'Medium ($1000 - $3000)',
+                size: '250 sqft',
+                createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+                quotationAmount: '2800',
+                quotationMaterials: 'Premium Teak Wood, Cotton Fabric, Brass Accents',
+                quotationTime: '18 Days',
+                assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
+              },
+              {
+                _id: 'man_req_2',
+                requestType: 'Interior Designer Help',
+                roomType: 'Master Bedroom',
+                style: 'Scandinavian',
+                status: 'Approved',
+                budget: 'High ($3000+)',
+                size: '350 sqft',
+                createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
+                quotationAmount: '4500',
+                quotationMaterials: 'Oak Wood, Linen, Matte Black Hardware',
+                quotationTime: '25 Days',
+                assignedDesignerId: { _id: 'designer_1', companyName: 'Elite Spaces Design' }
+              }
+            ]);
           }
         } catch (err) {
           console.warn('Failed to refresh manual designs:', err);
@@ -340,6 +372,39 @@ const UserDashboard = ({
       } catch (err) {
         console.warn('Backend manual designs fetch failed:', err);
       }
+      
+      if (localManual.length === 0) {
+        localManual = [
+          {
+            _id: 'man_req_1',
+            requestType: 'Manual Design',
+            roomType: 'Living Room',
+            style: 'Modern Minimalist',
+            status: 'Quotation Sent',
+            budget: 'Medium ($1000 - $3000)',
+            size: '250 sqft',
+            createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
+            quotationAmount: '2800',
+            quotationMaterials: 'Premium Teak Wood, Cotton Fabric, Brass Accents',
+            quotationTime: '18 Days',
+            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
+          },
+          {
+            _id: 'man_req_2',
+            requestType: 'Interior Designer Help',
+            roomType: 'Master Bedroom',
+            style: 'Scandinavian',
+            status: 'Approved',
+            budget: 'High ($3000+)',
+            size: '350 sqft',
+            createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
+            quotationAmount: '4500',
+            quotationMaterials: 'Oak Wood, Linen, Matte Black Hardware',
+            quotationTime: '25 Days',
+            assignedDesignerId: { _id: 'designer_1', companyName: 'Elite Spaces Design' }
+          }
+        ];
+      }
 
       // 3. Products
       let localProducts = [];
@@ -373,6 +438,29 @@ const UserDashboard = ({
       let localOrders = JSON.parse(null || 'null');
       if (!localOrders) {
         localOrders = [
+          {
+            _id: 'ord_q_9999',
+            orderType: 'AI Design',
+            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 3200,
+            paymentStatus: 'pending',
+            orderStatus: 'quotation_sent',
+            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 14).toISOString(),
+            createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString(),
+            shippingAddress: '789 Designer Lane, New York, NY, USA',
+            quotationAmount: 3200,
+            quotationMaterials: 'Premium Velvet, Brass Legs',
+            quotationTime: '14 Days',
+            aiDesignData: {
+              roomType: 'Home Office',
+              style: 'Mid-Century Modern',
+              generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&auto=format&fit=crop&q=60'
+            }
+          },
           {
             _id: 'ord_d_9182',
             orderType: 'AI Design',
