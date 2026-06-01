@@ -27,7 +27,12 @@ const protect = async (req, res, next) => {
         } catch (err) {
           // If token verification fails but we are running in local mock database mode, fallback to a safe mock session
           if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-            decoded = { id: 'mock_user_id_user', role: 'user' };
+            try {
+              const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+              decoded = { id: payload.id || 'mock_user_id_user', role: payload.role || 'user' };
+            } catch {
+              decoded = { id: 'mock_user_id_user', role: 'user' };
+            }
           } else {
             throw err; // bubble up to be caught by the outer try-catch as 401 Unauthorized
           }

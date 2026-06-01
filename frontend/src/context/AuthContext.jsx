@@ -16,17 +16,21 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Handle global 401 responses
+// Handle global 401 and 403 responses
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      if (error.config.url && !error.config.url.includes('/auth/login')) {
-        console.warn('[Axios Interceptor] 401 Unauthorized detected. Clearing session.');
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        alert('Session expired or unauthorized. Please login again.');
-        window.location.href = '/login';
+    if (error.response) {
+      if (error.response.status === 401) {
+        if (error.config.url && !error.config.url.includes('/auth/login')) {
+          console.warn('[Axios Interceptor] 401 Unauthorized detected. Clearing session.');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          alert('Session expired or unauthorized. Please login again.');
+          window.location.href = '/login';
+        }
+      } else if (error.response.status === 403) {
+        console.warn('[Axios Interceptor] 403 Forbidden:', error.response.data?.message || 'Access denied');
       }
     }
     return Promise.reject(error);

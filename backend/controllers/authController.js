@@ -92,7 +92,17 @@ exports.login = async (req, res) => {
     const prefix = email.split('@')[0];
     const isDemoEmail = email.endsWith('@example.com') && validRoles.includes(prefix);
     if (isDemoEmail || global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const userRole = validRoles.includes(prefix) ? prefix : 'user';
+      let userRole;
+      if (isDemoEmail) {
+        userRole = prefix;
+      } else {
+        try {
+          const user = await User.findOne({ email }).select('role');
+          userRole = user ? user.role : (validRoles.includes(prefix) ? prefix : 'user');
+        } catch {
+          userRole = validRoles.includes(prefix) ? prefix : 'user';
+        }
+      }
       const token = generateToken('mock_user_id_' + userRole, userRole);
 
       return res.status(200).json({
