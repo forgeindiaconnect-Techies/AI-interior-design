@@ -46,6 +46,19 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
+  const register = async (userData) => {
+    try {
+      const res = await axios.post('/auth/register', userData);
+      if (res.data && res.data.success) {
+        return { success: true, user: res.data.user };
+      }
+      return { success: false, message: res.data?.message || 'Registration failed' };
+    } catch (err) {
+      console.warn('Registration request failed:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
+    }
+  };
+
   const login = async (email, password) => {
     try {
       const res = await axios.post('/auth/login', { email, password });
@@ -95,7 +108,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const value = { user, login, logout, loading };
+  const value = { user, login, logout, register, loading };
 
   return (
     <AuthContext.Provider value={value}>
