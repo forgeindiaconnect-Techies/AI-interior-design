@@ -855,10 +855,8 @@ Thank you for shopping with Artisan Studio!
     }
   };
 
-  // Open Quotation Payment Modal
   const handleBudgetApproval = (quotationId) => {
-    const localRequests = [];
-    const req = localRequests.find(r => r._id === quotationId);
+    const req = manualDesigns.find(r => r._id === quotationId) || aiQuotationOrders.find(r => r._id === quotationId);
     if (req) setQuotationPayment(req);
   };
 
@@ -869,14 +867,7 @@ Thank you for shopping with Artisan Studio!
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const quotationId = quotationPayment._id;
-    const localRequests = [];
-    const reqIndex = localRequests.findIndex(r => r._id === quotationId);
-    let requestObj = null;
-    if (reqIndex !== -1) {
-      localRequests[reqIndex].status = 'Approved';
-      
-      requestObj = localRequests[reqIndex];
-    }
+    const requestObj = manualDesigns.find(r => r._id === quotationId) || aiQuotationOrders.find(r => r._id === quotationId);
 
     const orderAmount = requestObj ? Number(requestObj.quotationAmount || 3500) : 4500;
 
@@ -884,7 +875,7 @@ Thank you for shopping with Artisan Studio!
       _id: 'ord_q_' + Date.now(),
       orderType: requestObj?.requestType || 'Manual Design',
       userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+      vendorId: { _id: requestObj?.assignedVendorId?._id || '65c2b18a7c6b4b1c92949765', companyName: requestObj?.assignedVendorId?.companyName || 'Artisan Workshop' },
       manufacturerId: null,
       deliveryPartnerId: null,
       installationPartnerId: null,
@@ -900,20 +891,11 @@ Thank you for shopping with Artisan Studio!
       quotationTime: requestObj?.quotationTime || ''
     };
 
-    const localOrders = [];
-    const updated = [newOrder, ...localOrders];
+    const updated = [newOrder, ...orders];
     
     setOrders(updated);
 
     if (requestObj) {
-      const storedManual = [];
-      const updatedManual = storedManual.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
-      
-
-      const storedDesigner = [];
-      const updatedDesigner = storedDesigner.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r);
-      
-
       setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r));
     }
 
@@ -931,8 +913,6 @@ Thank you for shopping with Artisan Studio!
       type: 'Customer Payment',
       createdAt: new Date().toISOString()
     };
-    const localTxns = [];
-    
 
     // Notifications
     const triggerNotif = (recipient, message, type = 'success') => {
@@ -945,7 +925,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
     };
 
     const shortOrderId = newOrder._id.slice(-6);
@@ -970,14 +950,7 @@ Thank you for shopping with Artisan Studio!
   };
 
   const handleBudgetRejection = async (quotationId) => {
-    const localRequests = [];
-    const reqIndex = localRequests.findIndex(r => r._id === quotationId);
-    let requestObj = null;
-    if (reqIndex !== -1) {
-      localRequests[reqIndex].status = 'Quotation Rejected';
-      
-      requestObj = localRequests[reqIndex];
-    }
+    const requestObj = manualDesigns.find(r => r._id === quotationId) || aiQuotationOrders.find(r => r._id === quotationId);
     
     if (requestObj) {
       setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Quotation Rejected' } : r));
@@ -993,7 +966,7 @@ Thank you for shopping with Artisan Studio!
       };
       const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
       const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      
+      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
     };
 
     triggerNotif('vendor', `Quotation rejected by customer for room design request: ${requestObj?.roomType || 'Custom Room'}.`, 'warning');
