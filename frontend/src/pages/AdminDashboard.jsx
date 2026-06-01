@@ -1135,38 +1135,9 @@ const AdminDashboard = ({
     if (activeTab === 'roles') {
       fetchSubAdmins();
     }
-    // Live-refresh orders from localStorage whenever admin switches to orders-related tabs
-    if (activeTab === 'orders' || activeTab === 'manual_designs' || activeTab === 'ai_designs') {
-      if (managementData) {
-        const localOrders = [];
-        const existingOrders = managementData.orders || [];
-        const merged = [...localOrders];
-        existingOrders.forEach(eo => {
-          if (!merged.find(lo => lo._id === eo._id)) {
-            merged.push(eo);
-          }
-        });
-
-        const localManual = [];
-        const existingManual = managementData.manualDesigns || [];
-        const mergedManual = [...localManual];
-        existingManual.forEach(em => {
-          if (!mergedManual.find(lm => lm._id === em._id)) {
-            mergedManual.push(em);
-          }
-        });
-
-        const localAi = [];
-        const existingAi = managementData.aiDesigns || [];
-        const mergedAi = [...localAi];
-        existingAi.forEach(ea => {
-          if (!mergedAi.find(la => la._id === ea._id)) {
-            mergedAi.push(ea);
-          }
-        });
-
-        setManagementData(prev => prev ? { ...prev, orders: merged, manualDesigns: mergedManual, aiDesigns: mergedAi } : prev);
-      }
+    // Live-refresh orders from backend whenever admin switches to orders-related tabs
+    if (activeTab === 'orders' || activeTab === 'manual_designs' || activeTab === 'ai_designs' || activeTab === 'custom_design_requests') {
+      fetchAdminData();
     }
   }, [activeTab]);
 
