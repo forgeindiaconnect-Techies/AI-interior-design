@@ -11,19 +11,7 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState(initialRole);
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { UserPlus, CheckCircle, ArrowRight, ShieldCheck, FileText, CreditCard, Armchair, Sparkles } from 'lucide-react';
 
-const RegisterPage = () => {
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') || 'user';
-
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState(initialRole);
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [companyName, setCompanyName] = useState('');
