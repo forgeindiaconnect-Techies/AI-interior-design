@@ -29,7 +29,8 @@ exports.register = async (req, res) => {
       password,
       role: role || 'user',
       phone,
-      address
+      address,
+      status: (!role || role === 'user') ? 'Active' : 'Pending'
     });
 
     if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(role)) {
@@ -54,7 +55,7 @@ exports.register = async (req, res) => {
       // Notify Admin about normal user
       await Notification.create({
         isAdmin: true,
-        message: `New User Registration: ${email} joined the platform.`,
+        message: 'New User Registration: A new customer account has been created and is ready to use.',
         type: 'info'
       });
     }

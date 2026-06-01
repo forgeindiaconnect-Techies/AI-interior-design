@@ -38,7 +38,7 @@ const RegisterPage = () => {
       setModalInfo({
         show: true,
         title: 'Missing Information',
-        message: 'Please fill all required fields.',
+        message: 'Please complete all required fields.',
         type: 'error'
       });
       return;
@@ -64,7 +64,9 @@ const RegisterPage = () => {
       setModalInfo({
         show: true,
         title: 'Registration Successful',
-        message: 'Your account has been created successfully. It is pending admin approval. You will be able to access all features once approved.',
+        message: finalRole === 'user' 
+          ? 'Your account has been created successfully. You can now log in and start using the platform.' 
+          : 'Your account has been created successfully. It is pending admin approval. You will be able to access all features once approved.',
         type: 'success'
       });
     } else {
