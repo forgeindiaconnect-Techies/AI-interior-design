@@ -567,19 +567,7 @@ const DashboardLayout = ({ children }) => {
                 </button>
               )}
               
-              {(selectedNotif.message.toLowerCase().includes('request') || selectedNotif.message.toLowerCase().includes('custom')) && (
-                <button 
-                  onClick={() => {
-                    setActiveTab(isVendor ? 'custom_requests' : 'manual_designs');
-                    setSelectedNotif(null);
-                  }}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:-translate-y-0.5 ${
-                    isAdmin ? 'bg-[#1D3557] hover:bg-[#1D3557]/90' : isVendor ? 'bg-[#2A9D8F] hover:bg-[#2A9D8F]/90' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'
-                  }`}
-                >
-                  View Request
-                </button>
-              )}
+
 
               <button 
                 onClick={() => setSelectedNotif(null)}
