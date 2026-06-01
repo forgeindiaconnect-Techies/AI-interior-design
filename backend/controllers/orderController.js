@@ -1,5 +1,7 @@
 const Order = require('../models/Order');
 const Quotation = require('../models/Quotation');
+const ManualDesignRequest = require('../models/ManualDesignRequest');
+const AIDesignRequest = require('../models/AIDesignRequest');
 const ManufacturingOrder = require('../models/ManufacturingOrder');
 const DeliveryOrder = require('../models/DeliveryOrder');
 const InstallationOrder = require('../models/InstallationOrder');
@@ -188,39 +190,73 @@ exports.createPaymentAndOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'quotationId and paymentMethod are required' });
     }
 
-    const quotation = await Quotation.findById(quotationId);
+    let quotation = await Quotation.findById(quotationId);
     if (!quotation) {
-      return res.status(404).json({ success: false, message: 'Quotation not found' });
-    }
-    if (quotation.status !== 'pending') {
-      return res.status(400).json({ success: false, message: 'Quotation is not pending approval' });
+      quotation = await Quotation.findOne({ designRequestId: quotationId });
     }
 
-    quotation.status = 'approved';
-    await quotation.save();
+    let vendor, amount, designType, designRequestId;
 
-    const vendor = await Vendor.findById(quotation.vendorId);
+    if (quotation) {
+      if (quotation.status !== 'pending') {
+        return res.status(400).json({ success: false, message: 'Quotation is not pending approval' });
+      }
+      quotation.status = 'approved';
+      await quotation.save();
+      vendor = await Vendor.findById(quotation.vendorId);
+      amount = quotation.budgetAmount;
+      designType = quotation.designType;
+      designRequestId = quotation.designRequestId;
+    } else {
+      // No Quotation doc found — look up design request directly
+      let designReq = await ManualDesignRequest.findById(quotationId);
+      if (!designReq) {
+        designReq = await AIDesignRequest.findById(quotationId);
+      }
+      if (!designReq) {
+        return res.status(404).json({ success: false, message: 'Request not found. Please ensure a quotation has been sent by the vendor.' });
+      }
+      vendor = await Vendor.findById(designReq.assignedVendorId);
+      amount = Number(designReq.quotationAmount) || 0;
+      designType = designReq.requestType === 'AI Generated' ? 'ai' : 'manual';
+      designRequestId = designReq._id;
+    }
+
     if (!vendor) {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
 
     const order = await Order.create({
       userId: req.user.id,
-      vendorId: quotation.vendorId,
+      vendorId: vendor._id,
       orderType: 'custom_design',
-      referenceId: quotation._id,
-      totalAmount: quotation.budgetAmount,
+      referenceId: designRequestId,
+      totalAmount: amount,
       shippingAddress: shippingAddress || 'Address on file',
       orderStatus: 'Awaiting Vendor Verification',
       paymentStatus: 'paid'
     });
+
+    // Create a Quotation if one didn't exist
+    if (!quotation) {
+      quotation = await Quotation.create({
+        vendorId: vendor._id,
+        userId: req.user.id,
+        designType,
+        designRequestId,
+        budgetAmount: amount,
+        materialsBreakdown: '',
+        estimatedTime: '',
+        status: 'approved'
+      });
+    }
 
     const txnId = 'TXN' + Date.now() + Math.floor(Math.random() * 1000);
 
     const payment = await Payment.create({
       orderId: order._id,
       userId: req.user.id,
-      amount: quotation.budgetAmount,
+      amount,
       paymentMethod,
       transactionId: txnId,
       status: 'success'
@@ -231,10 +267,10 @@ exports.createPaymentAndOrder = async (req, res) => {
     const tracking = await OrderTracking.create({
       orderId: order._id,
       userId: req.user.id,
-      vendorId: quotation.vendorId,
+      vendorId: vendor._id,
       customerName: user ? user.name : 'Customer',
       vendorName: vendor.companyName || 'Vendor',
-      amount: quotation.budgetAmount,
+      amount,
       paymentMethod,
       transactionId: txnId,
       paymentDate: new Date(),
