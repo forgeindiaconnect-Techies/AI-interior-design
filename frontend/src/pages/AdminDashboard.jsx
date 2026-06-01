@@ -450,7 +450,6 @@ const AdminDashboard = ({
   };
 
   const fetchAdminData = async () => {
-    setLoading(true);
     try {
       const [statsRes, mgmtRes] = await Promise.all([
         axios.get('/admin/stats').catch(() => ({ data: { data: { totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 } } })),
