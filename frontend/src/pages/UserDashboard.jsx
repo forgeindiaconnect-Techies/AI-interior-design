@@ -268,8 +268,18 @@ const UserDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'quotations' || activeTab === 'manual') {
-      const localManual = [];
-      setManualDesigns(localManual);
+      // Re-fetch manual designs from the backend to get fresh quotation data
+      const refreshManualDesigns = async () => {
+        try {
+          const res = await axios.get('/designs/manual');
+          if (res.data && res.data.success) {
+            setManualDesigns(res.data.data);
+          }
+        } catch (err) {
+          console.warn('Failed to refresh manual designs:', err);
+        }
+      };
+      refreshManualDesigns();
     }
     if (activeTab === 'manual') {
       setOwnMaterials('No');

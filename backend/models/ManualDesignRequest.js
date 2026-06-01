@@ -25,6 +25,9 @@ const ManualDesignRequestSchema = new mongoose.Schema({
     enum: ['Submitted', 'Under Review', 'Accepted', 'Rejected', 'Quotation Sent', 'Approved', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed'], 
     default: 'Submitted' 
   },
+  quotationAmount: { type: String },
+  quotationMaterials: { type: String },
+  quotationTime: { type: String },
   originalImage: { type: String },
   generatedImage: { type: String },
   aiSuggestion: {

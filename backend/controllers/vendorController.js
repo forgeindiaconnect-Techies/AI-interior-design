@@ -107,7 +107,15 @@ exports.sendQuotation = async (req, res) => {
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
 
     const quotation = await Quotation.create({ vendorId: vendor._id, userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime, status: 'pending' });
-    if (designType === 'manual') await ManualDesignRequest.findByIdAndUpdate(designRequestId, { status: 'Quotation Sent' });
+    if (designType === 'manual') {
+      await ManualDesignRequest.findByIdAndUpdate(designRequestId, { 
+        status: 'Quotation Sent',
+        quotationAmount: budgetAmount,
+        quotationMaterials: materialsBreakdown,
+        quotationTime: estimatedTime,
+        assignedVendorId: vendor._id
+      });
+    }
 
     await Notification.create({ userId, message: `Vendor ${vendor.companyName} shared a budget quotation.` });
     await Notification.create({ isAdmin: true, message: `Quotation sent to user by vendor.` });

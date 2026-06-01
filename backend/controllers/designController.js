@@ -176,7 +176,7 @@ exports.createManualDesign = async (req, res) => {
 // @access  Private
 exports.getUserManualDesigns = async (req, res) => {
   try {
-    const designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').sort('-createdAt').lean();
+    const designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').populate('assignedDesignerId').sort('-createdAt').lean();
     res.status(200).json({ success: true, data: designs });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
