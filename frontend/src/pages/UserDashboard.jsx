@@ -700,12 +700,15 @@ const UserDashboard = ({
         const res = await axios.post('/designs/manual', payload);
         if (res.data.success) {
           setManualDesigns([res.data.data, ...manualDesigns]);
+          alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+        } else {
+          alert('Failed to forward request to vendors. Please try again.');
         }
         
       } catch (err) {
         console.error('Failed to forward AI request to vendor', err);
+        alert('Failed to forward request to vendors. Ensure backend is running.');
       }
-      alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
     }
     
     if (status === 'rejected') {

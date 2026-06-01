@@ -7296,11 +7296,11 @@ const AdminDashboard = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Original Uploaded Room Photo</p>
-                  <img src={selectedAIDesign.originalImage} alt="Original uploaded room" className="w-full h-64 object-cover rounded-2xl border border-gray-200 shadow-inner" />
+                  <img src={selectedAIDesign.originalImage || selectedAIDesign.aiDesignData?.originalImage || 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800'} alt="Original uploaded room" className="w-full h-64 object-cover rounded-2xl border border-gray-200 shadow-inner" />
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">AI Studio Stylized Design Output</p>
-                  <img src={selectedAIDesign.generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800'} alt="AI stylized room" className="w-full h-64 object-cover rounded-2xl border border-[#D4A373]/30 shadow-sm" />
+                  <img src={selectedAIDesign.generatedImage || selectedAIDesign.aiDesignData?.generatedImage || selectedAIDesign.aiDesignData?.image || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800'} alt="AI stylized room" className="w-full h-64 object-cover rounded-2xl border border-[#D4A373]/30 shadow-sm" />
                 </div>
               </div>
 
@@ -7308,15 +7308,15 @@ const AdminDashboard = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gray-50 p-6 rounded-2xl border border-gray-150 text-xs">
                 <div>
                   <p className="font-bold text-gray-400 uppercase">Room Type</p>
-                  <p className="font-bold text-gray-800 mt-1">{selectedAIDesign.roomType}</p>
+                  <p className="font-bold text-gray-800 mt-1">{selectedAIDesign.roomType || selectedAIDesign.aiDesignData?.roomType}</p>
                 </div>
                 <div>
                   <p className="font-bold text-gray-400 uppercase">Style Preference</p>
-                  <p className="font-bold text-gray-800 mt-1">{selectedAIDesign.stylePreference || 'Modern Minimalist'}</p>
+                  <p className="font-bold text-gray-800 mt-1">{selectedAIDesign.stylePreference || selectedAIDesign.style || selectedAIDesign.aiDesignData?.style || 'Modern Minimalist'}</p>
                 </div>
                 <div>
                   <p className="font-bold text-gray-400 uppercase">Estimated Budget</p>
-                  <p className="font-extrabold text-[#8B5E3C] text-sm mt-1">${selectedAIDesign.aiSuggestion?.budgetEstimate || 'N/A'}</p>
+                  <p className="font-extrabold text-[#8B5E3C] text-sm mt-1">${selectedAIDesign.aiSuggestion?.budgetEstimate || selectedAIDesign.aiDesignData?.budget || selectedAIDesign.totalAmount || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="font-bold text-gray-400 uppercase">Design Status</p>
@@ -7332,7 +7332,7 @@ const AdminDashboard = ({
                   <div className="bg-[#F8F5F0]/60 p-5 rounded-2xl border border-[#D4A373]/20 space-y-2">
                     <p className="text-xs font-bold text-[#8B5E3C] uppercase tracking-wider flex items-center gap-1.5"><Sparkles size={12} /> Key Furniture Items</p>
                     <ul className="text-xs space-y-1.5 text-gray-600 font-medium">
-                      {(selectedAIDesign.aiSuggestion?.furniture || ['Premium Accent Sofa', 'Tailored Side Tables', 'Intelligent Lighting Placements']).map((f, i) => (
+                      {(selectedAIDesign.aiSuggestion?.furniture || selectedAIDesign.aiDesignData?.furniture || ['Premium Accent Sofa', 'Tailored Side Tables', 'Intelligent Lighting Placements']).map((f, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#8B5E3C]" /> {f}
                         </li>
@@ -7344,7 +7344,7 @@ const AdminDashboard = ({
                   <div className="bg-[#F8F5F0]/60 p-5 rounded-2xl border border-[#D4A373]/20 space-y-2">
                     <p className="text-xs font-bold text-[#8B5E3C] uppercase tracking-wider flex items-center gap-1.5"><Hammer size={12} /> Material Recommendations</p>
                     <ul className="text-xs space-y-1.5 text-gray-600 font-medium">
-                      {(selectedAIDesign.aiSuggestion?.materials || ['Solid Oak Planks', 'Brushed Copper Trim', 'Woven Natural Linens']).map((m, i) => (
+                      {(selectedAIDesign.aiSuggestion?.materials || selectedAIDesign.aiDesignData?.materials || ['Solid Oak Planks', 'Brushed Copper Trim', 'Woven Natural Linens']).map((m, i) => (
                         <li key={i} className="flex items-center gap-2">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#2A9D8F]" /> {m}
                         </li>
@@ -7356,7 +7356,7 @@ const AdminDashboard = ({
                   <div className="bg-[#F8F5F0]/60 p-5 rounded-2xl border border-[#D4A373]/20 space-y-2">
                     <p className="text-xs font-bold text-[#8B5E3C] uppercase tracking-wider flex items-center gap-1.5"><Activity size={12} /> Palette Hex Codes</p>
                     <div className="flex gap-2.5 mt-2">
-                      {(selectedAIDesign.aiSuggestion?.colorPalette || ['#D4A373', '#2A9D8F', '#F8F5F0', '#1F2937']).map((hex, i) => (
+                      {(selectedAIDesign.aiSuggestion?.colorPalette || selectedAIDesign.aiDesignData?.colors || ['#D4A373', '#2A9D8F', '#F8F5F0', '#1F2937']).map((hex, i) => (
                         <div key={i} className="flex flex-col items-center gap-1">
                           <div className="w-8 h-8 rounded-full border border-gray-200 shadow-sm" style={{ backgroundColor: hex }} title={hex} />
                           <span className="font-mono text-[9px] text-gray-500 font-bold">{hex}</span>
