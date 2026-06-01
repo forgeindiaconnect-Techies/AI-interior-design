@@ -7,6 +7,7 @@ const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const { mockManualDesigns } = require('./designController');
 const VendorVerification = require('../models/VendorVerification');
+const OrderTracking = require('../models/OrderTracking');
 
 // In-memory mock states for Demo Mode
 let mockVerification = {};
@@ -336,8 +337,18 @@ exports.getVendorOrders = async (req, res) => {
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
     const standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
-    
-    res.status(200).json({ success: true, count: standardOrders.length, data: standardOrders });
+
+    const orderIds = standardOrders.map(o => o._id);
+    const trackingMap = {};
+    const trackings = await OrderTracking.find({ orderId: { $in: orderIds } });
+    trackings.forEach(t => { trackingMap[t.orderId.toString()] = t; });
+
+    const data = standardOrders.map(o => ({
+      ...o.toObject(),
+      tracking: trackingMap[o._id.toString()] || null
+    }));
+
+    res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -433,6 +444,59 @@ exports.approveReturn = async (req, res) => {
     await Notification.create({ userId: order.userId, message: `Your return request for order #${order._id.toString().slice(-6)} has been approved.` });
     
     res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Verify payment and start production
+// @route   POST /api/vendor/verify-payment/:orderId
+// @access  Private (Vendor)
+exports.verifyPayment = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    if (order.vendorId.toString() !== vendor._id.toString()) {
+      return res.status(403).json({ success: false, message: 'This order does not belong to your vendor account' });
+    }
+
+    if (order.orderStatus !== 'Awaiting Vendor Verification') {
+      return res.status(400).json({ success: false, message: 'Order is not awaiting vendor verification' });
+    }
+
+    order.orderStatus = 'Production Started';
+    await order.save();
+
+    const tracking = await OrderTracking.findOne({ orderId: order._id });
+    if (tracking) {
+      tracking.orderStatus = 'Production Started';
+      tracking.stages.push({ status: 'Production Started', timestamp: new Date(), updatedBy: 'vendor' });
+      await tracking.save();
+    }
+
+    const shortId = order._id.toString().slice(-6);
+    await Notification.create({
+      userId: order.userId,
+      message: `Vendor has verified payment for Order #${shortId}! Your order is now in production.`,
+      type: 'success'
+    });
+    await Notification.create({
+      isAdmin: true,
+      message: `Vendor verified payment for Order #${shortId}. Production started.`,
+      type: 'info'
+    });
+
+    res.status(200).json({ success: true, data: { order, tracking } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

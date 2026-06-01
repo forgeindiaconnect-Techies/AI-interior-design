@@ -12,6 +12,7 @@ const InstallationOrder = require('../models/InstallationOrder');
 const Payment = require('../models/Payment');
 const SupportTicket = require('../models/SupportTicket');
 const Notification = require('../models/Notification');
+const OrderTracking = require('../models/OrderTracking');
 const AdminLog = require('../models/AdminLog');
 const mongoose = require('mongoose');
 const VendorVerification = require('../models/VendorVerification');
@@ -1225,6 +1226,10 @@ exports.getManagementData = async (req, res) => {
       .populate('deliveryPartnerId', 'companyName')
       .populate('installationPartnerId', 'companyName')
       .sort('-createdAt');
+
+    const orderTrackings = await OrderTracking.find({}).lean();
+    const trackingByOrderId = {};
+    orderTrackings.forEach(t => { trackingByOrderId[t.orderId.toString()] = t; });
       
     const marketplaceOrders = await MarketplaceOrder.find({})
       .populate('userId', 'name email')
@@ -1259,7 +1264,8 @@ exports.getManagementData = async (req, res) => {
         expectedDeliveryDate: o.expectedDeliveryDate,
         createdAt: o.createdAt,
         shippingAddress: o.shippingAddress,
-        isMarketplace: false
+        isMarketplace: false,
+        tracking: trackingByOrderId[o._id.toString()] || null
       });
     });
 

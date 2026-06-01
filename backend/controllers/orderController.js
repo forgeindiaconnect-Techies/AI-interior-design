@@ -8,6 +8,8 @@ const Review = require('../models/Review');
 const SupportTicket = require('../models/SupportTicket');
 const Notification = require('../models/Notification');
 const Vendor = require('../models/Vendor');
+const User = require('../models/User');
+const OrderTracking = require('../models/OrderTracking');
 const mongoose = require('mongoose');
 
 // @desc    Place an order
@@ -37,7 +39,18 @@ exports.getUserOrders = async (req, res) => {
 
 
     const orders = await Order.find({ userId: req.user.id }).populate('vendorId', 'companyName').sort('-createdAt');
-    res.status(200).json({ success: true, data: orders });
+
+    const orderIds = orders.map(o => o._id);
+    const trackingMap = {};
+    const trackings = await OrderTracking.find({ orderId: { $in: orderIds } });
+    trackings.forEach(t => { trackingMap[t.orderId.toString()] = t; });
+
+    const data = orders.map(o => ({
+      ...o.toObject(),
+      tracking: trackingMap[o._id.toString()] || null
+    }));
+
+    res.status(200).json({ success: true, data });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -160,6 +173,99 @@ exports.createPayment = async (req, res) => {
     const payment = await Payment.create({ orderId, userId: req.user.id, amount, transactionId, paymentMethod, status: 'success' });
     await Order.findByIdAndUpdate(orderId, { paymentStatus: 'paid' });
     res.status(201).json({ success: true, data: payment });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Accept Quotation & Pay — creates Order, Payment, and OrderTracking
+// @route   POST /api/orders/accept-and-pay
+// @access  Private
+exports.createPaymentAndOrder = async (req, res) => {
+  try {
+    const { quotationId, paymentMethod, shippingAddress } = req.body;
+    if (!quotationId || !paymentMethod) {
+      return res.status(400).json({ success: false, message: 'quotationId and paymentMethod are required' });
+    }
+
+    const quotation = await Quotation.findById(quotationId);
+    if (!quotation) {
+      return res.status(404).json({ success: false, message: 'Quotation not found' });
+    }
+    if (quotation.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Quotation is not pending approval' });
+    }
+
+    quotation.status = 'approved';
+    await quotation.save();
+
+    const vendor = await Vendor.findById(quotation.vendorId);
+    if (!vendor) {
+      return res.status(404).json({ success: false, message: 'Vendor not found' });
+    }
+
+    const order = await Order.create({
+      userId: req.user.id,
+      vendorId: quotation.vendorId,
+      orderType: 'custom_design',
+      referenceId: quotation._id,
+      totalAmount: quotation.budgetAmount,
+      shippingAddress: shippingAddress || 'Address on file',
+      orderStatus: 'Awaiting Vendor Verification',
+      paymentStatus: 'paid'
+    });
+
+    const txnId = 'TXN' + Date.now() + Math.floor(Math.random() * 1000);
+
+    const payment = await Payment.create({
+      orderId: order._id,
+      userId: req.user.id,
+      amount: quotation.budgetAmount,
+      paymentMethod,
+      transactionId: txnId,
+      status: 'success'
+    });
+
+    const user = await User.findById(req.user.id).select('name');
+
+    const tracking = await OrderTracking.create({
+      orderId: order._id,
+      userId: req.user.id,
+      vendorId: quotation.vendorId,
+      customerName: user ? user.name : 'Customer',
+      vendorName: vendor.companyName || 'Vendor',
+      amount: quotation.budgetAmount,
+      paymentMethod,
+      transactionId: txnId,
+      paymentDate: new Date(),
+      paymentStatus: 'Completed',
+      orderStatus: 'Awaiting Vendor Verification',
+      stages: [
+        { status: 'Awaiting Vendor Verification', timestamp: new Date(), updatedBy: 'user' }
+      ]
+    });
+
+    const shortId = order._id.toString().slice(-6);
+    await Notification.create({
+      userId: req.user.id,
+      message: `Payment successful for Order #${shortId}! Awaiting vendor verification.`,
+      type: 'success'
+    });
+    await Notification.create({
+      userId: vendor.userId,
+      message: `Payment received for Order #${shortId}. Amount: ₹${quotation.budgetAmount}. Method: ${paymentMethod}. TXN: ${txnId}. Please verify payment.`,
+      type: 'info'
+    });
+    await Notification.create({
+      isAdmin: true,
+      message: `Payment completed for Order #${shortId}. Amount: ₹${quotation.budgetAmount}. Commission: ₹${(quotation.budgetAmount * 0.15).toFixed(2)}`,
+      type: 'info'
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { order, payment, tracking }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

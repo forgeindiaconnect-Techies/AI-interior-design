@@ -445,7 +445,7 @@ const VendorDashboard = ({
           }));
         setManufacturingOrders(mfgOrders);
 
-        const pendingOrders = localOrders.filter(o => o.orderStatus === 'Paid - Awaiting Verification');
+        const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
         setPendingVerificationOrders(pendingOrders);
 
         const delOrders = localOrders
@@ -1085,22 +1085,17 @@ const VendorDashboard = ({
 
   // Payment Verification Actions
   const handleVerifyPayment = async (orderId) => {
-    const localOrders = [];
-    const updatedOrders = localOrders.map(o =>
-      o._id === orderId ? { ...o, orderStatus: 'Production Started' } : o
-    );
-    
-    setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
-
-    // Notify user
-    const localUserNotifs = [];
-    
-
-    // Notify admin
-    const localAdminNotifs = [];
-    
-
-    showToast('Payment verified! Order moved to production.');
+    try {
+      const res = await axios.post(`/vendor/verify-payment/${orderId}`);
+      if (res.data && res.data.success) {
+        setPendingVerificationOrders(prev => prev.filter(o => o._id !== orderId));
+        await fetchPartnerData();
+        showToast('Payment verified! Order moved to production.');
+      }
+    } catch (err) {
+      console.error('Payment verification failed:', err);
+      showToast(err.response?.data?.message || 'Verification failed. Please try again.');
+    }
   };
 
   const handleRejectPayment = async (orderId) => {
@@ -2608,7 +2603,9 @@ const VendorDashboard = ({
                   <p className="text-xs text-gray-500">{pendingVerificationOrders.length} order{pendingVerificationOrders.length > 1 ? 's' : ''} awaiting verification</p>
                 </div>
               </div>
-              {pendingVerificationOrders.map((pv) => (
+              {pendingVerificationOrders.map((pv) => {
+                const tr = pv.tracking;
+                return (
                 <div key={pv._id} className="bg-white p-8 rounded-3xl shadow-sm border-l-4 border-l-amber-400 border border-[#D4A373]/30 space-y-6">
                   <div className="flex justify-between items-start border-b border-gray-100 pb-4">
                     <div>
@@ -2619,17 +2616,24 @@ const VendorDashboard = ({
                           : (pv.orderType || 'Custom Order') + ' — Order ' + pv._id.slice(-6)}
                       </h3>
                       <p className="text-xs text-gray-400 mt-1">Order ID: #{pv._id.slice(-6)}</p>
+                      {tr && <p className="text-xs text-gray-400 mt-1">Customer: {tr.customerName}</p>}
                     </div>
                     <span className="text-[#2A9D8F] font-extrabold text-2xl">${pv.quotationAmount || pv.totalAmount || '0'}</span>
                   </div>
                   <div className="bg-[#F8F5F0] p-5 rounded-2xl border border-[#D4A373]/20 space-y-3 text-sm">
                     <h4 className="font-bold text-xs uppercase tracking-wider text-gray-500 flex items-center gap-2"><FileText className="w-4 h-4" /> Transaction Details</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                      <div><span className="text-gray-500">Amount Paid</span><p className="font-bold text-[#1F2937]">${pv.quotationAmount || pv.totalAmount || '0'}</p></div>
-                      <div><span className="text-gray-500">Payment Method</span><p className="font-bold text-[#1F2937]">{pv.quotationPaymentMethod || 'UPI'}</p></div>
-                      <div><span className="text-gray-500">Customer</span><p className="font-bold text-[#1F2937]">{pv.userId?.name || 'Customer'}</p></div>
-                      <div><span className="text-gray-500">Date</span><p className="font-bold text-[#1F2937]">{new Date(pv.createdAt).toLocaleDateString()}</p></div>
+                      <div><span className="text-gray-500">Amount Paid</span><p className="font-bold text-[#1F2937]">${tr?.amount || pv.quotationAmount || pv.totalAmount || '0'}</p></div>
+                      <div><span className="text-gray-500">Payment Method</span><p className="font-bold text-[#1F2937]">{tr?.paymentMethod || pv.quotationPaymentMethod || 'UPI'}</p></div>
+                      <div><span className="text-gray-500">Customer</span><p className="font-bold text-[#1F2937]">{tr?.customerName || pv.userId?.name || 'Customer'}</p></div>
+                      <div><span className="text-gray-500">Date</span><p className="font-bold text-[#1F2937]">{tr?.paymentDate ? new Date(tr.paymentDate).toLocaleDateString() : new Date(pv.createdAt).toLocaleDateString()}</p></div>
                     </div>
+                    {tr && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm pt-2 border-t border-[#D4A373]/20">
+                        <div><span className="text-gray-500">Transaction ID</span><p className="font-bold text-[#1F2937] text-xs break-all">{tr.transactionId}</p></div>
+                        <div><span className="text-gray-500">Payment Status</span><p className="font-bold text-emerald-600">{tr.paymentStatus}</p></div>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-4">
                     <button
@@ -2648,7 +2652,8 @@ const VendorDashboard = ({
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
           )}
 

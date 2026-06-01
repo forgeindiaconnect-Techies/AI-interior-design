@@ -948,93 +948,50 @@ Thank you for shopping with Artisan Studio!
     if (req) setQuotationPayment(req);
   };
 
-  // Process Quotation Payment
+  // Process Quotation Payment via Backend API
   const handleQuotationPayment = async () => {
     if (!quotationPayment) return;
     setQuotationProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
 
     const quotationId = quotationPayment._id;
-    const requestObj = manualDesigns.find(r => r._id === quotationId) || aiQuotationOrders.find(r => r._id === quotationId);
 
-    const orderAmount = requestObj ? Number(requestObj.quotationAmount || 3500) : 4500;
-
-    const newOrder = {
-      _id: 'ord_q_' + Date.now(),
-      orderType: requestObj?.requestType || 'Manual Design',
-      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: { _id: requestObj?.assignedVendorId?._id || '65c2b18a7c6b4b1c92949765', companyName: requestObj?.assignedVendorId?.companyName || 'Artisan Workshop' },
-      manufacturerId: null,
-      deliveryPartnerId: null,
-      installationPartnerId: null,
-      totalAmount: orderAmount,
-      paymentStatus: 'paid',
-      orderStatus: 'Paid - Awaiting Verification',
-      expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
-      createdAt: new Date().toISOString(),
-      shippingAddress: user?.address || '789 Designer Lane, New York, NY, USA',
-      designRequestId: quotationId,
-      quotationAmount: requestObj?.quotationAmount || orderAmount,
-      quotationMaterials: requestObj?.quotationMaterials || '',
-      quotationTime: requestObj?.quotationTime || ''
+    const methodMap = {
+      'Google Pay': 'UPI',
+      'PhonePe': 'UPI',
+      'Paytm': 'UPI',
+      'UPI': 'UPI',
+      'Card': 'Credit Card',
+      'NetBanking': 'Net Banking'
     };
+    const paymentMethod = methodMap[quotationPaymentMethod] || 'UPI';
 
-    const updated = [newOrder, ...orders];
-    
-    setOrders(updated);
+    try {
+      const res = await axios.post('/orders/accept-and-pay', {
+        quotationId,
+        paymentMethod,
+        shippingAddress: user?.address || 'Address on file'
+      });
 
-    if (requestObj) {
-      setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Accepted' } : r));
+      if (res.data && res.data.success) {
+        const { order, payment, tracking } = res.data.data;
+
+        setOrders(prev => [{ ...order, tracking }, ...prev]);
+
+        const requestObj = manualDesigns.find(r => r._id === quotationId) || aiQuotationOrders.find(r => r._id === quotationId);
+        if (requestObj) {
+          setManualDesigns(manualDesigns.map(r => r._id === quotationId ? { ...r, status: 'Approved' } : r));
+        }
+
+        showToast('Payment successful! Order has been created.');
+        setQuotationPayment(null);
+        if (setActiveTab) setActiveTab('orders');
+      }
+    } catch (err) {
+      console.error('Payment failed:', err);
+      showToast(err.response?.data?.message || 'Payment failed. Please try again.');
+    } finally {
+      setQuotationProcessing(false);
     }
-
-    // Create transaction record for admin
-    const newTransaction = {
-      _id: 'txn_q_' + Date.now(),
-      orderId: newOrder._id,
-      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
-      vendorId: { companyName: 'Artisan Workshop' },
-      amount: orderAmount,
-      commissionAmount: Math.round(orderAmount * 0.15 * 100) / 100,
-      netPayout: Math.round(orderAmount * 0.85 * 100) / 100,
-      paymentMethod: quotationPaymentMethod,
-      status: 'Paid',
-      type: 'Customer Payment',
-      createdAt: new Date().toISOString()
-    };
-
-    // Notifications
-    const triggerNotif = (recipient, message, type = 'success') => {
-      const notifObj = {
-        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        message,
-        type,
-        createdAt: new Date().toISOString(),
-        read: false
-      };
-      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      localStorage.setItem(key, JSON.stringify([notifObj, ...existing]));
-    };
-
-    const shortOrderId = newOrder._id.slice(-6);
-    const payMethod = (quotationPaymentMethod || 'Paytm UPI').toUpperCase().includes('UPI') ? 'Paytm UPI' : (quotationPaymentMethod || 'Paytm UPI');
-    const txnId = 'PTM' + Math.floor(10000000 + Math.random() * 90000000);
-    const optionsDate = { day: 'numeric', month: 'short', year: 'numeric' };
-    const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
-    const formattedDate = new Date().toLocaleDateString('en-GB', optionsDate);
-    const formattedTime = new Date().toLocaleTimeString('en-US', optionsTime);
-    const paidOnStr = `${formattedDate} | ${formattedTime}`;
-
-    const vendorMsg = `Payment received successfully\n\nOrder ID: #${shortOrderId}\nCustomer: ${user?.name || 'Customer'}\nAmount Paid: ₹${orderAmount.toLocaleString('en-IN')}\nPayment Method: ${payMethod}\nTransaction ID: ${txnId}\nPaid On: ${paidOnStr}\n\nPlease verify the payment and start production.`;
-
-    triggerNotif('user', 'Payment success! Awaiting vendor verification. Your order will enter production once confirmed.', 'success');
-    triggerNotif('vendor', vendorMsg, 'info');
-    triggerNotif('admin', `Payment success for order: #${shortOrderId}.`, 'success');
-
-    setQuotationProcessing(false);
-    setQuotationPayment(null);
-    showToast('Payment successful! Order has been created.');
-    if (setActiveTab) setActiveTab('orders');
   };
 
   const handleBudgetRejection = async (quotationId) => {
@@ -2247,28 +2204,72 @@ Thank you for shopping with Artisan Studio!
               <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
                 <Hammer className="w-4 h-4 text-[#2A9D8F]" /> Custom Design Orders
               </h3>
-              {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').map((order) => (
-                <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:shadow-md transition-all">
-                  <div>
-                    <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{order.orderType?.replace('_', ' ') || 'CUSTOM'}</span>
-                    <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-2">Order #{order._id?.slice(-6) || '10293'}</h3>
-                    <p className="text-xs text-[#6B7280] mt-1">Vendor: {order.vendorId?.companyName || 'Artisan Partner'} • Status: <span className="font-bold text-[#2A9D8F]">{order.orderStatus || 'In Progress'}</span></p>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
-                      <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-1">Payment: <span className="text-[#2A9D8F]">{order.paymentStatus || 'pending'}</span></p>
+              {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').map((order) => {
+                const tracking = order.tracking;
+                const stages = tracking?.stages || [];
+                return (
+                <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 hover:shadow-md transition-all">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                      <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{order.orderType?.replace('_', ' ') || 'CUSTOM'}</span>
+                      <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-2">Order #{order._id?.slice(-6) || '10293'}</h3>
+                      <p className="text-xs text-[#6B7280] mt-1">Vendor: {order.vendorId?.companyName || 'Artisan Partner'} • Status: <span className="font-bold text-[#2A9D8F]">{order.orderStatus || 'In Progress'}</span></p>
                     </div>
-                    {(!order.paymentStatus || order.paymentStatus === 'pending') ? (
-                      <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Pay Now</button>
-                    ) : (
-                      <button onClick={() => { if(setActiveTab) setActiveTab('tracking'); }} className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2">
-                        <Truck className="w-4 h-4" /> Track Order
-                      </button>
-                    )}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-right">
+                        <span className="font-['Playfair_Display'] font-extrabold text-3xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
+                        <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-1">Payment: <span className={order.paymentStatus === 'paid' ? 'text-[#2A9D8F]' : 'text-amber-600'}>{order.paymentStatus || 'pending'}</span></p>
+                      </div>
+                      {(!order.paymentStatus || order.paymentStatus === 'pending') ? (
+                        <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-lg transition-all">Pay Now</button>
+                      ) : (
+                        <button onClick={() => { if(setActiveTab) setActiveTab('tracking'); }} className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-6 py-3 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                          <Truck className="w-4 h-4" /> Track Order
+                        </button>
+                      )}
+                    </div>
                   </div>
+                  {tracking && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                        <div className="bg-[#F8F5F0] p-3 rounded-xl border border-[#D4A373]/20">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Payment Method</span>
+                          <p className="font-bold text-gray-700 mt-0.5">{tracking.paymentMethod}</p>
+                        </div>
+                        <div className="bg-[#F8F5F0] p-3 rounded-xl border border-[#D4A373]/20">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Transaction ID</span>
+                          <p className="font-bold text-gray-700 mt-0.5 text-[11px]">{tracking.transactionId}</p>
+                        </div>
+                        <div className="bg-[#F8F5F0] p-3 rounded-xl border border-[#D4A373]/20">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Payment Date</span>
+                          <p className="font-bold text-gray-700 mt-0.5">{new Date(tracking.paymentDate).toLocaleDateString()}</p>
+                        </div>
+                        <div className="bg-[#F8F5F0] p-3 rounded-xl border border-[#D4A373]/20">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block">Status</span>
+                          <p className="font-bold text-emerald-600 mt-0.5">{tracking.paymentStatus}</p>
+                        </div>
+                      </div>
+                      {stages.length > 0 && (
+                        <div className="mt-4">
+                          <span className="text-[10px] text-gray-400 font-bold uppercase block mb-2">Order Timeline</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {stages.map((stage, i) => (
+                              <div key={i} className="flex items-center gap-2">
+                                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[#8B5E3C]/10 text-[#8B5E3C] rounded-lg text-[11px] font-bold">
+                                  <CheckCircle className="w-3.5 h-3.5" />
+                                  {stage.status}
+                                </div>
+                                {i < stages.length - 1 && <ArrowRight className="w-4 h-4 text-gray-300" />}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
