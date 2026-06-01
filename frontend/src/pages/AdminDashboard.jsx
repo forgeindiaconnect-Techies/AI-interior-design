@@ -2002,74 +2002,34 @@ const AdminDashboard = ({
 
   const handleAssignManualDesignVendorSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedManualDesignVendorId) {
-      alert('Please select a vendor to assign.');
-      return;
+    if (!selectedManualDesignVendorId) { alert('Please select a vendor.'); return; }
+
+    try {
+      await axios.put(`/admin/manual-designs/${assignVendorManualDesign._id}/assign-vendor`, { vendorId: selectedManualDesignVendorId });
+      await fetchAdminData();
+      alert('🏪 Vendor assigned successfully to request!');
+      setAssignVendorManualDesign(null);
+      setSelectedManualDesignVendorId('');
+    } catch (error) { 
+      console.error(error);
+      alert('Failed to assign vendor.');
     }
-    const chosenVendorObj = (managementData?.vendors || []).find(v => v._id === selectedManualDesignVendorId);
-    const companyName = chosenVendorObj?.companyName || chosenVendorObj?.name || 'Assigned Vendor';
-
-    // Check if assignVendorManualDesign is actually an AI Design order
-    const isOrder = assignVendorManualDesign._id && assignVendorManualDesign._id.startsWith('ord_');
-    if (isOrder) {
-      const orders = [];
-      const updated = orders.map(o => o._id === assignVendorManualDesign._id ? {
-        ...o,
-        vendorId: { _id: selectedManualDesignVendorId, companyName },
-        orderStatus: 'Assigned'
-      } : o);
-      
-      window.dispatchEvent(new Event('mockOrdersUpdated'));
-    } else {
-      try {
-        await axios.put(`/admin/manual-designs/${assignVendorManualDesign._id}/assign-vendor`, { vendorId: selectedManualDesignVendorId });
-      } catch (_) { /* offline fallback */ }
-      updateManualDesignInStorage(assignVendorManualDesign._id, {
-        assignedVendorId: { _id: selectedManualDesignVendorId, companyName },
-        status: 'Assigned'
-      });
-    }
-
-    alert('✅ Vendor assigned successfully!');
-    setAssignVendorManualDesign(null);
-    setSelectedManualDesignVendorId('');
-
   };
 
   const handleAssignManualDesignDesignerSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedManualDesignDesignerId) {
-      alert('Please select an interior designer.');
-      return;
+    if (!selectedManualDesignDesignerId) { alert('Please select a designer.'); return; }
+
+    try {
+      await axios.put(`/admin/manual-designs/${assignDesignerManualDesign._id}/assign-designer`, { designerId: selectedManualDesignDesignerId });
+      await fetchAdminData();
+      alert('🎨 Designer assigned successfully to request!');
+      setAssignDesignerManualDesign(null);
+      setSelectedManualDesignDesignerId('');
+    } catch (error) { 
+      console.error(error);
+      alert('Failed to assign designer.');
     }
-    const chosenDesignerObj = (managementData?.vendors || []).find(v => v._id === selectedManualDesignDesignerId);
-    const companyName = chosenDesignerObj?.companyName || chosenDesignerObj?.name || 'Assigned Designer';
-
-    // Check if assignDesignerManualDesign is actually an AI Design order
-    const isOrder = assignDesignerManualDesign._id && assignDesignerManualDesign._id.startsWith('ord_');
-    if (isOrder) {
-      const orders = [];
-      const updated = orders.map(o => o._id === assignDesignerManualDesign._id ? {
-        ...o,
-        designerId: { _id: selectedManualDesignDesignerId, companyName },
-        orderStatus: 'Assigned'
-      } : o);
-      
-      window.dispatchEvent(new Event('mockOrdersUpdated'));
-    } else {
-      try {
-        await axios.put(`/admin/manual-designs/${assignDesignerManualDesign._id}/assign-designer`, { designerId: selectedManualDesignDesignerId });
-      } catch (_) { /* offline fallback */ }
-      updateManualDesignInStorage(assignDesignerManualDesign._id, {
-        assignedDesignerId: { _id: selectedManualDesignDesignerId, companyName },
-        status: 'Assigned'
-      });
-    }
-
-    alert('🎨 Interior Designer assigned successfully!');
-    setAssignDesignerManualDesign(null);
-    setSelectedManualDesignDesignerId('');
-
   };
 
   const handleApproveManualDesign = async (id) => {
@@ -2095,95 +2055,30 @@ const AdminDashboard = ({
       const confirmDelete = window.confirm('Are you sure you want to delete this request? This action cannot be undone.');
       if (!confirmDelete) return;
 
-      let deleted = false;
-
-      const storedManual = [];
-      if (storedManual.some(r => r._id === id)) {
-        try { await axios.delete(`/admin/manual-designs/${id}`); } catch (_) {}
-        const updated = storedManual.filter(r => r._id !== id);
-        
-        deleted = true;
+      try {
+        await axios.delete(`/admin/manual-designs/${id}`);
+        if (selectedAIDesign && selectedAIDesign._id === id) setSelectedAIDesign(null);
+        if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(null);
+        if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(null);
+        await fetchAdminData();
+        alert('Request deleted successfully.');
+      } catch (err) {
+        console.error(err);
+        alert('Failed to delete request.');
       }
-
-      if (!deleted) {
-        const storedDesigner = [];
-        if (storedDesigner.some(r => r._id === id)) {
-          try { await axios.delete(`/admin/designer-requests/${id}`); } catch (_) {}
-          const updated = storedDesigner.filter(r => r._id !== id);
-          
-          deleted = true;
-        }
-      }
-
-      if (!deleted) {
-        const storedOrders = [];
-        if (storedOrders.some(o => o._id === id)) {
-          try { await axios.delete(`/admin/orders/${id}`); } catch (_) {}
-          const updated = storedOrders.filter(o => o._id !== id);
-          
-          window.dispatchEvent(new Event('mockOrdersUpdated'));
-          deleted = true;
-        }
-      }
-
-      if (selectedAIDesign && selectedAIDesign._id === id) setSelectedAIDesign(null);
-      if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(null);
-      if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(null);
-
-  
       return;
     }
 
-    let found = false;
-
-    // 1. Check mockManualRequests
-    const storedManual = [];
-    const isManual = storedManual.some(r => r._id === id);
-    if (isManual) {
-      try {
-        await axios.put(`/admin/manual-designs/${id}/status`, { status });
-      } catch (_) {}
-      updateManualDesignInStorage(id, { status });
-      found = true;
+    try {
+      await axios.put(`/admin/manual-designs/${id}/status`, { status });
+      if (selectedAIDesign && selectedAIDesign._id === id) setSelectedAIDesign(prev => prev ? { ...prev, status } : null);
+      if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(prev => prev ? { ...prev, status } : null);
+      if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(prev => prev ? { ...prev, status } : null);
+      await fetchAdminData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update status.');
     }
-
-    // 2. Check mockDesignerRequests
-    if (!found) {
-      const storedDesigner = [];
-      const isDesigner = storedDesigner.some(r => r._id === id);
-      if (isDesigner) {
-        try {
-          await axios.put(`/admin/designer-requests/${id}/status`, { status });
-        } catch (_) {}
-        updateDesignerRequestInStorage(id, { status });
-        found = true;
-      }
-    }
-
-    // 3. Check mockOrders
-    if (!found) {
-      const storedOrders = [];
-      const isOrder = storedOrders.some(o => o._id === id);
-      if (isOrder) {
-        const updatedOrders = storedOrders.map(o => o._id === id ? { ...o, orderStatus: status } : o);
-        
-        window.dispatchEvent(new Event('mockOrdersUpdated'));
-        found = true;
-      }
-    }
-
-    // Update active modal objects if open
-    if (selectedAIDesign && selectedAIDesign._id === id) {
-      setSelectedAIDesign(prev => prev ? { ...prev, orderStatus: status, status } : null);
-    }
-    if (selectedManualDesign && selectedManualDesign._id === id) {
-      setSelectedManualDesign(prev => prev ? { ...prev, status } : null);
-    }
-    if (selectedDesignerRequest && selectedDesignerRequest._id === id) {
-      setSelectedDesignerRequest(prev => prev ? { ...prev, status } : null);
-    }
-
-
   };
 
   const handleUpdateManualDesignStatus = async (id, status) => {
@@ -2197,22 +2092,16 @@ const AdminDashboard = ({
       return;
     }
 
-    const chosenDesignerObj = (managementData?.vendors || []).find(v => v._id === selectedRequestDesignerId);
-    const companyName = chosenDesignerObj?.companyName || chosenDesignerObj?.name || 'Assigned Designer';
-
     try {
-      await axios.put(`/admin/designer-requests/${assignDesignerRequestObj._id}/assign`, { designerId: selectedRequestDesignerId });
-    } catch (error) { /* offline fallback */ }
-
-    updateDesignerRequestInStorage(assignDesignerRequestObj._id, {
-      assignedDesignerId: { _id: selectedRequestDesignerId, companyName },
-      status: 'Assigned'
-    });
-
-    alert('🎨 Interior Designer assigned successfully to consultation request!');
-    setAssignDesignerRequestObj(null);
-    setSelectedRequestDesignerId('');
-
+      await axios.put(`/admin/manual-designs/${assignDesignerRequestObj._id}/assign-designer`, { designerId: selectedRequestDesignerId });
+      await fetchAdminData();
+      alert('🎨 Interior Designer assigned successfully to request!');
+      setAssignDesignerRequestObj(null);
+      setSelectedRequestDesignerId('');
+    } catch (error) { 
+      console.error(error);
+      alert('Failed to assign designer.');
+    }
   };
 
   const handleUpdateDesignerRequestStatus = async (id, status) => {

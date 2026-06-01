@@ -414,14 +414,7 @@ const VendorDashboard = ({
         if (reqRes.data.success) backendRequests = reqRes.data.data;
       } catch (err) { console.warn('Backend custom requests fetch failed'); }
       
-      const localManual = JSON.parse(localStorage.getItem('mockManualRequests') || '[]');
-      const finalRequests = [...localManual];
-      backendRequests.forEach(br => {
-        if (!finalRequests.find(lr => lr._id === br._id)) {
-          finalRequests.push(br);
-        }
-      });
-      setCustomRequests(finalRequests);
+      setCustomRequests(backendRequests);
 
       // 6. Orders (Manufacturing and Delivery)
       let localOrders = [];
@@ -894,30 +887,24 @@ const VendorDashboard = ({
 
   const handleSendQuotation = async (e, req) => {
     e.preventDefault();
-    const quotationFields = { 
-      quotationAmount: quoteAmount, 
-      quotationMaterials: quoteMaterials, 
-      quotationTime: quoteTime,
-      quotationUPI: quoteUPI,
-      quotationQR: quoteQR,
-      quotationPaymentMethod: selectedPaymentMethod,
-      quotationBankHolder: quoteBankHolder,
-      quotationBankAccount: quoteBankAccount,
-      quotationBankIFSC: quoteBankIFSC,
-      quotationBankName: quoteBankName,
-      quotationPaymentGateway: quotePaymentGateway,
-      quotationCashOnVisit: quoteCashOnVisit,
-    };
-    
-    setCustomRequests(customRequests.map(r => r._id === req._id ? { ...r, status: 'Quotation Sent', ...quotationFields } : r));
-    updateRequestStatusInStorage(req._id, 'Quotation Sent', quotationFields);
-
-    // Send customer notification
-    const localUserNotifs = [];
-    
-
-    alert('✅ Quotation sent to customer successfully! User has been notified.');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+    try {
+      const res = await axios.post('/vendor/quotations', {
+         userId: req.userId._id || req.userId,
+         designType: 'manual',
+         designRequestId: req._id,
+         budgetAmount: quoteAmount,
+         materialsBreakdown: quoteMaterials,
+         estimatedTime: quoteTime
+      });
+      if (res.data.success) {
+         setCustomRequests(customRequests.map(r => r._id === req._id ? { ...r, status: 'Quotation Sent', quotationAmount: quoteAmount } : r));
+         alert('Quotation sent to customer successfully! User has been notified.');
+         setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error sending quotation.');
+    }
   };
 
   const resetPaymentFields = () => {
@@ -927,16 +914,30 @@ const VendorDashboard = ({
   };
 
   const handleAcceptRequest = async (id) => {
-    setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Vendor Review' } : r));
-    updateRequestStatusInStorage(id, 'Vendor Review');
-    alert('✅ Design request accepted successfully! The user has been notified.');
+    try {
+      const res = await axios.post(`/vendor/requests/${id}/accept`);
+      if (res.data.success) {
+         setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Accepted' } : r));
+         alert('✅ Design request accepted successfully! The user has been notified.');
+      }
+    } catch(err) {
+      console.error(err);
+      alert('Error accepting request.');
+    }
   };
 
   const handleRejectRequest = async (id) => {
     if (!confirm('Are you sure you want to reject this design request?')) return;
-    setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Rejected' } : r));
-    updateRequestStatusInStorage(id, 'Rejected');
-    alert('❌ Design request rejected. The user has been notified.');
+    try {
+      const res = await axios.post(`/vendor/requests/${id}/reject`);
+      if (res.data.success) {
+         setCustomRequests(customRequests.map(r => r._id === id ? { ...r, status: 'Rejected' } : r));
+         alert('❌ Design request rejected. The user has been notified.');
+      }
+    } catch(err) {
+      console.error(err);
+      alert('Error rejecting request.');
+    }
   };
 
   const handleSendAiOrderQuotation = async (e, order) => {
@@ -2443,17 +2444,32 @@ const VendorDashboard = ({
 
                     {req.requestType === 'AI Generated' ? (
                       <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/30 flex flex-col sm:flex-row gap-6 mt-4">
-                        <img src={req.referenceImages?.[0] || '/ai-results/living_room.png'} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-sm" />
+                        <div className="flex gap-3 shrink-0">
+                          <div className="relative">
+                            <a href={req.generatedImage || req.referenceImages?.[0]} target="_blank" rel="noreferrer">
+                              <img src={req.generatedImage || req.referenceImages?.[0] || '/ai-results/living_room.png'} alt="AI Generated" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-[#2A9D8F]/30" />
+                            </a>
+                            <span className="absolute bottom-2 left-2 bg-[#2A9D8F]/90 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">AI Generated</span>
+                          </div>
+                          {req.originalImage && (
+                            <div className="relative">
+                              <a href={req.originalImage} target="_blank" rel="noreferrer">
+                                <img src={req.originalImage} alt="Original" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-gray-200 opacity-80 hover:opacity-100 transition-opacity" />
+                              </a>
+                              <span className="absolute bottom-2 left-2 bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">Original</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="space-y-4 flex-1">
                           <h4 className="font-bold text-[#1F2937] text-lg border-b border-[#D4A373]/20 pb-2">AI Suggestions</h4>
                           <div className="grid grid-cols-2 gap-4 text-sm text-[#6B7280]">
                             <div>
                               <strong className="text-[#1F2937] block mb-1">Furniture:</strong>
-                              {req.requirements?.match(/Furniture \(([^)]+)\)/)?.[1] || 'Modern Furniture Set'}
+                              {req.aiSuggestion?.furniture?.join(', ') || req.requirements?.match(/Furniture \(([^)]+)\)/)?.[1] || 'Modern Furniture Set'}
                             </div>
                             <div>
                               <strong className="text-[#1F2937] block mb-1">Materials:</strong>
-                              {req.requirements?.match(/Materials \(([^)]+)\)/)?.[1] || 'Premium Materials'}
+                              {req.aiSuggestion?.materials?.join(', ') || req.requirements?.match(/Materials \(([^)]+)\)/)?.[1] || 'Premium Materials'}
                             </div>
                           </div>
                           <div className="pt-2">

@@ -171,9 +171,9 @@ exports.acceptRequest = async (req, res) => {
   try {
 
 
-    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Vendor Review' }, { returnDocument: 'after' });
+    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Accepted' }, { returnDocument: 'after' });
     if (request) {
-      await Notification.create({ userId: request.userId, message: `Vendor accepted your design request and is reviewing it.` });
+      await Notification.create({ userId: request.userId, message: `Vendor accepted your design request and will provide a quotation.` });
     }
     res.status(200).json({ success: true, message: 'Request accepted successfully', data: request });
   } catch (error) {

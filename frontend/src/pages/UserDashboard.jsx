@@ -692,6 +692,9 @@ const UserDashboard = ({
           ownMaterialsAvailable: 'No',
           requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
           referenceImages: [updatedDesign.generatedImage],
+          originalImage: updatedDesign.originalImage,
+          generatedImage: updatedDesign.generatedImage,
+          aiSuggestion: updatedDesign.aiSuggestion
         };
         
         const res = await axios.post('/designs/manual', payload);
