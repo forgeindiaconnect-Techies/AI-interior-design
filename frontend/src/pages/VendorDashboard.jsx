@@ -2622,7 +2622,6 @@ const VendorDashboard = ({
                 <h4 className="font-bold text-sm text-[#1F2937]">Update Manufacturing Stage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={mfgStatus[mfg._id] || mfg.status} onChange={(e) => setMfgStatus({ ...mfgStatus, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
-                    <option value="Payment Verified">Payment Verified</option>
                     <option value="Production Started">Production Started</option>
                     <option value="Manufacturing">Manufacturing</option>
                     <option value="Ready for Delivery">Ready for Delivery</option>

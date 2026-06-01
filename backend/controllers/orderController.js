@@ -325,8 +325,17 @@ exports.updateOrderTracking = async (req, res) => {
 
     let tracking = await OrderTracking.findOne({ orderId });
     if (!tracking) {
+      const user = await User.findById(order.userId).select('name');
+      const vendor = await Vendor.findById(order.vendorId).select('companyName');
       tracking = new OrderTracking({
         orderId,
+        userId: order.userId,
+        vendorId: order.vendorId,
+        customerName: user?.name || 'Customer',
+        vendorName: vendor?.companyName || 'Vendor',
+        amount: order.totalAmount || order.quotationAmount || 0,
+        paymentMethod: 'UPI',
+        transactionId: 'TXN' + Date.now(),
         orderStatus: status || order.orderStatus,
         stages: []
       });

@@ -1,4 +1,5 @@
 const Vendor = require('../models/Vendor');
+const User = require('../models/User');
 const ManualDesignRequest = require('../models/ManualDesignRequest');
 const Quotation = require('../models/Quotation');
 const Order = require('../models/Order');
@@ -16,7 +17,6 @@ let mockStoreSetup = {};
 const findOrCreateVendorHelper = async (userId) => {
   let vendor = await Vendor.findOne({ userId });
   if (!vendor && mongoose.Types.ObjectId.isValid(userId)) {
-    const User = require('../models/User');
     const dbUser = await User.findById(userId);
     vendor = await Vendor.create({
       userId: userId,
@@ -479,8 +479,16 @@ exports.verifyPayment = async (req, res) => {
 
     let tracking = await OrderTracking.findOne({ orderId: order._id });
     if (!tracking) {
+      const user = await User.findById(order.userId).select('name');
       tracking = new OrderTracking({
         orderId: order._id,
+        userId: order.userId,
+        vendorId: vendor._id,
+        customerName: user?.name || 'Customer',
+        vendorName: vendor.companyName || 'Vendor',
+        amount: order.totalAmount || order.quotationAmount || 0,
+        paymentMethod: 'UPI',
+        transactionId: 'TXN' + Date.now(),
         orderStatus: 'Production Started',
         stages: []
       });

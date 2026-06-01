@@ -17,6 +17,7 @@ const OrderSchema = new mongoose.Schema({
       'Quotation Sent',
       'Quotation Accepted',
       'Payment Completed',
+      'Payment Verified',
       'Awaiting Vendor Verification',
       'Production Started',
       'Manufacturer Assigned',
