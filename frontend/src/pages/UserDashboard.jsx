@@ -310,69 +310,25 @@ const UserDashboard = ({
   const fetchUserData = async () => {
     try {
       // 1. AI Designs
-      let localAi = JSON.parse(localStorage.getItem('aiDesigns') || 'null');
-      if (!localAi) {
-        localAi = [
-          { 
-            _id: 'ai_1', 
-            roomType: 'Living Room', 
-            generatedImage: '/ai-results/living_room.png', 
-            aiSuggestion: { 
-              furniture: ['Modern Sofa', 'Glass Coffee Table', 'Minimalist TV Stand'],
-              materials: ['Oak Wood', 'Beige Linen', 'Brushed Brass'],
-              colorPalette: ['Beige', 'Warm Oak', 'Emerald green accents'],
-              budgetEstimate: 3500 
-            }, 
-            status: 'accepted',
-            createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
-          }
-        ];
-        localStorage.setItem('aiDesigns', JSON.stringify(localAi));
-        
+      let localAi = [];
+      try {
+        const res = await axios.get('/designs/ai');
+        if (res.data && res.data.success) {
+          localAi = res.data.data;
+        }
+      } catch (err) {
+        console.warn('Backend ai designs fetch failed:', err);
       }
 
       // 2. Manual Requests
-      let localManual = JSON.parse(null || 'null');
-      if (!localManual) {
-        localManual = [
-          {
-            _id: 'man_1',
-      requestType: needDesigner === 'Yes' ? 'INTERIOR_DESIGN' : 'Manual Design',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: '+91 98765 43210' },
-            roomType: 'Bedroom',
-            style: 'Minimalist',
-            budget: '₹50,000 - ₹1,00,000',
-            size: 'Medium',
-            requirements: 'Cozy and dark theme with hidden lighting.',
-            materials: 'Oak wood paneling, beige linen fabrics',
-            timeline: 'Within 1 Month',
-            ownMaterialsAvailable: 'No',
-            status: 'Submitted',
-            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString()
-          },
-          {
-            _id: 'man_2',
-            requestType: 'Interior Designer Help',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: '+91 98765 43210' },
-            roomType: 'Living Room',
-            style: 'Modern',
-            budget: 'Above ₹3,0,000',
-            size: 'Large',
-            requirements: 'Open layout consultation for family room.',
-            materials: 'Marble flooring, brass accents',
-            timeline: 'Flexible',
-            ownMaterialsAvailable: 'Yes',
-            materialDetails: 'Teak wood panels and white marble tiles',
-            materialQuantity: '40 sq ft teak, 120 sq ft marble',
-            materialPickupNeeded: 'Yes',
-            pickupAddress: 'Block 4B, Sector 62, Noida',
-            status: 'Submitted',
-            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', name: 'Artisan Workshop' },
-            createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
-          }
-        ];
-        
+      let localManual = [];
+      try {
+        const res = await axios.get('/designs/manual');
+        if (res.data && res.data.success) {
+          localManual = res.data.data;
+        }
+      } catch (err) {
+        console.warn('Backend manual designs fetch failed:', err);
       }
 
       // 3. Products
@@ -599,144 +555,102 @@ const UserDashboard = ({
     const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
     const mockImg = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
     
-    const newDesign = {
-      _id: 'ai_' + Date.now(),
-      userId: user?._id || 'u_local',
-      roomType,
-      originalImage: mockImg,
-      generatedImage: selectedDesign.generatedImage,
-      aiSuggestion: {
-        furniture: selectedDesign.furniture,
-        materials: selectedDesign.materials,
-        colorPalette: selectedDesign.colorPalette,
-        budgetEstimate: selectedDesign.budgetEstimate
-      },
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-
-    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
-    const updated = [newDesign, ...localAi];
-    
-    setAiDesigns(updated);
-    localStorage.setItem('aiDesigns', JSON.stringify(updated));
-    setLoadingAi(false);
-    alert('AI Design Generated Successfully!');
-    setTimeout(() => {
-      document.getElementById('ai-history-section')?.scrollIntoView({ behavior: 'smooth' });
-    }, 100);
+    try {
+      const payload = {
+        roomType,
+        originalImage: mockImg,
+        generatedImage: selectedDesign.generatedImage,
+        aiSuggestion: {
+          furniture: selectedDesign.furniture,
+          materials: selectedDesign.materials,
+          colorPalette: selectedDesign.colorPalette,
+          budgetEstimate: selectedDesign.budgetEstimate
+        }
+      };
+      const res = await axios.post('/designs/ai', payload);
+      if (res.data.success) {
+        setAiDesigns([res.data.data, ...aiDesigns]);
+        alert('AI Design Generated Successfully!');
+        setTimeout(() => {
+          document.getElementById('ai-history-section')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    } catch (err) {
+      console.error('Failed to generate AI design', err);
+      alert('Error generating design. Please try again.');
+    } finally {
+      setLoadingAi(false);
+    }
   };
 
   const handleAiStatus = async (id, status) => {
-    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
-    const updated = localAi.map(d => d._id === id ? { ...d, status } : d);
-    
-    setAiDesigns(updated);
-    localStorage.setItem('aiDesigns', JSON.stringify(updated));
-    
-    const updatedDesign = updated.find(d => d._id === id);
+    try {
+      const res = await axios.put(`/designs/ai/${id}`, { status });
+      if (res.data.success) {
+        const updatedDesign = res.data.data;
+        setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
 
-    if (status === 'regenerated') {
-      const regenerateVariants = [
-        {
-          generatedImage: '/ai-results/bedroom.png',
-          aiSuggestion: {
-            furniture: ['Sectional Velvet Sofa', 'Hexagonal Side Table', 'Arc Floor Lamp'],
-            materials: ['Velvet Upholstery', 'Gold Metal', 'Glass'],
-            colorPalette: ['Navy Blue', 'Gold', 'Cream White'],
-            budgetEstimate: 5800
-          }
-        },
-        {
-          generatedImage: '/ai-results/living_room.png',
-          aiSuggestion: {
-            furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
-            materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
-            colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
-            budgetEstimate: 6200
-          }
-        },
-        {
-          generatedImage: '/ai-results/kitchen.png',
-          aiSuggestion: {
-            furniture: ['Open Shelving Unit', 'Farmhouse Table', 'Pendant Lights'],
-            materials: ['Reclaimed Wood', 'Wrought Iron', 'Ceramic'],
-            colorPalette: ['Rustic Brown', 'Slate Gray', 'Sage Green'],
-            budgetEstimate: 4900
-          }
-        }
-      ];
-      try {
-        const res = await axios.put(`/designs/ai/${id}`, { status: 'regenerated' });
-        if (res.data.success) {
-          setAiDesigns(aiDesigns.map(d => d._id === id ? res.data.data : d));
+        if (status === 'regenerated') {
           alert('✨ AI Design regenerated with new style! Check the new design above.');
+        } else if (status === 'accepted') {
+          const payload = {
+            requestType: 'AI Generated',
+            roomType: updatedDesign.roomType || 'Living Room',
+            style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+            budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
+            size: 'Standard',
+            timeline: 'Flexible',
+            ownMaterialsAvailable: 'No',
+            requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
+            referenceImages: [updatedDesign.generatedImage],
+            originalImage: updatedDesign.originalImage,
+            generatedImage: updatedDesign.generatedImage,
+            aiSuggestion: updatedDesign.aiSuggestion
+          };
+          
+          const manualRes = await axios.post('/designs/manual', payload);
+          if (manualRes.data.success) {
+            setManualDesigns([manualRes.data.data, ...manualDesigns]);
+            alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+          } else {
+            alert('Failed to forward request to vendors. Please try again.');
+          }
+        } else if (status === 'rejected') {
+          alert('AI Design rejected. You can now submit a manual design request.');
+          if (setActiveTab) setActiveTab('manual');
         }
-      } catch (err) {
-        console.error('Failed to regenerate AI design', err);
-        alert('Error regenerating design.');
       }
-    }
-
-    if (status === 'accepted') {
-      try {
-        await axios.put(`/designs/ai/${id}`, { status: 'accepted' });
-        
-        const payload = {
-          requestType: 'AI Generated',
-          roomType: updatedDesign.roomType || 'Living Room',
-          style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
-          budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
-          size: 'Standard',
-          timeline: 'Flexible',
-          ownMaterialsAvailable: 'No',
-          requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
-          referenceImages: [updatedDesign.generatedImage],
-          originalImage: updatedDesign.originalImage,
-          generatedImage: updatedDesign.generatedImage,
-          aiSuggestion: updatedDesign.aiSuggestion
-        };
-        
-        const res = await axios.post('/designs/manual', payload);
-        if (res.data.success) {
-          setManualDesigns([res.data.data, ...manualDesigns]);
-          alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
-        } else {
-          alert('Failed to forward request to vendors. Please try again.');
-        }
-        
-      } catch (err) {
-        console.error('Failed to forward AI request to vendor', err);
-        alert('Failed to forward request to vendors. Ensure backend is running.');
-      }
-    }
-    
-    if (status === 'rejected') {
-      try {
-        await axios.put(`/designs/ai/${id}`, { status: 'rejected' });
-      } catch (err) {
-        console.error(err);
-      }
-      alert('AI Design rejected. You can now submit a manual design request.');
-      if (setActiveTab) setActiveTab('manual');
+    } catch (err) {
+      console.error('Failed to update AI design status', err);
+      alert('Failed to update design status.');
     }
   };
 
-  const handleDeleteDesign = (id) => {
+  const handleDeleteDesign = async (id) => {
     if (!confirm('Delete this AI design?')) return;
-    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
-    const filtered = localAi.filter(d => d._id !== id);
-    
-    setAiDesigns(filtered);
-    localStorage.setItem('aiDesigns', JSON.stringify(filtered));
+    try {
+      const res = await axios.delete(`/designs/ai/${id}`);
+      if (res.data.success) {
+        setAiDesigns(aiDesigns.filter(d => d._id !== id));
+      }
+    } catch (err) {
+      console.error('Failed to delete AI design', err);
+      alert('Failed to delete AI design.');
+    }
   };
 
-  const handleToggleBookmark = (id) => {
-    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
-    const updated = localAi.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d);
+  const handleToggleBookmark = async (id) => {
+    const design = aiDesigns.find(d => d._id === id);
+    if (!design) return;
     
-    setAiDesigns(updated);
-    localStorage.setItem('aiDesigns', JSON.stringify(updated));
+    try {
+      const res = await axios.put(`/designs/ai/${id}`, { isBookmarked: !design.isBookmarked });
+      if (res.data.success) {
+        setAiDesigns(aiDesigns.map(d => d._id === id ? res.data.data : d));
+      }
+    } catch (err) {
+      console.error('Failed to bookmark AI design', err);
+    }
   };
 
   const handleDownloadReceipt = (order) => {
@@ -793,11 +707,14 @@ Thank you for shopping with Artisan Studio!
     setOrders(updatedOrders);
     localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
     window.dispatchEvent(new Event('mockOrdersUpdated'));
-    const localAi = JSON.parse(localStorage.getItem('aiDesigns') || '[]');
-    const updatedAi = localAi.map(d => d._id === design._id ? { ...d, status: 'execution' } : d);
     
-    setAiDesigns(updatedAi);
-    localStorage.setItem('aiDesigns', JSON.stringify(updatedAi));
+    axios.put(`/designs/ai/${design._id}`, { status: 'execution' })
+      .then(res => {
+        if(res.data.success) {
+          setAiDesigns(aiDesigns.map(d => d._id === design._id ? res.data.data : d));
+        }
+      })
+      .catch(err => console.error('Failed to update design execution status', err));
     
     const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
     localVendorNotifs.unshift({

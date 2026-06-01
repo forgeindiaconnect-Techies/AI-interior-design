@@ -45,7 +45,7 @@ exports.mockManualDesigns = mockManualDesigns;
 // @access  Private
 exports.createAIDesign = async (req, res) => {
   try {
-    const { roomType, originalImage } = req.body;
+    const { roomType, originalImage, generatedImage, aiSuggestion } = req.body;
 
     const mockGeneratedImages = {
       Kitchen: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=60',
@@ -61,19 +61,20 @@ exports.createAIDesign = async (req, res) => {
       Bathroom: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373']
     };
 
-
+    const finalGeneratedImage = generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'];
+    const finalAiSuggestion = aiSuggestion || {
+      furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
+      materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble', 'Linen Upholstery'],
+      colorPalette: mockPalettes[roomType] || mockPalettes['Living Room'],
+      budgetEstimate: Math.floor(Math.random() * 3000) + 2000
+    };
 
     const aiDesign = await AIDesignRequest.create({
       userId: req.user.id,
       roomType: roomType || 'Living Room',
       originalImage,
-      generatedImage: mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'],
-      aiSuggestion: {
-        furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
-        materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble', 'Linen Upholstery'],
-        colorPalette: mockPalettes[roomType] || mockPalettes['Living Room'],
-        budgetEstimate: Math.floor(Math.random() * 3000) + 2000
-      },
+      generatedImage: finalGeneratedImage,
+      aiSuggestion: finalAiSuggestion,
       status: 'generated'
     });
 
@@ -105,7 +106,7 @@ exports.getUserAIDesigns = async (req, res) => {
 // @access  Private
 exports.updateAIDesignStatus = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, isBookmarked } = req.body;
 
 
     let design = await AIDesignRequest.findById(req.params.id);
@@ -118,13 +119,27 @@ exports.updateAIDesignStatus = async (req, res) => {
       return res.status(200).json({ success: true, data: design });
     }
 
-    design.status = status;
+    if (status !== undefined) design.status = status;
+    if (isBookmarked !== undefined) design.isBookmarked = isBookmarked;
     await design.save();
 
     if (status === 'accepted') {
       await Notification.create({ isAdmin: true, message: `User ${req.user.name} accepted AI design.` });
     }
     res.status(200).json({ success: true, data: design });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete AI design
+// @route   DELETE /api/designs/ai/:id
+// @access  Private
+exports.deleteAIDesign = async (req, res) => {
+  try {
+    const design = await AIDesignRequest.findByIdAndDelete(req.params.id);
+    if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
+    res.status(200).json({ success: true, data: {} });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

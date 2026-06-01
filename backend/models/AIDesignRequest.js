@@ -25,6 +25,7 @@ const AIDesignRequestSchema = new mongoose.Schema({
     enum: ['pending', 'generated', 'accepted', 'rejected'], 
     default: 'pending' 
   },
+  isBookmarked: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 
