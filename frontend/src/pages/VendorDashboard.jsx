@@ -2622,9 +2622,13 @@ const VendorDashboard = ({
                 <h4 className="font-bold text-sm text-[#1F2937]">Update Manufacturing Stage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <select value={mfgStatus[mfg._id] || mfg.status} onChange={(e) => setMfgStatus({ ...mfgStatus, [mfg._id]: e.target.value })} className="p-4 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
+                    <option value="Payment Verified">Payment Verified</option>
                     <option value="Production Started">Production Started</option>
                     <option value="Manufacturing">Manufacturing</option>
                     <option value="Ready for Delivery">Ready for Delivery</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Installation Scheduled">Installation Scheduled</option>
+                    <option value="Installation Completed">Installation Completed</option>
                   </select>
                   <div className="flex flex-col gap-2 justify-center">
                     <input type="file" accept="image/*" onChange={(e) => handleProgressImageUpload(e, mfg._id)} className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 cursor-pointer border border-gray-200 rounded-xl p-1" />
