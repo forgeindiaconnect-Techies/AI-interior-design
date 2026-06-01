@@ -477,12 +477,17 @@ exports.verifyPayment = async (req, res) => {
     order.orderStatus = 'Production Started';
     await order.save();
 
-    const tracking = await OrderTracking.findOne({ orderId: order._id });
-    if (tracking) {
-      tracking.orderStatus = 'Production Started';
-      tracking.stages.push({ status: 'Production Started', timestamp: new Date(), updatedBy: 'vendor' });
-      await tracking.save();
+    let tracking = await OrderTracking.findOne({ orderId: order._id });
+    if (!tracking) {
+      tracking = new OrderTracking({
+        orderId: order._id,
+        orderStatus: 'Production Started',
+        stages: []
+      });
     }
+    tracking.orderStatus = 'Production Started';
+    tracking.stages.push({ status: 'Production Started', timestamp: new Date(), updatedBy: 'vendor' });
+    await tracking.save();
 
     const shortId = order._id.toString().slice(-6);
     await Notification.create({

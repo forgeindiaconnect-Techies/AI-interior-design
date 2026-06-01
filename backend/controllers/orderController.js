@@ -324,7 +324,13 @@ exports.updateOrderTracking = async (req, res) => {
     }
 
     let tracking = await OrderTracking.findOne({ orderId });
-    if (!tracking) return res.status(404).json({ success: false, message: 'Order tracking not found' });
+    if (!tracking) {
+      tracking = new OrderTracking({
+        orderId,
+        orderStatus: status || order.orderStatus,
+        stages: []
+      });
+    }
 
     const role = req.user.role === 'vendor' ? 'vendor' : req.user.role === 'admin' ? 'admin' : 'system';
 
