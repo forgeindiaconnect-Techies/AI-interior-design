@@ -4084,6 +4084,13 @@ const AdminDashboard = ({
                               }`}>
                                 {order.paymentStatus === 'paid' ? '● Paid' : '○ Pending'}
                               </span>
+                              {order.tracking && (
+                                <div className="mt-2 pt-2 border-t border-gray-100 space-y-1 text-[10px]">
+                                  <p className="text-gray-400"><span className="font-bold">Method:</span> {order.tracking.paymentMethod}</p>
+                                  <p className="text-gray-400"><span className="font-bold">TXN:</span> <span className="font-mono">{order.tracking.transactionId}</span></p>
+                                  <p className="text-gray-400"><span className="font-bold">Paid On:</span> {new Date(order.tracking.paymentDate).toLocaleDateString()}</p>
+                                </div>
+                              )}
                             </td>
 
                             {/* Assignments */}
