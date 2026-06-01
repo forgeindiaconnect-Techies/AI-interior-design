@@ -1055,7 +1055,7 @@ const VendorDashboard = ({
       if (extra?.expectedDeliveryDate) payload.expectedDeliveryDate = extra.expectedDeliveryDate;
       if (extra?.note) payload.note = extra.note;
 
-      await axios.post(`/api/orders/tracking/${id}/update`, payload);
+      await axios.post(`/orders/tracking/${id}/update`, payload);
 
       // Optimistic local updates
       setManufacturingOrders(prev => prev.map(o =>

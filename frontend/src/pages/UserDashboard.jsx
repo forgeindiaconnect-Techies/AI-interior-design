@@ -116,7 +116,7 @@ const UserDashboard = ({
   const fetchTrackingData = async (orderId) => {
     if (!orderId) return;
     try {
-      const res = await axios.get(`/api/orders/tracking/${orderId}`);
+      const res = await axios.get(`/orders/tracking/${orderId}`);
       if (res.data && res.data.success) {
         setTrackingData(prev => ({ ...prev, [orderId]: res.data.data }));
       }
