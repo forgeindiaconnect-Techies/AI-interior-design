@@ -538,7 +538,7 @@ const UserDashboard = ({
         
       }
 
-      // Fetch backend orders
+      // Fetch backend orders (custom/design)
       try {
         const ordersRes = await axios.get('/orders/user');
         if (ordersRes.data && ordersRes.data.success) {
@@ -550,6 +550,41 @@ const UserDashboard = ({
         }
       } catch (err) {
         console.warn('Backend orders fetch failed in UserDashboard:', err);
+      }
+
+      // Fetch marketplace orders
+      try {
+        const mktRes = await axios.get('/marketplace-orders/myorders');
+        if (mktRes.data?.success && mktRes.data.data) {
+          const mktOrders = mktRes.data.data.map(o => ({
+            _id: o._id,
+            orderType: 'Marketplace Product',
+            userId: o.userId,
+            vendorId: o.items[0]?.vendorId || { companyName: 'Artisan Workshop' },
+            totalAmount: o.totalAmount,
+            paymentStatus: o.paymentStatus,
+            orderStatus: o.orderStatus,
+            shippingAddress: o.shippingAddress,
+            createdAt: o.createdAt,
+            productDetails: o.items[0]?.productId ? {
+              _id: o.items[0].productId._id,
+              title: o.items[0].productId.title,
+              price: o.items[0].price,
+              images: o.items[0].productId.images || [],
+              quantity: o.items.reduce((sum, i) => sum + i.quantity, 0)
+            } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
+            items: o.items,
+            subtotal: o.subtotal,
+            tax: o.tax,
+            shippingFee: o.shippingFee
+          }));
+          const mergedMap = new Map();
+          localOrders.forEach(o => mergedMap.set(o._id, o));
+          mktOrders.forEach(o => mergedMap.set(o._id, o));
+          localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        }
+      } catch (err) {
+        console.warn('Backend marketplace orders fetch failed:', err);
       }
 
       // Fetch user reviews
@@ -1913,63 +1948,41 @@ Thank you for shopping with Artisan Studio!
           setShowCheckoutSummary(true);
         };
 
-        const handleConfirmPayment = () => {
-          // Create mock orders for each vendor's products in the cart
-          const newOrders = resolvedItems.map(item => ({
-            _id: 'ord_p_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-            orderType: 'Marketplace Product',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: item.vendorId || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: item.price * item.quantity,
-            paymentStatus: 'paid',
-            orderStatus: 'Pending Confirmation',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
-            createdAt: new Date().toISOString(),
-            shippingAddress: user?.address || '123 Default User St',
-            productDetails: {
-              _id: item._id,
-              title: item.title,
-              price: item.price,
-              images: item.images,
-              quantity: item.quantity
-            }
+        const handleConfirmPayment = async () => {
+          const items = resolvedItems.map(item => ({
+            productId: item._id,
+            vendorId: item.vendorId?._id || item.vendorId,
+            quantity: item.quantity,
+            price: item.price
           }));
+          const totalAmount = resolvedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-          const localOrders = [];
-          const updatedOrders = [...newOrders, ...localOrders];
-          
-          setOrders(updatedOrders);
+          try {
+            const res = await axios.post('/marketplace-orders', {
+              items,
+              subtotal: totalAmount,
+              tax: Math.round(totalAmount * 0.08),
+              shippingFee: 50,
+              totalAmount: totalAmount + Math.round(totalAmount * 0.08) + 50,
+              shippingAddress: user?.address || 'Your Address'
+            });
 
-          // Trigger Notifications for Vendor & Admin
-          const triggerNotif = (recipient, message) => {
-            const notifObj = {
-              _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-              message,
-              type: 'success',
-              createdAt: new Date().toISOString(),
-              read: false
-            };
-            const key = recipient === 'vendor' ? 'mockVendorNotifications' : 'mockAdminNotifications';
-            const existing = JSON.parse(localStorage.getItem(key) || '[]');
-            
-          };
-
-          newOrders.forEach(order => {
-            triggerNotif('vendor', `New marketplace order received for $${order.totalAmount}`);
-            triggerNotif('admin', `New marketplace purchase placed: Order #${order._id.slice(-6)}`);
-          });
-
-          // Clear cart
-          setCartItems([]);
-          try { axios.delete('/cart'); } catch (_) {}
-          window.dispatchEvent(new Event('cartUpdated'));
-          setShowCheckoutSummary(false);
-
-          showToast('✅ Order placed successfully! Thank you for your purchase.');
-          if (setActiveTab) setActiveTab('orders');
+            if (res.data?.success) {
+              // Clear local cart
+              setCartItems([]);
+              window.dispatchEvent(new Event('cartUpdated'));
+              setShowCheckoutSummary(false);
+              // Refresh orders from backend
+              await fetchUserData();
+              showToast('✅ Order placed successfully! Thank you for your purchase.', 'success');
+              if (setActiveTab) setActiveTab('orders');
+            } else {
+              showToast(res.data?.message || 'Failed to place order.', 'error');
+            }
+          } catch (err) {
+            console.error('Failed to create order', err);
+            showToast(err.response?.data?.message || 'Failed to place order. Please try again.', 'error');
+          }
         };
 
         if (showCheckoutSummary) {

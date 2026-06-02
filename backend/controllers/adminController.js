@@ -740,13 +740,20 @@ exports.getStats = async (req, res) => {
     const totalManufacturers = await Vendor.countDocuments({ businessType: 'manufacturer' });
     const totalDelivery = await Vendor.countDocuments({ businessType: 'delivery' });
     const totalInstallation = await Vendor.countDocuments({ businessType: 'installation' });
-    const totalOrders = await Order.countDocuments();
+    const totalOrders = await Order.countDocuments() + await MarketplaceOrder.countDocuments();
     
     const payments = await Payment.find({ status: 'success' });
     const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
-    const estimatedCommission = totalRevenue * 0.15;
 
-    res.status(200).json({ success: true, data: { totalUsers, totalVendors, totalManufacturers, totalDelivery, totalInstallation, totalOrders, totalRevenue, estimatedCommission } });
+    const marketplaceRevenue = await MarketplaceOrder.aggregate([
+      { $match: { paymentStatus: 'paid' } },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } }
+    ]);
+
+    const finalRevenue = totalRevenue + (marketplaceRevenue[0]?.total || 0);
+    const estimatedCommission = finalRevenue * 0.15;
+
+    res.status(200).json({ success: true, data: { totalUsers, totalVendors, totalManufacturers, totalDelivery, totalInstallation, totalOrders, totalRevenue: finalRevenue, estimatedCommission } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

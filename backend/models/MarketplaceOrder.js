@@ -19,19 +19,21 @@ const MarketplaceOrderSchema = new mongoose.Schema({
   orderStatus: { 
     type: String, 
     enum: [
-      'Order Placed', 
+      'Pending Confirmation',
       'Processing', 
-      'Shipped', 
-      'Out for Delivery', 
+      'Pending Dispatch',
+      'Dispatched',
+      'Out For Delivery', 
       'Delivered', 
-      'Installation Pending',
       'Completed',
       'Cancelled'
     ], 
-    default: 'Order Placed' 
+    default: 'Pending Confirmation' 
   },
+  trackingId: { type: String, default: '' },
   deliveryPartnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   installationPartnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+  installationRequired: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
 

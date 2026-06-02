@@ -458,10 +458,40 @@ exports.getOrderTracking = async (req, res) => {
   try {
     const { orderId } = req.params;
 
-    const order = await Order.findById(orderId)
+    let order = await Order.findById(orderId)
       .populate('userId', 'name email phone')
       .populate('vendorId', 'companyName');
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    let isMarketplace = false;
+
+    if (!order) {
+      const MarketplaceOrder = require('../models/MarketplaceOrder');
+      const mktOrder = await MarketplaceOrder.findById(orderId)
+        .populate('userId', 'name email phone')
+        .populate('items.productId', 'title images')
+        .populate('items.vendorId', 'companyName');
+      if (!mktOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+
+      isMarketplace = true;
+      const primaryVendor = mktOrder.items[0]?.vendorId || { companyName: 'Artisan Workshop' };
+      order = {
+        _id: mktOrder._id,
+        userId: mktOrder.userId,
+        vendorId: primaryVendor,
+        orderStatus: mktOrder.orderStatus,
+        shippingAddress: mktOrder.shippingAddress,
+        createdAt: mktOrder.createdAt,
+        totalAmount: mktOrder.totalAmount,
+        trackingId: mktOrder.trackingId,
+        deliveryPartnerId: mktOrder.deliveryPartnerId,
+        isMarketplace: true,
+        productDetails: mktOrder.items[0]?.productId ? {
+          _id: mktOrder.items[0].productId._id,
+          title: mktOrder.items[0].productId.title,
+          images: mktOrder.items[0].productId.images || []
+        } : { title: 'Marketplace Product' }
+      };
+    }
 
     let tracking = await OrderTracking.findOne({ orderId });
     if (!tracking) {

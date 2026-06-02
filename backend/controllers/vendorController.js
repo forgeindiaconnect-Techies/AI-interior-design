@@ -336,6 +336,7 @@ exports.getVendorOrders = async (req, res) => {
     const vendor = await findOrCreateVendorHelper(req.user.id);
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
 
+    // Custom/design orders
     const standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
 
     const orderIds = standardOrders.map(o => o._id);
@@ -343,10 +344,44 @@ exports.getVendorOrders = async (req, res) => {
     const trackings = await OrderTracking.find({ orderId: { $in: orderIds } });
     trackings.forEach(t => { trackingMap[t.orderId.toString()] = t; });
 
-    const data = standardOrders.map(o => ({
+    const stdData = standardOrders.map(o => ({
       ...o.toObject(),
       tracking: trackingMap[o._id.toString()] || null
     }));
+
+    // Marketplace orders for this vendor
+    const MarketplaceOrder = require('../models/MarketplaceOrder');
+    const marketplaceOrders = await MarketplaceOrder.find({ 'items.vendorId': vendor._id })
+      .populate('items.productId')
+      .populate('userId', 'name email phone')
+      .sort({ createdAt: -1 });
+
+    const mktData = marketplaceOrders.map(o => ({
+      _id: o._id,
+      orderType: 'Marketplace Product',
+      userId: o.userId,
+      vendorId: { _id: vendor._id, companyName: vendor.companyName },
+      totalAmount: o.totalAmount,
+      paymentStatus: o.paymentStatus,
+      orderStatus: o.orderStatus,
+      shippingAddress: o.shippingAddress,
+      productDetails: o.items[0]?.productId ? {
+        _id: o.items[0].productId._id,
+        title: o.items[0].productId.title,
+        price: o.items[0].price,
+        images: o.items[0].productId.images || [],
+        quantity: o.items.reduce((sum, i) => sum + i.quantity, 0),
+        category: o.items[0].productId.category
+      } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
+      items: o.items,
+      subtotal: o.subtotal,
+      tax: o.tax,
+      shippingFee: o.shippingFee,
+      createdAt: o.createdAt,
+      tracking: null
+    }));
+
+    const data = [...stdData, ...mktData].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
@@ -396,13 +431,41 @@ exports.getVendorReviews = async (req, res) => {
 exports.updateOrderStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    const order = await Order.findByIdAndUpdate(req.params.id, { orderStatus: status }, { new: true });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-    
-    // Notifications logic is simplified here; full logic can be enhanced if needed
-    await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} status updated to ${status}.` });
-    
-    res.status(200).json({ success: true, data: order });
+
+    // Try Order model first (custom/design orders)
+    let order = await Order.findById(req.params.id);
+    if (order) {
+      order.orderStatus = status;
+      await order.save();
+      await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} status updated to ${status}.` });
+      return res.status(200).json({ success: true, data: order });
+    }
+
+    // Fallback to MarketplaceOrder
+    const MarketplaceOrder = require('../models/MarketplaceOrder');
+    const mktOrder = await MarketplaceOrder.findById(req.params.id);
+    if (!mktOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    const oldStatus = mktOrder.orderStatus;
+    mktOrder.orderStatus = status;
+    await mktOrder.save();
+
+    await Notification.create({
+      userId: mktOrder.userId,
+      message: `Your marketplace order #${mktOrder._id.toString().slice(-6)} status updated: ${oldStatus} → ${status}.`,
+      type: 'info'
+    });
+
+    if (['Delivered', 'Completed', 'Cancelled'].includes(status)) {
+      await Notification.create({
+        isAdmin: true,
+        message: `Marketplace order #${mktOrder._id.toString().slice(-6)} is now ${status}.`,
+        type: 'info'
+      });
+    }
+
+    const populated = await MarketplaceOrder.findById(mktOrder._id).populate('items.productId').populate('userId', 'name email');
+    res.status(200).json({ success: true, data: populated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -414,16 +477,37 @@ exports.updateOrderStatus = async (req, res) => {
 exports.dispatchOrder = async (req, res) => {
   try {
     const { deliveryPartner, trackingId, installationRequired } = req.body;
-    const order = await Order.findByIdAndUpdate(req.params.id, { 
-      orderStatus: 'Dispatched',
-      trackingId,
-      installationRequired
-    }, { new: true });
-    if (!order) return res.status(404).json({ success: false, message: 'Order not found' });
-    
-    await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} has been dispatched.` });
-    
-    res.status(200).json({ success: true, data: order });
+
+    // Try Order model first
+    let order = await Order.findById(req.params.id);
+    if (order) {
+      order.orderStatus = 'Dispatched';
+      order.trackingId = trackingId;
+      order.installationRequired = installationRequired;
+      await order.save();
+      await Notification.create({ userId: order.userId, message: `Your order #${order._id.toString().slice(-6)} has been dispatched.` });
+      return res.status(200).json({ success: true, data: order });
+    }
+
+    // Fallback to MarketplaceOrder
+    const MarketplaceOrder = require('../models/MarketplaceOrder');
+    const mktOrder = await MarketplaceOrder.findById(req.params.id);
+    if (!mktOrder) return res.status(404).json({ success: false, message: 'Order not found' });
+
+    mktOrder.orderStatus = 'Dispatched';
+    mktOrder.trackingId = trackingId;
+    mktOrder.deliveryPartnerId = deliveryPartner;
+    mktOrder.installationRequired = installationRequired;
+    await mktOrder.save();
+
+    await Notification.create({
+      userId: mktOrder.userId,
+      message: `Your marketplace order #${mktOrder._id.toString().slice(-6)} has been dispatched. Delivery partner: ${deliveryPartner}.`,
+      type: 'info'
+    });
+
+    const populated = await MarketplaceOrder.findById(mktOrder._id).populate('items.productId').populate('userId', 'name email');
+    res.status(200).json({ success: true, data: populated });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
