@@ -53,9 +53,13 @@ const protect = async (req, res, next) => {
           suspensionReason: isMockSuspended ? 'Mock policy violation' : '',
           vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(decoded.role) ? '65c2b18a7c6b4b1c92949765' : null
         };
-      } else {
-        req.user = await User.findById(decoded.id).select('-password');
-      }
+       } else {
+         req.user = await User.findById(decoded.id).select('-password');
+         // Override role with the one from the token to ensure consistency
+         if (req.user && decoded.role) {
+           req.user.role = decoded.role;
+         }
+       }
 
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'User not found' });
