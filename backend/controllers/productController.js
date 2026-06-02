@@ -98,6 +98,26 @@ exports.updateProduct = async (req, res) => {
     }
 
     product = await Product.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after', runValidators: true });
+
+    // Notify admins about product update.
+    const vendorForNotif = vendor || (await Vendor.findById(product.vendorId).select('companyName'));
+    await Notification.create({
+      isAdmin: true,
+      message: `Product updated: ${product.title} by ${vendorForNotif?.companyName || 'Vendor'}.`,
+      type: 'info'
+    });
+
+    // Low stock alert if applicable.
+    const newStock = product.stock ?? 0;
+    const threshold = product.lowStockThreshold ?? 5;
+    if (newStock > 0 && newStock <= threshold) {
+      await Notification.create({
+        isAdmin: true,
+        message: `Low stock alert: ${product.title} has only ${newStock} units remaining (threshold: ${threshold}).`,
+        type: 'warning'
+      });
+    }
+
     res.status(200).json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -121,7 +141,18 @@ exports.deleteProduct = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Not authorized to delete this product' });
     }
 
+    const vendorForNotif = vendor || (await Vendor.findById(product.vendorId).select('companyName'));
+    const deletedTitle = product.title;
+
     await product.deleteOne();
+
+    // Notify admins about product deletion.
+    await Notification.create({
+      isAdmin: true,
+      message: `Product deleted: ${deletedTitle} by ${vendorForNotif?.companyName || 'Vendor'}.`,
+      type: 'info'
+    });
+
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

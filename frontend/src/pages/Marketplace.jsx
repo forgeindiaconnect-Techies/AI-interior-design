@@ -20,73 +20,30 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
 
   const fetchProducts = async () => {
     setLoading(true);
-    const localProds = [];
     try {
       const res = await axios.get('/products');
-      if (res.data && res.data.data && res.data.data.length > 0) {
-        const serverProds = res.data.data;
-        const mergedMap = new Map();
-        serverProds.forEach(p => mergedMap.set(p._id, p));
-        localProds.forEach(p => mergedMap.set(p._id, p));
-        
-        // Sort newest first. Try to extract timestamp from _id if it's like 'prod_17...', otherwise string sort.
-        const sorted = Array.from(mergedMap.values()).sort((a, b) => {
-          const tA = parseInt(a._id.split('_')[1]) || 0;
-          const tB = parseInt(b._id.split('_')[1]) || 0;
-          if (tA > 10000 && tB > 10000) return tB - tA; // Both are timestamps
-          if (tA > 10000) return -1; // A is timestamp, B is not, so A is newer
-          if (tB > 10000) return 1; // B is timestamp, A is not, so B is newer
-          return b._id.localeCompare(a._id); // Both are fallback string IDs
+      const serverProds = res.data?.data || [];
+      if (serverProds.length > 0) {
+        const sorted = [...serverProds].sort((a, b) => {
+          const tA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+          const tB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+          return tB - tA;
         });
         setProducts(sorted);
       } else {
-        if (localProds.length > 0) {
-          const sorted = [...localProds].sort((a, b) => {
-            const tA = parseInt(a._id.split('_')[1]) || 0;
-            const tB = parseInt(b._id.split('_')[1]) || 0;
-            if (tA > 10000 && tB > 10000) return tB - tA;
-            if (tA > 10000) return -1;
-            if (tB > 10000) return 1;
-            return b._id.localeCompare(a._id);
-          });
-          setProducts(sorted);
-        } else {
-          const fallback = [
-            { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-            { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-            { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-            { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-            { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
-            { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
-          ];
-          setProducts(fallback);
-          
-        }
+        setProducts([]);
       }
     } catch (error) {
       console.error('Error fetching products', error);
-      if (localProds.length > 0) {
-        const sorted = [...localProds].sort((a, b) => {
-          const tA = parseInt(a._id.split('_')[1]) || 0;
-          const tB = parseInt(b._id.split('_')[1]) || 0;
-          if (tA > 10000 && tB > 10000) return tB - tA;
-          if (tA > 10000) return -1;
-          if (tB > 10000) return 1;
-          return b._id.localeCompare(a._id);
-        });
-        setProducts(sorted);
-      } else {
-        const fallback = [
-          { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-          { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-          { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
-          { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
-        ];
-        setProducts(fallback);
-        
-      }
+      const fallback = [
+        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
+        { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
+      ];
+      setProducts(fallback);
     } finally {
       setLoading(false);
     }

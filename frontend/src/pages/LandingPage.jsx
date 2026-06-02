@@ -113,18 +113,19 @@ const LandingPage = () => {
     const fetchProducts = async () => {
       try {
         const res = await axios.get('/products');
-        setProducts(res.data.data.slice(0, 6)); // Show top 6
+        const data = res.data?.data || [];
+        setProducts(data.slice(0, 6));
       } catch (error) {
         console.error('Error fetching preview products', error);
-        // Fallback mock products if backend is not seeded
-        setProducts([
+        const fallback = [
           { _id: '1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'] },
           { _id: '2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'] },
           { _id: '3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'] },
           { _id: '4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'] },
           { _id: '5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'] },
           { _id: '6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'] },
-        ]);
+        ];
+        setProducts(fallback);
       } finally {
         setLoading(false);
       }

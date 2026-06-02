@@ -158,6 +158,17 @@ const VendorDashboard = ({
   const [invSearch, setInvSearch] = useState('');
   const [invFilter, setInvFilter] = useState('All');
 
+  // Edit Product Modal State
+  const [editProduct, setEditProduct] = useState(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+  const [editDesc, setEditDesc] = useState('');
+  const [editCategory, setEditCategory] = useState('Living Room');
+  const [editMaterial, setEditMaterial] = useState('');
+  const [editSize, setEditSize] = useState('');
+  const [editImage, setEditImage] = useState('');
+  const [editStock, setEditStock] = useState(10);
+
   const [payoutHistory, setPayoutHistory] = useState(() =>
     []
   );
@@ -816,28 +827,64 @@ const VendorDashboard = ({
   };
 
   const handleEditProduct = async (p) => {
-    const updatedTitle = prompt('Enter new title:', p.title);
-    if (!updatedTitle) return;
-    const updatedPrice = prompt('Enter new price ($):', p.price);
-    if (!updatedPrice) return;
-    
-    const updatedProducts = products.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item);
-    setProducts(updatedProducts);
-    setInventoryProducts(prev => prev.map(item => item._id === p._id ? { ...item, title: updatedTitle, price: Number(updatedPrice) } : item));
-    
-    
-    alert('✅ Product updated successfully!');
+    setEditProduct(p);
+    setEditTitle(p.title || '');
+    setEditPrice(p.price?.toString() || '');
+    setEditDesc(p.description || '');
+    setEditCategory(p.category || 'Living Room');
+    setEditMaterial(p.material || '');
+    setEditSize(p.size || '');
+    setEditImage(p.images?.[0] || '');
+    setEditStock(p.stock ?? 10);
+  };
+
+  const handleEditProductSubmit = async (e) => {
+    e.preventDefault();
+    if (!editProduct) return;
+    const payload = {
+      title: editTitle,
+      price: Number(editPrice),
+      description: editDesc,
+      category: editCategory,
+      material: editMaterial || 'Oak Wood',
+      size: editSize || '32x32x30',
+      stock: editStock,
+      images: [editImage || editProduct.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60']
+    };
+    try {
+      const res = await axios.put(`/products/${editProduct._id}`, payload);
+      if (res.data?.success) {
+        const updated = res.data.data;
+        setProducts(prev => prev.map(item => item._id === editProduct._id ? updated : item));
+        setInventoryProducts(prev => prev.map(item => item._id === editProduct._id ? { ...updated, lowStockThreshold: item.lowStockThreshold || 5 } : item));
+        await fetchPartnerData();
+        showToast('✅ Product updated successfully!', 'success');
+      } else {
+        showToast(res.data?.message || 'Failed to update product.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to update product', err);
+      showToast(err.response?.data?.message || 'Failed to update product.', 'error');
+    }
+    setEditProduct(null);
   };
 
   const handleDeleteProduct = async (id) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    
-    const updatedProducts = products.filter(item => item._id !== id);
-    setProducts(updatedProducts);
-    setInventoryProducts(prev => prev.filter(item => item._id !== id));
-    
-    
-    alert('✅ Product deleted successfully!');
+    if (!confirm('Are you sure you want to delete this product? This cannot be undone.')) return;
+    try {
+      const res = await axios.delete(`/products/${id}`);
+      if (res.data?.success) {
+        setProducts(prev => prev.filter(item => item._id !== id));
+        setInventoryProducts(prev => prev.filter(item => item._id !== id));
+        await fetchPartnerData();
+        showToast('🗑️ Product deleted successfully!', 'success');
+      } else {
+        showToast(res.data?.message || 'Failed to delete product.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to delete product', err);
+      showToast(err.response?.data?.message || 'Failed to delete product.', 'error');
+    }
   };
 
   const handleViewInMarketplace = (id) => {
@@ -1646,6 +1693,62 @@ const VendorDashboard = ({
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* EDIT PRODUCT MODAL */}
+      {editProduct && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setEditProduct(null)}>
+          <div className="bg-white rounded-3xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#D4A373]/30" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Edit Product</h3>
+              <button onClick={() => setEditProduct(null)} className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"><X className="w-4 h-4" /></button>
+            </div>
+            <form onSubmit={handleEditProductSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Title</label>
+                <input required value={editTitle} onChange={e => setEditTitle(e.target.value)} placeholder="Product title" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Price ($)</label>
+                <input required type="number" step="0.01" value={editPrice} onChange={e => setEditPrice(e.target.value)} placeholder="0.00" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Description</label>
+                <textarea rows={3} value={editDesc} onChange={e => setEditDesc(e.target.value)} placeholder="Product description..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Category</label>
+                  <select value={editCategory} onChange={e => setEditCategory(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm">
+                    {['Living Room', 'Bedroom', 'Dining Room', 'Lighting', 'Decor', 'Outdoor'].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Material</label>
+                  <input value={editMaterial} onChange={e => setEditMaterial(e.target.value)} placeholder="Oak Wood" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Size</label>
+                  <input value={editSize} onChange={e => setEditSize(e.target.value)} placeholder="32x32x30" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Stock</label>
+                  <input type="number" min="0" value={editStock} onChange={e => setEditStock(Number(e.target.value))} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Image URL</label>
+                <input value={editImage} onChange={e => setEditImage(e.target.value)} placeholder="https://..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 py-4 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold shadow-md transition-all">Save Changes</button>
+                <button type="button" onClick={() => setEditProduct(null)} className="flex-1 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold transition-all">Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -3640,12 +3743,17 @@ const VendorDashboard = ({
 
       {/* TAB: INVENTORY MANAGEMENT */}
       {activeTab === 'inventory' && (() => {
-        const updateStock = (id, delta) => {
-          setInventoryProducts(prev => {
-            const updated = prev.map(p => p._id === id ? { ...p, stock: Math.max(0, (p.stock || 0) + delta) } : p);
-            
-            return updated;
-          });
+        const updateStock = async (id, delta) => {
+          const target = inventoryProducts.find(p => p._id === id);
+          if (!target) return;
+          const newStock = Math.max(0, (target.stock || 0) + delta);
+          setInventoryProducts(prev => prev.map(p => p._id === id ? { ...p, stock: newStock } : p));
+          try {
+            await axios.put(`/products/${id}`, { stock: newStock });
+          } catch (err) {
+            console.error('Failed to sync stock to backend', err);
+            showToast('Stock updated locally but failed to sync to server.', 'warning');
+          }
         };
 
         const filtered = inventoryProducts.filter(p => {

@@ -350,23 +350,13 @@ const UserDashboard = ({
       setCartItems(localCart);
       
       const syncProducts = async () => {
-        let localProducts = [];
         try {
           const res = await axios.get('/products');
-          if (res.data && res.data.data && res.data.data.length > 0) {
-            const serverProds = res.data.data;
-            const mergedMap = new Map();
-            serverProds.forEach(p => mergedMap.set(p._id, p));
-            localProducts.forEach(p => mergedMap.set(p._id, p));
-            const sorted = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
-            setProducts(sorted);
-            
-          } else {
-            setProducts(localProducts);
-          }
+          const serverProds = res.data?.data || [];
+          setProducts(serverProds);
         } catch (err) {
           console.warn('Backend products fetch failed in activeTab cart useEffect:', err);
-          setProducts(localProducts);
+          setProducts([]);
         }
       };
       syncProducts();
@@ -448,14 +438,8 @@ const UserDashboard = ({
 
       try {
         const res = await axios.get('/products');
-        if (res.data && res.data.data && res.data.data.length > 0) {
-          const serverProds = res.data.data;
-          const mergedMap = new Map();
-          serverProds.forEach(p => mergedMap.set(p._id, p));
-          localProducts.forEach(p => mergedMap.set(p._id, p));
-          localProducts = Array.from(mergedMap.values()).sort((a, b) => b._id.localeCompare(a._id));
-          
-        }
+        const serverProds = res.data?.data || [];
+        localProducts = serverProds;
       } catch (err) {
         console.warn('Backend products fetch failed in UserDashboard:', err);
       }
