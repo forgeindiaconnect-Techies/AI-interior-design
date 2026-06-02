@@ -2795,21 +2795,20 @@ Thank you for shopping with Artisan Studio!
         // Dynamic status descriptions
         const getStatusMessage = () => {
           switch (status) {
-            case 'Pending':
-            case 'Pending Confirmation':
-              return { title: 'Pending Confirmation', desc: 'The order is awaiting vendor confirmation.' };
-            case 'Payment Verified':
-              return { title: 'Payment Verified', desc: 'Your payment has been successfully verified by the vendor.' };
-            case 'Production Started':
-              return { title: 'Production Started', desc: 'The vendor has started production of your custom design.' };
-            case 'Manufacturing':
-              return { title: 'Manufacturing Progressing', desc: 'Your custom furniture is currently being manufactured.' };
-            case 'Ready for Delivery':
-              return { title: 'Ready for Delivery', desc: 'Your custom design is manufactured and ready for delivery dispatch.' };
+            case 'Order Confirmed':
+              return { title: 'Order Confirmed', desc: 'Your order has been confirmed and accepted by the vendor.' };
+            case 'Processing':
+              return { title: 'Processing', desc: 'Your order is being processed by the vendor.' };
+            case 'Shipped':
+              return { title: 'Shipped', desc: 'Your order has been shipped and is on its way.' };
+            case 'Out for Delivery':
+              return { title: 'Out for Delivery', desc: 'Your order is out for delivery and will arrive soon.' };
             case 'Delivered':
-              return { title: 'Delivered', desc: 'Your order has been successfully delivered. Please confirm receipt and request installation if needed.' };
+              return { title: 'Delivered', desc: 'Your order has been successfully delivered. Installation can be scheduled.' };
             case 'Installation Scheduled':
               return { title: 'Installation Scheduled', desc: 'An installation technician is scheduled to set up your design.' };
+            case 'Installation In Progress':
+              return { title: 'Installation In Progress', desc: 'Installation work is currently in progress.' };
             case 'Installation Completed':
               return { title: 'Installation Completed', desc: 'The order lifecycle is completed. We hope you enjoy your purchase!' };
             case 'Cancelled':
@@ -2821,8 +2820,8 @@ Thank you for shopping with Artisan Studio!
 
         const currentMsg = getStatusMessage();
 
-        // 7 Stages from backend tracking if available, otherwise compute from orderStatus
-        const allStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+        // 8 Stages from backend tracking if available, otherwise compute from orderStatus
+        const allStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
         const stagesList = trackingStages.length > 0
           ? allStages.map((s, i) => ({
               key: s,
@@ -2906,7 +2905,8 @@ Thank you for shopping with Artisan Studio!
               <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
                 <div>
                   <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Live Order Tracking</h2>
-                  <p className="text-xs text-gray-400 mt-1">Product: <strong>{activeOrder.productDetails?.title || (activeOrder.orderType === 'AI Design' ? `AI Design - ${activeOrder.aiDesignData?.roomType || 'Custom'}` : 'Custom Furniture Request')}</strong> • Order #{activeOrder._id?.slice(-6)} • Date: {new Date(activeOrder.createdAt).toLocaleDateString()}</p>
+                  <p className="text-xs text-gray-400 mt-1">Order #<strong>{activeOrder._id?.slice(-6)}</strong> • Product: <strong>{activeOrder.productDetails?.title || (activeOrder.orderType === 'AI Design' ? `AI Design - ${activeOrder.aiDesignData?.roomType || 'Custom'}` : 'Custom Furniture Request')}</strong> • Vendor: <strong>{activeOrder.vendorId?.companyName || activeTracking.tracking?.vendorName || 'N/A'}</strong></p>
+                  <p className="text-xs text-gray-400 mt-0.5">Delivery Status: <strong className={status === 'Delivered' ? 'text-green-600' : 'text-[#E76F51]'}>{status}</strong> • Installation Status: <strong className={installDetails.installationStatus === 'Completed' ? 'text-green-600' : installDetails.installationStatus ? 'text-[#E76F51]' : 'text-gray-400'}>{installDetails.installationStatus || 'Not Scheduled'}</strong></p>
                 </div>
                 <div className="px-4 py-2 bg-[#00A86B]/10 text-[#00A86B] font-bold rounded-lg text-xs border border-[#00A86B]/20">
                   Expected: {expectedDate}
@@ -2925,7 +2925,7 @@ Thank you for shopping with Artisan Studio!
                 ></div>
 
                 {/* Timeline Nodes */}
-                <div className="grid grid-cols-1 md:grid-cols-7 gap-6 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-8 gap-6 relative z-10">
                   {stagesList.map((stage, index) => {
                     const isPassed = stage.isDone;
                     const isCurrent = (index === stagesList.filter(s => s.isDone).length - 1) || (index === 0 && !stagesList[1].isDone);
@@ -3000,12 +3000,19 @@ Thank you for shopping with Artisan Studio!
               )}
 
               {/* Installation Details */}
-              {installDetails.partner && (
+              {(installDetails.partner || installDetails.technicianName) && (
                 <div className="bg-purple-50/50 p-6 rounded-2xl border border-purple-200 space-y-3">
                   <h4 className="font-bold text-sm text-purple-800 uppercase tracking-wider">Installation Details</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{installDetails.partner}</p></div>
+                    {installDetails.technicianName && <div><span className="text-gray-500">Technician:</span><p className="font-bold text-[#1F2937]">{installDetails.technicianName}</p></div>}
+                    {installDetails.technicianContact && <div><span className="text-gray-500">Contact:</span><p className="font-bold text-[#1F2937]">{installDetails.technicianContact}</p></div>}
+                    {installDetails.partner && <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{installDetails.partner}</p></div>}
                     {installDetails.scheduledDate && <div><span className="text-gray-500">Scheduled:</span><p className="font-bold text-[#1F2937]">{new Date(installDetails.scheduledDate).toLocaleDateString()}</p></div>}
+                    {installDetails.installationDate && <div><span className="text-gray-500">Installation Date:</span><p className="font-bold text-[#1F2937]">{new Date(installDetails.installationDate).toLocaleDateString()}</p></div>}
+                    {installDetails.installationTime && <div><span className="text-gray-500">Time:</span><p className="font-bold text-[#1F2937]">{installDetails.installationTime}</p></div>}
+                    {installDetails.installationAddress && <div className="col-span-2"><span className="text-gray-500">Address:</span><p className="font-bold text-[#1F2937]">{installDetails.installationAddress}</p></div>}
+                    {installDetails.installationStatus && <div><span className="text-gray-500">Status:</span><p className="font-bold text-purple-700">{installDetails.installationStatus}</p></div>}
+                    {installDetails.expectedCompletionDate && <div><span className="text-gray-500">Expected Completion:</span><p className="font-bold text-[#1F2937]">{new Date(installDetails.expectedCompletionDate).toLocaleDateString()}</p></div>}
                     {installDetails.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span><p className="text-[#1F2937]">{installDetails.notes}</p></div>}
                   </div>
                 </div>

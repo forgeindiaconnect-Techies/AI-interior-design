@@ -89,6 +89,13 @@ const VendorDashboard = ({
   const [delTrackingId, setDelTrackingId] = useState({});
   const [installPartner, setInstallPartner] = useState({});
   const [installDate, setInstallDate] = useState({});
+  const [installTechName, setInstallTechName] = useState({});
+  const [installTechContact, setInstallTechContact] = useState({});
+  const [installAddress, setInstallAddress] = useState({});
+  const [installExpectedCompletion, setInstallExpectedCompletion] = useState({});
+  const [installStatus, setInstallStatus] = useState({});
+  const [installTime, setInstallTime] = useState({});
+  const [installNotes, setInstallNotes] = useState({});
   const [expectedDelDate, setExpectedDelDate] = useState({});
   const [isPayoutRequested, setIsPayoutRequested] = useState(false);
 
@@ -2652,7 +2659,7 @@ const VendorDashboard = ({
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Delivery & Installation Timeline</h2>
           {deliveryOrders.filter(d => !searchQuery || d.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) || d.status?.toLowerCase().includes(searchQuery.toLowerCase()) || d.trackingId?.toLowerCase().includes(searchQuery.toLowerCase())).map((del) => {
-            const trackingStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+            const trackingStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
             const currentIdx = trackingStages.indexOf(del.status);
             return (
             <div key={del._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
@@ -2667,7 +2674,7 @@ const VendorDashboard = ({
 
               {/* 7-Stage Timeline */}
               <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/20">
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-8 gap-2">
                   {trackingStages.map((stage, idx) => {
                     const isActive = idx === currentIdx;
                     const isPast = idx < currentIdx;
@@ -2710,11 +2717,40 @@ const VendorDashboard = ({
                     <button onClick={() => handleTrackingUpdate(del._id, del.status, { deliveryDetails: { partner: delPartner[del._id], trackingId: delTrackingId[del._id] }, note: 'Delivery details updated' })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Delivery Details'}</button>
                   </div>
 
-                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider pt-2">Installation Scheduling</h4>
-                  <div className="grid grid-cols-1 gap-3">
+                  <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider pt-2">Installation Management</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="date" placeholder="Installation Date" value={installDate[del._id] || ''} onChange={(e) => setInstallDate({ ...installDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="time" placeholder="Installation Time" value={installTime[del._id] || ''} onChange={(e) => setInstallTime({ ...installTime, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
                     <input type="text" placeholder="Installation Partner" value={installPartner[del._id] || ''} onChange={(e) => setInstallPartner({ ...installPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <input type="datetime-local" placeholder="Scheduled Date" value={installDate[del._id] || ''} onChange={(e) => setInstallDate({ ...installDate, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <button onClick={() => handleTrackingUpdate(del._id, 'Installation Scheduled', { installationDetails: { partner: installPartner[del._id], scheduledDate: installDate[del._id] }, note: 'Installation scheduled' })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E76F51] hover:bg-[#E76F51]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Schedule Installation'}</button>
+                    <input type="text" placeholder="Technician Name" value={installTechName[del._id] || ''} onChange={(e) => setInstallTechName({ ...installTechName, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="text" placeholder="Technician Contact Number" value={installTechContact[del._id] || ''} onChange={(e) => setInstallTechContact({ ...installTechContact, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="text" placeholder="Installation Address" value={installAddress[del._id] || ''} onChange={(e) => setInstallAddress({ ...installAddress, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="date" placeholder="Expected Completion Date" value={installExpectedCompletion[del._id] || ''} onChange={(e) => setInstallExpectedCompletion({ ...installExpectedCompletion, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <select value={installStatus[del._id] || ''} onChange={(e) => setInstallStatus({ ...installStatus, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:border-[#2A9D8F]">
+                      <option value="">Select Status</option>
+                      <option value="Scheduled">Scheduled</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                    <textarea placeholder="Installation Notes" value={installNotes[del._id] || ''} onChange={(e) => setInstallNotes({ ...installNotes, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F] sm:col-span-2" rows={2}></textarea>
+                    <button onClick={() => {
+                      const installPayload = {
+                        partner: installPartner[del._id] || '',
+                        scheduledDate: installDate[del._id] || undefined,
+                        installationDate: installDate[del._id] || undefined,
+                        installationTime: installTime[del._id] || '',
+                        technicianName: installTechName[del._id] || '',
+                        technicianContact: installTechContact[del._id] || '',
+                        installationAddress: installAddress[del._id] || '',
+                        expectedCompletionDate: installExpectedCompletion[del._id] || undefined,
+                        installationStatus: installStatus[del._id] || '',
+                        notes: installNotes[del._id] || ''
+                      };
+                      const isDelivered = del.status === 'Delivered';
+                      const selStatus = installStatus[del._id];
+                      const targetStatus = isDelivered ? 'Installation Scheduled' : (selStatus === 'In Progress' ? 'Installation In Progress' : selStatus === 'Completed' ? 'Installation Completed' : del.status);
+                      handleTrackingUpdate(del._id, targetStatus, { installationDetails: installPayload, note: `Installation: ${selStatus || 'details saved'}` });
+                    }} disabled={trackingProcessing[del._id]} className={`sm:col-span-2 py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E76F51] hover:bg-[#E76F51]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Installation Details'}</button>
                   </div>
                 </div>
               </div>

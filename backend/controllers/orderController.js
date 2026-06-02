@@ -357,7 +357,7 @@ exports.updateOrderTracking = async (req, res) => {
         }
       } else {
         if (newIdx !== 0) {
-          return res.status(400).json({ success: false, message: `First tracking stage must be "Payment Verified", not "${status}"` });
+          return res.status(400).json({ success: false, message: `First tracking stage must be "Order Confirmed", not "${status}"` });
         }
       }
 
@@ -387,16 +387,33 @@ exports.updateOrderTracking = async (req, res) => {
     await tracking.save();
 
     const shortId = order._id.toString().slice(-6);
-    await Notification.create({
-      userId: order.userId,
-      message: `Order #${shortId} updated: ${status || 'details changed'}`,
-      type: 'info'
-    });
-    await Notification.create({
-      isAdmin: true,
-      message: `Order #${shortId} tracking updated to: ${status || 'details changed'}`,
-      type: 'info'
-    });
+    let userMsg = `Order #${shortId} updated: ${status || 'details changed'}`;
+    let vendorMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
+    let adminMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
+
+    if (status === 'Installation Scheduled') {
+      const techName = installationDetails?.technicianName || tracking.installationDetails?.technicianName || 'Technician';
+      userMsg = `Installation has been scheduled for Order #${shortId}. Technician: ${techName}`;
+      vendorMsg = `Installation scheduled for Order #${shortId} with ${techName}.`;
+      adminMsg = `Installation scheduled for Order #${shortId}. Technician: ${techName}`;
+    } else if (status === 'Installation In Progress') {
+      userMsg = `Installation work has started for Order #${shortId}.`;
+      vendorMsg = `Installation started for Order #${shortId}.`;
+      adminMsg = `Installation started for Order #${shortId}.`;
+    } else if (status === 'Installation Completed') {
+      userMsg = `Installation has been completed successfully for Order #${shortId}.`;
+      vendorMsg = `Installation completed for Order #${shortId}.`;
+      adminMsg = `Installation completed for Order #${shortId}.`;
+    }
+
+    await Notification.create({ userId: order.userId, message: userMsg, type: 'info' });
+
+    const vendor = await Vendor.findById(order.vendorId);
+    if (vendor?.userId) {
+      await Notification.create({ userId: vendor.userId, message: vendorMsg, type: 'info' });
+    }
+
+    await Notification.create({ isAdmin: true, message: adminMsg, type: 'info' });
 
     res.status(200).json({ success: true, data: { order, tracking } });
   } catch (error) {
@@ -404,14 +421,15 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
-// Valid 7-stage sequence for tracking workflow
+// Valid 8-stage tracking workflow sequence
 const TRACKING_STAGE_SEQUENCE = [
-  'Payment Verified',
-  'Production Started',
-  'Manufacturing',
-  'Ready for Delivery',
+  'Order Confirmed',
+  'Processing',
+  'Shipped',
+  'Out for Delivery',
   'Delivered',
   'Installation Scheduled',
+  'Installation In Progress',
   'Installation Completed'
 ];
 

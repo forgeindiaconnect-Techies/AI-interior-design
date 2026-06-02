@@ -30,6 +30,13 @@ const OrderTrackingSchema = new mongoose.Schema({
   installationDetails: {
     partner: { type: String, default: '' },
     scheduledDate: { type: Date },
+    installationDate: { type: Date },
+    installationTime: { type: String, default: '' },
+    technicianName: { type: String, default: '' },
+    technicianContact: { type: String, default: '' },
+    installationAddress: { type: String, default: '' },
+    expectedCompletionDate: { type: Date },
+    installationStatus: { type: String, enum: ['', 'Scheduled', 'In Progress', 'Completed'], default: '' },
     notes: { type: String, default: '' }
   },
   createdAt: { type: Date, default: Date.now }

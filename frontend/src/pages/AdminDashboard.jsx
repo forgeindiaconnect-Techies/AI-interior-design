@@ -439,7 +439,7 @@ const AdminDashboard = ({
 
   useEffect(() => {
     if (activeTab === 'delivery' && managementData?.orders) {
-      const trackingStatuses = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+      const trackingStatuses = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
       const needsFetch = managementData.orders
         .filter(o => trackingStatuses.includes(o.orderStatus))
         .filter(o => !adminTrackingData[o._id])
@@ -3451,12 +3451,12 @@ const AdminDashboard = ({
             {(() => {
               const orderList = managementData?.orders || [];
               const trackingOrders = orderList.filter(o => 
-                ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'].includes(o.orderStatus)
+                ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'].includes(o.orderStatus)
               );
               if (trackingOrders.length === 0) {
                 return <p className="text-sm text-gray-400 text-center py-8">No orders currently in tracking workflow.</p>;
               }
-              const trackingStages = ['Payment Verified', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+              const trackingStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
               return (
                 <div className="space-y-4">
                   {trackingOrders.map(order => {
@@ -3476,7 +3476,7 @@ const AdminDashboard = ({
                           </div>
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${currentIdx >= 4 ? 'bg-emerald-50 text-emerald-700' : currentIdx >= 2 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{order.orderStatus}</span>
                         </div>
-                        <div className="grid grid-cols-7 gap-1">
+                        <div className="grid grid-cols-8 gap-1">
                           {trackingStages.map((stage, idx) => {
                             const isActive = idx === currentIdx;
                             const isPast = idx < currentIdx;
@@ -3537,11 +3537,18 @@ const AdminDashboard = ({
                             )}
 
                             {/* Installation Details */}
-                            {installDetails?.partner && (
+                            {(installDetails?.partner || installDetails?.technicianName) && (
                               <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-200 space-y-1">
                                 <h4 className="font-bold text-xs text-purple-800">Installation Details</h4>
-                                <p className="text-xs text-gray-600">Partner: <strong>{installDetails.partner}</strong></p>
+                                {installDetails.technicianName && <p className="text-xs text-gray-600">Technician: <strong>{installDetails.technicianName}</strong></p>}
+                                {installDetails.technicianContact && <p className="text-xs text-gray-600">Contact: <strong>{installDetails.technicianContact}</strong></p>}
+                                {installDetails.partner && <p className="text-xs text-gray-600">Partner: <strong>{installDetails.partner}</strong></p>}
                                 {installDetails.scheduledDate && <p className="text-xs text-gray-600">Scheduled: <strong>{new Date(installDetails.scheduledDate).toLocaleDateString()}</strong></p>}
+                                {installDetails.installationDate && <p className="text-xs text-gray-600">Installation Date: <strong>{new Date(installDetails.installationDate).toLocaleDateString()}</strong></p>}
+                                {installDetails.installationTime && <p className="text-xs text-gray-600">Time: <strong>{installDetails.installationTime}</strong></p>}
+                                {installDetails.installationAddress && <p className="text-xs text-gray-600">Address: <strong>{installDetails.installationAddress}</strong></p>}
+                                {installDetails.installationStatus && <p className="text-xs text-gray-600">Status: <strong className="text-purple-700">{installDetails.installationStatus}</strong></p>}
+                                {installDetails.expectedCompletionDate && <p className="text-xs text-gray-600">Expected Completion: <strong>{new Date(installDetails.expectedCompletionDate).toLocaleDateString()}</strong></p>}
                                 {installDetails.notes && <p className="text-xs text-gray-600">{installDetails.notes}</p>}
                               </div>
                             )}
