@@ -764,30 +764,44 @@ const VendorDashboard = ({
   const handleCreateProduct = async (e) => {
     e.preventDefault();
     const payload = {
-      _id: 'prod_' + Date.now(),
-      title: newTitle, 
-      description: newDesc, 
-      price: Number(newPrice), 
-      category: newCategory, 
-      material: newMaterial || 'Oak Wood', 
-      size: newSize || '32x32x30', 
-      images: [newImage || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
-      stockStatus: 'In Stock',
-      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: profile?.companyName || 'Artisan Partner' }
+      title: newTitle,
+      description: newDesc,
+      price: Number(newPrice),
+      category: newCategory,
+      material: newMaterial || 'Oak Wood',
+      size: newSize || '32x32x30',
+      images: [
+        newImage ||
+          'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'
+      ],
+      stock: 10,
+      approvalStatus: 'Approved'
     };
-    
-    const localProducts = [];
-    const updatedProducts = [payload, ...localProducts];
-    setProducts(updatedProducts);
-    setInventoryProducts(prev => [{
-      ...payload,
-      stock: 10, // Default stock for newly created items
-      lowStockThreshold: 5
-    }, ...prev]);
-    
-    
-    alert('✅ Product listed successfully! It is now live in the Marketplace.');
-    setNewTitle(''); setNewDesc(''); setNewPrice(''); setNewMaterial(''); setNewSize(''); setNewImage('');
+
+    try {
+      const res = await axios.post('/products', payload);
+      if (res.data?.success) {
+        // Keep inventory tab in sync (this is UI-only).
+        setInventoryProducts(prev => [
+          { _id: res.data.data._id, ...payload, lowStockThreshold: 5 },
+          ...prev
+        ]);
+        await fetchPartnerData(); // Refresh products so it appears on User Dashboard too.
+        showToast('✅ Product listed successfully. Now live in Marketplace!', 'success');
+      } else {
+        showToast(res.data?.message || 'Failed to list product.', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to create product', err);
+      showToast(err.response?.data?.message || 'Failed to list product.', 'error');
+    }
+
+    setNewTitle('');
+    setNewDesc('');
+    setNewPrice('');
+    setNewMaterial('');
+    setNewSize('');
+    setNewImage('');
   };
 
   const handleProductImageUpload = (e) => {
@@ -1598,7 +1612,13 @@ const VendorDashboard = ({
                       <div className="space-y-2 flex-1">
                         <div className="flex items-center gap-3 flex-wrap">
                           <h4 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{p.title}</h4>
-                          <span className="bg-[#00A86B]/10 text-[#00A86B] px-3 py-1 rounded-full text-xs font-bold">{p.stockStatus || 'In Stock'}</span>
+                          <span className="bg-[#00A86B]/10 text-[#00A86B] px-3 py-1 rounded-full text-xs font-bold">
+                            {(p.stock ?? 10) === 0
+                              ? 'Out of Stock'
+                              : (p.stock ?? 10) <= 5
+                                ? 'Low Stock'
+                                : 'In Stock'}
+                          </span>
                         </div>
                         <div className="flex flex-wrap items-center gap-2 text-xs">
                           <span className="font-bold text-[#8B5E3C] bg-[#8B5E3C]/10 px-2.5 py-1 rounded-lg">{p.category}</span>

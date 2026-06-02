@@ -1,6 +1,7 @@
 const Product = require('../models/Product');
 const Vendor = require('../models/Vendor');
 const mongoose = require('mongoose');
+const Notification = require('../models/Notification');
 
 
 
@@ -10,7 +11,8 @@ const mongoose = require('mongoose');
 exports.getProducts = async (req, res) => {
   try {
     const { category, vendorId } = req.query;
-    let query = {};
+    // Marketplace should only show approved products (public route).
+    let query = { approvalStatus: 'Approved' };
     if (category && category !== 'All') query.category = category;
     if (vendorId) query.vendorId = vendorId;
 
@@ -28,7 +30,10 @@ exports.getProducts = async (req, res) => {
 // @access  Public
 exports.getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('vendorId', 'companyName rating description');
+    const product = await Product.findOne({ _id: req.params.id, approvalStatus: 'Approved' }).populate(
+      'vendorId',
+      'companyName rating description'
+    );
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -51,7 +56,24 @@ exports.createProduct = async (req, res) => {
     }
 
     req.body.vendorId = vendor ? vendor._id : req.body.vendorId;
+
+    // Vendor-listed products should go live immediately.
+    if (req.user.role === 'vendor' && !req.body.approvalStatus) {
+      req.body.approvalStatus = 'Approved';
+    }
+
     const product = await Product.create(req.body);
+
+    // Notify admins about new product listing.
+    const vendorForNotif = vendor || (await Vendor.findById(product.vendorId).select('companyName'));
+    if (product.approvalStatus === 'Approved') {
+      await Notification.create({
+        isAdmin: true,
+        message: `New ready-made product listed: ${product.title} by ${vendorForNotif?.companyName || 'Vendor'}.`,
+        type: 'info'
+      });
+    }
+
     res.status(201).json({ success: true, data: product });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
