@@ -6516,12 +6516,21 @@ const AdminDashboard = ({
       {/* TAB: INSTALLATION */}
       {activeTab === 'installation' && (() => {
         const allOrders = managementData?.orders || [];
+        const installationStatuses = [
+          'Installation Assigned',
+          'Installation Scheduled',
+          'Installation In Progress',
+          'Installation Completed',
+          'Completed',
+          'Order Completed'
+        ];
         const instOrders = allOrders.filter(o =>
-          ['Installation Assigned','Installation Completed','Delivery Assigned','Out for Delivery','Completed','Order Completed'].includes(o.orderStatus)
+          installationStatuses.includes(o.orderStatus) ||
+          (!!o.installationPartnerId && ['Delivered', 'Out for Delivery', 'Delivery Assigned'].includes(o.orderStatus))
         );
         const installPartners = (managementData?.vendors || []).filter(v => v.installationAvailable || v.businessType === 'installation');
         const kpiCards = [
-          { label: 'Pending Installation', value: instOrders.filter(o => o.orderStatus === 'Installation Assigned').length, color: 'text-amber-600', bg: 'bg-amber-50', icon: '🔧' },
+          { label: 'Pending Installation', value: instOrders.filter(o => ['Installation Assigned', 'Installation Scheduled', 'Installation In Progress'].includes(o.orderStatus)).length, color: 'text-amber-600', bg: 'bg-amber-50', icon: '🔧' },
           { label: 'Completed Today', value: instOrders.filter(o => o.orderStatus === 'Installation Completed').length, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: '✅' },
           { label: 'Install Partners', value: installPartners.length, color: 'text-indigo-600', bg: 'bg-indigo-50', icon: '👷' },
           { label: 'Total Jobs', value: instOrders.length, color: 'text-[#1F2937]', bg: 'bg-gray-100', icon: '📋' },
