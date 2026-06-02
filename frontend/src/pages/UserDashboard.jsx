@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -108,7 +108,7 @@ const UserDashboard = ({
   const [quotationProcessing, setQuotationProcessing] = useState(false);
   const [aiQuotationPayment, setAiQuotationPayment] = useState(null);
   const [aiQuotationProcessing, setAiQuotationProcessing] = useState(false);
-  const [aiQuotationOrders, setAiQuotationOrders] = useState([]);
+  const aiQuotationOrders = useMemo(() => orders.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent'), [orders]);
 
   // Tracking Data State (keyed by order _id, fetched from unified backend)
   const [trackingData, setTrackingData] = useState({});
@@ -385,174 +385,83 @@ const UserDashboard = ({
 
   const fetchUserData = async () => {
     try {
+      // ── Synchronous seed: show mock data immediately ──
+      const mockOrders = [
+        { _id: 'ord_mock_mkt_1', orderType: 'Marketplace Product', userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 1299, paymentStatus: 'paid', orderStatus: 'Pending Confirmation', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), shippingAddress: user?.address || '123 Default User St', productDetails: { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], quantity: 1 } },
+        { _id: 'ord_mock_mkt_2', orderType: 'Marketplace Product', userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 449, paymentStatus: 'paid', orderStatus: 'Out For Delivery', createdAt: new Date(Date.now() - 3600000 * 48).toISOString(), shippingAddress: user?.address || '123 Default User St', productDetails: { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], quantity: 2 } },
+      ];
+      setOrders(mockOrders);
+
+      const mockAi = [
+        { _id: 'ai_1', roomType: 'Living Room', status: 'generated', createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), aiSuggestion: { furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table'], materials: ['Teak Wood', 'Linen'], colorPalette: ['Teak Warmth', 'Beige Linen'], budgetEstimate: 4200 }, generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800' },
+        { _id: 'ai_2', roomType: 'Bedroom', status: 'generated', createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), aiSuggestion: { furniture: ['Platform Bed', 'Wall-mounted Shelves'], materials: ['Oak Wood', 'Cotton'], colorPalette: ['Warm White', 'Natural Oak'], budgetEstimate: 3800 }, generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800' },
+      ];
+      setAiDesigns(mockAi);
+
+      const mockManual = [
+        { _id: 'man_req_1', requestType: 'Manual Design', roomType: 'Living Room', style: 'Modern Minimalist', status: 'Quotation Sent', budget: 'Medium ($1000 - $3000)', size: '250 sqft', createdAt: new Date(Date.now() - 3600000 * 48).toISOString(), quotationAmount: '2800', quotationMaterials: 'Premium Teak Wood, Cotton Fabric, Brass Accents', quotationTime: '18 Days', assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' } },
+        { _id: 'man_req_2', requestType: 'Interior Designer Help', roomType: 'Master Bedroom', style: 'Scandinavian', status: 'Approved', budget: 'High ($3000+)', size: '350 sqft', createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), quotationAmount: '4500', quotationMaterials: 'Oak Wood, Linen, Matte Black Hardware', quotationTime: '25 Days', assignedDesignerId: { _id: 'designer_1', companyName: 'Elite Spaces Design' } }
+      ];
+      setManualDesigns(mockManual);
+
+      const mockProducts = [
+        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], vendorId: { companyName: 'Artisan Workshop' } },
+        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600'], vendorId: { companyName: 'Nordic Design Ltd' } },
+        { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600'], vendorId: { companyName: 'Luxury Living Inc' } },
+        { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600'], vendorId: { companyName: 'Luxury Living Inc' } }
+      ];
+      setProducts(mockProducts);
+
+      // ── Async: refresh from backend ──
       // 1. AI Designs
-      let localAi = [];
       try {
         const res = await axios.get('/designs/ai');
         if (res.data && res.data.success) {
-          localAi = res.data.data;
+          setAiDesigns(res.data.data);
         }
       } catch (err) {
         console.warn('Backend ai designs fetch failed:', err);
       }
 
       // 2. Manual Requests
-      let localManual = [];
       try {
         const res = await axios.get('/designs/manual');
-        if (res.data && res.data.success) {
-          localManual = res.data.data;
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          setManualDesigns(res.data.data);
         }
       } catch (err) {
         console.warn('Backend manual designs fetch failed:', err);
       }
-      
-      if (localManual.length === 0) {
-        localManual = [
-          {
-            _id: 'man_req_1',
-            requestType: 'Manual Design',
-            roomType: 'Living Room',
-            style: 'Modern Minimalist',
-            status: 'Quotation Sent',
-            budget: 'Medium ($1000 - $3000)',
-            size: '250 sqft',
-            createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
-            quotationAmount: '2800',
-            quotationMaterials: 'Premium Teak Wood, Cotton Fabric, Brass Accents',
-            quotationTime: '18 Days',
-            assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
-          },
-          {
-            _id: 'man_req_2',
-            requestType: 'Interior Designer Help',
-            roomType: 'Master Bedroom',
-            style: 'Scandinavian',
-            status: 'Approved',
-            budget: 'High ($3000+)',
-            size: '350 sqft',
-            createdAt: new Date(Date.now() - 3600000 * 72).toISOString(),
-            quotationAmount: '4500',
-            quotationMaterials: 'Oak Wood, Linen, Matte Black Hardware',
-            quotationTime: '25 Days',
-            assignedDesignerId: { _id: 'designer_1', companyName: 'Elite Spaces Design' }
-          }
-        ];
-      }
 
       // 3. Products
-      let localProducts = [];
-      if (localProducts.length === 0) {
-        localProducts = [
-          { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-          { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Artisan Workshop' } },
-          { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-          { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Nordic Design Ltd' } },
-          { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } },
-          { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&auto=format&fit=crop&q=60'], vendorId: { companyName: 'Luxury Living Inc' } }
-        ];
-        
-      }
-
       try {
         const res = await axios.get('/products');
         const serverProds = res.data?.data || [];
-        localProducts = serverProds;
+        if (serverProds.length > 0) setProducts(serverProds);
       } catch (err) {
         console.warn('Backend products fetch failed in UserDashboard:', err);
       }
 
-      // 4. Orders
-      let localOrders = JSON.parse(null || 'null');
-      if (!localOrders) {
-        localOrders = [
-          {
-            _id: 'ord_q_9999',
-            orderType: 'AI Design',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: 3200,
-            paymentStatus: 'pending',
-            orderStatus: 'quotation_sent',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 14).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString(),
-            shippingAddress: '789 Designer Lane, New York, NY, USA',
-            quotationAmount: 3200,
-            quotationMaterials: 'Premium Velvet, Brass Legs',
-            quotationTime: '14 Days',
-            aiDesignData: {
-              roomType: 'Home Office',
-              style: 'Mid-Century Modern',
-              generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=600&auto=format&fit=crop&q=60'
-            }
-          },
-          {
-            _id: 'ord_d_9182',
-            orderType: 'AI Design',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: 4500,
-            paymentStatus: 'paid',
-            orderStatus: 'Quotation Accepted',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 15).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
-            shippingAddress: '789 Designer Lane, New York, NY, USA'
-          },
-          {
-            _id: 'ord_m_2210',
-            orderType: 'Manual Design',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: 8500,
-            paymentStatus: 'paid',
-            orderStatus: 'Manufacturer Assigned',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 20).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-            shippingAddress: '12, Mahatma Gandhi Road, Bangalore, India'
-          },
-          {
-            _id: 'ord_p_1044',
-            orderType: 'Marketplace Product',
-            userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: null,
-            deliveryPartnerId: { _id: 'del_mock_1', companyName: 'Swift Logistics Solutions' },
-            installationPartnerId: null,
-            totalAmount: 1250,
-            paymentStatus: 'paid',
-            orderStatus: 'Delivery Assigned',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 3).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
-            shippingAddress: '456 Cinema Road, Los Angeles, CA, USA'
-          }
-        ];
-        
-      }
-
-      // Fetch backend orders (custom/design)
+      // 4. Orders from backend (custom/design)
       try {
         const ordersRes = await axios.get('/orders/user');
         if (ordersRes.data && ordersRes.data.success) {
           const dbOrders = ordersRes.data.data;
-          const mergedMap = new Map();
-          dbOrders.forEach(o => mergedMap.set(o._id, o));
-          localOrders.forEach(o => mergedMap.set(o._id, o));
-          localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setOrders(prev => {
+            const map = new Map();
+            let localOrders = Array.isArray(prev) ? prev : [];
+            dbOrders.forEach(o => map.set(o._id, o));
+            localOrders.forEach(o => map.set(o._id, o));
+            return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          });
         }
       } catch (err) {
         console.warn('Backend orders fetch failed in UserDashboard:', err);
       }
 
-      // Fetch marketplace orders
+      // 5. Marketplace orders
       try {
         const mktRes = await axios.get('/marketplace-orders/myorders');
         if (mktRes.data?.success && mktRes.data.data) {
@@ -578,43 +487,29 @@ const UserDashboard = ({
             tax: o.tax,
             shippingFee: o.shippingFee
           }));
-          const mergedMap = new Map();
-          localOrders.forEach(o => mergedMap.set(o._id, o));
-          mktOrders.forEach(o => mergedMap.set(o._id, o));
-          localOrders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          setOrders(prev => {
+            const map = new Map();
+            let localOrders = Array.from(prev || []);
+            mktOrders.forEach(o => map.set(o._id, o));
+            localOrders.forEach(o => map.set(o._id, o));
+            return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          });
         }
       } catch (err) {
         console.warn('Backend marketplace orders fetch failed:', err);
       }
 
-      // Fetch user reviews
-      let dbReviews = [];
+      // 6. User reviews
       try {
         const reviewsRes = await axios.get('/orders/reviews/user');
-        if (reviewsRes.data && reviewsRes.data.success) {
-          dbReviews = reviewsRes.data.data;
+        if (reviewsRes.data && reviewsRes.data.success && reviewsRes.data.data.length > 0) {
+          setUserReviews(reviewsRes.data.data);
         }
       } catch (err) {
         console.warn('Backend reviews fetch failed in UserDashboard:', err);
       }
 
-      // Load mock reviews from localStorage
-      const localReviews = JSON.parse(localStorage.getItem('mockReviews') || '[]');
-      const reviewsMap = new Map();
-      dbReviews.forEach(r => reviewsMap.set(r._id, r));
-      localReviews.forEach(r => reviewsMap.set(r._id, r));
-      const mergedReviews = Array.from(reviewsMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-      setAiDesigns(localAi);
-      setManualDesigns(localManual);
-      setProducts(localProducts);
-      setOrders(localOrders);
-      setUserReviews(mergedReviews);
-
-      const aiQuoteOrders = localOrders.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
-      setAiQuotationOrders(aiQuoteOrders);
-
-      // Fetch cart from backend
+      // 7. Cart
       try {
         const cartRes = await axios.get('/cart');
         const cartData = cartRes.data?.data;
@@ -628,6 +523,8 @@ const UserDashboard = ({
       console.error('Error fetching user dashboard data', error);
     }
   };
+
+
 
   // AI Studio Actions
   const handleImageUpload = (e) => {
@@ -1118,9 +1015,6 @@ Thank you for shopping with Artisan Studio!
     
     setOrders(updated);
 
-    const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
-    setAiQuotationOrders(updatedAiQuote);
-
     const orderAmount = aiQuotationPayment.quotationAmount || aiQuotationPayment.totalAmount || 0;
 
     const newTransaction = {
@@ -1181,9 +1075,6 @@ Thank you for shopping with Artisan Studio!
     );
     
     setOrders(updated);
-
-    const updatedAiQuote = updated.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
-    setAiQuotationOrders(updatedAiQuote);
 
     const triggerNotif = (recipient, message, type = 'warning') => {
       const notifObj = {

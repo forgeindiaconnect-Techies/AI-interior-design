@@ -386,6 +386,24 @@ const VendorDashboard = ({
 
     const fetchPartnerData = async () => {
     try {
+      // ── Synchronous seed: show mock data immediately ──
+      setProfile({ _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop', businessType: 'seller', isVerified: true, userId: { name: user?.name || 'Vendor Demo', email: user?.email || 'vendor@example.com' } });
+      setStats({ totalOrders: 28, activeOrders: 12, totalRevenue: 45200, totalProducts: 14, averageRating: 4.7, pendingVerifications: 3 });
+      setProducts([
+        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', stock: 10, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], approvalStatus: 'Approved' },
+        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', stock: 15, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], approvalStatus: 'Approved' },
+        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', stock: 20, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600'], approvalStatus: 'Approved' },
+      ]);
+      setCustomRequests([
+        { _id: 'req_1', requestType: 'Manual Design', roomType: 'Living Room', style: 'Modern Minimalist', status: 'Quotation Sent', userId: { name: 'John Doe' }, createdAt: new Date(Date.now() - 3600000 * 48).toISOString() },
+        { _id: 'req_2', requestType: 'AI Design', roomType: 'Bedroom', status: 'Quotation Sent', userId: { name: 'Alice Smith' }, createdAt: new Date(Date.now() - 3600000 * 72).toISOString() },
+      ]);
+      setReadyMadeOrders([
+        { _id: 'ord_rm_1', orderType: 'Marketplace Product', userId: { name: 'John Doe', phone: '+91 98765 43210' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 1299, paymentStatus: 'paid', orderStatus: 'Pending Confirmation', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), shippingAddress: '123 Customer St', productDetails: { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], quantity: 1 } },
+        { _id: 'ord_rm_2', orderType: 'Marketplace Product', userId: { name: 'Jane Doe', phone: '+91 87654 32109' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 898, paymentStatus: 'paid', orderStatus: 'Out For Delivery', createdAt: new Date(Date.now() - 3600000 * 48).toISOString(), shippingAddress: '456 Elm St', productDetails: { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], quantity: 2 } },
+      ]);
+
+      // ── Async: refresh from backend ──
       // 1. Get Vendor Profile & Stats
       const profileRes = await axios.get('/vendor/profile');
       if (profileRes.data.success) {

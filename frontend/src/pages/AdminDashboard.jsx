@@ -473,11 +473,35 @@ const AdminDashboard = ({
 
   const fetchAdminData = async () => {
     try {
+      // ── Synchronous seed: show data immediately ──
+      const now = new Date();
+      setStats({ totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 });
+      setManagementData({
+        users: [
+          { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com', phone: '+91 98765 43210', role: 'user', status: 'Active', createdAt: new Date(now - 86400000*40).toISOString(), totalOrders: 4, totalSpending: 2450, address: '12, MG Road, Bangalore' },
+          { _id: 'u_mock_2', name: 'Vendor Demo', email: 'vendor@example.com', phone: '+91 87654 32109', role: 'vendor', status: 'Active', createdAt: new Date(now - 86400000*10).toISOString(), totalOrders: 0, totalSpending: 0, address: '56, Industrial Area, Noida' },
+        ],
+        vendors: [
+          { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, verificationStatus: 'Approved', storeSetupStatus: 'Approved', isActive: true },
+          { _id: 'v2', companyName: 'Elite Woodworks', businessType: 'manufacturer', userId: { email: 'wood@example.com' }, isVerified: false, verificationStatus: 'Pending', storeSetupStatus: 'Pending', isActive: false },
+        ],
+        orders: [
+          { _id: 'ord_1', orderType: 'Marketplace Product', userId: { name: 'John Doe', email: 'john@example.com' }, vendorId: { companyName: 'Artisan Workshop' }, totalAmount: 1299, paymentStatus: 'paid', orderStatus: 'Pending Confirmation', createdAt: new Date().toISOString(), shippingAddress: '123 St', isMarketplace: false },
+          { _id: 'ord_2', orderType: 'Marketplace Product', userId: { name: 'Alice Smith', email: 'alice@example.com' }, vendorId: { companyName: 'Artisan Workshop' }, totalAmount: 898, paymentStatus: 'paid', orderStatus: 'Dispatched', createdAt: new Date(now - 86400000*2).toISOString(), shippingAddress: '456 Elm St', isMarketplace: false },
+        ],
+        aiDesigns: [
+          { _id: 'ai_1', roomType: 'Living Room', status: 'Quotation Sent', userId: { name: 'John Doe' }, createdAt: new Date(now - 86400000*5).toISOString() },
+        ],
+        manualDesigns: [],
+        designerRequests: []
+      });
+
+      // ── Async: refresh from backend ──
       const [statsRes, mgmtRes] = await Promise.all([
         axios.get('/admin/stats').catch(() => ({ data: { data: { totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 } } })),
         axios.get('/admin/management-data').catch(() => ({ data: { data: { users: [], vendors: [], orders: [], aiDesigns: [], manualDesigns: [] } } }))
       ]);
-      setStats(statsRes.data?.data || {});
+      if (statsRes.data?.data) setStats(statsRes.data.data);
 
       // Seed mock data for demo purposes if backend is empty/offline
       const mockMgmtData = mgmtRes.data?.data || {};
