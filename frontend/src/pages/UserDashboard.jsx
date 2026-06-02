@@ -115,13 +115,15 @@ const UserDashboard = ({
 
   const fetchTrackingData = async (orderId) => {
     if (!orderId) return;
+    // Skip mock/non-MongoDB order IDs — they only exist in frontend mock data
+    if (String(orderId).startsWith('ord_') || String(orderId).startsWith('mock_') || String(orderId).startsWith('mkt_')) return;
     try {
       const res = await axios.get(`/orders/tracking/${orderId}`);
       if (res.data && res.data.success) {
         setTrackingData(prev => ({ ...prev, [orderId]: res.data.data }));
       }
     } catch (err) {
-      // tracking endpoint may throw for orders without OrderTracking doc (e.g. marketplace orders)
+      // tracking endpoint may throw for orders without OrderTracking doc
     }
   };
 

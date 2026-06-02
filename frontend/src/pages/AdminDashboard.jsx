@@ -895,6 +895,9 @@ const AdminDashboard = ({
   };
 
   const fetchOrderTrackingAdmin = async (orderId) => {
+    if (!orderId) return;
+    // Skip mock/non-MongoDB order IDs — they only exist in frontend mock data
+    if (String(orderId).startsWith('ord_') || String(orderId).startsWith('mock_') || String(orderId).startsWith('mkt_')) return;
     try {
       const res = await axios.get(`/orders/tracking/${orderId}`);
       if (res.data?.success) {

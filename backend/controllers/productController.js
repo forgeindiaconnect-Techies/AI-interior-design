@@ -10,67 +10,66 @@ const Notification = require('../models/Notification');
 // @access  Public
 exports.getProducts = async (req, res) => {
   try {
-    // Mock data fallback
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const mockProducts = [
-        {
-          _id: 'mock_1',
-          title: 'Velvet Emerald Sofa',
-          description: 'Luxurious velvet sofa with emerald green upholstery and solid wood frame.',
-          price: 1299,
-          images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
-          category: 'Living Room',
-          material: 'Velvet',
-          size: '84x35x35',
-          stock: 10,
-          rating: 4.8,
-          reviewsCount: 124,
-          approvalStatus: 'Approved',
-          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
-          createdAt: new Date()
-        },
-        {
-          _id: 'mock_2',
-          title: 'Minimalist Teak Coffee Table',
-          description: 'Clean lines and natural teak wood make this coffee table a timeless piece.',
-          price: 449,
-          images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'],
-          category: 'Living Room',
-          material: 'Teak Wood',
-          size: '40x40x18',
-          stock: 15,
-          rating: 4.5,
-          reviewsCount: 89,
-          approvalStatus: 'Approved',
-          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
-          createdAt: new Date()
-        }
-      ];
-      
-      // Filter by category if provided
-      let filtered = mockProducts;
-      if (req.query.category && req.query.category !== 'All') {
-        filtered = mockProducts.filter(p => p.category === req.query.category);
+    const { category, vendorId } = req.query;
+
+    // Try real DB first if connected
+    if (!global.MOCK_DB && mongoose.connection.readyState === 1) {
+      try {
+        let query = { approvalStatus: 'Approved' };
+        if (category && category !== 'All') query.category = category;
+        if (vendorId) query.vendorId = vendorId;
+        const products = await Product.find(query).populate('vendorId', 'companyName rating');
+        return res.status(200).json({ success: true, count: products.length, data: products });
+      } catch (dbErr) {
+        console.warn('DB products query failed, falling back to mock:', dbErr.message);
       }
-      
-      // Filter by vendorId if provided
-      if (req.query.vendorId) {
-        filtered = mockProducts.filter(p => p.vendorId._id === req.query.vendorId || p.vendorId === req.query.vendorId);
-      }
-      
-      return res.status(200).json({ success: true, count: filtered.length, data: filtered });
     }
 
-    const { category, vendorId } = req.query;
-    // Marketplace should only show approved products (public route).
-    let query = { approvalStatus: 'Approved' };
-    if (category && category !== 'All') query.category = category;
-    if (vendorId) query.vendorId = vendorId;
+    // Fallback mock data
+    const mockProducts = [
+      {
+        _id: 'mock_1',
+        title: 'Velvet Emerald Sofa',
+        description: 'Luxurious velvet sofa with emerald green upholstery and solid wood frame.',
+        price: 1299,
+        images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
+        category: 'Living Room',
+        material: 'Velvet',
+        size: '84x35x35',
+        stock: 10,
+        rating: 4.8,
+        reviewsCount: 124,
+        approvalStatus: 'Approved',
+        vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+        createdAt: new Date()
+      },
+      {
+        _id: 'mock_2',
+        title: 'Minimalist Teak Coffee Table',
+        description: 'Clean lines and natural teak wood make this coffee table a timeless piece.',
+        price: 449,
+        images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'],
+        category: 'Living Room',
+        material: 'Teak Wood',
+        size: '40x40x18',
+        stock: 15,
+        rating: 4.5,
+        reviewsCount: 89,
+        approvalStatus: 'Approved',
+        vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+        createdAt: new Date()
+      }
+    ];
 
-    const products = await Product.find(query).populate('vendorId', 'companyName rating');
+    let filtered = mockProducts;
+    if (category && category !== 'All') {
+      filtered = mockProducts.filter(p => p.category === category);
+    }
+    if (vendorId) {
+      filtered = mockProducts.filter(p => p.vendorId._id === vendorId || p.vendorId === vendorId);
+    }
 
-    
-    res.status(200).json({ success: true, count: products.length, data: products });
+    res.status(200).json({ success: true, count: filtered.length, data: filtered });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
