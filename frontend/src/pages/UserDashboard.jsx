@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -344,11 +344,21 @@ const UserDashboard = ({
     }
   }, [activeTab]);
 
+  const fetchCart = useCallback(async () => {
+    try {
+      const res = await axios.get('/cart');
+      const cartData = res.data?.data;
+      if (cartData && cartData.items) {
+        setCartItems(cartData.items.filter(item => item.productId));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch cart from backend:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'cart') {
-      const localCart = [];
-      setCartItems(localCart);
-      
+      fetchCart();
       const syncProducts = async () => {
         try {
           const res = await axios.get('/products');
@@ -363,7 +373,15 @@ const UserDashboard = ({
     } else {
       setShowCheckoutSummary(false);
     }
-  }, [activeTab]);
+  }, [activeTab, fetchCart]);
+
+  useEffect(() => {
+    const onCartUpdated = () => {
+      if (activeTab === 'cart') fetchCart();
+    };
+    window.addEventListener('cartUpdated', onCartUpdated);
+    return () => window.removeEventListener('cartUpdated', onCartUpdated);
+  }, [activeTab, fetchCart]);
 
   const fetchUserData = async () => {
     try {
@@ -552,17 +570,25 @@ const UserDashboard = ({
       localReviews.forEach(r => reviewsMap.set(r._id, r));
       const mergedReviews = Array.from(reviewsMap.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      const localCart = [];
-
       setAiDesigns(localAi);
       setManualDesigns(localManual);
       setProducts(localProducts);
       setOrders(localOrders);
-      setCartItems(localCart);
       setUserReviews(mergedReviews);
 
       const aiQuoteOrders = localOrders.filter(o => o.orderType === 'AI Design' && o.orderStatus === 'quotation_sent');
       setAiQuotationOrders(aiQuoteOrders);
+
+      // Fetch cart from backend
+      try {
+        const cartRes = await axios.get('/cart');
+        const cartData = cartRes.data?.data;
+        if (cartData && cartData.items) {
+          setCartItems(cartData.items.filter(item => item.productId));
+        }
+      } catch (err) {
+        console.warn('Failed to fetch cart in fetchUserData:', err);
+      }
     } catch (error) {
       console.error('Error fetching user dashboard data', error);
     }
@@ -1837,8 +1863,9 @@ Thank you for shopping with Artisan Studio!
       {/* TAB 6: MY CART */}
       {activeTab === 'cart' && (() => {
         const resolvedItems = cartItems.map(item => {
-          const prod = products.find(p => p._id === item.productId);
-          return prod ? { ...prod, quantity: item.quantity } : null;
+          const prod = item.productId?._id ? item.productId : products.find(p => p._id === item.productId);
+          if (!prod) return null;
+          return { ...prod, quantity: item.quantity };
         }).filter(Boolean);
 
         const subtotal = resolvedItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -1846,23 +1873,35 @@ Thank you for shopping with Artisan Studio!
         const tax = Math.round(subtotal * 0.08);
         const total = subtotal + shipping + tax;
 
-        const updateCartQuantity = (productId, delta) => {
-          const updated = cartItems.map(item => {
-            if (item.productId === productId) {
-              const newQty = item.quantity + delta;
-              return newQty > 0 ? { ...item, quantity: newQty } : null;
+        const updateCartQuantity = async (productId, delta) => {
+          const item = cartItems.find(i => (i.productId?._id || i.productId) === productId);
+          if (!item) return;
+          const newQty = item.quantity + delta;
+          if (newQty <= 0) return removeFromCart(productId);
+          try {
+            const res = await axios.put(`/cart/${productId}`, { quantity: newQty });
+            if (res.data?.success) {
+              setCartItems(res.data.data.items.filter(i => i.productId));
             }
-            return item;
-          }).filter(Boolean);
-          setCartItems(updated);
-          
+          } catch (err) {
+            console.warn('Failed to update cart quantity on backend:', err);
+            showToast('Failed to update quantity.', 'error');
+          }
           window.dispatchEvent(new Event('cartUpdated'));
         };
 
-        const removeFromCart = (productId) => {
-          const updated = cartItems.filter(item => item.productId !== productId);
-          setCartItems(updated);
-          
+        const removeFromCart = async (productId) => {
+          try {
+            const res = await axios.delete(`/cart/${productId}`);
+            if (res.data?.success) {
+              setCartItems(res.data.data.items.filter(i => i.productId));
+            } else {
+              setCartItems(prev => prev.filter(i => (i.productId?._id || i.productId) !== productId));
+            }
+          } catch (err) {
+            console.warn('Failed to remove item from cart on backend:', err);
+            setCartItems(prev => prev.filter(i => (i.productId?._id || i.productId) !== productId));
+          }
           window.dispatchEvent(new Event('cartUpdated'));
         };
 
@@ -1925,7 +1964,7 @@ Thank you for shopping with Artisan Studio!
 
           // Clear cart
           setCartItems([]);
-          
+          try { axios.delete('/cart'); } catch (_) {}
           window.dispatchEvent(new Event('cartUpdated'));
           setShowCheckoutSummary(false);
 

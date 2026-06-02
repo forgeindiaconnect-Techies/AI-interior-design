@@ -56,14 +56,6 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     } catch (error) {
       // ignore
     }
-    const localCart = [];
-    const existingItem = localCart.find(item => item.productId === productId);
-    if (existingItem) {
-      existingItem.quantity += 1;
-    } else {
-      localCart.push({ productId, quantity: 1 });
-    }
-    
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
     if (onGoToCart) {

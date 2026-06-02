@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Sparkles, FileText, ShoppingBag, Bookmark, ShoppingCart, Package, Truck, User as UserIcon, HelpCircle, LogOut, ChevronDown, ChevronRight, CreditCard, Star, Bell, Armchair, Hammer } from 'lucide-react';
+import axios from 'axios';
 
 // ── USER SIDEBAR THEME: Clean White / Peach Highlight ──
 const U = {
@@ -25,17 +26,23 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
     design: true, shop: true, orders: true, support: true, account: true
   });
 
+  const fetchCartCount = async () => {
+    try {
+      const res = await axios.get('/cart');
+      const items = res.data?.data?.items || [];
+      setCartCount(items.filter(i => i.productId).length);
+    } catch (err) {
+      console.warn('Failed to fetch cart count:', err);
+    }
+  };
+
   useEffect(() => {
-    const update = () => {
-      const cart = [];
-      setCartCount(cart.length);
-    };
-    update();
-    window.addEventListener('storage', update);
-    window.addEventListener('cartUpdated', update);
+    fetchCartCount();
+    window.addEventListener('cartUpdated', fetchCartCount);
+    window.addEventListener('storage', fetchCartCount);
     return () => {
-      window.removeEventListener('storage', update);
-      window.removeEventListener('cartUpdated', update);
+      window.removeEventListener('cartUpdated', fetchCartCount);
+      window.removeEventListener('storage', fetchCartCount);
     };
   }, []);
 
