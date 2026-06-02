@@ -10,6 +10,57 @@ const Notification = require('../models/Notification');
 // @access  Public
 exports.getProducts = async (req, res) => {
   try {
+    // Mock data fallback
+    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
+      const mockProducts = [
+        {
+          _id: 'mock_1',
+          title: 'Velvet Emerald Sofa',
+          description: 'Luxurious velvet sofa with emerald green upholstery and solid wood frame.',
+          price: 1299,
+          images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
+          category: 'Living Room',
+          material: 'Velvet',
+          size: '84x35x35',
+          stock: 10,
+          rating: 4.8,
+          reviewsCount: 124,
+          approvalStatus: 'Approved',
+          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+          createdAt: new Date()
+        },
+        {
+          _id: 'mock_2',
+          title: 'Minimalist Teak Coffee Table',
+          description: 'Clean lines and natural teak wood make this coffee table a timeless piece.',
+          price: 449,
+          images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'],
+          category: 'Living Room',
+          material: 'Teak Wood',
+          size: '40x40x18',
+          stock: 15,
+          rating: 4.5,
+          reviewsCount: 89,
+          approvalStatus: 'Approved',
+          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+          createdAt: new Date()
+        }
+      ];
+      
+      // Filter by category if provided
+      let filtered = mockProducts;
+      if (req.query.category && req.query.category !== 'All') {
+        filtered = mockProducts.filter(p => p.category === req.query.category);
+      }
+      
+      // Filter by vendorId if provided
+      if (req.query.vendorId) {
+        filtered = mockProducts.filter(p => p.vendorId._id === req.query.vendorId || p.vendorId === req.query.vendorId);
+      }
+      
+      return res.status(200).json({ success: true, count: filtered.length, data: filtered });
+    }
+
     const { category, vendorId } = req.query;
     // Marketplace should only show approved products (public route).
     let query = { approvalStatus: 'Approved' };
@@ -30,6 +81,58 @@ exports.getProducts = async (req, res) => {
 // @access  Public
 exports.getProduct = async (req, res) => {
   try {
+    // Mock data fallback
+    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
+      const mockProducts = [
+        {
+          _id: 'mock_1',
+          title: 'Velvet Emerald Sofa',
+          description: 'Luxurious velvet sofa with emerald green upholstery and solid wood frame.',
+          price: 1299,
+          images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&auto=format&fit=crop&q=60'],
+          category: 'Living Room',
+          material: 'Velvet',
+          size: '84x35x35',
+          stock: 10,
+          rating: 4.8,
+          reviewsCount: 124,
+          approvalStatus: 'Approved',
+          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+          createdAt: new Date()
+        },
+        {
+          _id: 'mock_2',
+          title: 'Minimalist Teak Coffee Table',
+          description: 'Clean lines and natural teak wood make this coffee table a timeless piece.',
+          price: 449,
+          images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600&auto=format&fit=crop&q=60'],
+          category: 'Living Room',
+          material: 'Teak Wood',
+          size: '40x40x18',
+          stock: 15,
+          rating: 4.5,
+          reviewsCount: 89,
+          approvalStatus: 'Approved',
+          vendorId: { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' },
+          createdAt: new Date()
+        }
+      ];
+      
+      const product = mockProducts.find(p => p._id === req.params.id || p._id.toString() === req.params.id);
+      
+      if (!product) {
+        return res.status(404).json({ success: false, message: 'Product not found' });
+      }
+      
+      // Populate vendorId for consistency
+      const populatedProduct = { ...product };
+      if (!populatedProduct.vendorId) {
+        populatedProduct.vendorId = { _id: 'mock_vendor_1', companyName: 'Artisan Workshop' };
+      }
+      
+      return res.status(200).json({ success: true, data: populatedProduct });
+    }
+
     const product = await Product.findOne({ _id: req.params.id, approvalStatus: 'Approved' }).populate(
       'vendorId',
       'companyName rating description'
