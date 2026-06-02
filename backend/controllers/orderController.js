@@ -349,10 +349,10 @@ exports.updateOrderTracking = async (req, res) => {
       const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
       if (lastStage) {
         const currentIdx = getStageIndex(lastStage);
-        if (newIdx <= currentIdx) {
+        if (newIdx < currentIdx) {
           return res.status(400).json({ success: false, message: `Cannot move to "${status}" — already at or past this stage` });
         }
-        if (newIdx !== currentIdx + 1) {
+        if (newIdx > currentIdx + 1) {
           return res.status(400).json({ success: false, message: `Cannot skip from "${lastStage}" to "${status}". Must go through "${TRACKING_STAGE_SEQUENCE[currentIdx + 1]}" first` });
         }
       } else {
@@ -364,7 +364,9 @@ exports.updateOrderTracking = async (req, res) => {
       order.orderStatus = status;
       await order.save();
 
-      tracking.stages.push({ status, timestamp: new Date(), updatedBy: role, note: note || '' });
+      if (lastStage !== status) {
+        tracking.stages.push({ status, timestamp: new Date(), updatedBy: role, note: note || '' });
+      }
       tracking.orderStatus = status;
     }
 
@@ -378,6 +380,9 @@ exports.updateOrderTracking = async (req, res) => {
 
     if (installationDetails) {
       tracking.installationDetails = { ...tracking.installationDetails, ...installationDetails };
+      if (status === 'Installation Scheduled') tracking.installationDetails.installationStatus = 'Scheduled';
+      else if (status === 'Installation In Progress') tracking.installationDetails.installationStatus = 'In Progress';
+      else if (status === 'Installation Completed') tracking.installationDetails.installationStatus = 'Completed';
     }
 
     if (req.body.expectedDeliveryDate) {
@@ -385,6 +390,13 @@ exports.updateOrderTracking = async (req, res) => {
     }
 
     await tracking.save();
+
+    if (status === 'Installation Completed') {
+      order.orderStatus = 'Completed';
+      await order.save();
+      tracking.orderStatus = 'Completed';
+      await tracking.save();
+    }
 
     const shortId = order._id.toString().slice(-6);
     let userMsg = `Order #${shortId} updated: ${status || 'details changed'}`;
@@ -401,12 +413,16 @@ exports.updateOrderTracking = async (req, res) => {
       vendorMsg = `Installation started for Order #${shortId}.`;
       adminMsg = `Installation started for Order #${shortId}.`;
     } else if (status === 'Installation Completed') {
-      userMsg = `Installation has been completed successfully for Order #${shortId}.`;
-      vendorMsg = `Installation completed for Order #${shortId}.`;
-      adminMsg = `Installation completed for Order #${shortId}.`;
+      userMsg = `Installation has been completed successfully for Order #${shortId}. Your order is now complete! Please leave a review.`;
+      vendorMsg = `Installation completed for Order #${shortId}. Order is now marked as Completed.`;
+      adminMsg = `Installation completed for Order #${shortId}. Order moved to Completed.`;
     }
 
-    await Notification.create({ userId: order.userId, message: userMsg, type: 'info' });
+    if (status === 'Installation Completed') {
+      await Notification.create({ userId: order.userId, message: `Order #${shortId} is complete! You can now rate and review your experience.`, type: 'success' });
+    } else {
+      await Notification.create({ userId: order.userId, message: userMsg, type: 'info' });
+    }
 
     const vendor = await Vendor.findById(order.vendorId);
     if (vendor?.userId) {

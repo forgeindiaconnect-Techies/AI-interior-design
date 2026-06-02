@@ -286,6 +286,13 @@ const UserDashboard = ({
   }, []);
 
   useEffect(() => {
+    if (activeTab === 'tracking') {
+      const ordersWithTracking = orders.filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product');
+      ordersWithTracking.forEach(o => fetchTrackingData(o._id));
+    }
+  }, [activeTab, orders.length]);
+
+  useEffect(() => {
     if (activeTab === 'quotations' || activeTab === 'manual') {
       // Re-fetch manual designs from the backend to get fresh quotation data
       const refreshManualDesigns = async () => {
@@ -2993,6 +3000,7 @@ Thank you for shopping with Artisan Studio!
                   <h4 className="font-bold text-sm text-blue-800 uppercase tracking-wider">Delivery Details</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{delDetails.partner}</p></div>
+                    {delDetails.contact && <div><span className="text-gray-500">Contact:</span><p className="font-bold text-[#1F2937]">{delDetails.contact}</p></div>}
                     {delDetails.trackingId && <div><span className="text-gray-500">Tracking ID:</span><p className="font-bold text-[#1F2937]">{delDetails.trackingId}</p></div>}
                     {delDetails.notes && <div className="col-span-2"><span className="text-gray-500">Notes:</span><p className="text-[#1F2937]">{delDetails.notes}</p></div>}
                   </div>

@@ -86,6 +86,7 @@ const VendorDashboard = ({
   const [delStatus, setDelStatus] = useState({});
   const [trackingNote, setTrackingNote] = useState({});
   const [delPartner, setDelPartner] = useState({});
+  const [delContact, setDelContact] = useState({});
   const [delTrackingId, setDelTrackingId] = useState({});
   const [installPartner, setInstallPartner] = useState({});
   const [installDate, setInstallDate] = useState({});
@@ -465,14 +466,18 @@ const VendorDashboard = ({
         const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
         setPendingVerificationOrders(pendingOrders);
 
+        const deliveryTrackingStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
         const delOrders = localOrders
-          .filter(o => o.orderStatus === 'Ready for Delivery' || o.orderStatus === 'Delivered' || o.orderStatus === 'Installation Scheduled' || o.orderStatus === 'Installation Completed')
+          .filter(o => deliveryTrackingStatuses.includes(o.orderStatus))
           .map(o => ({
             _id: o._id,
             orderId: o._id,
             shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
             status: o.orderStatus,
-            trackingNotes: o.trackingNotes || 'Dispatched from central hub'
+            trackingNotes: o.trackingNotes || 'Dispatched from central hub',
+            userId: o.userId,
+            customerName: o.customerName,
+            designDetails: o.designDetails
           }));
         setDeliveryOrders(delOrders);
         
@@ -1077,10 +1082,44 @@ const VendorDashboard = ({
       ));
 
       await fetchPartnerData();
-      showToast(`Stage updated to "${status}"`);
+      if (status === 'Installation Completed') {
+        showToast('Installation completed! Order is now marked as Completed. Review & Rating enabled.');
+      } else {
+        showToast(`Stage updated to "${status}"`);
+      }
     } catch (err) {
       console.error('Tracking update failed:', err);
       showToast(err.response?.data?.message || 'Tracking update failed. Please try again.');
+    } finally {
+      setTrackingProcessing(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  // Save Delivery Details without changing stage
+  const handleDeliveryDetailsSave = async (id) => {
+    setTrackingProcessing(prev => ({ ...prev, [id]: true }));
+    try {
+      const payload = {
+        deliveryDetails: {
+          partner: delPartner[id] || '',
+          contact: delContact[id] || '',
+          trackingId: delTrackingId[id] || '',
+          notes: trackingNote[id] || ''
+        },
+        note: 'Delivery details updated'
+      };
+
+      await axios.post(`/orders/tracking/${id}/update`, payload);
+
+      setDeliveryOrders(prev => prev.map(o =>
+        o._id === id ? { ...o, deliveryDetails: payload.deliveryDetails } : o
+      ));
+
+      await fetchPartnerData();
+      showToast('Delivery details saved successfully!');
+    } catch (err) {
+      console.error('Delivery details save failed:', err);
+      showToast(err.response?.data?.message || 'Failed to save delivery details.');
     } finally {
       setTrackingProcessing(prev => ({ ...prev, [id]: false }));
     }
@@ -2712,9 +2751,10 @@ const VendorDashboard = ({
                 <div className="space-y-4">
                   <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider">Delivery Details</h4>
                   <div className="grid grid-cols-1 gap-3">
-                    <input type="text" placeholder="Delivery Partner Name" value={delPartner[del._id] || ''} onChange={(e) => setDelPartner({ ...delPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <input type="text" placeholder="Tracking ID" value={delTrackingId[del._id] || ''} onChange={(e) => setDelTrackingId({ ...delTrackingId, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
-                    <button onClick={() => handleTrackingUpdate(del._id, del.status, { deliveryDetails: { partner: delPartner[del._id], trackingId: delTrackingId[del._id] }, note: 'Delivery details updated' })} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Delivery Details'}</button>
+                    <input type="text" placeholder="Delivery Person Name" value={delPartner[del._id] || ''} onChange={(e) => setDelPartner({ ...delPartner, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="text" placeholder="Contact Number" value={delContact[del._id] || ''} onChange={(e) => setDelContact({ ...delContact, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <input type="text" placeholder="Tracking ID / Info" value={delTrackingId[del._id] || ''} onChange={(e) => setDelTrackingId({ ...delTrackingId, [del._id]: e.target.value })} className="p-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#2A9D8F]" />
+                    <button onClick={() => handleDeliveryDetailsSave(del._id)} disabled={trackingProcessing[del._id]} className={`w-full py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#8B5E3C] hover:bg-[#8B5E3C]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Delivery Details'}</button>
                   </div>
 
                   <h4 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider pt-2">Installation Management</h4>
@@ -2746,10 +2786,12 @@ const VendorDashboard = ({
                         installationStatus: installStatus[del._id] || '',
                         notes: installNotes[del._id] || ''
                       };
-                      const isDelivered = del.status === 'Delivered';
-                      const selStatus = installStatus[del._id];
-                      const targetStatus = isDelivered ? 'Installation Scheduled' : (selStatus === 'In Progress' ? 'Installation In Progress' : selStatus === 'Completed' ? 'Installation Completed' : del.status);
-                      handleTrackingUpdate(del._id, targetStatus, { installationDetails: installPayload, note: `Installation: ${selStatus || 'details saved'}` });
+                      const selInstallSt = installStatus[del._id];
+                      let targetStatus = del.status;
+                      if (selInstallSt === 'Scheduled') targetStatus = 'Installation Scheduled';
+                      else if (selInstallSt === 'In Progress') targetStatus = 'Installation In Progress';
+                      else if (selInstallSt === 'Completed') targetStatus = 'Installation Completed';
+                      handleTrackingUpdate(del._id, targetStatus, { installationDetails: installPayload, note: `Installation: ${selInstallSt || 'details saved'}` });
                     }} disabled={trackingProcessing[del._id]} className={`sm:col-span-2 py-3 ${trackingProcessing[del._id] ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#E76F51] hover:bg-[#E76F51]/90'} text-white rounded-xl font-bold text-sm shadow-md`}>{trackingProcessing[del._id] ? 'Processing...' : 'Save Installation Details'}</button>
                   </div>
                 </div>

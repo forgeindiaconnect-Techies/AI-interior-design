@@ -1031,6 +1031,20 @@ exports.updateOrderStatus = async (req, res) => {
     }
     await order.save();
 
+    // Sync with OrderTracking for delivery/installation stages
+    const TRACKING_STAGES = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
+    if (TRACKING_STAGES.includes(status)) {
+      let tracking = await OrderTracking.findOne({ orderId: order._id });
+      if (tracking) {
+        const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
+        if (lastStage !== status && lastStage !== 'Completed') {
+          tracking.stages.push({ status, timestamp: new Date(), updatedBy: 'admin', note: `Status updated by admin to ${status}` });
+        }
+        tracking.orderStatus = status;
+        await tracking.save();
+      }
+    }
+
     // Notifications logic
     await Notification.create({
       userId: order.userId,
@@ -1765,42 +1779,97 @@ exports.updateDeliveryStatus = async (req, res) => {
   try {
     const { orderId, type, status, trackingNotes, scheduledDate, notes } = req.body;
 
-
+    const TRACKING_STAGES = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
 
     if (type === 'delivery') {
       let dOrd = await DeliveryOrder.findOne({ orderId });
       if (!dOrd) {
-        // Fallback check by direct ID
         dOrd = await DeliveryOrder.findById(orderId);
       }
-      if (!dOrd) return res.status(404).json({ success: false, message: 'Delivery record not found' });
+      if (dOrd) {
+        dOrd.status = status;
+        if (trackingNotes) dOrd.trackingNotes = trackingNotes;
+        await dOrd.save();
+      }
 
-      dOrd.status = status;
-      if (trackingNotes) dOrd.trackingNotes = trackingNotes;
-      await dOrd.save();
+      const order = await Order.findById(orderId || dOrd?.orderId);
+      if (order) {
+        order.orderStatus = status;
+        await order.save();
 
-      // Update parent order status
-      if (status === 'Delivered') {
-        await Order.findByIdAndUpdate(dOrd.orderId, { orderStatus: 'Completed' });
-      } else {
-        await Order.findByIdAndUpdate(dOrd.orderId, { orderStatus: 'Delivery Assigned' });
+        let tracking = await OrderTracking.findOne({ orderId: order._id });
+        if (!tracking) {
+          const user = await User.findById(order.userId).select('name');
+          const vendor = await Vendor.findById(order.vendorId).select('companyName');
+          tracking = await OrderTracking.create({
+            orderId: order._id,
+            userId: order.userId,
+            vendorId: order.vendorId,
+            customerName: user?.name || 'Customer',
+            vendorName: vendor?.companyName || 'Vendor',
+            amount: order.totalAmount || 0,
+            paymentMethod: 'UPI',
+            transactionId: 'TXN' + Date.now(),
+            paymentDate: new Date(),
+            paymentStatus: 'Completed',
+            orderStatus: status,
+            stages: [{ status, timestamp: new Date(), updatedBy: 'admin', note: notes || '' }]
+          });
+        } else {
+          const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
+          if (lastStage !== status) {
+            tracking.stages.push({ status, timestamp: new Date(), updatedBy: 'admin', note: notes || '' });
+          }
+          tracking.orderStatus = status;
+          await tracking.save();
+        }
       }
     } else if (type === 'installation') {
       let iOrd = await InstallationOrder.findOne({ orderId });
       if (!iOrd) {
         iOrd = await InstallationOrder.findById(orderId);
       }
-      if (!iOrd) return res.status(404).json({ success: false, message: 'Installation record not found' });
+      if (iOrd) {
+        iOrd.status = status;
+        if (notes) iOrd.notes = notes;
+        if (scheduledDate) iOrd.scheduledDate = scheduledDate;
+        await iOrd.save();
+      }
 
-      iOrd.status = status;
-      if (notes) iOrd.notes = notes;
-      if (scheduledDate) iOrd.scheduledDate = scheduledDate;
-      await iOrd.save();
+      const order = await Order.findById(orderId || iOrd?.orderId);
+      if (order) {
+        order.orderStatus = status;
+        await order.save();
+      }
 
-      if (status === 'Installation Completed') {
-        await Order.findByIdAndUpdate(iOrd.orderId, { orderStatus: 'Completed' });
-      } else {
-        await Order.findByIdAndUpdate(iOrd.orderId, { orderStatus: 'Installation Assigned' });
+      let tracking = await OrderTracking.findOne({ orderId: orderId || iOrd?.orderId });
+      if (tracking) {
+        if (tracking.installationDetails) {
+          if (scheduledDate) tracking.installationDetails.scheduledDate = scheduledDate;
+          if (notes) tracking.installationDetails.notes = notes;
+          if (status === 'Installation Scheduled') tracking.installationDetails.installationStatus = 'Scheduled';
+          else if (status === 'Installation In Progress') tracking.installationDetails.installationStatus = 'In Progress';
+          else if (status === 'Installation Completed') tracking.installationDetails.installationStatus = 'Completed';
+        }
+        const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
+        if (lastStage !== status) {
+          tracking.stages.push({ status, timestamp: new Date(), updatedBy: 'admin', note: notes || '' });
+        }
+        tracking.orderStatus = status;
+        await tracking.save();
+      }
+    }
+
+    if (status === 'Installation Completed') {
+      const order = await Order.findById(orderId);
+      if (order) {
+        order.orderStatus = 'Completed';
+        await order.save();
+      }
+      let tracking = await OrderTracking.findOne({ orderId });
+      if (tracking) {
+        tracking.orderStatus = 'Completed';
+        await tracking.save();
       }
     }
 

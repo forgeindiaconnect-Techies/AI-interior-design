@@ -440,11 +440,20 @@ const AdminDashboard = ({
   useEffect(() => {
     if (activeTab === 'delivery' && managementData?.orders) {
       const trackingStatuses = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
-      const needsFetch = managementData.orders
-        .filter(o => trackingStatuses.includes(o.orderStatus))
-        .filter(o => !adminTrackingData[o._id])
-        .map(o => o._id);
-      needsFetch.forEach(id => fetchOrderTrackingAdmin(id));
+      const trackingOrders = managementData.orders.filter(o => trackingStatuses.includes(o.orderStatus));
+      trackingOrders.forEach(o => fetchOrderTrackingAdmin(o._id));
+    }
+  }, [activeTab, managementData]);
+
+  useEffect(() => {
+    if (activeTab === 'delivery') {
+      const interval = setInterval(() => {
+        if (managementData?.orders) {
+          const trackingStatuses = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+          managementData.orders.filter(o => trackingStatuses.includes(o.orderStatus)).forEach(o => fetchOrderTrackingAdmin(o._id));
+        }
+      }, 5000);
+      return () => clearInterval(interval);
     }
   }, [activeTab, managementData]);
 
@@ -3531,6 +3540,7 @@ const AdminDashboard = ({
                               <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-200 space-y-1">
                                 <h4 className="font-bold text-xs text-blue-800">Delivery Details</h4>
                                 <p className="text-xs text-gray-600">Partner: <strong>{delDetails.partner}</strong></p>
+                                {delDetails.contact && <p className="text-xs text-gray-600">Contact: <strong>{delDetails.contact}</strong></p>}
                                 {delDetails.trackingId && <p className="text-xs text-gray-600">Tracking: <strong>{delDetails.trackingId}</strong></p>}
                                 {delDetails.notes && <p className="text-xs text-gray-600">{delDetails.notes}</p>}
                               </div>

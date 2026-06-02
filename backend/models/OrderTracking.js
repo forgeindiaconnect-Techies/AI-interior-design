@@ -24,6 +24,7 @@ const OrderTrackingSchema = new mongoose.Schema({
   expectedDeliveryDate: { type: Date },
   deliveryDetails: {
     partner: { type: String, default: '' },
+    contact: { type: String, default: '' },
     trackingId: { type: String, default: '' },
     notes: { type: String, default: '' }
   },
