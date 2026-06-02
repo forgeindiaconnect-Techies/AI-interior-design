@@ -586,7 +586,7 @@ exports.getOrderTracking = async (req, res) => {
       };
     }
 
-    let tracking = await OrderTracking.findOne({ req.params.id });
+    let tracking = await OrderTracking.findOne({ orderId: req.params.id });
     if (!tracking) {
       tracking = {
         orderId: req.params.id,
