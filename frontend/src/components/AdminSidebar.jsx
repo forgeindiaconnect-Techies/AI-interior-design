@@ -139,8 +139,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
             <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
               <NavItem name="Customers" icon={Users} tab="users" />
               <NavItem name="Vendors" icon={Store} tab="vendors" />
-              <NavItem name="Manufacturers" icon={Factory} tab="manufacturers" />
-              <NavItem name="Delivery Partners" icon={Truck} tab="delivery" />
             </div>
           )}
         </div>
