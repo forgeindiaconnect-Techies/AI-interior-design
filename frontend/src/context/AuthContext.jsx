@@ -24,8 +24,9 @@ axios.interceptors.response.use(
       if (error.response.status === 401) {
         if (error.config.url && !error.config.url.includes('/auth/login')) {
           console.warn('[Axios Interceptor] 401 Unauthorized detected on ' + error.config.url);
-          // We rely on the /auth/me call or individual component error handling 
-          // to manage session state rather than forcefully redirecting globally here.
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login';
         }
       } else if (error.response.status === 403) {
         console.warn('[Axios Interceptor] 403 Forbidden:', error.response.data?.message || 'Access denied');
