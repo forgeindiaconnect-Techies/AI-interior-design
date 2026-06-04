@@ -1454,14 +1454,14 @@ Thank you for shopping with Artisan Studio!
                 <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                   <div className="flex flex-col sm:flex-row items-center gap-6">
                     {design.originalImage && (
-                      <div className="flex-1 w-full sm:w-auto relative group">
+                      <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
                         <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
-                        <img src={design.originalImage} alt="Original" className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
+                        <img src={design.originalImage} alt="Original" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
                       </div>
                     )}
-                    <div className="flex-1 w-full sm:w-auto relative group">
+                    <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
                       <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
-                      <img src={design.generatedImage} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+                      <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
                     </div>
                     <div className="space-y-4 flex-1 w-full">
                       <div className="flex items-center justify-between">
@@ -1483,7 +1483,6 @@ Thank you for shopping with Artisan Studio!
                           {design.status !== 'accepted' && design.status !== 'execution' && (
                             <>
                               <button onClick={() => handleAiStatus(design._id, 'accepted')} className="p-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm" title="Accept & Order"><CheckCircle className="w-4 h-4" /></button>
-                              <button onClick={() => handleProceedToExecution(design)} className="p-2 bg-[#1F2937] hover:bg-black text-white rounded-xl shadow-sm" title="Proceed to Execution"><PlayCircle className="w-4 h-4" /></button>
                               <button onClick={() => handleAiStatus(design._id, 'regenerated')} className="p-2 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
                               <button onClick={() => handleAiStatus(design._id, 'rejected')} className="p-2 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm" title="Reject & Manual Design"><XCircle className="w-4 h-4" /></button>
                             </>
