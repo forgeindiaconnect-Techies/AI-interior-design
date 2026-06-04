@@ -2752,16 +2752,25 @@ Thank you for shopping with Artisan Studio!
         // Dynamic status descriptions
         const getStatusMessage = () => {
           switch (status) {
+            case 'Pending Confirmation':
+              return { title: 'Pending Confirmation', desc: 'Your order is pending confirmation from the vendor.' };
             case 'Order Confirmed':
               return { title: 'Order Confirmed', desc: 'Your order has been confirmed and accepted by the vendor.' };
             case 'Processing':
               return { title: 'Processing', desc: 'Your order is being processed by the vendor.' };
+            case 'Pending Dispatch':
+              return { title: 'Pending Dispatch', desc: 'Your order is packed and awaiting courier pickup.' };
+            case 'Dispatched':
+              return { title: 'Dispatched', desc: 'Your order has been handed over to the courier partner.' };
             case 'Shipped':
               return { title: 'Shipped', desc: 'Your order has been shipped and is on its way.' };
             case 'Out for Delivery':
+            case 'Out For Delivery':
               return { title: 'Out for Delivery', desc: 'Your order is out for delivery and will arrive soon.' };
             case 'Delivered':
               return { title: 'Delivered', desc: 'Your order has been successfully delivered. Installation can be scheduled.' };
+            case 'Completed':
+              return { title: 'Completed', desc: 'Your order is fully completed.' };
             case 'Installation Scheduled':
               return { title: 'Installation Scheduled', desc: 'An installation technician is scheduled to set up your design.' };
             case 'Installation In Progress':
@@ -2777,8 +2786,12 @@ Thank you for shopping with Artisan Studio!
 
         const currentMsg = getStatusMessage();
 
-        // 8 Stages from backend tracking if available, otherwise compute from orderStatus
-        const allStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+        // Compute stages based on orderType
+        let allStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+        if (activeOrder.orderType === 'Marketplace Product') {
+          allStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
+        }
+
         const stagesList = trackingStages.length > 0
           ? allStages.map((s, i) => ({
               key: s,

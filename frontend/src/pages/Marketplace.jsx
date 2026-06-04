@@ -49,13 +49,12 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     }
   };
 
-  const handleAddToCart = async (e, productId) => {
+  const handleAddToCart = (e, productId) => {
     e.stopPropagation();
-    try {
-      await axios.post('/cart', { productId, quantity: 1 });
-    } catch (error) {
-      // ignore
-    }
+    
+    // Fire API call in the background without awaiting it to ensure instant UI response
+    axios.post('/cart', { productId, quantity: 1 }).catch(() => {});
+    
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
     if (onGoToCart) {
