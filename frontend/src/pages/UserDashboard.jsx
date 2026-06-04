@@ -2252,7 +2252,8 @@ Thank you for shopping with Artisan Studio!
                 );
               })}
             </div>
-          )}
+          ) : null;
+        })()}
             </>
           )}
         </div>
