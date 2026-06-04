@@ -1209,21 +1209,52 @@ exports.getManagementData = async (req, res) => {
 
 
 
-    const rawUsers = await User.find({}).select('-password').sort('-createdAt');
-    const vendors = await Vendor.find({}).populate('userId', 'name email phone').sort('-createdAt');
-    const products = await Product.find({}).populate('vendorId', 'companyName').sort('-createdAt');
-    const aiDesigns = await AIDesignRequest.find({})
-      .populate('userId', 'name email')
-      .populate('assignedVendor')
-      .populate('additionalVendors')
-      .populate('orderId')
-      .sort('-createdAt');
-    const dbManualDesigns = await ManualDesignRequest.find({})
-      .populate('userId', 'name email')
-      .populate('assignedVendorId', 'companyName')
-      .populate('assignedDesignerId', 'companyName')
-      .sort('-createdAt')
-      .lean();
+    const [
+      rawUsers,
+      vendors,
+      products,
+      aiDesigns,
+      dbManualDesigns,
+      designerRequests,
+      quotations,
+      orders,
+      orderTrackings,
+      marketplaceOrders,
+      manufacturingOrders
+    ] = await Promise.all([
+      User.find({}).select('-password').sort('-createdAt'),
+      Vendor.find({}).populate('userId', 'name email phone').sort('-createdAt'),
+      Product.find({}).populate('vendorId', 'companyName').sort('-createdAt'),
+      AIDesignRequest.find({})
+        .populate('userId', 'name email')
+        .populate('assignedVendor')
+        .populate('additionalVendors')
+        .populate('orderId')
+        .sort('-createdAt'),
+      ManualDesignRequest.find({})
+        .populate('userId', 'name email')
+        .populate('assignedVendorId', 'companyName')
+        .populate('assignedDesignerId', 'companyName')
+        .sort('-createdAt')
+        .lean(),
+      InteriorDesignerRequest.find({}).populate('userId', 'name email').sort('-createdAt'),
+      Quotation.find({}),
+      Order.find({})
+        .populate('userId', 'name email')
+        .populate('vendorId', 'companyName')
+        .populate('manufacturerId', 'companyName')
+        .populate('deliveryPartnerId', 'companyName')
+        .populate('installationPartnerId', 'companyName')
+        .sort('-createdAt'),
+      OrderTracking.find({}).lean(),
+      MarketplaceOrder.find({})
+        .populate('userId', 'name email')
+        .populate('deliveryPartnerId', 'companyName')
+        .populate('installationPartnerId', 'companyName')
+        .populate('items.vendorId', 'companyName')
+        .sort('-createdAt'),
+      ManufacturingOrder.find({})
+    ]);
 
     const manualDesigns = [...controllerMockManualDesigns];
     dbManualDesigns.forEach(d => {
@@ -1231,35 +1262,14 @@ exports.getManagementData = async (req, res) => {
         manualDesigns.push(d);
       }
     });
-    const designerRequests = await InteriorDesignerRequest.find({}).populate('userId', 'name email').sort('-createdAt');
-    
-    // Fetch Quotations to determine custom design types
-    const quotations = await Quotation.find({});
+
     const quotationMap = {};
     quotations.forEach(q => {
       quotationMap[q._id.toString()] = q.designType; // 'ai' or 'manual'
     });
 
-    const orders = await Order.find({})
-      .populate('userId', 'name email')
-      .populate('vendorId', 'companyName')
-      .populate('manufacturerId', 'companyName')
-      .populate('deliveryPartnerId', 'companyName')
-      .populate('installationPartnerId', 'companyName')
-      .sort('-createdAt');
-
-    const orderTrackings = await OrderTracking.find({}).lean();
     const trackingByOrderId = {};
     orderTrackings.forEach(t => { trackingByOrderId[t.orderId.toString()] = t; });
-      
-    const marketplaceOrders = await MarketplaceOrder.find({})
-      .populate('userId', 'name email')
-      .populate('deliveryPartnerId', 'companyName')
-      .populate('installationPartnerId', 'companyName')
-      .populate('items.vendorId', 'companyName')
-      .sort('-createdAt');
-
-    const manufacturingOrders = await ManufacturingOrder.find({});
 
     // Unify Orders
     const unifiedOrders = [];
