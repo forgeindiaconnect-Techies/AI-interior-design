@@ -26,8 +26,7 @@ axios.interceptors.response.use(
           console.warn('[Axios Interceptor] 401 Unauthorized detected. Clearing session.');
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          alert('Session expired or unauthorized. Please login again.');
-          window.location.href = '/login';
+          window.location.href = '/login?expired=true';
         }
       } else if (error.response.status === 403) {
         console.warn('[Axios Interceptor] 403 Forbidden:', error.response.data?.message || 'Access denied');

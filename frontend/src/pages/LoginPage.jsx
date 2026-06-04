@@ -12,6 +12,7 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const registeredSuccess = location.state?.registeredSuccess || false;
+  const isSessionExpired = new URLSearchParams(location.search).get('expired') === 'true';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,6 +60,12 @@ const LoginPage = () => {
             <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-2xl text-sm font-semibold text-center flex items-center justify-center gap-2">
               <span>✅</span>
               <span>Account created successfully! Please log in to continue.</span>
+            </div>
+          )}
+          {isSessionExpired && !registeredSuccess && !error && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl text-sm font-semibold text-center flex items-center justify-center gap-2">
+              <span>⚠️</span>
+              <span>Session expired or unauthorized. Please log in again.</span>
             </div>
           )}
           {error && (
