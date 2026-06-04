@@ -13,6 +13,7 @@ const {
   getOrderTracking,
   createReview,
   getUserReviews,
+  getUserPayments,
   createTicket,
   getSyncedOrders,
   updateSyncedOrder
@@ -38,6 +39,7 @@ router.post('/accept-and-pay', createPaymentAndOrder);
 router.post('/tracking/:orderId/update', authorize('vendor', 'admin'), updateOrderTracking);
 router.get('/tracking/:orderId', getOrderTracking);
 router.post('/review', createReview);
+router.get('/payments', getUserPayments);
 router.get('/reviews/user', getUserReviews);
 router.post('/ticket', createTicket);
 

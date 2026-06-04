@@ -1,5 +1,6 @@
 const MarketplaceOrder = require('../models/MarketplaceOrder');
 const Cart = require('../models/Cart');
+const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
 const Vendor = require('../models/Vendor');
 const Product = require('../models/Product');
@@ -28,18 +29,31 @@ exports.createOrder = async (req, res) => {
       orderStatus: 'Pending Confirmation'
     });
 
+    // Create payment record
+    const transactionId = 'TXN' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
+    await Payment.create({
+      marketplaceOrderId: order._id,
+      userId: req.user.id,
+      amount: totalAmount,
+      paymentMethod: req.body.paymentMethod || 'Card',
+      transactionId: transactionId,
+      status: 'success'
+    });
+
     // Clear cart after successful order
     await Cart.findOneAndUpdate({ userId: req.user.id }, { items: [], subtotal: 0 });
 
-    // Notify each vendor about the order
+    // Notify each vendor about the order (send to vendor's user account)
     const uniqueVendorIds = [...new Set(items.map(i => i.vendorId.toString()))];
     for (const vendorId of uniqueVendorIds) {
-      const vendor = await Vendor.findById(vendorId).select('companyName');
-      await Notification.create({
-        vendorId: vendorId,
-        message: `New marketplace order received from a customer. Order #${order._id.toString().slice(-6)}.`,
-        type: 'success'
-      });
+      const vendor = await Vendor.findById(vendorId).populate('userId', '_id');
+      if (vendor && vendor.userId) {
+        await Notification.create({
+          userId: vendor.userId._id,
+          message: `New marketplace order received from a customer. Order #${order._id.toString().slice(-6)}.`,
+          type: 'success'
+        });
+      }
     }
 
     // Notify admin
@@ -53,7 +67,7 @@ exports.createOrder = async (req, res) => {
       .populate('items.productId')
       .populate('userId', 'name email');
 
-    res.status(201).json({ success: true, data: populatedOrder });
+    res.status(201).json({ success: true, data: populatedOrder, payment: { transactionId, amount: totalAmount } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

@@ -390,12 +390,8 @@ const AdminDashboard = ({
   useEffect(() => {
     fetchAdminData();
     loadContactMessages();
-    const interval = setInterval(loadContactMessages, 5000);
-    const dataInterval = setInterval(fetchAdminData, 10000); // periodically refresh data from backend instead of localstorage
 
     return () => {
-      clearInterval(interval);
-      clearInterval(dataInterval);
     };
   }, []);
 
@@ -445,17 +441,7 @@ const AdminDashboard = ({
     }
   }, [activeTab, managementData]);
 
-  useEffect(() => {
-    if (activeTab === 'delivery') {
-      const interval = setInterval(() => {
-        if (managementData?.orders) {
-          const trackingStatuses = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
-          managementData.orders.filter(o => trackingStatuses.includes(o.orderStatus)).forEach(o => fetchOrderTrackingAdmin(o._id));
-        }
-      }, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [activeTab, managementData]);
+
 
   const handleDeleteReview = async (id) => {
     if (!window.confirm('Are you sure you want to delete this review?')) return;
@@ -815,6 +801,40 @@ const AdminDashboard = ({
         }
       });
       mockMgmtData.aiDesigns = finalAiDesigns;
+
+      // Fetch marketplace orders and merge into management data
+      try {
+        const mktOrdersRes = await axios.get('/marketplace-orders/all');
+        if (mktOrdersRes.data?.success && mktOrdersRes.data.data) {
+          const mktOrders = mktOrdersRes.data.data.map(o => ({
+            _id: o._id,
+            orderType: 'Marketplace Product',
+            userId: o.userId,
+            vendorId: o.items?.[0]?.vendorId || { companyName: 'Artisan Workshop' },
+            totalAmount: o.totalAmount,
+            paymentStatus: o.paymentStatus,
+            orderStatus: o.orderStatus,
+            shippingAddress: o.shippingAddress,
+            createdAt: o.createdAt,
+            isMarketplace: true,
+            productDetails: o.items?.[0]?.productId ? {
+              _id: o.items[0].productId._id,
+              title: o.items[0].productId.title,
+              price: o.items[0].price,
+              images: o.items[0].productId.images || [],
+              quantity: o.items.reduce((sum, i) => sum + i.quantity, 0)
+            } : { title: 'Marketplace Product', quantity: o.items?.reduce((sum, i) => sum + i.quantity, 0) || 0 }
+          }));
+          const existingOrderIds = new Set((mockMgmtData.orders || []).map(o => o._id));
+          mktOrders.forEach(o => {
+            if (!existingOrderIds.has(o._id)) {
+              mockMgmtData.orders.push(o);
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to fetch marketplace orders for admin', err);
+      }
 
       setManagementData(mockMgmtData);
 

@@ -698,6 +698,24 @@ exports.updateSyncedOrder = (req, res) => {
   res.status(400).json({ success: false, message: 'Sync not supported in prod DB' });
 };
 
+// @desc    Get user's payments
+// @route   GET /api/orders/payments
+// @access  Private
+exports.getUserPayments = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.user.id)) {
+      return res.status(200).json({ success: true, count: 0, data: [] });
+    }
+    const payments = await Payment.find({ userId: req.user.id })
+      .populate('orderId')
+      .populate('marketplaceOrderId')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: payments.length, data: payments });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Get user's reviews
 // @route   GET /api/orders/reviews/user
 // @access  Private

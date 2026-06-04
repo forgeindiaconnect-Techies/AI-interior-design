@@ -375,12 +375,10 @@ const VendorDashboard = ({
 
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
-    const pollInterval = setInterval(fetchPartnerData, 4000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
-      clearInterval(pollInterval);
     };
   }, []);
 

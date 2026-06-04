@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 
 const PaymentSchema = new mongoose.Schema({
-  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
+  marketplaceOrderId: { type: mongoose.Schema.Types.ObjectId, ref: 'MarketplaceOrder' },
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   amount: { type: Number, required: true },
   paymentMethod: { type: String, default: 'Card' },

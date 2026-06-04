@@ -127,6 +127,30 @@ const UserDashboard = ({
     }
   };
 
+  // Payment Records State
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+
+  const loadPayments = useCallback(async () => {
+    setLoadingPayments(true);
+    try {
+      const res = await axios.get('/orders/payments');
+      if (res.data && res.data.success) {
+        setPayments(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to load payments', err);
+    } finally {
+      setLoadingPayments(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'payments') {
+      loadPayments();
+    }
+  }, [activeTab, loadPayments]);
+
   // Ticket & Review State
   const [ticketSubject, setTicketSubject] = useState('');
   const [ticketMessage, setTicketMessage] = useState('');
@@ -273,17 +297,11 @@ const UserDashboard = ({
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
     window.addEventListener('mockOrdersUpdated', handleSync);
-    const interval = setInterval(() => {
-      fetchUserData();
-      const tid = localStorage.getItem('activeTrackingOrderId');
-      if (tid) fetchTrackingData(tid);
-    }, 3000);
 
     return () => {
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
       window.removeEventListener('mockOrdersUpdated', handleSync);
-      clearInterval(interval);
     };
   }, []);
 
@@ -1865,8 +1883,9 @@ Thank you for shopping with Artisan Studio!
               setCartItems([]);
               window.dispatchEvent(new Event('cartUpdated'));
               setShowCheckoutSummary(false);
-              // Refresh orders from backend
+              // Refresh orders and payments from backend
               await fetchUserData();
+              await loadPayments();
               showToast('✅ Order placed successfully! Thank you for your purchase.', 'success');
               if (setActiveTab) setActiveTab('orders');
             } else {
@@ -2089,77 +2108,84 @@ Thank you for shopping with Artisan Studio!
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Your Orders</h2>
 
-          {/* Marketplace Orders — with product thumbnail, name and status badge */}
-          {filteredOrders.filter(o => o.orderType === 'Marketplace Product').length > 0 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
-                <ShoppingBag className="w-4 h-4 text-[#8B5E3C]" /> Marketplace Product Orders
-              </h3>
-              {filteredOrders.filter(o => o.orderType === 'Marketplace Product').map((order) => {
-                const statusColors = {
-                  'Pending Confirmation': 'bg-amber-50 text-amber-700 border-amber-200',
-                  'Processing': 'bg-blue-50 text-blue-700 border-blue-200',
-                  'Pending Dispatch': 'bg-purple-50 text-purple-700 border-purple-200',
-                  'Dispatched': 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                  'Out For Delivery': 'bg-orange-50 text-orange-700 border-orange-200',
-                  'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                  'Completed': 'bg-teal-50 text-teal-700 border-teal-200',
-                  'Cancelled': 'bg-red-50 text-red-700 border-red-200',
-                };
-                const statusBadge = statusColors[order.orderStatus] || 'bg-gray-50 text-gray-700 border-gray-200';
-                const isPaid = order.paymentStatus === 'paid';
-                return (
-                  <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all">
-                    <div className="shrink-0">
-                      <img
-                        src={order.productDetails?.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&auto=format&fit=crop&q=60'}
-                        alt={order.productDetails?.title || 'Product'}
-                        className="w-24 h-24 object-cover rounded-2xl shadow-sm bg-gray-100"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Marketplace Product</span>
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge}`}>{order.orderStatus || 'Pending Confirmation'}</span>
-                      </div>
-                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] truncate">{order.productDetails?.title || `Order #${order._id?.slice(-6)}`}</h3>
-                      <p className="text-xs text-[#6B7280] mt-0.5">Vendor: {order.vendorId?.companyName || 'Artisan Partner'} • Qty: {order.productDetails?.quantity || 1}</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <div className="text-right">
-                        <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
-                        <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-0.5">
-                          Payment: <span className={isPaid ? 'text-[#2A9D8F]' : 'text-amber-600'}>{order.paymentStatus || 'pending'}</span>
-                        </p>
-                      </div>
-                      {!isPaid ? (
-                        <button onClick={() => { if(setActiveTab) setActiveTab('payments'); }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all">Pay Now</button>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            localStorage.setItem('activeTrackingOrderId', order._id);
-                            if(setActiveTab) setActiveTab('tracking');
-                          }}
-                          className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2"
-                        >
-                          <Truck className="w-4 h-4" /> Track Order
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+          {orders.length === 0 ? (
+            <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
+              <ShoppingBag className="w-12 h-12 text-[#D4A373] mx-auto" />
+              <p className="text-[#6B7280] font-medium">No orders yet.</p>
+              <button onClick={() => setActiveTab && setActiveTab('cart')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Start Shopping</button>
             </div>
-          )}
+          ) : (
+            <>
+              {/* Marketplace Orders */}
+              {(() => {
+                const mktOrders = filteredOrders.filter(o => o.orderType === 'Marketplace Product');
+                return mktOrders.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
+                      <ShoppingBag className="w-4 h-4 text-[#8B5E3C]" /> Marketplace Product Orders
+                    </h3>
+                    {mktOrders.map((order) => {
+                      const statusColors = {
+                        'Pending Confirmation': 'bg-amber-50 text-amber-700 border-amber-200',
+                        'Processing': 'bg-blue-50 text-blue-700 border-blue-200',
+                        'Pending Dispatch': 'bg-purple-50 text-purple-700 border-purple-200',
+                        'Dispatched': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                        'Out For Delivery': 'bg-orange-50 text-orange-700 border-orange-200',
+                        'Delivered': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        'Completed': 'bg-teal-50 text-teal-700 border-teal-200',
+                        'Cancelled': 'bg-red-50 text-red-700 border-red-200',
+                      };
+                      const statusBadge = statusColors[order.orderStatus] || 'bg-gray-50 text-gray-700 border-gray-200';
+                      const isPaid = order.paymentStatus === 'paid' || order.paymentStatus === 'Paid';
+                      return (
+                        <div key={order._id} className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-md transition-all">
+                          <div className="shrink-0">
+                            <img
+                              src={order.productDetails?.images?.[0] || (order.items?.[0]?.productId?.images?.[0]) || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&auto=format&fit=crop&q=60'}
+                              alt={order.productDetails?.title || order.items?.[0]?.productId?.title || 'Product'}
+                              className="w-24 h-24 object-cover rounded-2xl shadow-sm bg-gray-100"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Marketplace Product</span>
+                              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge}`}>{order.orderStatus || 'Pending Confirmation'}</span>
+                            </div>
+                            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] truncate">{order.productDetails?.title || order.items?.[0]?.productId?.title || `Order #${order._id?.slice(-6)}`}</h3>
+                            <p className="text-xs text-[#6B7280] mt-0.5">Vendor: {order.vendorId?.companyName || order.items?.[0]?.vendorId?.companyName || 'Artisan Partner'} • Qty: {order.items?.reduce((s, i) => s + i.quantity, 0) || order.productDetails?.quantity || 1}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">Ordered: {new Date(order.createdAt).toLocaleDateString()}</p>
+                          </div>
+                          <div className="flex items-center gap-4 shrink-0">
+                            <div className="text-right">
+                              <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">${order.totalAmount || '0'}</span>
+                              <p className="text-xs text-[#6B7280] font-bold uppercase tracking-wider mt-0.5">
+                                Payment: <span className={isPaid ? 'text-[#2A9D8F]' : 'text-amber-600'}>{order.paymentStatus || 'pending'}</span>
+                              </p>
+                            </div>
+                            {!isPaid ? (
+                              <button className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition-all">Pay Now</button>
+                            ) : (
+                              <button className="bg-gray-100 hover:bg-gray-200 text-[#1F2937] px-5 py-2.5 rounded-xl font-bold text-sm shadow-sm transition-all flex items-center gap-2">
+                                <Truck className="w-4 h-4" /> Track Order
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : null;
+              })()}
 
-          {/* Custom Design Orders */}
-          {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').length > 0 && (
-            <div className="space-y-4">
-              <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
-                <Hammer className="w-4 h-4 text-[#2A9D8F]" /> Custom Design Orders
-              </h3>
-              {filteredOrders.filter(o => o.orderType !== 'Marketplace Product').map((order) => {
+              {/* Custom Design Orders */}
+              {(() => {
+                const designOrders = filteredOrders.filter(o => o.orderType !== 'Marketplace Product');
+                return designOrders.length > 0 ? (
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-sm text-[#1F2937] uppercase tracking-wider flex items-center gap-2">
+                      <Hammer className="w-4 h-4 text-[#2A9D8F]" /> Custom Design Orders
+                    </h3>
+                    {designOrders.map((order) => {
                 const tracking = order.tracking;
                 const stages = tracking?.stages || [];
                 return (
@@ -2227,13 +2253,7 @@ Thank you for shopping with Artisan Studio!
               })}
             </div>
           )}
-
-          {/* Empty state */}
-          {orders.length === 0 && (
-            <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
-              <ShoppingBag className="w-12 h-12 text-[#D4A373] mx-auto" />
-              <p className="text-[#6B7280] font-medium">No active orders found.</p>
-            </div>
+            </>
           )}
         </div>
       )}
@@ -2987,6 +3007,9 @@ Thank you for shopping with Artisan Studio!
       {activeTab === 'payments' && (
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
           <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Payment History</h2>
+          {loadingPayments ? (
+            <div className="text-center py-8 text-gray-500 font-bold">Loading payment history...</div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -3000,39 +3023,33 @@ Thank you for shopping with Artisan Studio!
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {orders.length === 0 ? (
+                {payments.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="p-6 text-center text-gray-500">No payment history found.</td>
                   </tr>
                 ) : (
-                  orders.map(order => (
-                    <tr key={order._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="p-4 font-medium text-[#1F2937]">#{order._id.toUpperCase()}</td>
-                      <td className="p-4 text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</td>
-                      <td className="p-4 font-bold text-[#8B5E3C]">${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                  payments.map(payment => (
+                    <tr key={payment._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="p-4 font-medium text-[#1F2937] text-[11px]">{payment.transactionId}</td>
+                      <td className="p-4 text-gray-500">{new Date(payment.createdAt).toLocaleDateString()}</td>
+                      <td className="p-4 font-bold text-[#8B5E3C]">${(payment.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="p-4">
-                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' 
-                          ? <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-gray-400"/> Card **1234</div> 
-                          : '-'}
+                        <div className="flex items-center gap-2"><CreditCard className="w-4 h-4 text-gray-400"/> {payment.paymentMethod || 'Card'}</div>
                       </td>
                       <td className="p-4">
-                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' ? (
+                        {payment.status === 'success' ? (
                           <span className="bg-[#00A86B]/10 text-[#00A86B] px-2 py-1 rounded-md text-xs font-bold">Paid</span>
-                        ) : (
+                        ) : payment.status === 'pending' ? (
                           <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">Pending</span>
+                        ) : (
+                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded-md text-xs font-bold">Failed</span>
                         )}
                       </td>
                       <td className="p-4">
-                        {order.paymentStatus === 'paid' || order.paymentStatus === 'Paid' ? (
-                          <button onClick={() => handleDownloadReceipt(order)} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button>
+                        {payment.status === 'success' ? (
+                          <button onClick={() => handleDownloadReceipt(payment)} className="text-[#8B5E3C] hover:underline font-bold text-xs">Download</button>
                         ) : (
-                          <button onClick={() => { 
-                            const localOrders = [];
-                            const updated = localOrders.map(o => o._id === order._id ? { ...o, paymentStatus: 'paid' } : o);
-                            
-                            setOrders(updated);
-                            alert(`✅ Payment of $${(order.totalAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} Successful! Receipt generated.`); 
-                          }} className="bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all">Pay Now</button>
+                          <span className="text-gray-400 text-xs">-</span>
                         )}
                       </td>
                     </tr>
@@ -3041,6 +3058,7 @@ Thank you for shopping with Artisan Studio!
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
