@@ -10,6 +10,33 @@ import {
 import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
 
+import imgBalcony1 from '../assets/Balacony 1.png';
+import imgBalcony2 from '../assets/Balacony 2.png';
+import imgBalcony3 from '../assets/Balcony.png';
+import imgBathroom1 from '../assets/Bathroom image.png';
+import imgBathroom2 from '../assets/Bathroon image 1.png';
+import imgBathroom3 from '../assets/Bathroom image 2.png';
+import imgBedroom1 from '../assets/bedroom.png';
+import imgBedroom2 from '../assets/Bedroom 1.png';
+import imgBedroom3 from '../assets/Bedroom 2.png';
+import imgCommercial1 from '../assets/Commercial image .png';
+import imgDining1 from '../assets/dining room.png';
+import imgDining2 from '../assets/Dining room 1.png';
+import imgDining3 from '../assets/Dining room 2.png';
+import imgKitchen1 from '../assets/Kitchen room.png';
+import imgKitchen2 from '../assets/Kitchen room 1.png';
+import imgKitchen3 from '../assets/Kitchen room 2.png';
+import imgLiving1 from '../assets/Living room .png';
+import imgLiving2 from '../assets/Living room 1.png';
+import imgLiving3 from '../assets/Living room 2.png';
+import imgPooja1 from '../assets/Pooja room.png';
+import imgPooja2 from '../assets/pooja room 1.png';
+import imgPooja3 from '../assets/pooja room 2.png';
+import imgKids1 from '../assets/kidsroom .png';
+import imgOffice1 from '../assets/office room.png';
+import imgOffice2 from '../assets/office room 1.png';
+import imgOffice3 from '../assets/office room 2.png';
+
 const UserDashboard = ({ 
   activeTab = 'overview', 
   setActiveTab,
@@ -630,126 +657,16 @@ const UserDashboard = ({
       await delay(400);
 
             const roomImagePools = {
-        'Living Room': [
-          'https://images.unsplash.com/photo-shT_LaGUmYI?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-c0JoR_-2x3E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-IH7wPsjwomc?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-OtXADkUh3-I?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-s-ZJpt0UdpU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-umAXneH4GhA?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-9M66C_w_ToM?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-_HqHX3LBN18?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Faa_P3eaaGo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-WgkA3CSFrjc?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Bedroom': [
-          'https://images.unsplash.com/photo-0dJA53GaIl0?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-RUvW1KGD9a4?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-nEtpvJjnPVo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-IH7wPsjwomc?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-fobX0HI9vVo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-umAXneH4GhA?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-XM-miHibz64?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-_HqHX3LBN18?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-5zDFUb4R-60?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-8qNuR1lIv_k?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Kitchen': [
-          'https://images.unsplash.com/photo-XQ4cYH7Jhjo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo--aDGbdTsBZg?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-MP0bgaS_d1c?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-hYb7kbu4x7E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-T2VbfEgz9lk?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-cc0Gg3BegjE?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-RwXneIyqxAw?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-G7sE2S4Lab4?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-OlwQIOeDG2s?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-vqMQN9zImG4?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Dining Room': [
-          'https://images.unsplash.com/photo--R3ap-pgFjA?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-wMzpa3WsDkI?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-v9096DgeVeA?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-O0vzxGRmjNs?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-BdU_E9nv1yY?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-a3gcgVghgjk?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-qnSTxcs0EEs?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-dZiAEKSnWX4?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-hUUqCwbW0xg?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-uxlNi53vEdk?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Bathroom': [
-          'https://images.unsplash.com/photo-8yDJZ92_H9Y?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-g51F6-WYzyU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-L4iRkKL5dng?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-yg8zkwBS30Q?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo--4SlyFlvUdU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Aac7IlKnYX8?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-PibraWHb4h8?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-mLx6oMw32PI?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-ZjNNjt91Lo8?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-vTj_dmFGB1Y?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Office Room': [
-          'https://images.unsplash.com/photo-ezJWpD2PR9E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Cf8ivcIDc6E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-EwQhB7yNGOU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-otLKhXXxnOU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-y81BhNjhKBU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-mP5i1IgLCF0?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-qZ9YjkopI6E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-ZCDA1-cih6o?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-meZdiZ4f4Qg?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-9-0oXgzmBr0?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Kids Room': [
-          'https://images.unsplash.com/photo-om8vDkGXlZ4?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-AWzFKOH5UIQ?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-KlZ33F_Y3aI?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-jWUUg1eX24o?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-liEmt5SChxY?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-RE_j7uRsS6E?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-3mtds3PygEw?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Qgz6YqzQmwQ?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-0dXbMlfLI_8?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-b_GtasP517U?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Balcony': [
-          'https://images.unsplash.com/photo-ZK5CSoCuqC8?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-1vieZivk1As?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-kuEv-iYSvro?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Oa89doVWpqY?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-odH4AeRL33g?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-MUBHxi2TNnw?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-kB_fsmWQNOU?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-xuNuh7Mvmmo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-MZ3wL9ESzZ0?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-D0KTwKmBPYE?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Pooja Room': [
-          'https://images.unsplash.com/photo-U0HbbxGz-3A?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-6AebwXWd47Q?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-oZz2w1EebE0?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-t5XnF6YmHZE?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-Bw5G8bNqWXY?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-J1XqX-qvEZE?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-L1XqX-qvEZE?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-XQ4cYH7Jhjo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-AWzFKOH5UIQ?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-ZK5CSoCuqC8?w=800&auto=format&fit=crop&q=60'
-        ],
-        'Commercial Space': [
-          'https://images.unsplash.com/photo-J7YwSwnSckM?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-kOdl-epUGUE?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-zuX_l9aJFf0?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-CfUdTwVjh2s?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-CMBd9VLoK7I?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-S4a5zqWN4uY?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-ri3EqQWYahM?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-3lkaszxWfGc?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-1M8RdPGmvJo?w=800&auto=format&fit=crop&q=60',
-          'https://images.unsplash.com/photo-J5XqX-qvEZE?w=800&auto=format&fit=crop&q=60'
-        ],
+        'Living Room': [imgLiving1, imgLiving2, imgLiving3],
+        'Bedroom': [imgBedroom1, imgBedroom2, imgBedroom3],
+        'Kitchen': [imgKitchen1, imgKitchen2, imgKitchen3],
+        'Dining Room': [imgDining1, imgDining2, imgDining3],
+        'Bathroom': [imgBathroom1, imgBathroom2, imgBathroom3],
+        'Office Room': [imgOffice1, imgOffice2, imgOffice3],
+        'Kids Room': [imgKids1],
+        'Balcony': [imgBalcony1, imgBalcony2, imgBalcony3],
+        'Pooja Room': [imgPooja1, imgPooja2, imgPooja3],
+        'Commercial Space': [imgCommercial1]
       };
 
 const roomDesigns = {
