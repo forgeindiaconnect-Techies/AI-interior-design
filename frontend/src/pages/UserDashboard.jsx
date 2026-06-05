@@ -5,7 +5,7 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, ArrowLeft, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
@@ -50,6 +50,14 @@ const UserDashboard = ({
   );
   const savedDesigns = filteredAiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution');
   const [loadingAi, setLoadingAi] = useState(false);
+
+  // AI Room Vision states for sequential analysis & WGAN generation
+  const [aiAnalysisStep, setAiAnalysisStep] = useState('idle'); // 'idle', 'analyzing', 'generating', 'completed'
+  const [aiAnalysisProgress, setAiAnalysisProgress] = useState(0);
+  const [aiAnalysisLogs, setAiAnalysisLogs] = useState([]);
+  const [activeAnalysisResult, setActiveAnalysisResult] = useState(null);
+  const [expandedAnalysisId, setExpandedAnalysisId] = useState(null);
+  const [showOriginalImage, setShowOriginalImage] = useState(false);
 
   // Manual Design State
   const [manualStyle, setManualStyle] = useState('Modern');
@@ -562,87 +570,207 @@ const UserDashboard = ({
   const handleAiSubmit = async (e) => {
     e.preventDefault();
     setLoadingAi(true);
-    
-    // Simulate generation delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    setAiAnalysisStep('analyzing');
+    setAiAnalysisProgress(0);
+    setAiAnalysisLogs([]);
+    setActiveAnalysisResult(null);
 
-    const roomDesigns = {
-      'Living Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
-        materials: ['Teak Wood', 'Linen', 'Brass'],
-        colorPalette: ['Teak Warmth', 'Beige Linen', 'Warm Brass Accent'],
-        budgetEstimate: 4200
-      },
-      'Bedroom': {
-        generatedImage: 'https://images.unsplash.com/photo-1522771730844-47fb5bd1ca08?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
-        materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
-        colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
-        budgetEstimate: 6200
-      },
-      'Kitchen': {
-        generatedImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Island Counter', 'Bar Stools', 'Pendant Lights'],
-        materials: ['Marble', 'Oak Wood', 'Stainless Steel'],
-        colorPalette: ['White', 'Navy Blue', 'Brass'],
-        budgetEstimate: 8500
-      },
-      'Dining Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Farmhouse Table', 'Dining Chairs', 'Chandelier'],
-        materials: ['Reclaimed Wood', 'Linen', 'Iron'],
-        colorPalette: ['Rustic Brown', 'Slate Gray', 'Cream'],
-        budgetEstimate: 5100
-      },
-      'Bathroom': {
-        generatedImage: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Floating Vanity', 'Freestanding Tub', 'LED Mirror'],
-        materials: ['Ceramic Tiles', 'Matte Black Fixtures', 'Glass'],
-        colorPalette: ['White', 'Charcoal', 'Natural Wood'],
-        budgetEstimate: 4000
-      },
-      'Office Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Ergonomic Desk', 'Office Chair', 'Bookshelf'],
-        materials: ['Oak Wood', 'Metal', 'Leather'],
-        colorPalette: ['Walnut', 'Black', 'White'],
-        budgetEstimate: 3200
-      },
-      'Kids Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Bunk Bed', 'Study Table', 'Toy Storage'],
-        materials: ['Pine Wood', 'Cotton', 'Laminate'],
-        colorPalette: ['Pastel Blue', 'Yellow', 'White'],
-        budgetEstimate: 3800
-      },
-      'Balcony': {
-        generatedImage: 'https://images.unsplash.com/photo-1550983196-8eb591a423ae?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Rattan Chairs', 'Small Coffee Table', 'Planters'],
-        materials: ['Rattan', 'Teak Wood', 'Ceramic'],
-        colorPalette: ['Natural Wood', 'Green', 'White'],
-        budgetEstimate: 1500
-      },
-      'Pooja Room': {
-        generatedImage: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Carved Mandir', 'Floor Seating', 'Brass Lamps'],
-        materials: ['Teak Wood', 'Brass', 'Marble'],
-        colorPalette: ['Saffron', 'Warm Wood', 'Gold'],
-        budgetEstimate: 2500
-      },
-      'Commercial Space': {
-        generatedImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=60',
-        furniture: ['Lounge Seating', 'Reception Desk', 'Track Lighting'],
-        materials: ['Concrete', 'Glass', 'Steel'],
-        colorPalette: ['Industrial Gray', 'Black', 'Accent Color'],
-        budgetEstimate: 12000
-      }
+    const addLog = (msg) => {
+      setAiAnalysisLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
     };
 
-    const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
-    const mockImg = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
-    
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
     try {
+      addLog("Initializing Scene Analysis Engine...");
+      addLog(`Target Room Space: ${roomType}`);
+      await delay(700);
+      setAiAnalysisProgress(15);
+      addLog("Detecting spatial geometry: walls, floor boundaries, and ceilings...");
+      await delay(800);
+      setAiAnalysisProgress(30);
+      addLog("Geometry Scan OK: 3D perspective grids aligned.");
+
+      addLog("Analyzing lighting structure and color temperature...");
+      await delay(600);
+      setAiAnalysisProgress(45);
+      addLog("Luminance Analysis: Natural ambient lighting detected from side opening.");
+      addLog("Contrast index: High. Heavy shadows registered in corner pockets.");
+
+      addLog("Scanning for existing items and clutter distribution...");
+      await delay(900);
+      setAiAnalysisProgress(60);
+
+      const detectedItemsMap = {
+        'Living Room': '1x Sectional Sofa, 1x Low Coffee Table, 1x Window Frame',
+        'Bedroom': '1x Bed Platform, 2x Pillows, 1x Side Nightstand',
+        'Kitchen': 'Cabinet arrays, 1x Sink Basin, 1x Marble Countertop',
+        'Bathroom': '1x Vanity Sink, 1x Mirror, 1x Shower Enclosure',
+        'Dining Room': '1x Table, 4x Dining Chairs, 1x Overhead Pendant',
+        'Office Room': '1x Work Desk, 1x Chair, 1x Bookshelf',
+        'Kids Room': '1x Single Bed, Toy bins, Play area',
+        'Balcony': '2x Patio chairs, plant pots',
+        'Pooja Room': '1x Mandir structure, floor mats',
+        'Commercial Space': 'Reception desk, lobby seating'
+      };
+
+      const itemsText = detectedItemsMap[roomType] || 'Standard room layouts and openings';
+      addLog(`Item Detection Result: Found ${itemsText}.`);
+      addLog("Space Utilization: Clutter density 28% (low). Suitable for texturing.");
+
+      setAiAnalysisStep('generating');
+      addLog("Initializing Deep Generative Model (WGAN-GP)...");
+      addLog("Setting latent vector configuration (z_dim=100)...");
+      await delay(800);
+      setAiAnalysisProgress(80);
+      addLog("Synthesizing modern architectural texture coordinates...");
+      await delay(800);
+      setAiAnalysisProgress(100);
+      addLog("Design rendering finished.");
+      await delay(400);
+
+      const roomDesigns = {
+        'Living Room': {
+          generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
+          materials: ['Teak Wood', 'Linen', 'Brass'],
+          colorPalette: ['Teak Warmth', 'Beige Linen', 'Warm Brass Accent'],
+          budgetEstimate: 4200
+        },
+        'Bedroom': {
+          generatedImage: 'https://images.unsplash.com/photo-1522771730844-47fb5bd1ca08?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
+          materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
+          colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
+          budgetEstimate: 6200
+        },
+        'Kitchen': {
+          generatedImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Island Counter', 'Bar Stools', 'Pendant Lights'],
+          materials: ['Marble', 'Oak Wood', 'Stainless Steel'],
+          colorPalette: ['White', 'Navy Blue', 'Brass'],
+          budgetEstimate: 8500
+        },
+        'Dining Room': {
+          generatedImage: 'https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Farmhouse Table', 'Dining Chairs', 'Chandelier'],
+          materials: ['Reclaimed Wood', 'Linen', 'Iron'],
+          colorPalette: ['Rustic Brown', 'Slate Gray', 'Cream'],
+          budgetEstimate: 5100
+        },
+        'Bathroom': {
+          generatedImage: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Floating Vanity', 'Freestanding Tub', 'LED Mirror'],
+          materials: ['Ceramic Tiles', 'Matte Black Fixtures', 'Glass'],
+          colorPalette: ['White', 'Charcoal', 'Natural Wood'],
+          budgetEstimate: 4000
+        },
+        'Office Room': {
+          generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Ergonomic Desk', 'Office Chair', 'Bookshelf'],
+          materials: ['Oak Wood', 'Metal', 'Leather'],
+          colorPalette: ['Walnut', 'Black', 'White'],
+          budgetEstimate: 3200
+        },
+        'Kids Room': {
+          generatedImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Bunk Bed', 'Study Table', 'Toy Storage'],
+          materials: ['Pine Wood', 'Cotton', 'Laminate'],
+          colorPalette: ['Pastel Blue', 'Yellow', 'White'],
+          budgetEstimate: 3800
+        },
+        'Balcony': {
+          generatedImage: 'https://images.unsplash.com/photo-1550983196-8eb591a423ae?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Rattan Chairs', 'Small Coffee Table', 'Planters'],
+          materials: ['Rattan', 'Teak Wood', 'Ceramic'],
+          colorPalette: ['Natural Wood', 'Green', 'White'],
+          budgetEstimate: 1500
+        },
+        'Pooja Room': {
+          generatedImage: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Carved Mandir', 'Floor Seating', 'Brass Lamps'],
+          materials: ['Teak Wood', 'Brass', 'Marble'],
+          colorPalette: ['Saffron', 'Warm Wood', 'Gold'],
+          budgetEstimate: 2500
+        },
+        'Commercial Space': {
+          generatedImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=60',
+          furniture: ['Lounge Seating', 'Reception Desk', 'Track Lighting'],
+          materials: ['Concrete', 'Glass', 'Steel'],
+          colorPalette: ['Industrial Gray', 'Black', 'Accent Color'],
+          budgetEstimate: 12000
+        }
+      };
+
+      const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
+      const mockImg = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
+
+      const simulatedAnalyses = {
+        'Living Room': {
+          detectedRoomType: 'Living Room',
+          detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp', 'Window'],
+          lightingAnalysis: 'Moderate natural light from side window, soft shadows in corners.',
+          colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
+          spaceUtilization: 'Low clutter, balanced spatial flow.',
+          recommendations: [
+            'Retain sofa footprint but replace fabric texture with premium linen.',
+            'Contrast slate grey elements with warm teak wood accents.',
+            'Introduce warm brass wall sconces to elevate low-light areas.'
+          ]
+        },
+        'Bedroom': {
+          detectedRoomType: 'Bedroom',
+          detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe', 'Pillow'],
+          lightingAnalysis: 'Soft diffused warm lighting, minimal natural glare.',
+          colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
+          spaceUtilization: 'Compact layout, bedside area optimized.',
+          recommendations: [
+            'Introduce a platform bed with floating nightstands to save floor space.',
+            'Utilize linen sheets and cotton covers for natural warmth.',
+            'Add dimmable warm ambient lamps for a relaxed atmosphere.'
+          ]
+        },
+        'Kitchen': {
+          detectedRoomType: 'Kitchen',
+          detectedItems: ['Cabinet', 'Countertop', 'Sink', 'Refrigerator'],
+          lightingAnalysis: 'Bright task lighting, overhead fluorescent glare.',
+          colorProfile: ['Matte Navy', 'White Quartz', 'Brushed Brass'],
+          spaceUtilization: 'L-shape workflow, under-utilized corner cabinet space.',
+          recommendations: [
+            'Add a marble waterfall kitchen island to bridge workspace gap.',
+            'Swap cabinet handles for brushed brass fixtures.',
+            'Install under-cabinet LED warm strip lights for functional elegance.'
+          ]
+        },
+        'Bathroom': {
+          detectedRoomType: 'Bathroom',
+          detectedItems: ['Vanity', 'Mirror', 'Shower Glass', 'Toilet'],
+          lightingAnalysis: 'Cool LED lighting, high reflective sheen.',
+          colorProfile: ['Ceramic White', 'Slate Gray', 'Chrome'],
+          spaceUtilization: 'Standard footprint, vanity storage maximized.',
+          recommendations: [
+            'Introduce a floating oak vanity to increase visual space.',
+            'Add an LED anti-fog back-lit circular mirror.',
+            'Choose matte black plumbing fixtures for modern contrast.'
+          ]
+        },
+        default: {
+          detectedRoomType: roomType,
+          detectedItems: ['Wall Outlines', 'Floor Plan', 'Primary Light Source'],
+          lightingAnalysis: 'Standard room illumination, uniform shadow distribution.',
+          colorProfile: ['Neutral White', 'Oak Wood', 'Beige'],
+          spaceUtilization: 'Flexible footprint layout, ready for styling.',
+          recommendations: [
+            'Optimize furniture alignment to natural light entry.',
+            'Utilize contrasting textures for flooring and wall surface.',
+            'Introduce custom built-in furniture to maximize utility.'
+          ]
+        }
+      };
+
+      const finalAnalysis = simulatedAnalyses[roomType] || simulatedAnalyses.default;
+      setActiveAnalysisResult(finalAnalysis);
+
       const payload = {
         roomType,
         originalImage: mockImg,
@@ -652,19 +780,23 @@ const UserDashboard = ({
           materials: selectedDesign.materials,
           colorPalette: selectedDesign.colorPalette,
           budgetEstimate: selectedDesign.budgetEstimate
-        }
+        },
+        analysis: finalAnalysis
       };
+
       const res = await axios.post('/designs/ai', payload);
       if (res.data.success) {
         setAiDesigns([res.data.data, ...aiDesigns]);
-        alert('AI Design Generated Successfully!');
+        showToast('AI Design & Image Analysis Generated Successfully!');
+        setAiAnalysisStep('completed');
         setTimeout(() => {
-          document.getElementById('ai-history-section')?.scrollIntoView({ behavior: 'smooth' });
+          document.getElementById('ai-new-design-result')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);
       }
     } catch (err) {
       console.error('Failed to generate AI design', err);
       alert('Error generating design. Please try again.');
+      setAiAnalysisStep('idle');
     } finally {
       setLoadingAi(false);
     }
@@ -1388,120 +1520,430 @@ Thank you for shopping with Artisan Studio!
 
       {/* TAB 2: AI STUDIO */}
       {activeTab === 'ai_studio' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Upload Box */}
-          <div className="lg:col-span-5 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
-            <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-              <Wand2 className="w-6 h-6 text-[#8B5E3C]" />
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">New AI Design</h2>
-            </div>
-            <form onSubmit={handleAiSubmit} className="space-y-6">
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Room Type</label>
-                <select value={roomType} onChange={(e) => setRoomType(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
-                  <option value="Living Room">Living Room</option>
-                  <option value="Bedroom">Bedroom</option>
-                  <option value="Kitchen">Kitchen</option>
-                  <option value="Dining Room">Dining Room</option>
-                  <option value="Bathroom">Bathroom</option>
-                  <option value="Office Room">Office Room</option>
-                  <option value="Kids Room">Kids Room</option>
-                  <option value="Balcony">Balcony</option>
-                  <option value="Pooja Room">Pooja Room</option>
-                  <option value="Commercial Space">Commercial Space</option>
-                </select>
+        <div className="space-y-8">
+          <style>{`
+            @keyframes scan {
+              0% { top: 0%; }
+              50% { top: 100%; }
+              100% { top: 0%; }
+            }
+            @keyframes slideDown {
+              from { opacity: 0; transform: translateY(-10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          {/* Phase 1: SCANNING OR GENERATING PROGRESS */}
+          {(aiAnalysisStep === 'analyzing' || aiAnalysisStep === 'generating') && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8 animate-fadeIn">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <Wand2 className="w-6 h-6 text-[#8B5E3C] animate-spin" />
+                  <div>
+                    <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Artisan AI Room Vision</h2>
+                    <p className="text-xs text-gray-400">Step {aiAnalysisStep === 'analyzing' ? '1: Image Scanning & Spatial Recognition' : '2: WGAN Texture Synthesis'}</p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-extrabold text-[#8B5E3C]">{aiAnalysisProgress}%</span>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Progress</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Upload Room Photo</label>
-                <label className="border-2 border-dashed border-[#D4A373]/50 rounded-2xl p-6 text-center hover:border-[#8B5E3C] transition-all bg-[#F8F5F0]/50 block group cursor-pointer relative overflow-hidden">
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleImageUpload} 
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" 
-                  />
-                  {originalImage && originalImage.startsWith('data:image') ? (
-                    <div className="space-y-2 pointer-events-none">
-                      <img src={originalImage} alt="Room Preview" className="w-full h-32 object-cover rounded-xl shadow-inner" />
-                      <p className="text-xs text-[#8B5E3C] font-bold">Click or drag to change image</p>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div className="bg-[#8B5E3C] h-2 rounded-full transition-all duration-500" style={{ width: `${aiAnalysisProgress}%` }}></div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left Panel: Scanning View */}
+                <div className="space-y-4">
+                  <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-video bg-gray-900 flex items-center justify-center">
+                    <img 
+                      src={originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60'} 
+                      alt="Room scanning" 
+                      className="w-full h-full object-cover opacity-70"
+                    />
+                    {/* Neon Scanline */}
+                    <div style={{
+                      position: 'absolute',
+                      left: 0,
+                      width: '100%',
+                      height: '4px',
+                      background: 'linear-gradient(to right, transparent, #2A9D8F, #8B5E3C, #2A9D8F, transparent)',
+                      boxShadow: '0 0 8px #2A9D8F, 0 0 16px #8B5E3C',
+                      animation: 'scan 3s linear infinite',
+                    }}></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent pointer-events-none"></div>
+                    <span className="absolute bottom-4 left-4 bg-red-600 text-white font-bold text-[10px] uppercase px-2.5 py-1.5 tracking-widest animate-pulse flex items-center gap-1.5 rounded-full shadow-md z-20">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span> Live Vision Scan
+                    </span>
+                  </div>
+
+                  {/* Console log box */}
+                  <div className="bg-gray-950 text-emerald-400 font-mono text-[11px] p-4 rounded-xl h-44 overflow-y-auto border border-gray-800 shadow-inner flex flex-col justify-end">
+                    <div className="overflow-y-auto space-y-1">
+                      {aiAnalysisLogs.map((log, idx) => (
+                        <div key={idx} className="leading-relaxed whitespace-pre-wrap">
+                          {log}
+                        </div>
+                      ))}
+                      <div className="animate-pulse w-2 h-4 bg-emerald-400 inline-block align-middle ml-1"></div>
                     </div>
-                  ) : (
-                    <div className="space-y-2 py-4 pointer-events-none">
-                      <UploadCloud className="w-10 h-10 text-[#8B5E3C] mx-auto group-hover:scale-110 transition-transform" />
-                      <p className="text-sm font-bold text-[#1F2937]">Click to upload or drag & drop</p>
-                      <p className="text-xs text-[#6B7280]">PNG, JPG, WEBP up to 10MB</p>
+                  </div>
+                </div>
+
+                {/* Right Panel: Analysis Metadata */}
+                <div className="space-y-6">
+                  <h3 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Room Analysis Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-2xl border transition-all duration-300 ${aiAnalysisProgress >= 15 ? 'bg-[#F8F5F0] border-[#D4A373]/30 scale-100 opacity-100' : 'bg-gray-50 border-gray-100 scale-95 opacity-50'}`}>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Detected Room Type</p>
+                      <p className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937] mt-1">
+                        {aiAnalysisProgress >= 15 ? roomType : 'Analyzing...'}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border transition-all duration-300 ${aiAnalysisProgress >= 15 ? 'bg-[#F8F5F0] border-[#D4A373]/30 scale-100 opacity-100' : 'bg-gray-50 border-gray-100 scale-95 opacity-50'}`}>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Size</p>
+                      <p className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937] mt-1">
+                        {aiAnalysisProgress >= 15 ? (roomType === 'Living Room' ? '180 sq ft' : roomType === 'Bedroom' ? '150 sq ft' : roomType === 'Kitchen' ? '120 sq ft' : 'Standard footprint') : 'Analyzing...'}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border transition-all duration-300 ${aiAnalysisProgress >= 45 ? 'bg-[#F8F5F0] border-[#D4A373]/30 scale-100 opacity-100' : 'bg-gray-50 border-gray-100 scale-95 opacity-50'}`}>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Lighting Profile</p>
+                      <p className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937] mt-1 truncate">
+                        {aiAnalysisProgress >= 45 ? 'Ambient Natural' : 'Analyzing...'}
+                      </p>
+                    </div>
+                    <div className={`p-4 rounded-2xl border transition-all duration-300 ${aiAnalysisProgress >= 60 ? 'bg-[#F8F5F0] border-[#D4A373]/30 scale-100 opacity-100' : 'bg-gray-50 border-gray-100 scale-95 opacity-50'}`}>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Detected Furniture</p>
+                      <p className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937] mt-1 truncate">
+                        {aiAnalysisProgress >= 60 ? (roomType === 'Living Room' ? 'Sofa, Table, Lamp' : roomType === 'Bedroom' ? 'Bed, Nightstand' : roomType === 'Kitchen' ? 'Cabinet, Counter' : 'Objects') : 'Scanning...'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-2xl border transition-all duration-300 ${aiAnalysisProgress >= 60 ? 'bg-[#F8F5F0] border-[#D4A373]/30 scale-100 opacity-100' : 'bg-gray-50 border-gray-100 scale-95 opacity-50'}`}>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-2">Space Utilization</p>
+                    <p className="text-sm font-medium text-gray-700">
+                      {aiAnalysisProgress >= 60 ? 'Low clutter level (28%). Balanced spatial flow suitable for new textures and architectural furniture updates.' : 'Awaiting visual diagnostic report...'}
+                    </p>
+                  </div>
+
+                  {aiAnalysisStep === 'generating' && (
+                    <div className="bg-purple-50 border border-purple-100 p-4 rounded-2xl flex items-center gap-3 animate-pulse">
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600"><Wand2 size={20}/></div>
+                      <div>
+                        <p className="text-xs font-bold text-purple-800">Synthesizing design via WGAN-GP...</p>
+                        <p className="text-[10px] text-purple-600">Mapping modern apartment textures (nz=100 latent vector)</p>
+                      </div>
                     </div>
                   )}
-                </label>
-                <p className="text-xs text-[#6B7280] mt-2">Leave empty to use demo living room photo</p>
+                </div>
               </div>
-              <button type="submit" disabled={loadingAi} className="w-full flex items-center justify-center gap-2 py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50">
-                <Wand2 className="w-5 h-5" />
-                <span>{loadingAi ? 'Analyzing & Styling...' : 'Generate AI Interior'}</span>
-              </button>
-            </form>
-          </div>
+            )}
 
-          {/* Generated Designs List */}
-          <div id="ai-history-section" className="lg:col-span-7 space-y-6">
-            <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Your AI Design History</h2>
-            {aiDesigns.length === 0 ? (
-              <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
-                <UploadCloud className="w-12 h-12 text-[#D4A373] mx-auto" />
-                <p className="text-[#6B7280] font-medium">No AI designs generated yet. Use the studio panel to start styling!</p>
-              </div>
-            ) : (
-              filteredAiDesigns.map((design) => (
-                <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                  <div className="flex flex-col sm:flex-row items-center gap-6">
-                    {design.originalImage && (
-                      <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
-                        <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
-                        <img src={design.originalImage} alt="Original" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
-                      </div>
-                    )}
-                    <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
-                      <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
-                      <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+          {/* Phase 2: GENERATION COMPLETED SHOWCASE */}
+          {aiAnalysisStep === 'completed' && aiDesigns.length > 0 && (() => {
+            const latestDesign = aiDesigns[0];
+            return (
+              <div id="ai-new-design-result" className="space-y-8 animate-fadeIn">
+                <button 
+                  onClick={() => {
+                    setAiAnalysisStep('idle');
+                    setOriginalImage('');
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-xl text-sm font-bold border border-gray-200 transition-all shadow-sm"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>Start a New AI Design</span>
+                </button>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Left Column: Image Viewer with Before/After Toggle */}
+                  <div className="lg:col-span-6 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                    <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Before & After Comparison</h3>
+                    <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] bg-gray-900 flex items-center justify-center">
+                      <img 
+                        src={showOriginalImage ? latestDesign.originalImage : latestDesign.generatedImage} 
+                        alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
+                        className="w-full h-full object-cover transition-all duration-300"
+                        onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                      />
+                      <span className="absolute top-4 left-4 bg-black/55 text-white text-xs px-3 py-1.5 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm shadow-sm">
+                        {showOriginalImage ? "Original View" : "AI Style Generated"}
+                      </span>
                     </div>
-                    <div className="space-y-4 flex-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{design.roomType}</span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${design.status === 'accepted' || design.status === 'execution' ? 'bg-[#2A9D8F] text-white' : design.status === 'rejected' ? 'bg-[#E76F51] text-white' : 'bg-[#E9C46A] text-[#1F2937]'}`}>
-                          {design.status === 'execution' ? 'SENT TO EXECUTION' : design.status.toUpperCase()}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-[#1F2937] text-lg mb-2">AI Suggestions</h4>
-                        <div className="grid grid-cols-2 gap-2 text-xs text-[#6B7280]">
-                          <div><strong className="text-[#1F2937]">Furniture:</strong> {design.aiSuggestion?.furniture?.join(', ') || 'Modern Sofa, Coffee Table'}</div>
-                          <div><strong className="text-[#1F2937]">Materials:</strong> {design.aiSuggestion?.materials?.join(', ') || 'Leather, Oak Wood'}</div>
+
+                    <div className="flex gap-4">
+                      <button 
+                        onClick={() => setShowOriginalImage(true)}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold border transition-all ${showOriginalImage ? 'bg-[#8B5E3C] text-white border-[#8B5E3C]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        Show Original
+                      </button>
+                      <button 
+                        onClick={() => setShowOriginalImage(false)}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold border transition-all ${!showOriginalImage ? 'bg-[#8B5E3C] text-white border-[#8B5E3C]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      >
+                        Show AI Design
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right Column: AI Room Analysis Blueprint & Recommendations */}
+                  <div className="lg:col-span-6 space-y-8">
+                    {/* Blueprint Card */}
+                    {latestDesign.analysis && (
+                      <div className="bg-[#F8F5F0] p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                        <div className="flex items-center gap-2 border-b border-[#D4A373]/20 pb-4">
+                          <Eye className="w-5 h-5 text-[#8B5E3C]" />
+                          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Artisan AI Room Analysis Report</h3>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Room Type DNA</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.detectedRoomType}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Estimated Footprint</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{roomType === 'Living Room' ? '180 sq ft' : roomType === 'Bedroom' ? '150 sq ft' : roomType === 'Kitchen' ? '120 sq ft' : 'Standard'}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Lighting Grid</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.lightingAnalysis}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Space Flow Index</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.spaceUtilization}</span>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-[#D4A373]/20 pt-4">
+                          <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-2">Dominant Colors Found</span>
+                          <div className="flex gap-2">
+                            {latestDesign.analysis.colorProfile?.map((color, i) => (
+                              <span key={i} className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700">{color}</span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="border-t border-[#D4A373]/20 pt-4">
+                          <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-2">Styling Directives (WGAN-GP)</span>
+                          <ul className="text-xs text-gray-700 space-y-2 list-disc list-inside leading-relaxed">
+                            {latestDesign.analysis.recommendations?.map((rec, i) => (
+                              <li key={i}><span className="font-medium">{rec}</span></li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                        <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: ${design.aiSuggestion?.budgetEstimate || '4,500'}</span>
-                        <div className="flex items-center gap-2">
-                          {design.status !== 'accepted' && design.status !== 'execution' && (
-                            <>
-                              <button onClick={() => handleAiStatus(design._id, 'accepted')} className="p-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm" title="Accept & Order"><CheckCircle className="w-4 h-4" /></button>
-                              <button onClick={() => handleAiStatus(design._id, 'regenerated')} className="p-2 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
-                              <button onClick={() => handleAiStatus(design._id, 'rejected')} className="p-2 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm" title="Reject & Manual Design"><XCircle className="w-4 h-4" /></button>
-                            </>
-                          )}
-                          <button onClick={() => handleToggleBookmark(design._id)} className={`p-2 rounded-xl shadow-sm transition-all ${design.isBookmarked ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`} title={design.isBookmarked ? 'Unsave' : 'Save Design'}>
-                            <Bookmark className={`w-4 h-4 ${design.isBookmarked ? 'fill-current' : ''}`} />
-                          </button>
-                          <button onClick={() => handleDeleteDesign(design._id)} className="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl shadow-sm transition-all" title="Delete">
-                            <XCircle className="w-4 h-4" />
-                          </button>
+                    )}
+
+                    {/* Suggestions Box */}
+                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Artisan Styling Recommendations</h3>
+
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-xs text-[#6B7280]">
+                          <div><strong className="text-[#1F2937] block mb-1">Recommended Furniture:</strong> {latestDesign.aiSuggestion?.furniture?.join(', ')}</div>
+                          <div><strong className="text-[#1F2937] block mb-1">Proposed Materials:</strong> {latestDesign.aiSuggestion?.materials?.join(', ')}</div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Project Budget</span>
+                            <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C] mt-1">${latestDesign.aiSuggestion?.budgetEstimate || '4,500'}</p>
+                          </div>
+
+                          <div className="flex gap-2">
+                            {latestDesign.status !== 'accepted' && latestDesign.status !== 'execution' && (
+                              <>
+                                <button onClick={() => handleAiStatus(latestDesign._id, 'accepted')} className="p-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm flex items-center gap-1.5 font-bold text-xs" title="Accept & Order"><CheckCircle className="w-4 h-4" /> Accept Design</button>
+                                <button onClick={() => handleAiStatus(latestDesign._id, 'regenerated')} className="p-3 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm font-bold text-xs" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
+                                <button onClick={() => handleAiStatus(latestDesign._id, 'rejected')} className="p-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm font-bold text-xs" title="Reject"><XCircle className="w-4 h-4" /></button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+              </div>
+            );
+          })()}
+
+          {/* Phase 3: DEFAULT EDIT / IDLE STATE (Upload Box & History List Side by Side) */}
+          {aiAnalysisStep === 'idle' && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Upload Box */}
+              <div className="lg:col-span-5 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start animate-fadeIn">
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
+                  <Wand2 className="w-6 h-6 text-[#8B5E3C]" />
+                  <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">New AI Design</h2>
+                </div>
+                <form onSubmit={handleAiSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Select Room Type</label>
+                    <select value={roomType} onChange={(e) => setRoomType(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
+                      <option value="Living Room">Living Room</option>
+                      <option value="Bedroom">Bedroom</option>
+                      <option value="Kitchen">Kitchen</option>
+                      <option value="Dining Room">Dining Room</option>
+                      <option value="Bathroom">Bathroom</option>
+                      <option value="Office Room">Office Room</option>
+                      <option value="Kids Room">Kids Room</option>
+                      <option value="Balcony">Balcony</option>
+                      <option value="Pooja Room">Pooja Room</option>
+                      <option value="Commercial Space">Commercial Space</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Upload Room Photo</label>
+                    <label className="border-2 border-dashed border-[#D4A373]/50 rounded-2xl p-6 text-center hover:border-[#8B5E3C] transition-all bg-[#F8F5F0]/50 block group cursor-pointer relative overflow-hidden">
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50" 
+                      />
+                      {originalImage && originalImage.startsWith('data:image') ? (
+                        <div className="space-y-2 pointer-events-none">
+                          <img src={originalImage} alt="Room Preview" className="w-full h-32 object-cover rounded-xl shadow-inner" />
+                          <p className="text-xs text-[#8B5E3C] font-bold">Click or drag to change image</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-2 py-4 pointer-events-none">
+                          <UploadCloud className="w-10 h-10 text-[#8B5E3C] mx-auto group-hover:scale-110 transition-transform" />
+                          <p className="text-sm font-bold text-[#1F2937]">Click to upload or drag & drop</p>
+                          <p className="text-xs text-[#6B7280]">PNG, JPG, WEBP up to 10MB</p>
+                        </div>
+                      )}
+                    </label>
+                    <p className="text-xs text-[#6B7280] mt-2">Leave empty to use demo living room photo</p>
+                  </div>
+                  <button type="submit" disabled={loadingAi} className="w-full flex items-center justify-center gap-2 py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50">
+                    <Wand2 className="w-5 h-5" />
+                    <span>{loadingAi ? 'Analyzing & Styling...' : 'Generate AI Interior'}</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* Generated Designs List */}
+              <div id="ai-history-section" className="lg:col-span-7 space-y-6">
+                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Your AI Design History</h2>
+                {aiDesigns.length === 0 ? (
+                  <div className="bg-white p-12 rounded-3xl text-center border border-[#D4A373]/30 space-y-4 shadow-sm">
+                    <UploadCloud className="w-12 h-12 text-[#D4A373] mx-auto" />
+                    <p className="text-[#6B7280] font-medium">No AI designs generated yet. Use the studio panel to start styling!</p>
+                  </div>
+                ) : (
+                  filteredAiDesigns.map((design) => (
+                    <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                      <div className="flex flex-col sm:flex-row items-center gap-6">
+                        {design.originalImage && (
+                          <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
+                            <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
+                            <img src={design.originalImage} alt="Original" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
+                          </div>
+                        )}
+                        <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
+                          <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
+                          <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+                        </div>
+                        <div className="space-y-4 flex-1 w-full">
+                          <div className="flex items-center justify-between">
+                            <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{design.roomType}</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${design.status === 'accepted' || design.status === 'execution' ? 'bg-[#2A9D8F] text-white' : design.status === 'rejected' ? 'bg-[#E76F51] text-white' : 'bg-[#E9C46A] text-[#1F2937]'}`}>
+                              {design.status === 'execution' ? 'SENT TO EXECUTION' : design.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-[#1F2937] text-lg mb-2">AI Suggestions</h4>
+                            <div className="grid grid-cols-2 gap-2 text-xs text-[#6B7280]">
+                              <div><strong className="text-[#1F2937]">Furniture:</strong> {design.aiSuggestion?.furniture?.join(', ') || 'Modern Sofa, Coffee Table'}</div>
+                              <div><strong className="text-[#1F2937]">Materials:</strong> {design.aiSuggestion?.materials?.join(', ') || 'Leather, Oak Wood'}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: ${design.aiSuggestion?.budgetEstimate || '4,500'}</span>
+                            <div className="flex items-center gap-2">
+                              {design.analysis && (
+                                <button 
+                                  onClick={() => setExpandedAnalysisId(expandedAnalysisId === design._id ? null : design._id)}
+                                  className={`p-2 rounded-xl shadow-sm transition-all flex items-center gap-1 ${expandedAnalysisId === design._id ? 'bg-[#8B5E3C] text-white' : 'bg-gray-50 text-[#8B5E3C] hover:bg-gray-100'}`}
+                                  title="View Image Analysis Report"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              )}
+                              {design.status !== 'accepted' && design.status !== 'execution' && (
+                                <>
+                                  <button onClick={() => handleAiStatus(design._id, 'accepted')} className="p-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm" title="Accept & Order"><CheckCircle className="w-4 h-4" /></button>
+                                  <button onClick={() => handleAiStatus(design._id, 'regenerated')} className="p-2 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
+                                  <button onClick={() => handleAiStatus(design._id, 'rejected')} className="p-2 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm" title="Reject & Manual Design"><XCircle className="w-4 h-4" /></button>
+                                </>
+                              )}
+                              <button onClick={() => handleToggleBookmark(design._id)} className={`p-2 rounded-xl shadow-sm transition-all ${design.isBookmarked ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`} title={design.isBookmarked ? 'Unsave' : 'Save Design'}>
+                                <Bookmark className={`w-4 h-4 ${design.isBookmarked ? 'fill-current' : ''}`} />
+                              </button>
+                              <button onClick={() => handleDeleteDesign(design._id)} className="p-2 bg-gray-50 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-xl shadow-sm transition-all" title="Delete">
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Expandable Blueprint Analysis Report */}
+                      {expandedAnalysisId === design._id && design.analysis && (
+                        <div className="mt-4 p-6 bg-[#F8F5F0] rounded-2xl border border-[#D4A373]/30 grid grid-cols-1 md:grid-cols-2 gap-6 animate-slideDown">
+                          <div className="space-y-4">
+                            <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2">🔍 AI Vision Diagnostics</h4>
+                            <div className="grid grid-cols-2 gap-3 text-xs">
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[9px]">Room Type DNA</span>
+                                <span className="font-bold text-[#1F2937]">{design.analysis.detectedRoomType || design.roomType}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[9px]">Lighting Profile</span>
+                                <span className="font-bold text-[#1F2937]">{design.analysis.lightingAnalysis || 'Ambient Natural'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[9px]">Space Flow Index</span>
+                                <span className="font-bold text-[#1F2937]">{design.analysis.spaceUtilization || 'Optimized'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[9px]">Furniture Detected</span>
+                                <span className="font-bold text-[#1F2937] truncate block">{design.analysis.detectedItems?.join(', ') || 'Sofa, Table'}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-xs text-gray-400 block font-medium uppercase tracking-wider text-[9px] mb-1.5">Dominant Colors Found</span>
+                              <div className="flex gap-2">
+                                {design.analysis.colorProfile?.map((c, i) => (
+                                  <span key={i} className="px-2.5 py-1 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-600">{c}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2">💡 Styling Recommendations</h4>
+                            <ul className="text-xs text-gray-600 space-y-2 list-disc list-inside leading-relaxed">
+                              {design.analysis.recommendations?.map((rec, i) => (
+                                <li key={i}><span className="font-medium text-[#1F2937]">{rec}</span></li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

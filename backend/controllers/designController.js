@@ -45,7 +45,7 @@ exports.mockManualDesigns = mockManualDesigns;
 // @access  Private
 exports.createAIDesign = async (req, res) => {
   try {
-    const { roomType, originalImage, generatedImage, aiSuggestion } = req.body;
+    const { roomType, originalImage, generatedImage, aiSuggestion, analysis } = req.body;
 
     const mockGeneratedImages = {
       Kitchen: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=60',
@@ -61,6 +61,57 @@ exports.createAIDesign = async (req, res) => {
       Bathroom: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373']
     };
 
+    const mockAnalyses = {
+      'Living Room': {
+        detectedRoomType: 'Living Room',
+        detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp', 'Window'],
+        lightingAnalysis: 'Moderate natural light from side window, soft shadows in corners.',
+        colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
+        spaceUtilization: 'Low clutter, balanced spatial flow.',
+        recommendations: [
+          'Retain sofa footprint but replace fabric texture with premium linen.',
+          'Contrast slate grey elements with warm teak wood accents.',
+          'Introduce warm brass wall sconces to elevate low-light areas.'
+        ]
+      },
+      Bedroom: {
+        detectedRoomType: 'Bedroom',
+        detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe', 'Pillow'],
+        lightingAnalysis: 'Soft diffused warm lighting, minimal natural glare.',
+        colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
+        spaceUtilization: 'Compact layout, bedside area optimized.',
+        recommendations: [
+          'Introduce a platform bed with floating nightstands to save floor space.',
+          'Utilize linen sheets and cotton covers for natural warmth.',
+          'Add dimmable warm ambient lamps for a relaxed atmosphere.'
+        ]
+      },
+      Kitchen: {
+        detectedRoomType: 'Kitchen',
+        detectedItems: ['Cabinet', 'Countertop', 'Sink', 'Refrigerator'],
+        lightingAnalysis: 'Bright task lighting, overhead fluorescent glare.',
+        colorProfile: ['Matte Navy', 'White Quartz', 'Brushed Brass'],
+        spaceUtilization: 'L-shape workflow, under-utilized corner cabinet space.',
+        recommendations: [
+          'Add a marble waterfall kitchen island to bridge workspace gap.',
+          'Swap cabinet handles for brushed brass fixtures.',
+          'Install under-cabinet LED warm strip lights for functional elegance.'
+        ]
+      },
+      Bathroom: {
+        detectedRoomType: 'Bathroom',
+        detectedItems: ['Vanity', 'Mirror', 'Shower Glass', 'Toilet'],
+        lightingAnalysis: 'Cool LED lighting, high reflective sheen.',
+        colorProfile: ['Ceramic White', 'Slate Gray', 'Chrome'],
+        spaceUtilization: 'Standard footprint, vanity storage maximized.',
+        recommendations: [
+          'Introduce a floating oak vanity to increase visual space.',
+          'Add an LED anti-fog back-lit circular mirror.',
+          'Choose matte black plumbing fixtures for modern contrast.'
+        ]
+      }
+    };
+
     const finalGeneratedImage = generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'];
     const finalAiSuggestion = aiSuggestion || {
       furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
@@ -69,12 +120,15 @@ exports.createAIDesign = async (req, res) => {
       budgetEstimate: Math.floor(Math.random() * 3000) + 2000
     };
 
+    const finalAnalysis = analysis || mockAnalyses[roomType] || mockAnalyses['Living Room'];
+
     const aiDesign = await AIDesignRequest.create({
       userId: req.user.id,
       roomType: roomType || 'Living Room',
       originalImage,
       generatedImage: finalGeneratedImage,
       aiSuggestion: finalAiSuggestion,
+      analysis: finalAnalysis,
       status: 'generated'
     });
 
