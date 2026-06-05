@@ -20,6 +20,9 @@ const seedUsers = async () => {
 
     const User = require('../models/User');
 
+    const Vendor = require('../models/Vendor');
+    const VendorVerification = require('../models/VendorVerification');
+
     // Create demo users array
     const users = [
       {
@@ -27,29 +30,74 @@ const seedUsers = async () => {
         email: "admin@admin.com",
         password: "password123",
         role: "admin",
+        status: "Active"
       },
       {
         name: "Vendor User",
         email: "vendor@vendor.com",
         password: "password123",
         role: "vendor",
+        status: "Active"
       },
       {
         name: "Normal User",
         email: "user@user.com",
         password: "password123",
         role: "user",
+        status: "Active"
       }
     ];
 
     for (let userData of users) {
       // Check if exists
-      const exists = await User.findOne({ email: userData.email });
-      if (!exists) {
-        await User.create(userData); // Mongoose model pre-save hook will hash password
+      let user = await User.findOne({ email: userData.email });
+      if (!user) {
+        user = await User.create(userData); // Mongoose model pre-save hook will hash password
         console.log(`Created user: ${userData.email}`);
       } else {
-        console.log(`User already exists: ${userData.email}`);
+        user.status = "Active";
+        await user.save();
+        console.log(`User updated to Active: ${userData.email}`);
+      }
+
+      if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) {
+        let vendor = await Vendor.findOne({ userId: user._id });
+        if (!vendor) {
+          vendor = await Vendor.create({
+            userId: user._id,
+            companyName: `${user.name}'s Business`,
+            businessType: user.role === 'vendor' ? 'seller' : user.role,
+            accountActivationStatus: 'Active',
+            verificationStatus: 'Approved',
+            storeSetupStatus: 'Approved',
+            isActive: true
+          });
+          console.log(`Created vendor profile for: ${user.email}`);
+        } else {
+          vendor.accountActivationStatus = 'Active';
+          vendor.verificationStatus = 'Approved';
+          vendor.storeSetupStatus = 'Approved';
+          vendor.isActive = true;
+          await vendor.save();
+          console.log(`Updated vendor profile to Active for: ${user.email}`);
+        }
+
+        let verification = await VendorVerification.findOne({ vendorId: vendor._id });
+        if (!verification) {
+          await VendorVerification.create({
+            vendorId: vendor._id,
+            status: 'Approved',
+            businessName: vendor.companyName,
+            ownerName: user.name,
+            email: user.email,
+            submittedAt: new Date()
+          });
+          console.log(`Created approved vendor verification for: ${user.email}`);
+        } else {
+          verification.status = 'Approved';
+          await verification.save();
+          console.log(`Updated vendor verification to Approved for: ${user.email}`);
+        }
       }
     }
 

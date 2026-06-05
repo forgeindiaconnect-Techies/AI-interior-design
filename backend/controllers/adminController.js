@@ -764,10 +764,11 @@ exports.getStats = async (req, res) => {
 // @access  Private (Admin)
 exports.verifyVendor = async (req, res) => {
   try {
-
-
     const { isVerified } = req.body;
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isVerified }, { returnDocument: 'after' });
+    if (vendor && isVerified) {
+      await User.findByIdAndUpdate(vendor.userId, { status: 'Active' });
+    }
     await AdminLog.create({ adminId: req.user.id, action: `Updated verification of vendor` });
     await Notification.create({ userId: vendor.userId, message: `Your verification status updated.` });
     res.status(200).json({ success: true, data: vendor });
@@ -1457,8 +1458,6 @@ exports.updateVerificationStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
 
-
-
     const verification = await VendorVerification.findByIdAndUpdate(req.params.id, { status, adminRemarks, updatedAt: new Date() }, { returnDocument: 'after' });
     if (!verification) return res.status(404).json({ success: false, message: 'Verification record not found' });
 
@@ -1468,6 +1467,7 @@ exports.updateVerificationStatus = async (req, res) => {
         vendor.accountActivationStatus = 'Store Setup Pending';
         vendor.isVerified = true;
         vendor.verificationStatus = 'Approved';
+        await User.findByIdAndUpdate(vendor.userId, { status: 'Active' });
         await Notification.create({ userId: vendor.userId, message: 'Your business verification has been approved.' });
       } else if (status === 'Under Review') {
         vendor.accountActivationStatus = 'Under Review';
@@ -1547,8 +1547,6 @@ exports.updateStoreApprovalStatus = async (req, res) => {
   try {
     const { status, adminRemarks } = req.body;
 
-
-
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { storeSetupStatus: status }, { returnDocument: 'after' });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor record not found' });
 
@@ -1556,6 +1554,7 @@ exports.updateStoreApprovalStatus = async (req, res) => {
       vendor.accountActivationStatus = 'Active';
       vendor.isActive = true;
       vendor.isVerified = true;
+      await User.findByIdAndUpdate(vendor.userId, { status: 'Active' });
     } else {
       vendor.accountActivationStatus = 'Rejected';
       vendor.isActive = false;
@@ -1611,10 +1610,12 @@ exports.updateVendorActivation = async (req, res) => {
   try {
     const { isActive } = req.body;
 
-
-
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { isActive }, { returnDocument: 'after' });
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    if (isActive) {
+      await User.findByIdAndUpdate(vendor.userId, { status: 'Active' });
+    }
 
     await Notification.create({ userId: vendor.userId, message: `Your partner account activation status is now: ${isActive ? 'ACTIVATED (Live)' : 'SUSPENDED'}.` });
     await AdminLog.create({ adminId: req.user.id, action: `Updated activation of vendor ${vendor.companyName} to ${isActive}` });
@@ -1695,8 +1696,6 @@ exports.approveManufacturer = async (req, res) => {
   try {
     const { id } = req.params;
 
-
-
     const vendor = await Vendor.findByIdAndUpdate(id, {
       verificationStatus: 'Approved',
       isVerified: true,
@@ -1707,8 +1706,9 @@ exports.approveManufacturer = async (req, res) => {
 
     if (!vendor) return res.status(404).json({ success: false, message: 'Manufacturer not found' });
 
-    // Also update associated Verification
+    // Also update associated Verification and User
     await VendorVerification.findOneAndUpdate({ vendorId: id }, { status: 'Approved', adminRemarks: 'Approved by Administrator' });
+    await User.findByIdAndUpdate(vendor.userId, { status: 'Active' });
 
     await Notification.create({
       userId: vendor.userId,
