@@ -629,7 +629,130 @@ const UserDashboard = ({
       addLog("Design rendering finished.");
       await delay(400);
 
-      const roomDesigns = {
+            const roomImagePools = {
+        'Living Room': [
+          'https://images.unsplash.com/photo-shT_LaGUmYI?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-c0JoR_-2x3E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-IH7wPsjwomc?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-OtXADkUh3-I?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-s-ZJpt0UdpU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-umAXneH4GhA?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-9M66C_w_ToM?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-_HqHX3LBN18?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Faa_P3eaaGo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-WgkA3CSFrjc?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Bedroom': [
+          'https://images.unsplash.com/photo-0dJA53GaIl0?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-RUvW1KGD9a4?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-nEtpvJjnPVo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-IH7wPsjwomc?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-fobX0HI9vVo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-umAXneH4GhA?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-XM-miHibz64?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-_HqHX3LBN18?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-5zDFUb4R-60?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-8qNuR1lIv_k?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Kitchen': [
+          'https://images.unsplash.com/photo-XQ4cYH7Jhjo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo--aDGbdTsBZg?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-MP0bgaS_d1c?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-hYb7kbu4x7E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-T2VbfEgz9lk?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-cc0Gg3BegjE?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-RwXneIyqxAw?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-G7sE2S4Lab4?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-OlwQIOeDG2s?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-vqMQN9zImG4?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Dining Room': [
+          'https://images.unsplash.com/photo--R3ap-pgFjA?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-wMzpa3WsDkI?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-v9096DgeVeA?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-O0vzxGRmjNs?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-BdU_E9nv1yY?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-a3gcgVghgjk?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-qnSTxcs0EEs?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-dZiAEKSnWX4?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-hUUqCwbW0xg?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-uxlNi53vEdk?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Bathroom': [
+          'https://images.unsplash.com/photo-8yDJZ92_H9Y?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-g51F6-WYzyU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-L4iRkKL5dng?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-yg8zkwBS30Q?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo--4SlyFlvUdU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Aac7IlKnYX8?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-PibraWHb4h8?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-mLx6oMw32PI?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-ZjNNjt91Lo8?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-vTj_dmFGB1Y?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Office Room': [
+          'https://images.unsplash.com/photo-ezJWpD2PR9E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Cf8ivcIDc6E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-EwQhB7yNGOU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-otLKhXXxnOU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-y81BhNjhKBU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-mP5i1IgLCF0?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-qZ9YjkopI6E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-ZCDA1-cih6o?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-meZdiZ4f4Qg?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-9-0oXgzmBr0?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Kids Room': [
+          'https://images.unsplash.com/photo-om8vDkGXlZ4?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-AWzFKOH5UIQ?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-KlZ33F_Y3aI?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-jWUUg1eX24o?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-liEmt5SChxY?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-RE_j7uRsS6E?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-3mtds3PygEw?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Qgz6YqzQmwQ?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-0dXbMlfLI_8?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-b_GtasP517U?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Balcony': [
+          'https://images.unsplash.com/photo-ZK5CSoCuqC8?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1vieZivk1As?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-kuEv-iYSvro?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Oa89doVWpqY?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-odH4AeRL33g?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-MUBHxi2TNnw?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-kB_fsmWQNOU?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-xuNuh7Mvmmo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-MZ3wL9ESzZ0?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-D0KTwKmBPYE?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Pooja Room': [
+          'https://images.unsplash.com/photo-U0HbbxGz-3A?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-6AebwXWd47Q?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-oZz2w1EebE0?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-t5XnF6YmHZE?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-Bw5G8bNqWXY?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-J1XqX-qvEZE?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-L1XqX-qvEZE?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-XQ4cYH7Jhjo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-AWzFKOH5UIQ?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-ZK5CSoCuqC8?w=800&auto=format&fit=crop&q=60'
+        ],
+        'Commercial Space': [
+          'https://images.unsplash.com/photo-J7YwSwnSckM?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-kOdl-epUGUE?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-zuX_l9aJFf0?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-CfUdTwVjh2s?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-CMBd9VLoK7I?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-S4a5zqWN4uY?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-ri3EqQWYahM?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-3lkaszxWfGc?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-1M8RdPGmvJo?w=800&auto=format&fit=crop&q=60',
+          'https://images.unsplash.com/photo-J5XqX-qvEZE?w=800&auto=format&fit=crop&q=60'
+        ],
+      };
+
+const roomDesigns = {
         'Living Room': {
           generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
           furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
@@ -703,6 +826,10 @@ const UserDashboard = ({
       };
 
       const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
+      const pool = roomImagePools[roomType] || roomImagePools['Living Room'];
+      const randomGeneratedImage = pool[Math.floor(Math.random() * pool.length)];
+      selectedDesign.generatedImage = randomGeneratedImage;
+
       const mockImg = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
 
       const simulatedAnalyses = {
