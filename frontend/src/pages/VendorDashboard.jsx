@@ -463,12 +463,16 @@ const VendorDashboard = ({
 
       // 6. Orders (Manufacturing and Delivery)
       let localOrders = [];
+      let fetchedSuccessfully = false;
       try {
         const ordersRes = await axios.get('/vendor/orders');
-        if (ordersRes.data.success) localOrders = ordersRes.data.data;
+        if (ordersRes.data.success) {
+          localOrders = ordersRes.data.data;
+          fetchedSuccessfully = true;
+        }
       } catch (err) { console.warn('Backend orders fetch failed'); }
 
-      if (localOrders.length > 0) {
+      if (fetchedSuccessfully) {
         let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
         setReadyMadeOrders(mktOrders);
         

@@ -89,6 +89,7 @@ const UserDashboard = ({
 
   // Orders & Quotations State
   const [orders, setOrders] = useState([]);
+  const [trackingOrderId, setTrackingOrderId] = useState(localStorage.getItem('activeTrackingOrderId') || '');
   const filteredOrders = orders.filter(o => 
     !searchQuery || 
     o._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1882,11 +1883,17 @@ Thank you for shopping with Artisan Studio!
               setCartItems([]);
               window.dispatchEvent(new Event('cartUpdated'));
               setShowCheckoutSummary(false);
+              // Save the newly created order ID to track it immediately!
+              const newOrderId = res.data.data?._id;
+              if (newOrderId) {
+                localStorage.setItem('activeTrackingOrderId', newOrderId);
+                setTrackingOrderId(newOrderId);
+              }
               // Refresh orders and payments from backend
               await fetchUserData();
               await loadPayments();
               showToast('✅ Order placed successfully! Thank you for your purchase.', 'success');
-              if (setActiveTab) setActiveTab('orders');
+              if (setActiveTab) setActiveTab('tracking');
             } else {
               showToast(res.data?.message || 'Failed to place order.', 'error');
             }
@@ -2724,7 +2731,7 @@ Thank you for shopping with Artisan Studio!
 
       {/* TAB 8: ORDER TRACKING */}
       {activeTab === 'tracking' && (() => {
-        const trackingId = localStorage.getItem('activeTrackingOrderId');
+        const trackingId = trackingOrderId || localStorage.getItem('activeTrackingOrderId');
         const trackableOrders = orders.filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product');
         const activeOrder = orders.find(o => o._id === trackingId) || trackableOrders[0];
         const activeTracking = trackingData[activeOrder?._id] || {};
@@ -2858,8 +2865,7 @@ Thank you for shopping with Artisan Studio!
                   value={activeOrder._id}
                   onChange={(e) => {
                     localStorage.setItem('activeTrackingOrderId', e.target.value);
-                    // Force state update by reloading activeOrder
-                    setOrders([]);
+                    setTrackingOrderId(e.target.value);
                   }}
                   className="text-xs p-2.5 bg-gray-50 rounded-xl border border-gray-200 focus:outline-none"
                 >
