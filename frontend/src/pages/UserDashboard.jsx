@@ -747,7 +747,12 @@ const roomDesigns = {
       const randomGeneratedImage = pool[Math.floor(Math.random() * pool.length)];
       selectedDesign.generatedImage = randomGeneratedImage;
 
-      const mockImg = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
+      let mockImg = originalImage;
+      if (!mockImg) {
+        let availablePool = pool.filter(img => img !== randomGeneratedImage);
+        if (availablePool.length === 0) availablePool = pool;
+        mockImg = availablePool[Math.floor(Math.random() * availablePool.length)];
+      }
 
       const simulatedAnalyses = {
         'Living Room': {
@@ -1866,7 +1871,7 @@ Thank you for shopping with Artisan Studio!
                         </div>
                       )}
                     </label>
-                    <p className="text-xs text-[#6B7280] mt-2">Leave empty to use demo living room photo</p>
+                    <p className="text-xs text-[#6B7280] mt-2">Leave empty to use demo {roomType.toLowerCase()} photo</p>
                   </div>
                   <button type="submit" disabled={loadingAi} className="w-full flex items-center justify-center gap-2 py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50">
                     <Wand2 className="w-5 h-5" />
