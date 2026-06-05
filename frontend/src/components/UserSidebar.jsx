@@ -48,23 +48,23 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
 
   const toggleGroup = (g) => setOpenGroups(p => ({ ...p, [g]: !p[g] }));
 
-  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral, color = U.activeText }) => {
     const isActive = activeTab === tab;
     return (
       <button
         onClick={() => setActiveTab(tab)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '10px', padding: '9px 12px', borderRadius: '10px',
-          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
-          transition: 'all 0.15s ease',
-          backgroundColor: isActive ? U.activeBg : 'transparent',
-          color: isActive ? U.activeText : U.itemColor,
+          gap: '10px', padding: '10px 12px', borderRadius: '10px',
+          fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          backgroundColor: isActive ? `${color}1A` : 'transparent',
+          color: isActive ? color : U.itemColor,
         }}
         onMouseEnter={e => { 
           if (!isActive) { 
-            e.currentTarget.style.backgroundColor = U.itemHoverBg; 
-            e.currentTarget.style.color = U.activeText; 
+            e.currentTarget.style.backgroundColor = `${color}0D`; 
+            e.currentTarget.style.color = color; 
           } 
         }}
         onMouseLeave={e => { 
@@ -74,14 +74,14 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
           } 
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? U.activeText : '#9CA3AF' }} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Icon style={{ width: 16, height: 16, flexShrink: 0, color: color }} />
           {name}
         </span>
         {badge > 0 && (
           <span style={{
-            backgroundColor: isBadgeCoral ? '#E76F51' : U.activeBg,
-            color: isBadgeCoral ? '#ffffff' : U.activeText,
+            backgroundColor: isBadgeCoral ? '#E76F51' : `${color}33`,
+            color: isBadgeCoral ? '#ffffff' : color,
             fontSize: 10, fontWeight: 700, padding: '2px 6px',
             borderRadius: 9999, minWidth: 18, textAlign: 'center'
           }}>{badge}</span>
@@ -114,40 +114,40 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
     {
       group: 'design', label: 'Design Services',
       items: [
-        { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio' },
-        { name: 'Manual Design Request', icon: FileText, tab: 'manual' },
-        { name: 'Interior Designer Help', icon: UserIcon, tab: 'designer' },
-        { name: 'Saved Designs', icon: Bookmark, tab: 'saved' },
+        { name: 'AI Room Studio', icon: Sparkles, tab: 'ai_studio', color: '#8B5CF6' },
+        { name: 'Manual Design Request', icon: FileText, tab: 'manual', color: '#EC4899' },
+        { name: 'Interior Designer Help', icon: UserIcon, tab: 'designer', color: '#F59E0B' },
+        { name: 'Saved Designs', icon: Bookmark, tab: 'saved', color: '#10B981' },
       ]
     },
     {
       group: 'shop', label: 'Marketplace',
       items: [
-        { name: 'Products', icon: ShoppingBag, tab: 'marketplace' },
+        { name: 'Products', icon: ShoppingBag, tab: 'marketplace', color: '#06B6D4' },
       ]
     },
     {
       group: 'orders', label: 'Orders & Payments',
       items: [
-        { name: 'My Cart', icon: ShoppingCart, tab: 'cart', badge: cartCount },
-        { name: 'Quotations', icon: FileText, tab: 'quotations' },
-        { name: 'My Orders', icon: Package, tab: 'orders' },
-        { name: 'Order Tracking', icon: Truck, tab: 'tracking' },
-        { name: 'Payments', icon: CreditCard, tab: 'payments' },
+        { name: 'My Cart', icon: ShoppingCart, tab: 'cart', badge: cartCount, color: '#F97316' },
+        { name: 'Quotations', icon: FileText, tab: 'quotations', color: '#6366F1' },
+        { name: 'My Orders', icon: Package, tab: 'orders', color: '#14B8A6' },
+        { name: 'Order Tracking', icon: Truck, tab: 'tracking', color: '#84CC16' },
+        { name: 'Payments', icon: CreditCard, tab: 'payments', color: '#EAB308' },
       ]
     },
     {
       group: 'support', label: 'Support',
       items: [
-        { name: 'Reviews', icon: Star, tab: 'reviews' },
-        { name: 'User Chat', icon: HelpCircle, tab: 'support' },
+        { name: 'Reviews', icon: Star, tab: 'reviews', color: '#F43F5E' },
+        { name: 'User Chat', icon: HelpCircle, tab: 'support', color: '#A855F7' },
       ]
     },
     {
       group: 'account', label: 'Account',
       items: [
-        { name: 'Profile', icon: UserIcon, tab: 'profile' },
-        { name: 'Notifications', icon: Bell, tab: 'notifications', badge: unreadNotifCount, isBadgeCoral: true },
+        { name: 'Profile', icon: UserIcon, tab: 'profile', color: '#64748B' },
+        { name: 'Notifications', icon: Bell, tab: 'notifications', badge: unreadNotifCount, isBadgeCoral: true, color: '#EF4444' },
       ]
     },
   ];
@@ -183,14 +183,14 @@ const UserSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 }
       {/* Nav Scroll Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Overview */}
-        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" />
+        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" color="#3B82F6" />
 
         {/* Collapsible Sections */}
         {sections.map(({ group, label, items }) => (
           <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <SectionLabel label={label} group={group} />
             {openGroups[group] && (
-              <div className="section-border" style={{ borderLeft: `1px solid ${U.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
                 {items.map(item => (
                   <NavItem key={item.tab} {...item} />
                 ))}

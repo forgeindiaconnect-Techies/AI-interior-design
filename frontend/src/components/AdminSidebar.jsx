@@ -37,23 +37,23 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
     }));
   };
 
-  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral }) => {
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral, color = A.activeText }) => {
     const isActive = activeTab === tab;
     return (
       <button
         onClick={() => setActiveTab(tab)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '10px', padding: '9px 12px', borderRadius: '10px',
-          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
-          transition: 'all 0.15s ease',
-          backgroundColor: isActive ? A.activeBg : 'transparent',
-          color: isActive ? A.activeText : A.itemColor,
+          gap: '10px', padding: '10px 12px', borderRadius: '10px',
+          fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          backgroundColor: isActive ? `${color}1A` : 'transparent',
+          color: isActive ? color : A.itemColor,
         }}
         onMouseEnter={e => { 
           if (!isActive) { 
-            e.currentTarget.style.backgroundColor = A.itemHoverBg; 
-            e.currentTarget.style.color = A.activeText; 
+            e.currentTarget.style.backgroundColor = `${color}0D`; 
+            e.currentTarget.style.color = color; 
           } 
         }}
         onMouseLeave={e => { 
@@ -63,14 +63,14 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           } 
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? A.activeText : '#9CA3AF' }} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Icon style={{ width: 16, height: 16, flexShrink: 0, color: color }} />
           {name}
         </span>
         {badge > 0 && (
           <span style={{
-            backgroundColor: isBadgeCoral ? '#E76F51' : A.activeBg,
-            color: isBadgeCoral ? '#ffffff' : A.activeText,
+            backgroundColor: isBadgeCoral ? '#E76F51' : `${color}33`,
+            color: isBadgeCoral ? '#ffffff' : color,
             fontSize: 10, fontWeight: 700, padding: '2px 6px',
             borderRadius: 9999, minWidth: 18, textAlign: 'center'
           }}>{badge}</span>
@@ -130,15 +130,15 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
       {/* Nav Scroll Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Overview */}
-        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" />
+        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" color="#3B82F6" />
 
         {/* Collapsible: USER & VENDOR MANAGEMENT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="User Management" group="users" />
           {openGroups.users && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Customers" icon={Users} tab="users" />
-              <NavItem name="Vendors" icon={Store} tab="vendors" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Customers" icon={Users} tab="users" color="#8B5CF6" />
+              <NavItem name="Vendors" icon={Store} tab="vendors" color="#F59E0B" />
             </div>
           )}
         </div>
@@ -147,11 +147,11 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="Operations Workflow" group="operations" />
           {openGroups.operations && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Orders" icon={ShoppingBag} tab="orders" />
-              <NavItem name="Manufacturing" icon={Factory} tab="manufacturing" />
-              <NavItem name="Delivery" icon={Truck} tab="delivery" />
-              <NavItem name="Installation" icon={Wrench} tab="installation" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Orders" icon={ShoppingBag} tab="orders" color="#10B981" />
+              <NavItem name="Manufacturing" icon={Factory} tab="manufacturing" color="#EC4899" />
+              <NavItem name="Delivery" icon={Truck} tab="delivery" color="#F97316" />
+              <NavItem name="Installation" icon={Wrench} tab="installation" color="#06B6D4" />
             </div>
           )}
         </div>
@@ -160,8 +160,8 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="AI & Design Requests" group="ai_requests" />
           {openGroups.ai_requests && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Custom Design Requests" icon={FileText} tab="custom_design_requests" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Custom Design Requests" icon={FileText} tab="custom_design_requests" color="#6366F1" />
             </div>
           )}
         </div>
@@ -170,9 +170,9 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="Finance" group="finance" />
           {openGroups.finance && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Platform Commission" icon={BarChart2} tab="platform_commission" />
-              <NavItem name="Refunds" icon={RefreshCw} tab="refunds" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Platform Commission" icon={BarChart2} tab="platform_commission" color="#14B8A6" />
+              <NavItem name="Refunds" icon={RefreshCw} tab="refunds" color="#F43F5E" />
             </div>
           )}
         </div>
@@ -181,34 +181,34 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="Support" group="support" />
           {openGroups.support && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Live Chat" icon={MessageSquare} tab="support" />
-              <NavItem name="Contact Messages" icon={MessageSquare} tab="contact_messages" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Live Chat" icon={MessageSquare} tab="support" color="#84CC16" />
+              <NavItem name="Contact Messages" icon={MessageSquare} tab="contact_messages" color="#EAB308" />
             </div>
           )}
         </div>
 
         {/* Outer-level: Reports & Analytics */}
         <div>
-          <NavItem name="Reports & Analytics" icon={BarChart2} tab="analytics" />
+          <NavItem name="Reports & Analytics" icon={BarChart2} tab="analytics" color="#A855F7" />
         </div>
 
         {/* Collapsible: VERIFICATION & REVIEWS */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <SectionLabel label="Verification & Reviews" group="verifications" />
           {openGroups.verifications && (
-            <div className="section-border" style={{ borderLeft: `1px solid ${A.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
-              <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" />
-              <NavItem name="Store Approval" icon={Store} tab="store-approvals" />
-              <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" />
-              <NavItem name="Customer Reviews" icon={Sparkles} tab="reviews_management" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" color="#3B82F6" />
+              <NavItem name="Store Approval" icon={Store} tab="store-approvals" color="#F59E0B" />
+              <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" color="#10B981" />
+              <NavItem name="Customer Reviews" icon={Sparkles} tab="reviews_management" color="#EC4899" />
             </div>
           )}
         </div>
 
         {/* Outer-level: Notifications */}
         <div>
-          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} />
+          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} color="#EF4444" />
         </div>
       </div>
 

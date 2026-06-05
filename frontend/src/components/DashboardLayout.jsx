@@ -274,11 +274,53 @@ const DashboardLayout = ({ children }) => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  const tabColors = {
+    overview: '#3B82F6',
+    ai_studio: '#8B5CF6',
+    manual: '#EC4899',
+    designer: '#F59E0B',
+    saved: '#10B981',
+    marketplace: '#06B6D4',
+    cart: '#F97316',
+    quotations: '#6366F1',
+    orders: isAdmin || isVendor ? '#10B981' : '#14B8A6',
+    tracking: '#84CC16',
+    payments: '#EAB308',
+    reviews: '#F43F5E',
+    support: isAdmin ? '#84CC16' : isVendor ? '#14B8A6' : '#A855F7',
+    profile: '#64748B',
+    notifications: '#EF4444',
+    products: '#8B5CF6',
+    inventory: '#F59E0B',
+    custom_requests: '#EC4899',
+    manufacturing: isVendor ? '#F97316' : '#EC4899',
+    logistics: '#06B6D4',
+    earnings: '#84CC16',
+    payouts: '#EAB308',
+    verification: '#3B82F6',
+    store_setup: '#A855F7',
+    users: '#8B5CF6',
+    vendors: '#F59E0B',
+    delivery: '#F97316',
+    installation: '#06B6D4',
+    custom_design_requests: '#6366F1',
+    platform_commission: '#14B8A6',
+    refunds: '#F43F5E',
+    contact_messages: '#EAB308',
+    analytics: '#A855F7',
+    verifications: '#3B82F6',
+    'store-approvals': '#F59E0B',
+    'product-reviews': '#10B981',
+    reviews_management: '#EC4899'
+  };
+
+  const activeColor = tabColors[activeTab] || (isAdmin ? '#1D3557' : isVendor ? '#2A9D8F' : '#8B5E3C');
+
   // Header background theme based on Role
   const headerAccentColor = isAdmin ? 'border-b-[#1D3557]' : isVendor ? 'border-b-[#2A9D8F]' : 'border-b-[#8B5E3C]';
 
   return (
-    <div className="min-h-screen bg-[#F8F5F0] flex">
+    <div className="min-h-screen flex transition-colors duration-500" style={{ backgroundColor: `${activeColor}12` }}>
       {/* Sidebar */}
       {renderSidebar()}
 
@@ -507,7 +549,7 @@ const DashboardLayout = ({ children }) => {
         </header>
 
         {/* Dashboard Content Container */}
-        <main className="flex-1 p-8 overflow-y-auto">
+        <main className="flex-1 p-8 overflow-y-auto transition-colors duration-500">
           {childrenWithProps}
         </main>
       </div>

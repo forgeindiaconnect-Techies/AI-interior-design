@@ -84,24 +84,29 @@ const Footer = () => {
           <h4 className="font-['Playfair_Display'] text-lg font-semibold mb-4 text-[#D4A373]">Partner Network</h4>
           <ul className="space-y-2 text-sm text-gray-300">
             <li>
-              <Link to="/register?role=vendor" className="hover:text-white transition-colors">
-                Become a Vendor
+              <a href="/" onClick={handleHomeTop} className="hover:text-white transition-colors cursor-pointer">
+                Home
+              </a>
+            </li>
+            <li>
+              <a href="/#about" onClick={handleSectionNav('about')} className="hover:text-white transition-colors cursor-pointer">
+                About Us
+              </a>
+            </li>
+            <li>
+              <a href="/#ai-design" onClick={handleSectionNav('ai-design')} className="hover:text-white transition-colors cursor-pointer">
+                AI Studio
+              </a>
+            </li>
+            <li>
+              <Link to="/marketplace" className="hover:text-white transition-colors">
+                Marketplace
               </Link>
             </li>
             <li>
-              <Link to="/register?role=manufacturer" className="hover:text-white transition-colors">
-                Manufacturer Portal
-              </Link>
-            </li>
-            <li>
-              <Link to="/register?role=delivery" className="hover:text-white transition-colors">
-                Delivery Partner Portal
-              </Link>
-            </li>
-            <li>
-              <Link to="/register?role=installation" className="hover:text-white transition-colors">
-                Installation Expert Portal
-              </Link>
+              <a href="/#how-it-works" onClick={handleSectionNav('how-it-works')} className="hover:text-white transition-colors cursor-pointer">
+                How it's works
+              </a>
             </li>
           </ul>
         </div>

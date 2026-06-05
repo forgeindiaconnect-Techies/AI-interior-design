@@ -36,23 +36,23 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
     }));
   };
 
-  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral, isVerified }) => {
+  const NavItem = ({ name, icon: Icon, tab, badge, isBadgeCoral, isVerified, color = V.activeText }) => {
     const isActive = activeTab === tab;
     return (
       <button
         onClick={() => setActiveTab(tab)}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '10px', padding: '9px 12px', borderRadius: '10px',
-          fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
-          transition: 'all 0.15s ease',
-          backgroundColor: isActive ? V.activeBg : 'transparent',
-          color: isActive ? V.activeText : V.itemColor,
+          gap: '10px', padding: '10px 12px', borderRadius: '10px',
+          fontSize: '13px', fontWeight: 600, border: 'none', cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          backgroundColor: isActive ? `${color}1A` : 'transparent',
+          color: isActive ? color : V.itemColor,
         }}
         onMouseEnter={e => { 
           if (!isActive) { 
-            e.currentTarget.style.backgroundColor = V.itemHoverBg; 
-            e.currentTarget.style.color = V.activeText; 
+            e.currentTarget.style.backgroundColor = `${color}0D`; 
+            e.currentTarget.style.color = color; 
           } 
         }}
         onMouseLeave={e => { 
@@ -62,8 +62,8 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
           } 
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Icon style={{ width: 15, height: 15, flexShrink: 0, color: isActive ? V.activeText : '#9CA3AF' }} />
+        <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Icon style={{ width: 16, height: 16, flexShrink: 0, color: color }} />
           {name}
           {isVerified && (
             <span style={{
@@ -71,13 +71,14 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
               backgroundColor: '#2A9D8F', color: '#fff',
               fontSize: 8, fontWeight: 800, padding: '1px 5px',
               borderRadius: 9999, lineHeight: '14px',
+              marginLeft: 4
             }}>✓</span>
           )}
         </span>
         {badge > 0 && (
           <span style={{
-            backgroundColor: isBadgeCoral ? '#E76F51' : V.activeBg,
-            color: isBadgeCoral ? '#ffffff' : V.activeText,
+            backgroundColor: isBadgeCoral ? '#E76F51' : `${color}33`,
+            color: isBadgeCoral ? '#ffffff' : color,
             fontSize: 10, fontWeight: 700, padding: '2px 6px',
             borderRadius: 9999, minWidth: 18, textAlign: 'center'
           }}>{badge}</span>
@@ -110,40 +111,40 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
     {
       group: 'products', label: 'Products',
       items: [
-        { name: 'Product Management', icon: Package, tab: 'products' },
-        { name: 'Inventory', icon: Package, tab: 'inventory' }
+        { name: 'Product Management', icon: Package, tab: 'products', color: '#8B5CF6' },
+        { name: 'Inventory', icon: Package, tab: 'inventory', color: '#F59E0B' }
       ]
     },
     {
       group: 'orders', label: 'Orders Workflow',
       items: [
-        { name: 'Ready-made Orders', icon: ShoppingCart, tab: 'orders' },
-        { name: 'Custom Orders', icon: FileText, tab: 'custom_requests' },
-        { name: 'Production Requests', icon: Wrench, tab: 'manufacturing' },
-        { name: 'Delivery & Installation', icon: Truck, tab: 'logistics' }
+        { name: 'Ready-made Orders', icon: ShoppingCart, tab: 'orders', color: '#10B981' },
+        { name: 'Custom Orders', icon: FileText, tab: 'custom_requests', color: '#EC4899' },
+        { name: 'Production Requests', icon: Wrench, tab: 'manufacturing', color: '#F97316' },
+        { name: 'Delivery & Installation', icon: Truck, tab: 'logistics', color: '#06B6D4' }
       ]
     },
     {
       group: 'customers', label: 'Quotations & Customers',
       items: [
-        { name: 'Quotations', icon: FileText, tab: 'quotations' },
-        { name: 'Customer Chat', icon: MessageSquare, tab: 'support' },
-        { name: 'Reviews', icon: Star, tab: 'reviews' }
+        { name: 'Quotations', icon: FileText, tab: 'quotations', color: '#6366F1' },
+        { name: 'Customer Chat', icon: MessageSquare, tab: 'support', color: '#14B8A6' },
+        { name: 'Reviews', icon: Star, tab: 'reviews', color: '#F43F5E' }
       ]
     },
     {
       group: 'finance', label: 'Earnings',
       items: [
-        { name: 'Revenue', icon: DollarSign, tab: 'earnings' },
-        { name: 'Payouts', icon: DollarSign, tab: 'payouts' }
+        { name: 'Revenue', icon: DollarSign, tab: 'earnings', color: '#84CC16' },
+        { name: 'Payouts', icon: DollarSign, tab: 'payouts', color: '#EAB308' }
       ]
     },
     {
       group: 'business', label: 'Business Settings',
       items: [
-        { name: 'Business Profile', icon: Briefcase, tab: 'profile' },
-        { name: 'Business Verification', icon: ShieldCheck, tab: 'verification' },
-        { name: 'Store Setup', icon: Store, tab: 'store_setup' }
+        { name: 'Business Profile', icon: Briefcase, tab: 'profile', color: '#64748B' },
+        { name: 'Business Verification', icon: ShieldCheck, tab: 'verification', color: '#3B82F6' },
+        { name: 'Store Setup', icon: Store, tab: 'store_setup', color: '#A855F7' }
       ]
     }
   ];
@@ -179,14 +180,14 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
       {/* Nav Scroll Area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: 18 }}>
         {/* Overview */}
-        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" />
+        <NavItem name="Overview" icon={LayoutDashboard} tab="overview" color="#3B82F6" />
 
         {/* Collapsible Sections */}
         {sections.map(({ group, label, items }) => (
           <div key={group} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <SectionLabel label={label} group={group} />
             {openGroups[group] && (
-              <div className="section-border" style={{ borderLeft: `1px solid ${V.border}`, marginLeft: 20, paddingLeft: 8, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
                 {items.map(item => (
                   <NavItem key={item.tab} {...item} isVerified={item.tab === 'verification' && verificationStatus === 'Approved'} />
                 ))}
@@ -197,7 +198,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
 
         {/* Outer-level Notifications Item */}
         <div style={{ marginTop: 10 }}>
-          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} />
+          <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} color="#EF4444" />
         </div>
       </div>
 
