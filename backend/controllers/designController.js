@@ -4,6 +4,7 @@ const InteriorDesignerRequest = require('../models/InteriorDesignerRequest');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const mongoose = require('mongoose');
+const Replicate = require('replicate');
 
 let mockManualDesigns = [
   {
@@ -112,7 +113,40 @@ exports.createAIDesign = async (req, res) => {
       }
     };
 
-    const finalGeneratedImage = generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'];
+    let finalGeneratedImage = generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'];
+
+    if (process.env.REPLICATE_API_TOKEN && originalImage) {
+      try {
+        const replicate = new Replicate({
+          auth: process.env.REPLICATE_API_TOKEN,
+        });
+        
+        console.log(`Generating AI design for ${roomType} using Replicate...`);
+        const output = await replicate.run(
+          "jagilley/controlnet-hough:854e87270c1a024da3dbcd569aa1f807205a2786725227f272a806ea95d6771e",
+          {
+            input: {
+              image: originalImage,
+              prompt: `A beautiful interior design of a ${roomType}, photorealistic, 8k, modern interior design, high quality, highly detailed`,
+              num_samples: "1",
+              image_resolution: "512",
+              a_prompt: "best quality, extremely detailed",
+              n_prompt: "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
+            }
+          }
+        );
+        
+        // Output from jagilley/controlnet-hough is usually [annotated_image, generated_image]
+        if (output && output.length > 0) {
+          finalGeneratedImage = output.length > 1 ? output[1] : output[0];
+          console.log("Successfully generated AI image from Replicate.");
+        }
+      } catch (err) {
+        console.error("Replicate AI Generation Error:", err.message);
+        // Fallback to mock image on error
+      }
+    }
+
     const finalAiSuggestion = aiSuggestion || {
       furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
       materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble', 'Linen Upholstery'],
