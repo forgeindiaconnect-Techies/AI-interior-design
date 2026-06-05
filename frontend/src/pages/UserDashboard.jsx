@@ -1641,7 +1641,8 @@ Thank you for shopping with Artisan Studio!
                   )}
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Phase 2: GENERATION COMPLETED SHOWCASE */}
           {aiAnalysisStep === 'completed' && aiDesigns.length > 0 && (() => {
