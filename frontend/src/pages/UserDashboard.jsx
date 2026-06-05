@@ -26,7 +26,7 @@ import imgDining3 from '../assets/Dining room 2.png';
 import imgKitchen1 from '../assets/Kitchen room.png';
 import imgKitchen2 from '../assets/Kitchen room 1.png';
 import imgKitchen3 from '../assets/Kitchen room 2.png';
-import imgLiving1 from '../assets/Living room .png';
+import imgLiving1 from '../assets/living room .png';
 import imgLiving2 from '../assets/Living room 1.png';
 import imgLiving3 from '../assets/Living room 2.png';
 import imgPooja1 from '../assets/Pooja room.png';
