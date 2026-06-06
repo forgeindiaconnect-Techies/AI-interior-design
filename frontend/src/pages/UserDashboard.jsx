@@ -1957,7 +1957,7 @@ Thank you for shopping with Artisan Studio!
                           <div className="flex items-center justify-between">
                             <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">{design.roomType}</span>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${design.status === 'accepted' || design.status === 'execution' ? 'bg-[#2A9D8F] text-white' : design.status === 'rejected' ? 'bg-[#E76F51] text-white' : 'bg-[#E9C46A] text-[#1F2937]'}`}>
-                              {design.status === 'execution' ? 'SENT TO EXECUTION' : design.status.toUpperCase()}
+                              {design.status === 'execution' ? 'SENT TO EXECUTION' : (design.status || 'GENERATED').toString().toUpperCase()}
                             </span>
                           </div>
                           <div>
@@ -2699,6 +2699,7 @@ Thank you for shopping with Artisan Studio!
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Marketplace Product</span>
                               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${statusBadge}`}>{order.orderStatus || 'Pending Confirmation'}</span>
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${order.paymentStatus === 'paid' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'}`}>{(order.paymentStatus || 'UNPAID').toString().toUpperCase()}</span>
                             </div>
                             <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] truncate">{order.productDetails?.title || order.items?.[0]?.productId?.title || `Order #${order._id?.slice(-6)}`}</h3>
                             <p className="text-xs text-[#6B7280] mt-0.5">Vendor: {order.vendorId?.companyName || order.items?.[0]?.vendorId?.companyName || 'Artisan Partner'} • Qty: {order.items?.reduce((s, i) => s + i.quantity, 0) || order.productDetails?.quantity || 1}</p>
