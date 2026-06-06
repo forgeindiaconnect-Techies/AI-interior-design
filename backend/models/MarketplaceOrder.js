@@ -34,6 +34,11 @@ const MarketplaceOrderSchema = new mongoose.Schema({
   deliveryPartnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   installationPartnerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
   installationRequired: { type: Boolean, default: false },
+  timeline: [{
+    status: { type: String, required: true },
+    updatedBy: { type: String, enum: ['system', 'vendor', 'admin'], default: 'system' },
+    updatedAt: { type: Date, default: Date.now }
+  }],
   createdAt: { type: Date, default: Date.now }
 });
 

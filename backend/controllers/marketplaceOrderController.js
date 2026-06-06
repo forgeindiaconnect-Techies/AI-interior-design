@@ -26,7 +26,8 @@ exports.createOrder = async (req, res) => {
       totalAmount: totalAmount,
       shippingAddress: shippingAddress || 'Default Address',
       paymentStatus: 'paid',
-      orderStatus: 'Pending Confirmation'
+      orderStatus: 'Pending Confirmation',
+      timeline: [{ status: 'Pending Confirmation', updatedBy: 'system' }]
     });
 
     // Create payment record
@@ -173,12 +174,25 @@ exports.updateOrderStatus = async (req, res) => {
 
     const oldStatus = order.orderStatus;
     order.orderStatus = status;
+
+    // Push new status to timeline
+    const updatedByRole = req.user.role === 'vendor' ? 'vendor' : req.user.role === 'admin' ? 'admin' : 'system';
+    order.timeline.push({ status, updatedBy: updatedByRole, updatedAt: new Date() });
+
     await order.save();
 
-    // Notify user about status change
+    // Notify user about status change with specific messages
+    let userMessage = `Your marketplace order #${order._id.toString().slice(-6)} status updated: ${oldStatus} → ${status}.`;
+    if (status === 'Processing') userMessage = "Your order is now being processed.";
+    else if (status === 'Pending Dispatch') userMessage = "Your order is ready for dispatch.";
+    else if (status === 'Dispatched') userMessage = "Your order has been dispatched.";
+    else if (status === 'Out For Delivery') userMessage = "Your order is out for delivery.";
+    else if (status === 'Delivered') userMessage = "Your order has been delivered.";
+    else if (status === 'Completed') userMessage = "Order completed successfully.";
+
     await Notification.create({
       userId: order.userId,
-      message: `Your marketplace order #${order._id.toString().slice(-6)} status updated: ${oldStatus} → ${status}.`,
+      message: userMessage,
       type: 'info'
     });
 

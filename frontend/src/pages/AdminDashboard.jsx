@@ -4368,17 +4368,19 @@ const AdminDashboard = ({
                                 >
                                   <Eye size={14} />
                                 </button>
-                                <button
-                                  onClick={() => {
-                                    setUpdateStatusOrder(order);
-                                    setNewWorkflowStage(order.orderStatus);
-                                    setNewExpectedDeliveryDate(order.expectedDeliveryDate ? order.expectedDeliveryDate.split('T')[0] : '');
-                                  }}
-                                  title="Update Workflow Stage"
-                                  className="p-2 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 text-[#8B5E3C] rounded-xl transition-all"
-                                >
-                                  <Layers size={14} />
-                                </button>
+                                {order.orderType !== 'Marketplace Product' && (
+                                  <button
+                                    onClick={() => {
+                                      setUpdateStatusOrder(order);
+                                      setNewWorkflowStage(order.orderStatus);
+                                      setNewExpectedDeliveryDate(order.expectedDeliveryDate ? order.expectedDeliveryDate.split('T')[0] : '');
+                                    }}
+                                    title="Update Workflow Stage"
+                                    className="p-2 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C]/20 text-[#8B5E3C] rounded-xl transition-all"
+                                  >
+                                    <Layers size={14} />
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => setTrackOrder(order)}
                                   title="Track Order Progress"
@@ -8633,49 +8635,75 @@ const AdminDashboard = ({
             
             <div className="p-8 space-y-6 text-left">
               <div className="relative border-l-2 border-dashed border-gray-200 pl-4 ml-3 space-y-6">
-                {[
-                  { label: 'Order Submitted & Quotation Accepted', desc: 'Custom quote verified, contract established, and initial deposit confirmed.', statusList: ['Request Submitted', 'Quotation Sent', 'Quotation Accepted', 'Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'Manufacturer Assigned & Production Kick-off', desc: 'Verified millwork fabrication or furniture creation assigned and underway.', statusList: ['Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'Off-site Manufacturing Completed', desc: 'All panels and structures customized to dimensions and specifications.', statusList: ['Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'Rigorous Quality Verification', desc: 'Admin review and dimensions testing to assure grade matches design details.', statusList: ['Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'Logistics Assigned & Shipped', desc: 'Secure dispatch and transit to final delivery destination address.', statusList: ['Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'On-site Fitting & Installation', desc: 'Final execution and modular elements assembly by matching local team.', statusList: ['Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                  { label: 'Milestone Handover Completed', desc: 'Work checklist successfully ticked and client accepted project release.', statusList: ['Completed', 'Order Completed'] }
-                ].map((step, idx) => {
-                  const isCompleted = step.statusList.includes(trackOrder.orderStatus);
-                  const isCurrent = trackOrder.orderStatus !== 'Cancelled' && 
-                    (idx === 0 && ['Request Submitted', 'Quotation Sent', 'Quotation Accepted'].includes(trackOrder.orderStatus) ||
-                     idx === 1 && ['Manufacturer Assigned', 'Manufacturing Started'].includes(trackOrder.orderStatus) ||
-                     idx === 2 && trackOrder.orderStatus === 'Manufacturing' ||
-                     idx === 3 && trackOrder.orderStatus === 'Quality Check' ||
-                     idx === 4 && ['Delivery Assigned', 'Out for Delivery'].includes(trackOrder.orderStatus) ||
-                     idx === 5 && ['Installation Assigned', 'Installation Completed'].includes(trackOrder.orderStatus) ||
-                     idx === 6 && ['Completed', 'Order Completed'].includes(trackOrder.orderStatus));
+                {(() => {
+                  let steps = [
+                    { label: 'Order Submitted & Quotation Accepted', desc: 'Custom quote verified, contract established, and initial deposit confirmed.', statusList: ['Request Submitted', 'Quotation Sent', 'Quotation Accepted', 'Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'Manufacturer Assigned & Production Kick-off', desc: 'Verified millwork fabrication or furniture creation assigned and underway.', statusList: ['Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'Off-site Manufacturing Completed', desc: 'All panels and structures customized to dimensions and specifications.', statusList: ['Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'Rigorous Quality Verification', desc: 'Admin review and dimensions testing to assure grade matches design details.', statusList: ['Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'Logistics Assigned & Shipped', desc: 'Secure dispatch and transit to final delivery destination address.', statusList: ['Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'On-site Fitting & Installation', desc: 'Final execution and modular elements assembly by matching local team.', statusList: ['Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
+                    { label: 'Milestone Handover Completed', desc: 'Work checklist successfully ticked and client accepted project release.', statusList: ['Completed', 'Order Completed'] }
+                  ];
+                  
+                  if (trackOrder.orderType === 'Marketplace Product') {
+                    steps = [
+                      { label: 'Pending Confirmation', desc: 'Vendor is reviewing the order.', statusList: ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
+                      { label: 'Processing', desc: 'Vendor is processing the order.', statusList: ['Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
+                      { label: 'Pending Dispatch', desc: 'Order packed and ready for dispatch.', statusList: ['Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
+                      { label: 'Dispatched', desc: 'Order handed over to courier.', statusList: ['Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
+                      { label: 'Out For Delivery', desc: 'Courier is out for delivery.', statusList: ['Out For Delivery', 'Delivered', 'Completed'] },
+                      { label: 'Delivered', desc: 'Order has been delivered.', statusList: ['Delivered', 'Completed'] },
+                      { label: 'Completed', desc: 'Order is completely finalized.', statusList: ['Completed'] }
+                    ];
+                  }
 
-                  return (
-                    <div key={idx} className="relative pl-8">
-                      <div className={`absolute -left-3.5 top-0 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-bold ${
-                        isCompleted 
-                          ? 'bg-green-500 text-white' 
-                          : isCurrent 
-                            ? 'bg-amber-500 text-white animate-pulse' 
-                            : 'bg-gray-200 text-gray-400'
-                      }`}>
-                        {isCompleted ? '✓' : idx + 1}
+                  return steps.map((step, idx) => {
+                    const isCompleted = step.statusList.includes(trackOrder.orderStatus);
+                    let isCurrent = false;
+
+                    if (trackOrder.orderStatus !== 'Cancelled') {
+                      if (trackOrder.orderType === 'Marketplace Product') {
+                        const statusSequence = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
+                        const currentStatusIndex = statusSequence.indexOf(trackOrder.orderStatus);
+                        isCurrent = currentStatusIndex === idx;
+                      } else {
+                        isCurrent = 
+                          (idx === 0 && ['Request Submitted', 'Quotation Sent', 'Quotation Accepted'].includes(trackOrder.orderStatus)) ||
+                          (idx === 1 && ['Manufacturer Assigned', 'Manufacturing Started'].includes(trackOrder.orderStatus)) ||
+                          (idx === 2 && trackOrder.orderStatus === 'Manufacturing') ||
+                          (idx === 3 && trackOrder.orderStatus === 'Quality Check') ||
+                          (idx === 4 && ['Delivery Assigned', 'Out for Delivery'].includes(trackOrder.orderStatus)) ||
+                          (idx === 5 && ['Installation Assigned', 'Installation Completed'].includes(trackOrder.orderStatus)) ||
+                          (idx === 6 && ['Completed', 'Order Completed'].includes(trackOrder.orderStatus));
+                      }
+                    }
+
+                    return (
+                      <div key={idx} className="relative pl-8">
+                        <div className={`absolute -left-3.5 top-0 w-7 h-7 rounded-full border-4 border-white flex items-center justify-center text-[10px] font-bold ${
+                          isCompleted 
+                            ? 'bg-green-500 text-white' 
+                            : isCurrent 
+                              ? 'bg-amber-500 text-white animate-pulse' 
+                              : 'bg-gray-200 text-gray-400'
+                        }`}>
+                          {isCompleted ? '✓' : idx + 1}
+                        </div>
+                        <h4 className={`font-bold text-sm ${isCurrent ? 'text-amber-600' : isCompleted ? 'text-gray-800' : 'text-gray-400'}`}>
+                          {step.label}
+                        </h4>
+                        <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
+                        {isCurrent && (
+                          <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase tracking-wider">ACTIVE PHASE</p>
+                        )}
+                        {isCompleted && !isCurrent && (
+                          <p className="text-[10px] font-bold text-green-500 mt-1 uppercase tracking-wider">COMPLETED</p>
+                        )}
                       </div>
-                      <h4 className={`font-bold text-sm ${isCurrent ? 'text-amber-600' : isCompleted ? 'text-gray-800' : 'text-gray-400'}`}>
-                        {step.label}
-                      </h4>
-                      <p className="text-xs text-gray-500 mt-0.5">{step.desc}</p>
-                      {isCurrent && (
-                        <p className="text-[10px] font-bold text-amber-500 mt-1 uppercase tracking-wider">ACTIVE PHASE</p>
-                      )}
-                      {isCompleted && !isCurrent && (
-                        <p className="text-[10px] font-bold text-green-500 mt-1 uppercase tracking-wider">COMPLETED</p>
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
             </div>
 

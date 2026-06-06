@@ -448,11 +448,24 @@ exports.updateOrderStatus = async (req, res) => {
 
     const oldStatus = mktOrder.orderStatus;
     mktOrder.orderStatus = status;
+    
+    // Push new status to timeline
+    if (!mktOrder.timeline) mktOrder.timeline = [];
+    mktOrder.timeline.push({ status, updatedBy: 'vendor', updatedAt: new Date() });
+
     await mktOrder.save();
+
+    let userMessage = `Your marketplace order #${mktOrder._id.toString().slice(-6)} status updated: ${oldStatus} → ${status}.`;
+    if (status === 'Processing') userMessage = "Your order is now being processed.";
+    else if (status === 'Pending Dispatch') userMessage = "Your order is ready for dispatch.";
+    else if (status === 'Dispatched') userMessage = "Your order has been dispatched.";
+    else if (status === 'Out For Delivery') userMessage = "Your order is out for delivery.";
+    else if (status === 'Delivered') userMessage = "Your order has been delivered.";
+    else if (status === 'Completed') userMessage = "Order completed successfully.";
 
     await Notification.create({
       userId: mktOrder.userId,
-      message: `Your marketplace order #${mktOrder._id.toString().slice(-6)} status updated: ${oldStatus} → ${status}.`,
+      message: userMessage,
       type: 'info'
     });
 

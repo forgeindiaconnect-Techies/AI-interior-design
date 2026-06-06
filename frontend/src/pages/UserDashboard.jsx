@@ -3289,7 +3289,7 @@ Thank you for shopping with Artisan Studio!
         const activeOrder = orders.find(o => o._id === trackingId) || trackableOrders[0];
         const activeTracking = trackingData[activeOrder?._id] || {};
         const orderTracking = activeTracking.tracking || {};
-        const trackingStages = orderTracking.stages || activeTracking.stages || [];
+        const trackingStages = activeOrder?.timeline || orderTracking.stages || activeTracking.stages || [];
 
         if (!activeOrder) {
           return (
@@ -3352,12 +3352,15 @@ Thank you for shopping with Artisan Studio!
         }
 
         const stagesList = trackingStages.length > 0
-          ? allStages.map((s, i) => ({
-              key: s,
-              label: s,
-              isDone: trackingStages.some(st => st.status === s) || allStages.indexOf(status) >= i,
-              timestamp: trackingStages.find(st => st.status === s)?.timestamp || null
-            }))
+          ? allStages.map((s, i) => {
+              const stageEntry = trackingStages.find(st => st.status === s);
+              return {
+                key: s,
+                label: s,
+                isDone: !!stageEntry || allStages.indexOf(status) >= i,
+                timestamp: stageEntry ? (stageEntry.updatedAt || stageEntry.timestamp) : null
+              };
+            })
           : allStages.map(s => ({
               key: s,
               label: s,

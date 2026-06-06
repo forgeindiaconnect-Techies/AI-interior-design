@@ -2183,64 +2183,24 @@ const VendorDashboard = ({
 
                         {/* Status Transition buttons */}
                         <div className="border-t border-gray-100 pt-6">
-                          <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-3">Workflow Actions</h4>
-                          <div className="flex flex-wrap gap-3">
-                            {status === 'Pending Confirmation' && (
-                              <>
-                                <button 
-                                  onClick={() => handleOrderStatusUpdate(o._id, 'Processing')}
-                                  className="flex-1 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                                >
-                                  <Check className="w-4 h-4" /> Accept Order
-                                </button>
-                                <button 
-                                  onClick={() => handleOrderStatusUpdate(o._id, 'Cancelled')}
-                                  className="py-3 px-6 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl font-bold text-xs transition-all"
-                                >
-                                  Reject / Decline
-                                </button>
-                              </>
-                            )}
+                          <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-3">Update Order Status</h4>
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center gap-3">
+                              <select 
+                                value={status}
+                                onChange={(e) => handleOrderStatusUpdate(o._id, e.target.value)}
+                                className="flex-1 p-3 rounded-xl border border-gray-200 text-sm font-medium bg-white focus:outline-none focus:border-[#2A9D8F]"
+                              >
+                                {stages.map(s => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                                <option value="Cancelled">Cancelled</option>
+                              </select>
+                            </div>
                             
-                            {status === 'Processing' && (
-                              <button 
-                                onClick={() => handleOrderStatusUpdate(o._id, 'Pending Dispatch')}
-                                className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5"
-                              >
-                                Pack Product & Mark Ready for Dispatch
-                              </button>
-                            )}
-
-                            {status === 'Dispatched' && (
-                              <button 
-                                onClick={() => handleOrderStatusUpdate(o._id, 'Out For Delivery')}
-                                className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                              >
-                                <Truck className="w-4 h-4" /> Ship Out For Delivery
-                              </button>
-                            )}
-
-                            {status === 'Out For Delivery' && (
-                              <button 
-                                onClick={() => handleOrderStatusUpdate(o._id, 'Delivered')}
-                                className="flex-1 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                              >
-                                <Check className="w-4 h-4" /> Mark Order Delivered
-                              </button>
-                            )}
-
-                            {status === 'Delivered' && (
-                              <button 
-                                onClick={() => handleOrderStatusUpdate(o._id, 'Completed')}
-                                className="flex-1 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold text-xs shadow-md transition-all flex items-center justify-center gap-2"
-                              >
-                                <Check className="w-4 h-4" /> Mark Workflow Completed
-                              </button>
-                            )}
-
                             <button 
                               onClick={() => handleDownloadInvoice(o)}
-                              className="px-5 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5"
+                              className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5"
                             >
                               <Download className="w-4 h-4" /> Print Invoice
                             </button>
