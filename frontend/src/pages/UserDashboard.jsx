@@ -10,32 +10,7 @@ import {
 import { useToast } from '../components/Toast';
 import Marketplace from './Marketplace';
 
-import imgBalcony1 from '../assets/Balacony 1.png';
-import imgBalcony2 from '../assets/Balacony 2.png';
-import imgBalcony3 from '../assets/Balcony.png';
-import imgBathroom1 from '../assets/Bathroom image.png';
-import imgBathroom2 from '../assets/Bathroon image 1.png';
-import imgBathroom3 from '../assets/Bathroom image 2.png';
-import imgBedroom1 from '../assets/bedroom.png';
-import imgBedroom2 from '../assets/Bedroom 1.png';
-import imgBedroom3 from '../assets/Bedroom 2.png';
-import imgCommercial1 from '../assets/Commercial image .png';
-import imgDining1 from '../assets/dining room.png';
-import imgDining2 from '../assets/Dining room 1.png';
-import imgDining3 from '../assets/Dining room 2.png';
-import imgKitchen1 from '../assets/Kitchen room.png';
-import imgKitchen2 from '../assets/Kitchen room 1.png';
-import imgKitchen3 from '../assets/Kitchen room 2.png';
-import imgLiving1 from '../assets/living room .png';
-import imgLiving2 from '../assets/Living room 1.png';
-import imgLiving3 from '../assets/Living room 2.png';
-import imgPooja1 from '../assets/Pooja room.png';
-import imgPooja2 from '../assets/pooja room 1.png';
-import imgPooja3 from '../assets/pooja room 2.png';
-import imgKids1 from '../assets/kidsroom .png';
-import imgOffice1 from '../assets/office room.png';
-import imgOffice2 from '../assets/office room 1.png';
-import imgOffice3 from '../assets/office room 2.png';
+
 
 const UserDashboard = ({ 
   activeTab = 'overview', 
@@ -690,17 +665,17 @@ const UserDashboard = ({
       addLog("Design rendering finished.");
       await delay(400);
 
-            const roomImagePools = {
-        'Living Room': [imgLiving1, imgLiving2, imgLiving3],
-        'Bedroom': [imgBedroom1, imgBedroom2, imgBedroom3],
-        'Kitchen': [imgKitchen1, imgKitchen2, imgKitchen3],
-        'Dining Room': [imgDining1, imgDining2, imgDining3],
-        'Bathroom': [imgBathroom1, imgBathroom2, imgBathroom3],
-        'Office Room': [imgOffice1, imgOffice2, imgOffice3],
-        'Kids Room': [imgKids1],
-        'Balcony': [imgBalcony1, imgBalcony2, imgBalcony3],
-        'Pooja Room': [imgPooja1, imgPooja2, imgPooja3],
-        'Commercial Space': [imgCommercial1]
+      const roomImagePools = {
+        'Living Room': ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=60'],
+        'Bedroom': ['https://images.unsplash.com/photo-1522771730844-47fb5bd1ca08?w=800&q=60'],
+        'Kitchen': ['https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=60'],
+        'Dining Room': ['https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&q=60'],
+        'Bathroom': ['https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=60'],
+        'Office Room': ['https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=60'],
+        'Kids Room': ['https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=60'],
+        'Balcony': ['https://images.unsplash.com/photo-1550983196-8eb591a423ae?w=800&q=60'],
+        'Pooja Room': ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=60'],
+        'Commercial Space': ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=60']
       };
 
 const roomDesigns = {
