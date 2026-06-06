@@ -2499,28 +2499,37 @@ Thank you for shopping with Artisan Studio!
                 </div>
 
                 {/* Conditional Payment Fields */}
-                {['Google Pay', 'PhonePe', 'Paytm'].includes(paymentMethod) && (
-                  <div className="space-y-2 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">UPI Mobile Number</label>
-                    <input 
-                      type="tel" 
-                      placeholder="Enter 10-digit mobile number" 
-                      maxLength="10"
-                      className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
-                    />
-                    <p className="text-[10px] text-gray-400">A payment request will be sent to this number.</p>
-                  </div>
-                )}
+                {['Google Pay', 'PhonePe', 'Paytm', 'UPI'].includes(paymentMethod) && (
+                  <div className="bg-[#F0FDF4] border border-emerald-200 rounded-2xl p-5 text-center space-y-4 animate-fadeIn">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                      <Smartphone className="w-3.5 h-3.5" /> Scan with {paymentMethod === 'UPI' ? 'UPI App' : paymentMethod}
+                    </div>
 
-                {paymentMethod === 'UPI' && (
-                  <div className="space-y-2 animate-fadeIn bg-[#F8F5F0]/50 p-4 rounded-2xl border border-gray-100">
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">UPI ID (VPA)</label>
-                    <input 
-                      type="text" 
-                      placeholder="username@bank" 
-                      className="w-full bg-white border border-gray-200 rounded-xl py-2.5 px-4 text-sm font-medium text-gray-700 focus:outline-none focus:border-[#8B5E3C] transition-all"
-                    />
-                    <p className="text-[10px] text-gray-400">Example: mobile@okaxis, name@okicici</p>
+                    {/* QR Code Image */}
+                    <div className="flex justify-center">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=UPI://pay?pa=artisan@upi&pn=ArtisanStudio&am=${subtotal + shipping + tax}`}
+                        alt="Scan to Pay QR Code"
+                        className="w-40 h-40 object-contain rounded-2xl border-2 border-emerald-200 bg-white p-2 shadow-sm"
+                      />
+                    </div>
+
+                    <div className="bg-white border border-emerald-200 rounded-xl p-3 flex items-center justify-between gap-3">
+                      <div className="text-left">
+                        <p className="text-[10px] text-gray-500 font-bold uppercase">UPI ID</p>
+                        <p className="font-bold text-gray-800 text-sm">artisan@upi</p>
+                      </div>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText('artisan@upi'); showToast && showToast('UPI ID copied!'); }}
+                        className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 rounded-lg text-[11px] font-bold transition-all"
+                      >
+                        Copy
+                      </button>
+                    </div>
+
+                    <p className="text-xs text-gray-500 leading-relaxed">
+                      Open <strong>{paymentMethod === 'UPI' ? 'any UPI App' : paymentMethod}</strong> on your phone, scan the QR code above or enter the UPI ID to pay <strong>${(subtotal + shipping + tax).toLocaleString()}</strong>.
+                    </p>
                   </div>
                 )}
 
