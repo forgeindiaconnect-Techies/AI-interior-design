@@ -449,8 +449,40 @@ const UserDashboard = ({
       setOrders(mockOrders);
 
       const mockAi = [
-        { _id: 'ai_1', roomType: 'Living Room', status: 'generated', createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), aiSuggestion: { furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table'], materials: ['Teak Wood', 'Linen'], colorPalette: ['Teak Warmth', 'Beige Linen'], budgetEstimate: 4200 }, generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800' },
-        { _id: 'ai_2', roomType: 'Bedroom', status: 'generated', createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), aiSuggestion: { furniture: ['Platform Bed', 'Wall-mounted Shelves'], materials: ['Oak Wood', 'Cotton'], colorPalette: ['Warm White', 'Natural Oak'], budgetEstimate: 3800 }, generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800' },
+        { 
+          _id: 'ai_1', 
+          roomType: 'Living Room', 
+          status: 'generated', 
+          createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), 
+          aiSuggestion: { furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table'], materials: ['Teak Wood', 'Linen'], colorPalette: ['Teak Warmth', 'Beige Linen'], budgetEstimate: 4200 }, 
+          originalImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=60', 
+          generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
+          analysis: {
+            detectedRoomType: 'Living Room',
+            lightingAnalysis: 'Moderate natural light from side window',
+            spaceUtilization: 'Low clutter, balanced spatial flow.',
+            detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp'],
+            colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
+            recommendations: ['Contrast slate grey elements with warm teak wood accents.', 'Introduce warm brass wall sconces to elevate low-light areas.']
+          }
+        },
+        { 
+          _id: 'ai_2', 
+          roomType: 'Bedroom', 
+          status: 'generated', 
+          createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), 
+          aiSuggestion: { furniture: ['Platform Bed', 'Wall-mounted Shelves'], materials: ['Oak Wood', 'Cotton'], colorPalette: ['Warm White', 'Natural Oak'], budgetEstimate: 3800 }, 
+          originalImage: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&auto=format&fit=crop&q=60', 
+          generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&auto=format&fit=crop&q=60',
+          analysis: {
+            detectedRoomType: 'Bedroom',
+            lightingAnalysis: 'Soft diffused warm lighting',
+            spaceUtilization: 'Compact layout, bedside area optimized.',
+            detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe'],
+            colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
+            recommendations: ['Introduce a platform bed with floating nightstands to save floor space.', 'Utilize linen sheets and cotton covers for natural warmth.']
+          }
+        },
       ];
       setAiDesigns(mockAi);
 
@@ -471,15 +503,17 @@ const UserDashboard = ({
       setProducts(mockProducts);
 
       // ── Async: refresh from backend ──
-      // 1. AI Designs
+      // 1. AI Designs (Commented out to keep the page fixed as a static showcase)
+      /*
       try {
         const res = await axios.get('/designs/ai');
-        if (res.data && res.data.success) {
-          setAiDesigns(res.data.data);
+        if (res.data && res.data.success && res.data.data.length > 0) {
+          // setAiDesigns(res.data.data); // Disabled for static view
         }
       } catch (err) {
         console.warn('Backend ai designs fetch failed:', err);
       }
+      */
 
       // 2. Manual Requests
       try {
@@ -852,6 +886,40 @@ const roomDesigns = {
   };
 
   const handleAiStatus = async (id, status) => {
+    if (String(id).startsWith('ai_')) {
+      const design = aiDesigns.find(d => d._id === id);
+      if (!design) return;
+      const updatedDesign = { ...design, status };
+      setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
+
+      if (status === 'regenerated') {
+        alert('✨ AI Design regenerated with new style! Check the new design above.');
+      } else if (status === 'accepted') {
+        const payload = {
+          _id: 'man_mock_' + Date.now(),
+          requestType: 'AI Generated',
+          roomType: updatedDesign.roomType || 'Living Room',
+          style: 'AI Generated (' + (updatedDesign.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+          budget: '$' + (updatedDesign.aiSuggestion?.budgetEstimate || 3000),
+          size: 'Standard',
+          timeline: 'Flexible',
+          ownMaterialsAvailable: 'No',
+          requirements: 'AI Suggestions: Furniture (' + (updatedDesign.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (updatedDesign.aiSuggestion?.materials?.join(', ') || 'Standard') + ').',
+          referenceImages: [updatedDesign.generatedImage],
+          originalImage: updatedDesign.originalImage,
+          generatedImage: updatedDesign.generatedImage,
+          aiSuggestion: updatedDesign.aiSuggestion,
+          status: 'Submitted'
+        };
+        setManualDesigns([payload, ...manualDesigns]);
+        alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+      } else if (status === 'rejected') {
+        alert('AI Design rejected. You can now submit a manual design request.');
+        if (setActiveTab) setActiveTab('manual');
+      }
+      return;
+    }
+
     try {
       const res = await axios.put(`/designs/ai/${id}`, { status });
       if (res.data.success) {
@@ -896,6 +964,12 @@ const roomDesigns = {
 
   const handleDeleteDesign = async (id) => {
     if (!confirm('Delete this AI design?')) return;
+    
+    if (String(id).startsWith('ai_')) {
+      setAiDesigns(aiDesigns.filter(d => d._id !== id));
+      return;
+    }
+
     try {
       const res = await axios.delete(`/designs/ai/${id}`);
       if (res.data.success) {
@@ -910,6 +984,11 @@ const roomDesigns = {
   const handleToggleBookmark = async (id) => {
     const design = aiDesigns.find(d => d._id === id);
     if (!design) return;
+    
+    if (String(id).startsWith('ai_')) {
+      setAiDesigns(aiDesigns.map(d => d._id === id ? { ...d, isBookmarked: !d.isBookmarked } : d));
+      return;
+    }
     
     try {
       const res = await axios.put(`/designs/ai/${id}`, { isBookmarked: !design.isBookmarked });
