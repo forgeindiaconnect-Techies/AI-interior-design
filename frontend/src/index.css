@@ -24,34 +24,7 @@ body {
   box-sizing: border-box;
 }
 
-/* =========================================
-   DARK MODE OVERRIDES
-   ========================================= */
-.dark body { background-color: #121212 !important; }
-.dark .bg-\[\#F8F5F0\] { background-color: #121212 !important; }
-.dark .bg-white { background-color: #1E1E1E !important; }
-.dark .bg-gray-50 { background-color: #2D2D2D !important; }
-.dark .bg-gray-100 { background-color: #374151 !important; }
-.dark .bg-\[\#F8F5F0\]\/50 { background-color: #121212 !important; }
-.dark .bg-gray-50\/50 { background-color: #2D2D2D !important; }
 
-/* Text Overrides */
-.dark .text-\[\#1F2937\] { color: #F9FAFB !important; }
-.dark .text-gray-400, .dark .text-gray-500, .dark .text-gray-600, .dark .text-gray-700 { color: #D1D5DB !important; }
-
-/* Border Overrides */
-.dark .border-gray-50, .dark .border-gray-100, .dark .border-gray-200 { border-color: #374151 !important; }
-.dark .border-\[\#D4A373\]\/30 { border-color: rgba(212, 163, 115, 0.15) !important; }
-.dark .border-\[\#8B5E3C\]\/30 { border-color: rgba(139, 94, 60, 0.2) !important; }
-
-/* Inputs and Selects (Reset bg to dark) */
-.dark input, .dark select, .dark textarea {
-  background-color: #2D2D2D !important;
-  color: #F9FAFB !important;
-  border-color: #4B5563 !important;
-}
-
-.dark .shadow-sm, .dark .shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5) !important; }
 
 @keyframes slide-in-right {
   from { opacity: 0; transform: translateX(100px); }
