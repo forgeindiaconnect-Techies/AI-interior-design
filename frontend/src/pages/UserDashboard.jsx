@@ -477,18 +477,15 @@ const UserDashboard = ({
       ];
       setProducts(mockProducts);
 
-      // ── Async: refresh from backend ──
-      // 1. AI Designs (Commented out to keep the page fixed as a static showcase)
-      /*
+      // 1. AI Designs (Fetch dynamic designs from backend and merge with static mocks)
       try {
         const res = await axios.get('/designs/ai');
         if (res.data && res.data.success && res.data.data.length > 0) {
-          // setAiDesigns(res.data.data); // Disabled for static view
+          setAiDesigns([...res.data.data, ...mockAi]);
         }
       } catch (err) {
         console.warn('Backend ai designs fetch failed:', err);
       }
-      */
 
       // 2. Manual Requests
       try {
