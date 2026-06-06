@@ -5,6 +5,7 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const Replicate = require('replicate');
+const axios = require('axios');
 
 let mockManualDesigns = [
   {
@@ -143,7 +144,41 @@ exports.createAIDesign = async (req, res) => {
         }
       } catch (err) {
         console.error("Replicate AI Generation Error:", err.message);
-        // Fallback to mock image on error
+        // Fall back below if Replicate fails
+      }
+    }
+
+    // Fallback to Hugging Face if Replicate wasn't used or failed
+    if (finalGeneratedImage === (generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room']) && process.env.HF_API_TOKEN && originalImage) {
+      console.log(`Generating AI design for ${roomType} using Hugging Face...`);
+      try {
+        const base64Data = originalImage.replace(/^data:image\/\w+;base64,/, "");
+        
+        const response = await axios({
+          method: 'post',
+          url: 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+          headers: {
+            'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
+            'Content-Type': 'application/json'
+          },
+          data: {
+            inputs: originalImage,
+            parameters: {
+              prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
+              num_inference_steps: 30,
+              guidance_scale: 7.5
+            }
+          },
+          responseType: 'arraybuffer'
+        });
+
+        // Convert returned binary image to base64
+        const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+        finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
+        console.log("Successfully generated AI image from Hugging Face.");
+      } catch (err) {
+        console.error("Hugging Face AI Generation Error:", err.message);
+        // If everything fails, it will safely use the Unsplash mock placeholder
       }
     }
 
