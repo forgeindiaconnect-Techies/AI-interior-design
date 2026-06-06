@@ -25,7 +25,7 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-app.options(/(.*)/,  cors(corsOptions)); // handle preflight for all routes (Node 24 compatible)
+app.options(/(.*)/, cors(corsOptions)); // handle preflight for all routes (Node 24 compatible)
 
 // Define Routes
 app.use('/api/auth', require('./routes/authRoutes'));
