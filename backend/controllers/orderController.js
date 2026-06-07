@@ -466,6 +466,7 @@ exports.getOrderTracking = async (req, res) => {
         trackingId: mktOrder.trackingId,
         deliveryPartnerId: mktOrder.deliveryPartnerId,
         isMarketplace: true,
+        timeline: mktOrder.timeline,
         productDetails: mktOrder.items[0]?.productId ? {
           _id: mktOrder.items[0].productId._id,
           title: mktOrder.items[0].productId.title,
@@ -489,12 +490,30 @@ exports.getOrderTracking = async (req, res) => {
       };
     }
 
+    let unifiedStages = [...(tracking.stages || [])];
+    
+    // Fallback to order timeline if stages are empty or missing
+    if (order.timeline && order.timeline.length > 0) {
+      order.timeline.forEach(event => {
+        if (!unifiedStages.find(s => s.status === event.status)) {
+          unifiedStages.push({
+            status: event.status,
+            timestamp: event.updatedAt || new Date(),
+            updatedBy: event.updatedBy,
+            note: ''
+          });
+        }
+      });
+    }
+
+    unifiedStages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
     res.status(200).json({
       success: true,
       data: {
         order,
         tracking,
-        stages: tracking.stages || [],
+        stages: unifiedStages,
         progressImages: tracking.progressImages || []
       }
     });

@@ -70,20 +70,7 @@ const DashboardLayout = ({ children }) => {
         setNotifications(mapped);
       }
     } catch (err) {
-      console.warn("API notifications fetch failed, falling back to local:", err);
-      const key = getNotifKey();
-      const stored = JSON.parse(localStorage.getItem(key) || '[]');
-      if (stored.length === 0) {
-        // Seed some nice initial notifications for presentation
-        const initial = [
-          { _id: 'n1', message: 'Welcome to your premium dashboard workspace.', type: 'info', createdAt: new Date().toISOString(), read: false },
-          { _id: 'n2', message: 'System optimization is complete.', type: 'success', createdAt: new Date(Date.now() - 3600000).toISOString(), read: true }
-        ];
-        
-        setNotifications(initial);
-      } else {
-        setNotifications(stored);
-      }
+      console.warn("API notifications fetch failed:", err);
     }
   };
 
