@@ -101,11 +101,16 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('user', JSON.stringify(res.data.user));
           }
         })
-        .catch(() => {
-          // Token is invalid/expired - clear it (also handled by interceptor)
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          setUser(null);
+        .catch((error) => {
+          // Only clear token if we explicitly get a 401 Unauthorized (invalid/expired)
+          if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+          } else {
+            // Keep the user logged in if it's a network error or 500 error
+            console.warn('[AuthContext] Verification failed, but keeping session due to non-401 error', error);
+          }
         })
         .finally(() => setLoading(false));
     } else {

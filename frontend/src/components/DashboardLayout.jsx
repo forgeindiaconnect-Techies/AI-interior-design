@@ -10,7 +10,9 @@ import AdminSidebar from './AdminSidebar';
 const DashboardLayout = ({ children }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('currentDashboardTab') || 'overview';
+  });
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showNotifDropdown, setShowNotifDropdown] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -40,7 +42,12 @@ const DashboardLayout = ({ children }) => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Sync route overrides
+  // Persist current tab to local storage for refresh continuity
+  useEffect(() => {
+    localStorage.setItem('currentDashboardTab', activeTab);
+  }, [activeTab]);
+
+  // Sync route overrides (e.g. clicking a link from outside the dashboard)
   useEffect(() => {
     const overrideTab = localStorage.getItem('activeDashboardTab');
     if (overrideTab) {
