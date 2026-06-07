@@ -4071,21 +4071,14 @@ const AdminDashboard = ({
           return matchesSearch && matchesType && matchesPayment && matchesStage && matchesPartner;
         });
 
-        // Stage list for filter
         const allStages = [
-          'Request Submitted',
-          'Quotation Sent',
-          'Quotation Accepted',
-          'Manufacturer Assigned',
-          'Manufacturing Started',
-          'Manufacturing',
-          'Quality Check',
-          'Delivery Assigned',
-          'Out for Delivery',
-          'Installation Assigned',
-          'Installation Completed',
+          'Pending Confirmation',
+          'Processing',
+          'Pending Dispatch',
+          'Dispatched',
+          'Out For Delivery',
+          'Delivered',
           'Completed',
-          'Order Completed',
           'Cancelled'
         ];
 
@@ -4177,7 +4170,7 @@ const AdminDashboard = ({
                   onChange={(e) => setOrderStageFilter(e.target.value)}
                   className="px-4 py-3 rounded-xl border border-gray-200 bg-gray-50/50 text-sm focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
                 >
-                  <option value="all">All Workflow Stages</option>
+                  <option value="all">All Statuses</option>
                   {allStages.map((stage, idx) => (
                     <option key={idx} value={stage}>{stage}</option>
                   ))}
@@ -8589,19 +8582,13 @@ const AdminDashboard = ({
                     onChange={(e) => setNewWorkflowStage(e.target.value)} 
                     className="w-full p-3 rounded-xl border border-gray-200 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#8B5E3C]"
                   >
-                    <option value="Request Submitted">Request Submitted</option>
-                    <option value="Quotation Sent">Quotation Sent</option>
-                    <option value="Quotation Accepted">Quotation Accepted</option>
-                    <option value="Manufacturer Assigned">Manufacturer Assigned</option>
-                    <option value="Manufacturing Started">Manufacturing Started</option>
-                    <option value="Manufacturing">Manufacturing</option>
-                    <option value="Quality Check">Quality Check</option>
-                    <option value="Delivery Assigned">Delivery Assigned</option>
-                    <option value="Out for Delivery">Out for Delivery</option>
-                    <option value="Installation Assigned">Installation Assigned</option>
-                    <option value="Installation Completed">Installation Completed</option>
+                    <option value="Pending Confirmation">Pending Confirmation</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Pending Dispatch">Pending Dispatch</option>
+                    <option value="Dispatched">Dispatched</option>
+                    <option value="Out For Delivery">Out For Delivery</option>
+                    <option value="Delivered">Delivered</option>
                     <option value="Completed">Completed</option>
-                    <option value="Order Completed">Order Completed</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>
