@@ -18,7 +18,7 @@ const OrderTrackingSchema = new mongoose.Schema({
   transactionId: { type: String, required: true },
   paymentDate: { type: Date, default: Date.now },
   paymentStatus: { type: String, enum: ['Completed', 'Pending', 'Failed'], default: 'Completed' },
-  orderStatus: { type: String, default: 'Awaiting Vendor Verification' },
+  orderStatus: { type: String, default: 'Pending Confirmation' },
   stages: [TrackingStageSchema],
   progressImages: [{ type: String }],
   expectedDeliveryDate: { type: Date },

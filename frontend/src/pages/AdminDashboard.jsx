@@ -3507,12 +3507,12 @@ const AdminDashboard = ({
             {(() => {
               const orderList = managementData?.orders || [];
               const trackingOrders = orderList.filter(o => 
-                ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'].includes(o.orderStatus)
+                ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(o.orderStatus)
               );
               if (trackingOrders.length === 0) {
                 return <p className="text-sm text-gray-400 text-center py-8">No orders currently in tracking workflow.</p>;
               }
-              const trackingStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+              const trackingStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
               return (
                 <div className="space-y-4">
                   {trackingOrders.map(order => {
@@ -3532,7 +3532,7 @@ const AdminDashboard = ({
                           </div>
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${currentIdx >= 4 ? 'bg-emerald-50 text-emerald-700' : currentIdx >= 2 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{order.orderStatus}</span>
                         </div>
-                        <div className="grid grid-cols-8 gap-1">
+                        <div className="grid grid-cols-7 gap-1">
                           {trackingStages.map((stage, idx) => {
                             const isActive = idx === currentIdx;
                             const isPast = idx < currentIdx;

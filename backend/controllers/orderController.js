@@ -312,56 +312,6 @@ exports.createPaymentAndOrder = async (req, res) => {
 // @access  Private (vendor, admin)
 exports.updateOrderTracking = async (req, res) => {
   try {
-    // Mock data fallback
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const { orderId } = req.params;
-      const { status, progressImage, deliveryDetails, installationDetails, note } = req.body;
-      
-      // Mock order and tracking objects
-      const mockOrder = {
-        _id: orderId,
-        userId: { _id: 'mock_user_id', name: 'Mock User' },
-        vendorId: { _id: 'mock_vendor_id', companyName: 'Artisan Workshop' },
-        orderStatus: status || 'Processing',
-        totalAmount: 299.99,
-        shippingAddress: '123 Mock Street',
-        createdAt: new Date()
-      };
-
-      const mockTracking = {
-        orderId,
-        userId: mockOrder.userId._id,
-        vendorId: mockOrder.vendorId._id,
-        customerName: 'Mock User',
-        vendorName: 'Artisan Workshop',
-        amount: mockOrder.totalAmount,
-        paymentMethod: 'UPI',
-        transactionId: 'TXN' + Date.now(),
-        paymentDate: new Date(),
-        paymentStatus: 'Completed',
-        orderStatus: status || mockOrder.orderStatus,
-        stages: [
-          { status: 'Order Confirmed', timestamp: new Date(Date.now() - 86400000), updatedBy: 'user', note: 'Order placed' },
-          { status: 'Processing', timestamp: new Date(), updatedBy: 'vendor', note: note || 'Order updated' }
-        ],
-        progressImages: progressImage ? [progressImage] : [],
-        deliveryDetails: deliveryDetails || null,
-        installationDetails: installationDetails || null,
-        expectedDeliveryDate: new Date(Date.now() + 86400000)
-      };
-
-      // Simulate saving
-      const shortId = orderId.toString().slice(-6);
-      let userMsg = `Order #${shortId} updated: ${status || 'details changed'}`;
-      let vendorMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
-      let adminMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
-
-      // In mock mode, we don't actually create notifications, but we can skip or log
-      // For now, we just return the data
-
-      return res.status(200).json({ success: true, data: { order: mockOrder, tracking: mockTracking } });
-    }
-
     const { orderId } = req.params;
     const { status, progressImage, deliveryDetails, installationDetails, note } = req.body;
 
@@ -389,6 +339,10 @@ exports.updateOrderTracking = async (req, res) => {
     }
 
     const role = req.user.role === 'vendor' ? 'vendor' : req.user.role === 'admin' ? 'admin' : 'system';
+    
+    if (role !== 'vendor' && role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Only vendors can update order status' });
+    }
 
     if (status) {
       const newIdx = getStageIndex(status);
@@ -396,18 +350,11 @@ exports.updateOrderTracking = async (req, res) => {
         return res.status(400).json({ success: false, message: `Invalid tracking status "${status}"` });
       }
 
-      const lastStage = tracking.stages.length > 0 ? tracking.stages[tracking.stages.length - 1].status : null;
-      if (lastStage) {
+      const lastStage = order.orderStatus;
+      if (lastStage && lastStage !== 'Cancelled') {
         const currentIdx = getStageIndex(lastStage);
         if (newIdx < currentIdx) {
           return res.status(400).json({ success: false, message: `Cannot move to "${status}" — already at or past this stage` });
-        }
-        if (newIdx > currentIdx + 1) {
-          return res.status(400).json({ success: false, message: `Cannot skip from "${lastStage}" to "${status}". Must go through "${TRACKING_STAGE_SEQUENCE[currentIdx + 1]}" first` });
-        }
-      } else {
-        if (newIdx !== 0) {
-          return res.status(400).json({ success: false, message: `First tracking stage must be "Order Confirmed", not "${status}"` });
         }
       }
 
@@ -415,6 +362,8 @@ exports.updateOrderTracking = async (req, res) => {
       await order.save();
 
       if (lastStage !== status) {
+        if (!order.timeline) order.timeline = [];
+        order.timeline.push({ status, updatedBy: role, updatedAt: new Date() });
         tracking.stages.push({ status, timestamp: new Date(), updatedBy: role, note: note || '' });
       }
       tracking.orderStatus = status;
@@ -449,37 +398,22 @@ exports.updateOrderTracking = async (req, res) => {
     }
 
     const shortId = order._id.toString().slice(-6);
-    let userMsg = `Order #${shortId} updated: ${status || 'details changed'}`;
-    let vendorMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
-    let adminMsg = `Order #${shortId} tracking updated to: ${status || 'details changed'}`;
+    
+    // Notifications specific to Vendor updating status
+    if (status) {
+      let userMsg = `Order #${shortId} status updated to ${status}.`;
+      if (status === 'Processing') userMsg = "Your order is now being processed.";
+      else if (status === 'Pending Dispatch') userMsg = "Your order is ready for dispatch.";
+      else if (status === 'Dispatched') userMsg = "Your order has been dispatched.";
+      else if (status === 'Out For Delivery') userMsg = "Your order is out for delivery.";
+      else if (status === 'Delivered') userMsg = "Your order has been delivered.";
+      else if (status === 'Completed') userMsg = "Order completed successfully.";
 
-    if (status === 'Installation Scheduled') {
-      const techName = installationDetails?.technicianName || tracking.installationDetails?.technicianName || 'Technician';
-      userMsg = `Installation has been scheduled for Order #${shortId}. Technician: ${techName}`;
-      vendorMsg = `Installation scheduled for Order #${shortId} with ${techName}.`;
-      adminMsg = `Installation scheduled for Order #${shortId}. Technician: ${techName}`;
-    } else if (status === 'Installation In Progress') {
-      userMsg = `Installation work has started for Order #${shortId}.`;
-      vendorMsg = `Installation started for Order #${shortId}.`;
-      adminMsg = `Installation started for Order #${shortId}.`;
-    } else if (status === 'Installation Completed') {
-      userMsg = `Installation has been completed successfully for Order #${shortId}. Your order is now complete! Please leave a review.`;
-      vendorMsg = `Installation completed for Order #${shortId}. Order is now marked as Completed.`;
-      adminMsg = `Installation completed for Order #${shortId}. Order moved to Completed.`;
-    }
-
-    if (status === 'Installation Completed') {
-      await Notification.create({ userId: order.userId, message: `Order #${shortId} is complete! You can now rate and review your experience.`, type: 'success' });
-    } else {
       await Notification.create({ userId: order.userId, message: userMsg, type: 'info' });
+      
+      const adminMsg = `Order #${shortId} tracking updated to: ${status}`;
+      await Notification.create({ isAdmin: true, message: adminMsg, type: 'info' });
     }
-
-    const vendor = await Vendor.findById(order.vendorId);
-    if (vendor?.userId) {
-      await Notification.create({ userId: vendor.userId, message: vendorMsg, type: 'info' });
-    }
-
-    await Notification.create({ isAdmin: true, message: adminMsg, type: 'info' });
 
     res.status(200).json({ success: true, data: { order, tracking } });
   } catch (error) {
@@ -487,16 +421,15 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
-// Valid 8-stage tracking workflow sequence
+// Valid 7-stage tracking workflow sequence
 const TRACKING_STAGE_SEQUENCE = [
-  'Order Confirmed',
+  'Pending Confirmation',
   'Processing',
-  'Shipped',
-  'Out for Delivery',
+  'Pending Dispatch',
+  'Dispatched',
+  'Out For Delivery',
   'Delivered',
-  'Installation Scheduled',
-  'Installation In Progress',
-  'Installation Completed'
+  'Completed'
 ];
 
 const getStageIndex = (status) => TRACKING_STAGE_SEQUENCE.indexOf(status);
@@ -506,51 +439,6 @@ const getStageIndex = (status) => TRACKING_STAGE_SEQUENCE.indexOf(status);
 // @access  Private
 exports.getOrderTracking = async (req, res) => {
   try {
-    // Mock data fallback
-    if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      const mockOrder = {
-        _id: req.params.id,
-        userId: { _id: 'mock_user_id', name: 'Mock User', email: 'user@example.com', phone: '+1234567890' },
-        vendorId: { _id: 'mock_vendor_id', companyName: 'Artisan Workshop' },
-        orderStatus: 'Processing',
-        shippingAddress: '123 Mock Street, Mock City',
-        createdAt: new Date(),
-        totalAmount: 299.99,
-        trackingId: 'TRK' + req.params.id,
-        isMarketplace: false,
-        productDetails: {
-          _id: 'mock_product_id',
-          title: 'Mock Product',
-          images: ['https://via.placeholder.com/300']
-        }
-      };
-
-      const mockTracking = {
-        orderId: req.params.id,
-        userId: mockOrder.userId._id,
-        vendorId: mockOrder.vendorId._id,
-        orderStatus: mockOrder.orderStatus,
-        stages: [
-          { status: 'Order Confirmed', timestamp: new Date(Date.now() - 86400000), updatedBy: 'user', note: 'Order placed' },
-          { status: 'Processing', timestamp: new Date(Date.now() - 43200000), updatedBy: 'vendor', note: 'Order confirmed' }
-        ],
-        progressImages: [],
-        deliveryDetails: null,
-        installationDetails: null,
-        expectedDeliveryDate: new Date(Date.now() + 86400000)
-      };
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          order: mockOrder,
-          tracking: mockTracking,
-          stages: mockTracking.stages,
-          progressImages: mockTracking.progressImages
-        }
-      });
-    }
-
     let order = await Order.findById(req.params.id)
       .populate('userId', 'name email phone')
       .populate('vendorId', 'companyName');

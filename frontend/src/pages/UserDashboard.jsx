@@ -416,12 +416,6 @@ const UserDashboard = ({
 
   const fetchUserData = async () => {
     try {
-      // ── Synchronous seed: show mock data immediately ──
-      const mockOrders = [
-        { _id: 'ord_mock_mkt_1', orderType: 'Marketplace Product', userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 1299, paymentStatus: 'paid', orderStatus: 'Pending Confirmation', createdAt: new Date(Date.now() - 3600000 * 2).toISOString(), shippingAddress: user?.address || '123 Default User St', productDetails: { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], quantity: 1 } },
-        { _id: 'ord_mock_mkt_2', orderType: 'Marketplace Product', userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' }, vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }, totalAmount: 449, paymentStatus: 'paid', orderStatus: 'Out For Delivery', createdAt: new Date(Date.now() - 3600000 * 48).toISOString(), shippingAddress: user?.address || '123 Default User St', productDetails: { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], quantity: 2 } },
-      ];
-      setOrders(mockOrders);
 
       const mockAi = [
         { 
@@ -3346,10 +3340,7 @@ Thank you for shopping with Artisan Studio!
         const currentMsg = getStatusMessage();
 
         // Compute stages based on orderType
-        let allStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
-        if (activeOrder.orderType === 'Marketplace Product') {
-          allStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
-        }
+        const allStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
 
         const stagesList = trackingStages.length > 0
           ? allStages.map((s, i) => {
