@@ -390,8 +390,12 @@ const AdminDashboard = ({
   useEffect(() => {
     fetchAdminData();
     loadContactMessages();
-
+    const syncInterval = setInterval(() => {
+      fetchAdminData();
+      loadContactMessages();
+    }, 10000);
     return () => {
+      clearInterval(syncInterval);
     };
   }, []);
 

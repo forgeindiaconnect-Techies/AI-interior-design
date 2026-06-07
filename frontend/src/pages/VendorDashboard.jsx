@@ -373,10 +373,15 @@ const VendorDashboard = ({
       fetchPartnerData();
     };
 
+    const syncInterval = setInterval(() => {
+      fetchPartnerData();
+    }, 10000);
+
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
 
     return () => {
+      clearInterval(syncInterval);
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
     };
