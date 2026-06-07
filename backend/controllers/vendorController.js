@@ -332,12 +332,33 @@ exports.getStoreSetupStatus = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorOrders = async (req, res) => {
   try {
-    if (String(req.user.id).startsWith('mock_')) return res.status(200).json({ success: true, count: 0, data: [] });
-    const vendor = await findOrCreateVendorHelper(req.user.id);
-    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+    let standardOrders = [];
+    let marketplaceOrders = [];
+    let vendorInfo = { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' };
 
-    // Custom/design orders
-    const standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
+    if (String(req.user.id).startsWith('mock_')) {
+      // For demo mode, return all orders so the dashboard is not empty
+      standardOrders = await Order.find({}).populate('userId', 'name email phone').sort('-createdAt');
+      const MarketplaceOrder = require('../models/MarketplaceOrder');
+      marketplaceOrders = await MarketplaceOrder.find({})
+        .populate('items.productId')
+        .populate('userId', 'name email phone')
+        .sort({ createdAt: -1 });
+    } else {
+      const vendor = await findOrCreateVendorHelper(req.user.id);
+      if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+      vendorInfo = { _id: vendor._id, companyName: vendor.companyName };
+      
+      // Custom/design orders
+      standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
+      
+      // Marketplace orders for this vendor
+      const MarketplaceOrder = require('../models/MarketplaceOrder');
+      marketplaceOrders = await MarketplaceOrder.find({ 'items.vendorId': vendor._id })
+        .populate('items.productId')
+        .populate('userId', 'name email phone')
+        .sort({ createdAt: -1 });
+    }
 
     const orderIds = standardOrders.map(o => o._id);
     const trackingMap = {};
@@ -349,31 +370,24 @@ exports.getVendorOrders = async (req, res) => {
       tracking: trackingMap[o._id.toString()] || null
     }));
 
-    // Marketplace orders for this vendor
-    const MarketplaceOrder = require('../models/MarketplaceOrder');
-    const marketplaceOrders = await MarketplaceOrder.find({ 'items.vendorId': vendor._id })
-      .populate('items.productId')
-      .populate('userId', 'name email phone')
-      .sort({ createdAt: -1 });
-
     const mktData = marketplaceOrders.map(o => ({
       _id: o._id,
       orderType: 'Marketplace Product',
       userId: o.userId,
-      vendorId: { _id: vendor._id, companyName: vendor.companyName },
+      vendorId: o.items?.[0]?.vendorId || vendorInfo,
       totalAmount: o.totalAmount,
       paymentStatus: o.paymentStatus,
       orderStatus: o.orderStatus,
       shippingAddress: o.shippingAddress,
-      productDetails: o.items[0]?.productId ? {
+      productDetails: o.items && o.items[0] && o.items[0].productId ? {
         _id: o.items[0].productId._id,
         title: o.items[0].productId.title,
         price: o.items[0].price,
         images: o.items[0].productId.images || [],
         quantity: o.items.reduce((sum, i) => sum + i.quantity, 0),
         category: o.items[0].productId.category
-      } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
-      items: o.items,
+      } : { title: 'Marketplace Product', quantity: o.items ? o.items.reduce((sum, i) => sum + i.quantity, 0) : 0 },
+      items: o.items || [],
       subtotal: o.subtotal,
       tax: o.tax,
       shippingFee: o.shippingFee,
