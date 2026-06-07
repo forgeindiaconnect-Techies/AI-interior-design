@@ -483,9 +483,13 @@ const AdminDashboard = ({
       });
 
       // ── Async: refresh from backend ──
-      const [statsRes, mgmtRes] = await Promise.all([
+      const [statsRes, mgmtRes, mktOrdersRes, verRes, storeRes, prodRes] = await Promise.all([
         axios.get('/admin/stats').catch(() => ({ data: { data: { totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 } } })),
-        axios.get('/admin/management-data').catch(() => ({ data: { data: { users: [], vendors: [], orders: [], aiDesigns: [], manualDesigns: [] } } }))
+        axios.get('/admin/management-data').catch(() => ({ data: { data: { users: [], vendors: [], orders: [], aiDesigns: [], manualDesigns: [] } } })),
+        axios.get('/marketplace-orders/all').catch(() => ({ data: { data: [] } })),
+        axios.get('/admin/verifications').catch(() => ({ data: { data: [] } })),
+        axios.get('/admin/store-approvals').catch(() => ({ data: { data: [] } })),
+        axios.get('/admin/product-reviews').catch(() => ({ data: { data: [] } }))
       ]);
       if (statsRes.data?.data) setStats(statsRes.data.data);
 
@@ -804,7 +808,6 @@ const AdminDashboard = ({
 
       // Fetch marketplace orders and merge into management data
       try {
-        const mktOrdersRes = await axios.get('/marketplace-orders/all');
         if (mktOrdersRes.data?.success && mktOrdersRes.data.data) {
           const mktOrders = mktOrdersRes.data.data.map(o => ({
             _id: o._id,
@@ -839,9 +842,7 @@ const AdminDashboard = ({
       setManagementData(mockMgmtData);
 
       // Fetch Verification, Store Setup & Product Quality Review Data
-      const verRes = await axios.get('/admin/verifications').catch(() => ({ data: { data: [] } }));
-      const storeRes = await axios.get('/admin/store-approvals').catch(() => ({ data: { data: [] } }));
-      const prodRes = await axios.get('/admin/product-reviews').catch(() => ({ data: { data: [] } }));
+      // (Pre-fetched via Promise.all)
 
       const currentVer = verRes.data?.data || [];
       const currentStore = storeRes.data?.data || [];
