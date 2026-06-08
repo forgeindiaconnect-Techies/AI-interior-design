@@ -3100,25 +3100,16 @@ Thank you for shopping with Artisan Studio!
 
         const currentMsg = getStatusMessage();
 
-        // Compute stages based on orderType
-        const allStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
+        let normalizedStatus = status;
+        if (['Pending Confirmation', 'Submitted'].includes(status)) normalizedStatus = 'Order Confirmed';
+        else if (['Pending Dispatch', 'Ready for Delivery'].includes(status)) normalizedStatus = 'Processing';
+        else if (['Dispatched'].includes(status)) normalizedStatus = 'Shipped';
+        else if (['Out For Delivery'].includes(status)) normalizedStatus = 'Out for Delivery';
+        else if (['Completed'].includes(status)) normalizedStatus = 'Installation Completed';
 
-        const stagesList = trackingStages.length > 0
-          ? allStages.map((s, i) => {
-              const stageEntry = trackingStages.find(st => st.status === s);
-              return {
-                key: s,
-                label: s,
-                isDone: !!stageEntry || allStages.indexOf(status) >= i,
-                timestamp: stageEntry ? (stageEntry.updatedAt || stageEntry.timestamp) : null
-              };
-            })
-          : allStages.map(s => ({
-              key: s,
-              label: s,
-              isDone: allStages.indexOf(s) <= allStages.indexOf(status),
-              timestamp: null
-            }));
+        const globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+        let currentIdx = globalStages.indexOf(normalizedStatus);
+        if (currentIdx === -1) currentIdx = 0;
 
         const handleReturnRequest = (e) => {
           e.preventDefault();
@@ -3196,48 +3187,18 @@ Thank you for shopping with Artisan Studio!
                 </div>
               </div>
 
-              {/* Progress Timeline */}
-              <div className="relative py-6">
-                {/* Horizontal Progress Line for MD and larger */}
-                <div className="absolute top-[28px] left-0 w-full h-1 bg-gray-100 -translate-y-1/2 rounded-full hidden md:block"></div>
-                <div 
-                  className="absolute top-[28px] left-0 h-1 bg-[#2A9D8F] -translate-y-1/2 rounded-full hidden md:block transition-all duration-500"
-                  style={{
-                    width: `${(stagesList.filter(s => s.isDone).length - 1) / (stagesList.length - 1) * 100}%`
-                  }}
-                ></div>
-
-                {/* Timeline Nodes */}
-                <div className="grid grid-cols-1 md:grid-cols-8 gap-6 relative z-10">
-                  {stagesList.map((stage, index) => {
-                    const isPassed = stage.isDone;
-                    const isCurrent = (index === stagesList.filter(s => s.isDone).length - 1) || (index === 0 && !stagesList[1].isDone);
-                    
+              {/* 8-Stage Timeline (Unified) */}
+              <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/20 mb-8 mt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                  {globalStages.map((stage, idx) => {
+                    const isActive = idx === currentIdx;
+                    const isPast = idx < currentIdx;
                     return (
-                      <div key={stage.key} className="flex md:flex-col items-center md:text-center gap-4 md:gap-3">
-                        <div 
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs shadow-md transition-all duration-300 ring-4 ring-white ${
-                            isPassed 
-                              ? 'bg-[#2A9D8F] text-white' 
-                              : 'bg-white text-gray-400 border-2 border-gray-200'
-                          } ${isCurrent ? 'scale-110 ring-emerald-200' : ''}`}
-                        >
-                          {isPassed ? '✓' : index + 1}
+                      <div key={stage} className={`text-center p-2 rounded-xl ${isActive ? 'bg-[#2A9D8F] text-white scale-105 shadow-md' : isPast ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                        <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center font-bold text-xs mb-1 ${isActive ? 'bg-white text-[#2A9D8F]' : isPast ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                          {isPast ? '✓' : idx + 1}
                         </div>
-                        <div className="text-left md:text-center">
-                          <p className={`font-bold text-xs ${isPassed ? 'text-[#1F2937]' : 'text-gray-400'}`}>
-                            {stage.label}
-                          </p>
-                          {stage.timestamp ? (
-                            <p className="text-[10px] text-gray-400 font-medium">
-                              {new Date(stage.timestamp).toLocaleDateString() + ' ' + new Date(stage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          ) : (
-                            <p className="text-[10px] text-gray-400 font-medium">
-                              {isCurrent ? 'Current Stage' : (isPassed ? 'Completed' : 'Pending')}
-                            </p>
-                          )}
-                        </div>
+                        <p className="text-[10px] font-bold leading-tight">{stage}</p>
                       </div>
                     );
                   })}

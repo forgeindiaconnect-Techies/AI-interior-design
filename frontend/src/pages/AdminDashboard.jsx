@@ -3511,13 +3511,12 @@ const AdminDashboard = ({
             </div>
             {(() => {
               const orderList = managementData?.orders || [];
-              const trackingOrders = orderList.filter(o => 
-                ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'].includes(o.orderStatus)
-              );
+              const validStatuses = ['Pending Confirmation', 'Submitted', 'Order Confirmed', 'Processing', 'Pending Dispatch', 'Ready for Delivery', 'Dispatched', 'Shipped', 'Out For Delivery', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Completed', 'Installation Completed'];
+              const trackingOrders = orderList.filter(o => validStatuses.includes(o.orderStatus));
               if (trackingOrders.length === 0) {
                 return <p className="text-sm text-gray-400 text-center py-8">No orders currently in tracking workflow.</p>;
               }
-              const trackingStages = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
+              const globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
               return (
                 <div className="space-y-4">
                   {trackingOrders.map(order => {
@@ -3526,7 +3525,17 @@ const AdminDashboard = ({
                     const progressImages = tr?.tracking?.progressImages || tr?.progressImages || [];
                     const delDetails = tr?.tracking?.deliveryDetails || {};
                     const installDetails = tr?.tracking?.installationDetails || {};
-                    const currentIdx = trackingStages.indexOf(order.orderStatus);
+                    
+                    let normalizedStatus = order.orderStatus;
+                    if (['Pending Confirmation', 'Submitted'].includes(normalizedStatus)) normalizedStatus = 'Order Confirmed';
+                    else if (['Pending Dispatch', 'Ready for Delivery'].includes(normalizedStatus)) normalizedStatus = 'Processing';
+                    else if (['Dispatched'].includes(normalizedStatus)) normalizedStatus = 'Shipped';
+                    else if (['Out For Delivery'].includes(normalizedStatus)) normalizedStatus = 'Out for Delivery';
+                    else if (['Completed'].includes(normalizedStatus)) normalizedStatus = 'Installation Completed';
+
+                    let currentIdx = globalStages.indexOf(normalizedStatus);
+                    if (currentIdx === -1) currentIdx = 0;
+
                     const isExpanded = expandedTrackingOrder === order._id;
                     return (
                       <div key={order._id} className="border border-gray-100 rounded-2xl p-4 space-y-3 hover:shadow-sm transition-shadow">
@@ -3537,19 +3546,24 @@ const AdminDashboard = ({
                           </div>
                           <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${currentIdx >= 4 ? 'bg-emerald-50 text-emerald-700' : currentIdx >= 2 ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>{order.orderStatus}</span>
                         </div>
-                        <div className="grid grid-cols-7 gap-1">
-                          {trackingStages.map((stage, idx) => {
-                            const isActive = idx === currentIdx;
-                            const isPast = idx < currentIdx;
-                            return (
-                              <div key={stage} className={`text-center p-1.5 rounded-lg text-[10px] font-bold ${isActive ? 'bg-[#2A9D8F] text-white' : isPast ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-400'}`}>
-                                {stage}
-                              </div>
-                            );
-                          })}
+                        <div className="bg-[#F8F5F0] p-4 rounded-2xl border border-[#D4A373]/20 my-3">
+                          <div className="grid grid-cols-4 md:grid-cols-8 gap-2">
+                            {globalStages.map((stage, idx) => {
+                              const isActive = idx === currentIdx;
+                              const isPast = idx < currentIdx;
+                              return (
+                                <div key={stage} className={`text-center p-2 rounded-xl ${isActive ? 'bg-[#2A9D8F] text-white scale-105 shadow-md' : isPast ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                                  <div className={`w-6 h-6 mx-auto rounded-full flex items-center justify-center font-bold text-[10px] mb-1 ${isActive ? 'bg-white text-[#2A9D8F]' : isPast ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                                    {isPast ? '✓' : idx + 1}
+                                  </div>
+                                  <p className="text-[9px] font-bold leading-tight">{stage}</p>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span className="font-bold">Progress: {currentIdx + 1}/{trackingStages.length}</span>
+                          <span className="font-bold">Progress: {currentIdx + 1}/{globalStages.length}</span>
                           {tr?.tracking?.expectedDeliveryDate && <span>Expected: {new Date(tr.tracking.expectedDeliveryDate).toLocaleDateString()}</span>}
                         </div>
 
@@ -8628,47 +8642,34 @@ const AdminDashboard = ({
             <div className="p-8 space-y-6 text-left">
               <div className="relative border-l-2 border-dashed border-gray-200 pl-4 ml-3 space-y-6">
                 {(() => {
-                  let steps = [
-                    { label: 'Order Submitted & Quotation Accepted', desc: 'Custom quote verified, contract established, and initial deposit confirmed.', statusList: ['Request Submitted', 'Quotation Sent', 'Quotation Accepted', 'Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'Manufacturer Assigned & Production Kick-off', desc: 'Verified millwork fabrication or furniture creation assigned and underway.', statusList: ['Manufacturer Assigned', 'Manufacturing Started', 'Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'Off-site Manufacturing Completed', desc: 'All panels and structures customized to dimensions and specifications.', statusList: ['Manufacturing', 'Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'Rigorous Quality Verification', desc: 'Admin review and dimensions testing to assure grade matches design details.', statusList: ['Quality Check', 'Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'Logistics Assigned & Shipped', desc: 'Secure dispatch and transit to final delivery destination address.', statusList: ['Delivery Assigned', 'Out for Delivery', 'Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'On-site Fitting & Installation', desc: 'Final execution and modular elements assembly by matching local team.', statusList: ['Installation Assigned', 'Installation Completed', 'Completed', 'Order Completed'] },
-                    { label: 'Milestone Handover Completed', desc: 'Work checklist successfully ticked and client accepted project release.', statusList: ['Completed', 'Order Completed'] }
+                  const steps = [
+                    { label: 'Order Confirmed', desc: 'Order details verified and processing initiated.', statusList: ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Processing', desc: 'Order is being prepared and manufactured/packed.', statusList: ['Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Shipped', desc: 'Order handed over to logistics partner.', statusList: ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Out for Delivery', desc: 'Order is out for final delivery.', statusList: ['Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Delivered', desc: 'Order delivered to the customer.', statusList: ['Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Installation Scheduled', desc: 'Installation date confirmed with technician.', statusList: ['Installation Scheduled', 'Installation In Progress', 'Installation Completed'] },
+                    { label: 'Installation In Progress', desc: 'Technician is actively installing the products.', statusList: ['Installation In Progress', 'Installation Completed'] },
+                    { label: 'Installation Completed', desc: 'Installation successfully completed and verified.', statusList: ['Installation Completed'] }
                   ];
-                  
-                  if (trackOrder.orderType === 'Marketplace Product') {
-                    steps = [
-                      { label: 'Pending Confirmation', desc: 'Vendor is reviewing the order.', statusList: ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
-                      { label: 'Processing', desc: 'Vendor is processing the order.', statusList: ['Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
-                      { label: 'Pending Dispatch', desc: 'Order packed and ready for dispatch.', statusList: ['Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
-                      { label: 'Dispatched', desc: 'Order handed over to courier.', statusList: ['Dispatched', 'Out For Delivery', 'Delivered', 'Completed'] },
-                      { label: 'Out For Delivery', desc: 'Courier is out for delivery.', statusList: ['Out For Delivery', 'Delivered', 'Completed'] },
-                      { label: 'Delivered', desc: 'Order has been delivered.', statusList: ['Delivered', 'Completed'] },
-                      { label: 'Completed', desc: 'Order is completely finalized.', statusList: ['Completed'] }
-                    ];
-                  }
+
+                  let normalizedStatus = trackOrder.orderStatus;
+                  if (['Pending Confirmation', 'Submitted', 'Request Submitted', 'Quotation Sent', 'Quotation Accepted'].includes(normalizedStatus)) normalizedStatus = 'Order Confirmed';
+                  else if (['Pending Dispatch', 'Ready for Delivery', 'Manufacturing Started', 'Manufacturing', 'Quality Check'].includes(normalizedStatus)) normalizedStatus = 'Processing';
+                  else if (['Dispatched', 'Delivery Assigned'].includes(normalizedStatus)) normalizedStatus = 'Shipped';
+                  else if (['Out For Delivery'].includes(normalizedStatus)) normalizedStatus = 'Out for Delivery';
+                  else if (['Completed', 'Order Completed'].includes(normalizedStatus)) normalizedStatus = 'Installation Completed';
+                  else if (['Installation Assigned'].includes(normalizedStatus)) normalizedStatus = 'Installation Scheduled';
 
                   return steps.map((step, idx) => {
-                    const isCompleted = step.statusList.includes(trackOrder.orderStatus);
+                    const isCompleted = step.statusList.includes(normalizedStatus);
                     let isCurrent = false;
 
                     if (trackOrder.orderStatus !== 'Cancelled') {
-                      if (trackOrder.orderType === 'Marketplace Product') {
-                        const statusSequence = ['Pending Confirmation', 'Processing', 'Pending Dispatch', 'Dispatched', 'Out For Delivery', 'Delivered', 'Completed'];
-                        const currentStatusIndex = statusSequence.indexOf(trackOrder.orderStatus);
-                        isCurrent = currentStatusIndex === idx;
-                      } else {
-                        isCurrent = 
-                          (idx === 0 && ['Request Submitted', 'Quotation Sent', 'Quotation Accepted'].includes(trackOrder.orderStatus)) ||
-                          (idx === 1 && ['Manufacturer Assigned', 'Manufacturing Started'].includes(trackOrder.orderStatus)) ||
-                          (idx === 2 && trackOrder.orderStatus === 'Manufacturing') ||
-                          (idx === 3 && trackOrder.orderStatus === 'Quality Check') ||
-                          (idx === 4 && ['Delivery Assigned', 'Out for Delivery'].includes(trackOrder.orderStatus)) ||
-                          (idx === 5 && ['Installation Assigned', 'Installation Completed'].includes(trackOrder.orderStatus)) ||
-                          (idx === 6 && ['Completed', 'Order Completed'].includes(trackOrder.orderStatus));
-                      }
+                      const globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+                      let currentIdx = globalStages.indexOf(normalizedStatus);
+                      if (currentIdx === -1) currentIdx = 0;
+                      isCurrent = currentIdx === idx;
                     }
 
                     return (
