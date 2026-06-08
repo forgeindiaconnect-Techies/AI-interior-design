@@ -152,7 +152,7 @@ exports.createAIDesign = async (req, res) => {
       'Office Room': 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
       'Kids Room': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
       'Balcony': 'https://images.unsplash.com/photo-1590005354167-6da97ce2311c?w=800&q=80',
-      'Pooja Room': 'https://images.unsplash.com/photo-1601058268499-e52658b8bb88?w=800&q=80',
+      'Pooja Room': '/pooja_room.png',
       'Commercial Space': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80'
     };
 
