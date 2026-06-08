@@ -146,7 +146,7 @@ exports.createAIDesign = async (req, res) => {
       'Living Room': 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
       'Bedroom': 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
       'Kitchen': 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
-      'Dining Room': 'https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&q=80',
+      'Dining Room': 'https://images.unsplash.com/photo-1604578762246-41134e37f9cc?w=800&q=80',
       'Bathroom': 'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
       'Office Room': 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
       'Kids Room': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
