@@ -627,3 +627,35 @@ exports.verifyPayment = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Delete vendor order
+// @route   DELETE /api/vendor/orders/:id
+// @access  Private (Vendor)
+exports.deleteVendorOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Try Order model first (custom/design orders)
+    let order = await Order.findById(id);
+    if (order) {
+      await Order.findByIdAndDelete(id);
+      // Clean up related tracking
+      await OrderTracking.deleteMany({ orderId: id });
+      return res.status(200).json({ success: true, message: 'Order deleted successfully' });
+    }
+
+    // Fallback to MarketplaceOrder
+    const MarketplaceOrder = require('../models/MarketplaceOrder');
+    const mktOrder = await MarketplaceOrder.findById(id);
+    if (mktOrder) {
+      await MarketplaceOrder.findByIdAndDelete(id);
+      // Clean up related tracking
+      await OrderTracking.deleteMany({ orderId: id });
+      return res.status(200).json({ success: true, message: 'Marketplace order deleted successfully' });
+    }
+
+    return res.status(404).json({ success: false, message: 'Order not found' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

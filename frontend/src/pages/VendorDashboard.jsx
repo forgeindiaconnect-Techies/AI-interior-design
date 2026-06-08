@@ -6,7 +6,7 @@ import {
   Store, Hammer, Truck, CheckCircle, PlusCircle, DollarSign, UploadCloud, 
   Send, RefreshCw, Eye, ArrowRight, ClipboardList, Package, MessageSquare, 
   Star, Briefcase, ShieldCheck, Bell, ShoppingCart, FileText, Activity,
-  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot, AlertCircle, HelpCircle, XCircle, CreditCard
+  Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot, AlertCircle, HelpCircle, XCircle, CreditCard, Trash2
 } from 'lucide-react';
 
 const VendorDashboard = ({ 
@@ -614,6 +614,22 @@ const VendorDashboard = ({
       setSelectedOrder(prev => ({ ...prev, returnStatus: 'Rejected', hasReturnRequest: false }));
     }
     alert('Return request declined.');
+  };
+
+  const handleDeleteOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) return;
+    try {
+      const res = await axios.delete(`/vendor/orders/${orderId}`);
+      if (res.data.success) {
+        showToast('success', 'Order deleted successfully');
+        setReadyMadeOrders(prev => prev.filter(o => o._id !== orderId));
+        fetchPartnerData(); // Refresh all other states silently
+      } else {
+        showToast('error', res.data.message || 'Failed to delete order');
+      }
+    } catch (err) {
+      showToast('error', err.response?.data?.message || 'Error deleting order');
+    }
   };
 
   const handleDownloadInvoice = (order) => {
@@ -2015,6 +2031,13 @@ const VendorDashboard = ({
                                 title="Download Invoice"
                               >
                                 <Download className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => handleDeleteOrder(order._id)}
+                                className="p-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg text-red-600 hover:text-red-700 transition-all"
+                                title="Delete Order"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>

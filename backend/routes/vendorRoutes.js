@@ -15,7 +15,8 @@ const {
   updateOrderStatus,
   dispatchOrder,
   approveReturn,
-  verifyPayment
+  verifyPayment,
+  deleteVendorOrder
 } = require('../controllers/vendorController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -41,6 +42,7 @@ router.post('/store-setup', submitStoreSetup);
 // Vendor Orders route
 router.get('/orders', require('../controllers/vendorController').getVendorOrders);
 router.put('/orders/:id/status', updateOrderStatus);
+router.delete('/orders/:id', deleteVendorOrder);
 router.put('/orders/:id/dispatch', dispatchOrder);
 router.put('/orders/:id/return', approveReturn);
 router.post('/verify-payment/:orderId', verifyPayment);
