@@ -686,20 +686,25 @@ const UserDashboard = ({
 
   const handleDeleteDesign = async (id) => {
     if (!confirm('Delete this AI design?')) return;
+
+    // If we are deleting the design currently being showcased, revert to idle upload state
+    if (aiAnalysisStep === 'completed' && aiDesigns.length > 0 && aiDesigns[0]._id === id) {
+      setAiAnalysisStep('idle');
+      setOriginalImage('');
+    }
     
+    // Optimistic deletion: instantly remove from UI
+    setAiDesigns(prev => prev.filter(d => d._id !== id));
+
     if (String(id).startsWith('ai_')) {
-      setAiDesigns(aiDesigns.filter(d => d._id !== id));
       return;
     }
 
     try {
-      const res = await axios.delete(`/designs/ai/${id}`);
-      if (res.data.success) {
-        setAiDesigns(aiDesigns.filter(d => d._id !== id));
-      }
+      await axios.delete(`/designs/ai/${id}`);
     } catch (err) {
-      console.error('Failed to delete AI design', err);
-      alert('Failed to delete AI design.');
+      console.error('Failed to delete AI design on server', err);
+      // Suppress alert so the user isn't blocked by backend errors
     }
   };
 
