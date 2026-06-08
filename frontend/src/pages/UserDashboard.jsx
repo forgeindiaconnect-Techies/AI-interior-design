@@ -417,65 +417,11 @@ const UserDashboard = ({
   const fetchUserData = async () => {
     try {
 
-      const mockAi = [
-        { 
-          _id: 'ai_1', 
-          roomType: 'Living Room', 
-          status: 'generated', 
-          createdAt: new Date(Date.now() - 3600000 * 24).toISOString(), 
-          aiSuggestion: { furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table'], materials: ['Teak Wood', 'Linen'], colorPalette: ['Teak Warmth', 'Beige Linen'], budgetEstimate: 4200 }, 
-          originalImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=60', 
-          generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
-          analysis: {
-            detectedRoomType: 'Living Room',
-            lightingAnalysis: 'Moderate natural light from side window',
-            spaceUtilization: 'Low clutter, balanced spatial flow.',
-            detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp'],
-            colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
-            recommendations: ['Contrast slate grey elements with warm teak wood accents.', 'Introduce warm brass wall sconces to elevate low-light areas.']
-          }
-        },
-        { 
-          _id: 'ai_2', 
-          roomType: 'Bedroom', 
-          status: 'generated', 
-          createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), 
-          aiSuggestion: { furniture: ['Platform Bed', 'Wall-mounted Shelves'], materials: ['Oak Wood', 'Cotton'], colorPalette: ['Warm White', 'Natural Oak'], budgetEstimate: 3800 }, 
-          originalImage: 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&auto=format&fit=crop&q=60', 
-          generatedImage: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&auto=format&fit=crop&q=60',
-          analysis: {
-            detectedRoomType: 'Bedroom',
-            lightingAnalysis: 'Soft diffused warm lighting',
-            spaceUtilization: 'Compact layout, bedside area optimized.',
-            detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe'],
-            colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
-            recommendations: ['Introduce a platform bed with floating nightstands to save floor space.', 'Utilize linen sheets and cotton covers for natural warmth.']
-          }
-        },
-      ];
-      setAiDesigns(mockAi);
-
-      const mockManual = [
-        { _id: 'man_req_1', requestType: 'Manual Design', roomType: 'Living Room', style: 'Modern Minimalist', status: 'Quotation Sent', budget: 'Medium ($1000 - $3000)', size: '250 sqft', createdAt: new Date(Date.now() - 3600000 * 48).toISOString(), quotationAmount: '2800', quotationMaterials: 'Premium Teak Wood, Cotton Fabric, Brass Accents', quotationTime: '18 Days', assignedVendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' } },
-        { _id: 'man_req_2', requestType: 'Interior Designer Help', roomType: 'Master Bedroom', style: 'Scandinavian', status: 'Approved', budget: 'High ($3000+)', size: '350 sqft', createdAt: new Date(Date.now() - 3600000 * 72).toISOString(), quotationAmount: '4500', quotationMaterials: 'Oak Wood, Linen, Matte Black Hardware', quotationTime: '25 Days', assignedDesignerId: { _id: 'designer_1', companyName: 'Elite Spaces Design' } }
-      ];
-      setManualDesigns(mockManual);
-
-      const mockProducts = [
-        { _id: 'prod_1', title: 'Velvet Emerald Sofa', price: 1299, category: 'Living Room', rating: 4.8, reviewsCount: 124, images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'], vendorId: { companyName: 'Artisan Workshop' } },
-        { _id: 'prod_2', title: 'Minimalist Teak Coffee Table', price: 449, category: 'Living Room', rating: 4.5, reviewsCount: 89, images: ['https://images.unsplash.com/photo-1532323544230-7191fd51bc1b?w=600'], vendorId: { companyName: 'Artisan Workshop' } },
-        { _id: 'prod_3', title: 'Nordic Oak Dining Chair', price: 210, category: 'Dining Room', rating: 4.9, reviewsCount: 300, images: ['https://images.unsplash.com/photo-1592078615290-033ee584e267?w=600'], vendorId: { companyName: 'Nordic Design Ltd' } },
-        { _id: 'prod_4', title: 'Modern Brass Floor Lamp', price: 320, category: 'Lighting', rating: 4.7, reviewsCount: 156, images: ['https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600'], vendorId: { companyName: 'Nordic Design Ltd' } },
-        { _id: 'prod_5', title: 'Luxury Marble Side Table', price: 580, category: 'Living Room', rating: 4.6, reviewsCount: 45, images: ['https://images.unsplash.com/photo-1505693314120-0d443867891c?w=600'], vendorId: { companyName: 'Luxury Living Inc' } },
-        { _id: 'prod_6', title: 'Ergonomic Lounge Chair', price: 890, category: 'Bedroom', rating: 4.9, reviewsCount: 412, images: ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600'], vendorId: { companyName: 'Luxury Living Inc' } }
-      ];
-      setProducts(mockProducts);
-
-      // 1. AI Designs (Fetch dynamic designs from backend and merge with static mocks)
+      // 1. AI Designs (Fetch dynamic designs from backend)
       try {
         const res = await axios.get('/designs/ai');
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          setAiDesigns([...res.data.data, ...mockAi]);
+        if (res.data && res.data.success) {
+          setAiDesigns(res.data.data);
         }
       } catch (err) {
         console.warn('Backend ai designs fetch failed:', err);
@@ -596,8 +542,13 @@ const UserDashboard = ({
 
   const handleAiSubmit = async (e) => {
     e.preventDefault();
+    if (!originalImage) {
+      alert("Please upload a room photo before generating AI design.");
+      return;
+    }
+
     setLoadingAi(true);
-    setAiAnalysisStep('analyzing');
+    setAiAnalysisStep('generating');
     setAiAnalysisProgress(0);
     setAiAnalysisLogs([]);
     setActiveAnalysisResult(null);
@@ -606,235 +557,40 @@ const UserDashboard = ({
       setAiAnalysisLogs(prev => [...prev, `[${new Date().toLocaleTimeString()}] ${msg}`]);
     };
 
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
     try {
-      addLog("Initializing Scene Analysis Engine...");
-      addLog(`Target Room Space: ${roomType}`);
-      await delay(700);
-      setAiAnalysisProgress(15);
-      addLog("Detecting spatial geometry: walls, floor boundaries, and ceilings...");
-      await delay(800);
-      setAiAnalysisProgress(30);
-      addLog("Geometry Scan OK: 3D perspective grids aligned.");
-
-      addLog("Analyzing lighting structure and color temperature...");
-      await delay(600);
-      setAiAnalysisProgress(45);
-      addLog("Luminance Analysis: Natural ambient lighting detected from side opening.");
-      addLog("Contrast index: High. Heavy shadows registered in corner pockets.");
-
-      addLog("Scanning for existing items and clutter distribution...");
-      await delay(900);
-      setAiAnalysisProgress(60);
-
-      const detectedItemsMap = {
-        'Living Room': '1x Sectional Sofa, 1x Low Coffee Table, 1x Window Frame',
-        'Bedroom': '1x Bed Platform, 2x Pillows, 1x Side Nightstand',
-        'Kitchen': 'Cabinet arrays, 1x Sink Basin, 1x Marble Countertop',
-        'Bathroom': '1x Vanity Sink, 1x Mirror, 1x Shower Enclosure',
-        'Dining Room': '1x Table, 4x Dining Chairs, 1x Overhead Pendant',
-        'Office Room': '1x Work Desk, 1x Chair, 1x Bookshelf',
-        'Kids Room': '1x Single Bed, Toy bins, Play area',
-        'Balcony': '2x Patio chairs, plant pots',
-        'Pooja Room': '1x Mandir structure, floor mats',
-        'Commercial Space': 'Reception desk, lobby seating'
+      // Start background visual progress simulation
+      const simulateProgress = async () => {
+        const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+        addLog("Initializing Scene Analysis Engine...");
+        addLog(`Target Room Space: ${roomType}`);
+        await delay(500);
+        setAiAnalysisProgress(20);
+        addLog("Detecting spatial geometry...");
+        await delay(500);
+        setAiAnalysisProgress(45);
+        addLog("Analyzing lighting structure and color temperature...");
+        await delay(500);
+        setAiAnalysisProgress(60);
+        addLog(`Item Detection: Processing ${roomType} layouts...`);
+        await delay(500);
+        setAiAnalysisProgress(80);
+        addLog("Synthesizing modern architectural texture coordinates...");
+        await delay(500);
+        setAiAnalysisProgress(90);
+        addLog("Waiting for Hugging Face Inference API response...");
       };
 
-      const itemsText = detectedItemsMap[roomType] || 'Standard room layouts and openings';
-      addLog(`Item Detection Result: Found ${itemsText}.`);
-      addLog("Space Utilization: Clutter density 28% (low). Suitable for texturing.");
-
-      setAiAnalysisStep('generating');
-      addLog("Initializing Deep Generative Model (WGAN-GP)...");
-      addLog("Setting latent vector configuration (z_dim=100)...");
-      await delay(800);
-      setAiAnalysisProgress(80);
-      addLog("Synthesizing modern architectural texture coordinates...");
-      await delay(800);
-      setAiAnalysisProgress(100);
-      addLog("Design rendering finished.");
-      await delay(400);
-
-      const roomImagePools = {
-        'Living Room': ['https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=60'],
-        'Bedroom': ['https://images.unsplash.com/photo-1522771730844-47fb5bd1ca08?w=800&q=60'],
-        'Kitchen': ['https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=60'],
-        'Dining Room': ['https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&q=60'],
-        'Bathroom': ['https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=60'],
-        'Office Room': ['https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=60'],
-        'Kids Room': ['https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=60'],
-        'Balcony': ['https://images.unsplash.com/photo-1550983196-8eb591a423ae?w=800&q=60'],
-        'Pooja Room': ['https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=60'],
-        'Commercial Space': ['https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=60']
-      };
-
-const roomDesigns = {
-        'Living Room': {
-          generatedImage: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Custom Teak Sofa', 'Minimalist Oak Coffee Table', 'Modern Brass Sconces'],
-          materials: ['Teak Wood', 'Linen', 'Brass'],
-          colorPalette: ['Teak Warmth', 'Beige Linen', 'Warm Brass Accent'],
-          budgetEstimate: 4200
-        },
-        'Bedroom': {
-          generatedImage: 'https://images.unsplash.com/photo-1522771730844-47fb5bd1ca08?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Platform Bed', 'Floating Nightstands', 'Minimalist Wardrobe'],
-          materials: ['Walnut Wood', 'Matte Black Metal', 'Linen'],
-          colorPalette: ['Walnut Brown', 'Charcoal', 'Ivory'],
-          budgetEstimate: 6200
-        },
-        'Kitchen': {
-          generatedImage: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Island Counter', 'Bar Stools', 'Pendant Lights'],
-          materials: ['Marble', 'Oak Wood', 'Stainless Steel'],
-          colorPalette: ['White', 'Navy Blue', 'Brass'],
-          budgetEstimate: 8500
-        },
-        'Dining Room': {
-          generatedImage: 'https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Farmhouse Table', 'Dining Chairs', 'Chandelier'],
-          materials: ['Reclaimed Wood', 'Linen', 'Iron'],
-          colorPalette: ['Rustic Brown', 'Slate Gray', 'Cream'],
-          budgetEstimate: 5100
-        },
-        'Bathroom': {
-          generatedImage: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Floating Vanity', 'Freestanding Tub', 'LED Mirror'],
-          materials: ['Ceramic Tiles', 'Matte Black Fixtures', 'Glass'],
-          colorPalette: ['White', 'Charcoal', 'Natural Wood'],
-          budgetEstimate: 4000
-        },
-        'Office Room': {
-          generatedImage: 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Ergonomic Desk', 'Office Chair', 'Bookshelf'],
-          materials: ['Oak Wood', 'Metal', 'Leather'],
-          colorPalette: ['Walnut', 'Black', 'White'],
-          budgetEstimate: 3200
-        },
-        'Kids Room': {
-          generatedImage: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Bunk Bed', 'Study Table', 'Toy Storage'],
-          materials: ['Pine Wood', 'Cotton', 'Laminate'],
-          colorPalette: ['Pastel Blue', 'Yellow', 'White'],
-          budgetEstimate: 3800
-        },
-        'Balcony': {
-          generatedImage: 'https://images.unsplash.com/photo-1550983196-8eb591a423ae?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Rattan Chairs', 'Small Coffee Table', 'Planters'],
-          materials: ['Rattan', 'Teak Wood', 'Ceramic'],
-          colorPalette: ['Natural Wood', 'Green', 'White'],
-          budgetEstimate: 1500
-        },
-        'Pooja Room': {
-          generatedImage: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Carved Mandir', 'Floor Seating', 'Brass Lamps'],
-          materials: ['Teak Wood', 'Brass', 'Marble'],
-          colorPalette: ['Saffron', 'Warm Wood', 'Gold'],
-          budgetEstimate: 2500
-        },
-        'Commercial Space': {
-          generatedImage: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=60',
-          furniture: ['Lounge Seating', 'Reception Desk', 'Track Lighting'],
-          materials: ['Concrete', 'Glass', 'Steel'],
-          colorPalette: ['Industrial Gray', 'Black', 'Accent Color'],
-          budgetEstimate: 12000
-        }
-      };
-
-      const selectedDesign = roomDesigns[roomType] || roomDesigns['Living Room'];
-      const pool = roomImagePools[roomType] || roomImagePools['Living Room'];
-      const randomGeneratedImage = pool[Math.floor(Math.random() * pool.length)];
-      selectedDesign.generatedImage = randomGeneratedImage;
-
-      let mockImg = originalImage;
-      if (!mockImg) {
-        let availablePool = pool.filter(img => img !== randomGeneratedImage);
-        if (availablePool.length === 0) availablePool = pool;
-        mockImg = availablePool[Math.floor(Math.random() * availablePool.length)];
-      }
-
-      const simulatedAnalyses = {
-        'Living Room': {
-          detectedRoomType: 'Living Room',
-          detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp', 'Window'],
-          lightingAnalysis: 'Moderate natural light from side window, soft shadows in corners.',
-          colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
-          spaceUtilization: 'Low clutter, balanced spatial flow.',
-          recommendations: [
-            'Retain sofa footprint but replace fabric texture with premium linen.',
-            'Contrast slate grey elements with warm teak wood accents.',
-            'Introduce warm brass wall sconces to elevate low-light areas.'
-          ]
-        },
-        'Bedroom': {
-          detectedRoomType: 'Bedroom',
-          detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe', 'Pillow'],
-          lightingAnalysis: 'Soft diffused warm lighting, minimal natural glare.',
-          colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
-          spaceUtilization: 'Compact layout, bedside area optimized.',
-          recommendations: [
-            'Introduce a platform bed with floating nightstands to save floor space.',
-            'Utilize linen sheets and cotton covers for natural warmth.',
-            'Add dimmable warm ambient lamps for a relaxed atmosphere.'
-          ]
-        },
-        'Kitchen': {
-          detectedRoomType: 'Kitchen',
-          detectedItems: ['Cabinet', 'Countertop', 'Sink', 'Refrigerator'],
-          lightingAnalysis: 'Bright task lighting, overhead fluorescent glare.',
-          colorProfile: ['Matte Navy', 'White Quartz', 'Brushed Brass'],
-          spaceUtilization: 'L-shape workflow, under-utilized corner cabinet space.',
-          recommendations: [
-            'Add a marble waterfall kitchen island to bridge workspace gap.',
-            'Swap cabinet handles for brushed brass fixtures.',
-            'Install under-cabinet LED warm strip lights for functional elegance.'
-          ]
-        },
-        'Bathroom': {
-          detectedRoomType: 'Bathroom',
-          detectedItems: ['Vanity', 'Mirror', 'Shower Glass', 'Toilet'],
-          lightingAnalysis: 'Cool LED lighting, high reflective sheen.',
-          colorProfile: ['Ceramic White', 'Slate Gray', 'Chrome'],
-          spaceUtilization: 'Standard footprint, vanity storage maximized.',
-          recommendations: [
-            'Introduce a floating oak vanity to increase visual space.',
-            'Add an LED anti-fog back-lit circular mirror.',
-            'Choose matte black plumbing fixtures for modern contrast.'
-          ]
-        },
-        default: {
-          detectedRoomType: roomType,
-          detectedItems: ['Wall Outlines', 'Floor Plan', 'Primary Light Source'],
-          lightingAnalysis: 'Standard room illumination, uniform shadow distribution.',
-          colorProfile: ['Neutral White', 'Oak Wood', 'Beige'],
-          spaceUtilization: 'Flexible footprint layout, ready for styling.',
-          recommendations: [
-            'Optimize furniture alignment to natural light entry.',
-            'Utilize contrasting textures for flooring and wall surface.',
-            'Introduce custom built-in furniture to maximize utility.'
-          ]
-        }
-      };
-
-      const finalAnalysis = simulatedAnalyses[roomType] || simulatedAnalyses.default;
-      setActiveAnalysisResult(finalAnalysis);
+      simulateProgress();
 
       const payload = {
         roomType,
-        originalImage: mockImg,
-        generatedImage: selectedDesign.generatedImage,
-        aiSuggestion: {
-          furniture: selectedDesign.furniture,
-          materials: selectedDesign.materials,
-          colorPalette: selectedDesign.colorPalette,
-          budgetEstimate: selectedDesign.budgetEstimate
-        },
-        analysis: finalAnalysis
+        originalImage
       };
 
       const res = await axios.post('/designs/ai', payload);
       if (res.data.success) {
+        setAiAnalysisProgress(100);
+        addLog("Design rendering finished.");
         setAiDesigns([res.data.data, ...aiDesigns]);
         showToast('AI Design & Image Analysis Generated Successfully!');
         setAiAnalysisStep('completed');

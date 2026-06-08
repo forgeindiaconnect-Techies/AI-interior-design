@@ -49,72 +49,102 @@ exports.createAIDesign = async (req, res) => {
   try {
     const { roomType, originalImage, generatedImage, aiSuggestion, analysis } = req.body;
 
-    const mockGeneratedImages = {
-      Kitchen: 'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&auto=format&fit=crop&q=60',
-      'Living Room': 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60',
-      Bedroom: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&auto=format&fit=crop&q=60',
-      Bathroom: 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop&q=60'
-    };
-
-    const mockPalettes = {
-      Kitchen: ['#2F3E46', '#8B5E3C', '#F8F5F0', '#D4A373'],
-      'Living Room': ['#D4A373', '#2A9D8F', '#F8F5F0', '#1F2937'],
-      Bedroom: ['#8B5E3C', '#E9C46A', '#F8F5F0', '#6B7280'],
-      Bathroom: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373']
-    };
-
-    const mockAnalyses = {
+    const roomData = {
       'Living Room': {
-        detectedRoomType: 'Living Room',
+        palette: ['#D4A373', '#2A9D8F', '#F8F5F0', '#1F2937'],
+        furniture: ['Sofas', 'TV unit', 'Coffee table', 'Lighting', 'Wall decor'],
+        materials: ['Solid Teak Wood', 'Brushed Brass', 'Linen Upholstery'],
+        budget: 4500,
         detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp', 'Window'],
-        lightingAnalysis: 'Moderate natural light from side window, soft shadows in corners.',
-        colorProfile: ['Warm Beige', 'Natural Oak', 'Charcoal Gray'],
-        spaceUtilization: 'Low clutter, balanced spatial flow.',
-        recommendations: [
-          'Retain sofa footprint but replace fabric texture with premium linen.',
-          'Contrast slate grey elements with warm teak wood accents.',
-          'Introduce warm brass wall sconces to elevate low-light areas.'
-        ]
+        analysis: 'Moderate natural light from side window, soft shadows in corners.',
+        recs: ['Contrast slate grey elements with warm teak wood accents.', 'Introduce warm brass wall sconces to elevate low-light areas.']
       },
-      Bedroom: {
-        detectedRoomType: 'Bedroom',
+      'Bedroom': {
+        palette: ['#8B5E3C', '#E9C46A', '#F8F5F0', '#6B7280'],
+        furniture: ['Bed', 'Wardrobe', 'Side tables', 'Lighting', 'Curtains'],
+        materials: ['Walnut Wood', 'Ivory Linen', 'Charcoal accents'],
+        budget: 3500,
         detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe', 'Pillow'],
-        lightingAnalysis: 'Soft diffused warm lighting, minimal natural glare.',
-        colorProfile: ['Walnut Brown', 'Ivory', 'Charcoal'],
-        spaceUtilization: 'Compact layout, bedside area optimized.',
-        recommendations: [
-          'Introduce a platform bed with floating nightstands to save floor space.',
-          'Utilize linen sheets and cotton covers for natural warmth.',
-          'Add dimmable warm ambient lamps for a relaxed atmosphere.'
-        ]
+        analysis: 'Soft diffused warm lighting, minimal natural glare.',
+        recs: ['Introduce a platform bed with floating nightstands to save floor space.', 'Add dimmable warm ambient lamps for a relaxed atmosphere.']
       },
-      Kitchen: {
-        detectedRoomType: 'Kitchen',
+      'Kitchen': {
+        palette: ['#2F3E46', '#8B5E3C', '#F8F5F0', '#D4A373'],
+        furniture: ['Modular kitchen', 'Cabinets', 'Countertops', 'Appliances'],
+        materials: ['White Quartz', 'Brushed Brass', 'Matte Navy Wood'],
+        budget: 8500,
         detectedItems: ['Cabinet', 'Countertop', 'Sink', 'Refrigerator'],
-        lightingAnalysis: 'Bright task lighting, overhead fluorescent glare.',
-        colorProfile: ['Matte Navy', 'White Quartz', 'Brushed Brass'],
-        spaceUtilization: 'L-shape workflow, under-utilized corner cabinet space.',
-        recommendations: [
-          'Add a marble waterfall kitchen island to bridge workspace gap.',
-          'Swap cabinet handles for brushed brass fixtures.',
-          'Install under-cabinet LED warm strip lights for functional elegance.'
-        ]
+        analysis: 'Bright task lighting, overhead fluorescent glare.',
+        recs: ['Add a marble waterfall kitchen island to bridge workspace gap.', 'Install under-cabinet LED warm strip lights for functional elegance.']
       },
-      Bathroom: {
-        detectedRoomType: 'Bathroom',
+      'Dining Room': {
+        palette: ['#E76F51', '#264653', '#E9C46A', '#FFFFFF'],
+        furniture: ['Dining table', 'Chairs', 'Lighting', 'Storage'],
+        materials: ['Reclaimed Wood', 'Iron', 'Linen'],
+        budget: 4200,
+        detectedItems: ['Dining Table', 'Chairs', 'Lighting'],
+        analysis: 'Centralized overhead lighting, balanced space around table.',
+        recs: ['Use a statement chandelier above the dining table.', 'Include a built-in buffet for additional storage.']
+      },
+      'Bathroom': {
+        palette: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373'],
+        furniture: ['Vanity', 'Tiles', 'Mirror', 'Lighting'],
+        materials: ['Ceramic Tiles', 'Slate Gray Marble', 'Chrome Fixtures'],
+        budget: 3000,
         detectedItems: ['Vanity', 'Mirror', 'Shower Glass', 'Toilet'],
-        lightingAnalysis: 'Cool LED lighting, high reflective sheen.',
-        colorProfile: ['Ceramic White', 'Slate Gray', 'Chrome'],
-        spaceUtilization: 'Standard footprint, vanity storage maximized.',
-        recommendations: [
-          'Introduce a floating oak vanity to increase visual space.',
-          'Add an LED anti-fog back-lit circular mirror.',
-          'Choose matte black plumbing fixtures for modern contrast.'
-        ]
+        analysis: 'Cool LED lighting, high reflective sheen.',
+        recs: ['Introduce a floating oak vanity to increase visual space.', 'Choose matte black plumbing fixtures for modern contrast.']
+      },
+      'Office Room': {
+        palette: ['#1F2937', '#F8F5F0', '#4B5563', '#9CA3AF'],
+        furniture: ['Workstation', 'Office chair', 'Shelves', 'Lighting'],
+        materials: ['Oak Wood', 'Metal Framework', 'Leather'],
+        budget: 2500,
+        detectedItems: ['Work Desk', 'Office Chair', 'Bookshelf'],
+        analysis: 'Focused task lighting with reduced glare.',
+        recs: ['Add ergonomic seating for prolonged work hours.', 'Incorporate floating shelves for organized storage.']
+      },
+      'Kids Room': {
+        palette: ['#FCA5A5', '#FCD34D', '#93C5FD', '#FFFFFF'],
+        furniture: ['Kids furniture', 'Play area', 'Storage', 'Colorful design'],
+        materials: ['Pine Wood', 'Cotton', 'Laminate'],
+        budget: 3200,
+        detectedItems: ['Single Bed', 'Toy bins', 'Play area'],
+        analysis: 'Bright, colorful natural lighting with fun accents.',
+        recs: ['Use low-height accessible storage bins.', 'Incorporate a soft rug for the play area.']
+      },
+      'Balcony': {
+        palette: ['#10B981', '#F8F5F0', '#8B5E3C', '#D1D5DB'],
+        furniture: ['Outdoor seating', 'Plants', 'Lighting', 'Decor'],
+        materials: ['Rattan', 'Teak Wood', 'Ceramic'],
+        budget: 1500,
+        detectedItems: ['Patio chairs', 'Plant pots', 'Railing'],
+        analysis: 'Abundant natural light, open-air environment.',
+        recs: ['Add weather-resistant rattan furniture.', 'Introduce vertical planters to maximize green space.']
+      },
+      'Pooja Room': {
+        palette: ['#F59E0B', '#8B5E3C', '#FFFFFF', '#EF4444'],
+        furniture: ['Mandir', 'Traditional decor', 'Lighting', 'Storage'],
+        materials: ['Teak Wood', 'Brass', 'Marble'],
+        budget: 2000,
+        detectedItems: ['Mandir structure', 'Floor mats', 'Idols'],
+        analysis: 'Warm, spiritual lighting with incense smoke handling.',
+        recs: ['Install carved wooden doors with bells.', 'Use warm brass lamps for a divine ambiance.']
+      },
+      'Commercial Space': {
+        palette: ['#1F2937', '#374151', '#9CA3AF', '#F3F4F6'],
+        furniture: ['Professional interior', 'Reception', 'Work areas', 'Commercial furniture'],
+        materials: ['Concrete', 'Glass', 'Steel'],
+        budget: 12000,
+        detectedItems: ['Reception desk', 'Lobby seating', 'Workstations'],
+        analysis: 'Professional, uniform lighting across large areas.',
+        recs: ['Create an inviting reception area with acoustic panels.', 'Use modular workstations for flexibility.']
       }
     };
 
-    let finalGeneratedImage = generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room'];
+    const currentRoom = roomData[roomType] || roomData['Living Room'];
+
+    let finalGeneratedImage = generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60';
 
     if (process.env.REPLICATE_API_TOKEN && originalImage) {
       try {
@@ -149,47 +179,55 @@ exports.createAIDesign = async (req, res) => {
     }
 
     // Fallback to Hugging Face if Replicate wasn't used or failed
-    if (finalGeneratedImage === (generatedImage || mockGeneratedImages[roomType] || mockGeneratedImages['Living Room']) && process.env.HF_API_TOKEN && originalImage) {
-      console.log(`Generating AI design for ${roomType} using Hugging Face...`);
-      try {
-        const base64Data = originalImage.replace(/^data:image\/\w+;base64,/, "");
-        
-        const response = await axios({
-          method: 'post',
-          url: 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
-          headers: {
-            'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          data: {
-            inputs: originalImage,
-            parameters: {
-              prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
-              num_inference_steps: 30,
-              guidance_scale: 7.5
-            }
-          },
-          responseType: 'arraybuffer'
-        });
+    if (finalGeneratedImage === generatedImage || finalGeneratedImage === 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60') {
+      if (process.env.HF_API_TOKEN && originalImage) {
+        console.log(`Generating AI design for ${roomType} using Hugging Face...`);
+        try {
+          const base64Data = originalImage.replace(/^data:image\/\w+;base64,/, "");
+          
+          const response = await axios({
+            method: 'post',
+            url: 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+            headers: {
+              'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
+              'Content-Type': 'application/json'
+            },
+            data: {
+              inputs: originalImage,
+              parameters: {
+                prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
+                num_inference_steps: 30,
+                guidance_scale: 7.5
+              }
+            },
+            responseType: 'arraybuffer'
+          });
 
-        // Convert returned binary image to base64
-        const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
-        finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
-        console.log("Successfully generated AI image from Hugging Face.");
-      } catch (err) {
-        console.error("Hugging Face AI Generation Error:", err.message);
-        // If everything fails, it will safely use the Unsplash mock placeholder
+          // Convert returned binary image to base64
+          const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+          finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
+          console.log("Successfully generated AI image from Hugging Face.");
+        } catch (err) {
+          console.error("Hugging Face AI Generation Error:", err.message);
+        }
       }
     }
 
     const finalAiSuggestion = aiSuggestion || {
-      furniture: ['Luxury Velvet Sofa', 'Minimalist Coffee Table', 'Nordic Floor Lamp', 'Abstract Wall Art'],
-      materials: ['Solid Teak Wood', 'Brushed Brass', 'Italian Marble', 'Linen Upholstery'],
-      colorPalette: mockPalettes[roomType] || mockPalettes['Living Room'],
-      budgetEstimate: Math.floor(Math.random() * 3000) + 2000
+      furniture: currentRoom.furniture,
+      materials: currentRoom.materials,
+      colorPalette: currentRoom.palette,
+      budgetEstimate: Math.floor(Math.random() * 1000) + currentRoom.budget
     };
 
-    const finalAnalysis = analysis || mockAnalyses[roomType] || mockAnalyses['Living Room'];
+    const finalAnalysis = analysis || {
+      detectedRoomType: roomType,
+      detectedItems: currentRoom.detectedItems,
+      lightingAnalysis: currentRoom.analysis,
+      colorProfile: currentRoom.palette,
+      spaceUtilization: 'Optimized space flow based on modern design principles.',
+      recommendations: currentRoom.recs
+    };
 
     const aiDesign = await AIDesignRequest.create({
       userId: req.user.id,
@@ -201,7 +239,7 @@ exports.createAIDesign = async (req, res) => {
       status: 'generated'
     });
 
-    await Notification.create({ userId: req.user.id, message: 'Photo uploaded successfully. AI design is ready!' });
+    await Notification.create({ userId: req.user.id, message: `Your ${roomType || 'Living Room'} AI design has been generated successfully.` });
     await Notification.create({ isAdmin: true, message: `New AI design generated for user ${req.user.name}` });
 
     res.status(201).json({ success: true, data: aiDesign });
