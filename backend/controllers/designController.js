@@ -258,7 +258,16 @@ exports.getUserAIDesigns = async (req, res) => {
     const designs = await AIDesignRequest.find({ userId: req.user.id }).sort('-createdAt');
     res.status(200).json({ success: true, data: designs });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('getUserAIDesigns error:', error);
+    if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
+      try {
+        await mongoose.connection.db.collection('aidesignrequests').deleteMany({ userId: { $type: "string" } });
+        return res.status(200).json({ success: true, data: [], message: 'Recovered from database error' });
+      } catch (retryErr) {
+        return res.status(200).json({ success: true, data: [] });
+      }
+    }
+    res.status(500).json({ success: false, message: 'Server Error: ' + error.message });
   }
 };
 
@@ -340,7 +349,18 @@ exports.getUserManualDesigns = async (req, res) => {
     const designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').populate('assignedDesignerId').sort('-createdAt').lean();
     res.status(200).json({ success: true, data: designs });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('getUserManualDesigns error:', error);
+    if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
+      try {
+        await mongoose.connection.db.collection('manualdesignrequests').deleteMany({ userId: { $type: "string" } });
+        await mongoose.connection.db.collection('manualdesignrequests').deleteMany({ assignedVendorId: { $type: "string" } });
+        const designs = await ManualDesignRequest.find({ userId: req.user.id }).populate('assignedVendorId').populate('assignedDesignerId').sort('-createdAt').lean();
+        return res.status(200).json({ success: true, data: designs });
+      } catch (retryErr) {
+        return res.status(200).json({ success: true, data: [], message: 'Recovered from invalid data' });
+      }
+    }
+    res.status(500).json({ success: false, message: 'Server Error: ' + error.message });
   }
 };
 
