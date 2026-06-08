@@ -192,45 +192,30 @@ exports.createAIDesign = async (req, res) => {
       }
     }
 
-    // Fallback to Hugging Face if Replicate wasn't used or failed
+    // Fallback to Pollinations AI (Free Text-to-Image API) since Hugging Face dropped the free instruct-pix2pix model
     if (finalGeneratedImage === generatedImage || finalGeneratedImage === mockFallbackImages[roomType] || finalGeneratedImage === mockFallbackImages['Living Room']) {
-      if (process.env.HF_API_TOKEN && originalImage) {
-        console.log(`Generating AI design for ${roomType} using Hugging Face...`);
-        try {
-          const base64Data = originalImage.replace(/^data:image\/\w+;base64,/, "");
-          
-          const response = await axios({
-            method: 'post',
-            url: 'https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix',
-            headers: {
-              'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
-              'Content-Type': 'application/json'
-            },
-            data: {
-              inputs: base64Data,
-              parameters: {
-                prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
-                num_inference_steps: 30,
-                guidance_scale: 7.5
-              },
-              options: {
-                wait_for_model: true
-              }
-            },
-            httpsAgent: new https.Agent({ family: 4 }),
-            responseType: 'arraybuffer'
-          });
+      console.log(`Generating unique AI design for ${roomType} using Pollinations AI...`);
+      try {
+        const seed = Math.floor(Math.random() * 1000000);
+        const prompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType}, architectural digest, beautiful lighting, 8k resolution`);
+        
+        // Pollinations AI returns a direct image buffer
+        const response = await axios.get(`https://image.pollinations.ai/prompt/${prompt}?width=800&height=600&seed=${seed}&nologo=true`, {
+          responseType: 'arraybuffer'
+        });
 
-          // Convert returned binary image to base64
-          const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
-          finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
-          console.log("Successfully generated AI image from Hugging Face.");
-        } catch (err) {
-          console.error("Hugging Face AI Generation Error:", err.response ? err.response.data.toString() : err.message);
-          return res.status(503).json({ success: false, message: 'AI Model is currently loading or failed. Please try again in 30 seconds.' });
-        }
-      } else {
-        return res.status(400).json({ success: false, message: 'No AI token provided.' });
+        const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+        finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
+        console.log("Successfully generated AI image from Pollinations AI.");
+      } catch (err) {
+        console.error("Pollinations AI Generation Error:", err.message);
+        
+        // Final ultimate fallback if even Pollinations AI fails
+        const status = err.response ? err.response.status : 503;
+        return res.status(status).json({ 
+          success: false, 
+          message: 'AI Generation Services are currently unavailable. Please try again later.' 
+        });
       }
     }
 
