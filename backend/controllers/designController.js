@@ -142,9 +142,22 @@ exports.createAIDesign = async (req, res) => {
       }
     };
 
+    const mockFallbackImages = {
+      'Living Room': 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+      'Bedroom': 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
+      'Kitchen': 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
+      'Dining Room': 'https://images.unsplash.com/photo-1617806118233-18e1c0945594?w=800&q=80',
+      'Bathroom': 'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
+      'Office Room': 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
+      'Kids Room': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
+      'Balcony': 'https://images.unsplash.com/photo-1590005354167-6da97ce2311c?w=800&q=80',
+      'Pooja Room': 'https://images.unsplash.com/photo-1601058268499-e52658b8bb88?w=800&q=80',
+      'Commercial Space': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80'
+    };
+
     const currentRoom = roomData[roomType] || roomData['Living Room'];
 
-    let finalGeneratedImage = generatedImage || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60';
+    let finalGeneratedImage = generatedImage || mockFallbackImages[roomType] || mockFallbackImages['Living Room'];
 
     if (process.env.REPLICATE_API_TOKEN && originalImage) {
       try {
@@ -179,7 +192,7 @@ exports.createAIDesign = async (req, res) => {
     }
 
     // Fallback to Hugging Face if Replicate wasn't used or failed
-    if (finalGeneratedImage === generatedImage || finalGeneratedImage === 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop&q=60') {
+    if (finalGeneratedImage === generatedImage || finalGeneratedImage === mockFallbackImages[roomType] || finalGeneratedImage === mockFallbackImages['Living Room']) {
       if (process.env.HF_API_TOKEN && originalImage) {
         console.log(`Generating AI design for ${roomType} using Hugging Face...`);
         try {
