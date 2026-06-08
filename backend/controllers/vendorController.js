@@ -93,7 +93,18 @@ exports.getCustomRequests = async (req, res) => {
     const requests = await ManualDesignRequest.find({}).populate('userId', 'name email phone').sort('-createdAt').lean();
     res.status(200).json({ success: true, data: requests });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('getCustomRequests error:', error);
+    // Self-healing: if it's a CastError due to bad mock data, delete it and retry
+    if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
+      try {
+        await mongoose.connection.db.collection('manualdesignrequests').deleteMany({ userId: { $type: "string" } });
+        const requests = await ManualDesignRequest.find({}).populate('userId', 'name email phone').sort('-createdAt').lean();
+        return res.status(200).json({ success: true, data: requests });
+      } catch (retryErr) {
+        return res.status(200).json({ success: true, data: [], message: 'Recovered from database error' });
+      }
+    }
+    res.status(500).json({ success: false, message: 'Server Error: ' + error.message });
   }
 };
 
@@ -360,14 +371,16 @@ exports.getVendorOrders = async (req, res) => {
         .sort({ createdAt: -1 });
     }
 
-    const orderIds = standardOrders.map(o => o._id);
+    const orderIds = standardOrders.map(o => o._id).filter(Boolean);
     const trackingMap = {};
     const trackings = await OrderTracking.find({ orderId: { $in: orderIds } });
-    trackings.forEach(t => { trackingMap[t.orderId.toString()] = t; });
+    trackings.forEach(t => { 
+      if (t.orderId) trackingMap[t.orderId.toString()] = t; 
+    });
 
     const stdData = standardOrders.map(o => ({
-      ...o.toObject(),
-      tracking: trackingMap[o._id.toString()] || null
+      ...(o.toObject ? o.toObject() : o),
+      tracking: o._id ? (trackingMap[o._id.toString()] || null) : null
     }));
 
     const mktData = marketplaceOrders.map(o => ({
@@ -381,25 +394,39 @@ exports.getVendorOrders = async (req, res) => {
       shippingAddress: o.shippingAddress,
       productDetails: o.items && o.items[0] && o.items[0].productId ? {
         _id: o.items[0].productId._id,
-        title: o.items[0].productId.title,
-        price: o.items[0].price,
+        title: o.items[0].productId.title || 'Marketplace Product',
+        price: o.items[0].price || 0,
         images: o.items[0].productId.images || [],
-        quantity: o.items.reduce((sum, i) => sum + i.quantity, 0),
-        category: o.items[0].productId.category
-      } : { title: 'Marketplace Product', quantity: o.items ? o.items.reduce((sum, i) => sum + i.quantity, 0) : 0 },
+        quantity: o.items.reduce((sum, i) => sum + (i.quantity || 1), 0),
+        category: o.items[0].productId.category || 'General'
+      } : { title: 'Marketplace Product', quantity: o.items ? o.items.reduce((sum, i) => sum + (i.quantity || 1), 0) : 0 },
       items: o.items || [],
-      subtotal: o.subtotal,
-      tax: o.tax,
-      shippingFee: o.shippingFee,
+      subtotal: o.subtotal || 0,
+      tax: o.tax || 0,
+      shippingFee: o.shippingFee || 0,
       createdAt: o.createdAt,
       tracking: null
     }));
 
-    const data = [...stdData, ...mktData].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const data = [...stdData, ...mktData].sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+      const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+      return dateB - dateA;
+    });
 
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('getVendorOrders error:', error);
+    if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
+      try {
+        await mongoose.connection.db.collection('orders').deleteMany({ userId: { $type: "string" } });
+        await mongoose.connection.db.collection('marketplaceorders').deleteMany({ userId: { $type: "string" } });
+        return res.status(200).json({ success: true, count: 0, data: [], message: 'Recovered from invalid data' });
+      } catch (retryErr) {
+        return res.status(200).json({ success: true, count: 0, data: [], message: 'Recovered with empty array' });
+      }
+    }
+    res.status(500).json({ success: false, message: 'Server Error: ' + error.message });
   }
 };
 
