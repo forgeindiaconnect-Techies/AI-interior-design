@@ -201,7 +201,7 @@ exports.createAIDesign = async (req, res) => {
           
           const response = await axios({
             method: 'post',
-            url: 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix',
+            url: 'https://router.huggingface.co/hf-inference/models/timbrooks/instruct-pix2pix',
             headers: {
               'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
               'Content-Type': 'application/json'
