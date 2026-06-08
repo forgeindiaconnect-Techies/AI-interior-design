@@ -211,6 +211,9 @@ exports.createAIDesign = async (req, res) => {
                 prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
                 num_inference_steps: 30,
                 guidance_scale: 7.5
+              },
+              options: {
+                wait_for_model: true
               }
             },
             responseType: 'arraybuffer'
