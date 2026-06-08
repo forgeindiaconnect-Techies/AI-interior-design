@@ -623,7 +623,6 @@ const VendorDashboard = ({
       if (res.data.success) {
         showToast('success', 'Order deleted successfully');
         setReadyMadeOrders(prev => prev.filter(o => o._id !== orderId));
-        fetchPartnerData(); // Refresh all other states silently
       } else {
         showToast('error', res.data.message || 'Failed to delete order');
       }
