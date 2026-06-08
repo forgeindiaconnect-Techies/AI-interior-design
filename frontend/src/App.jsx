@@ -35,10 +35,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   // NOTE: Strict role-based redirects can be added here if needed
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-     // If user is logged in but doesn't have the right role, send them home
-     return <Navigate to="/" replace />;
-  }
+  // if (allowedRoles && !allowedRoles.includes(user.role)) {
+  //    // If user is logged in but doesn't have the right role, send them home
+  //    return <Navigate to="/" replace />;
+  // }
 
   return children;
 };
