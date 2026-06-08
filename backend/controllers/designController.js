@@ -206,7 +206,7 @@ exports.createAIDesign = async (req, res) => {
               'Content-Type': 'application/json'
             },
             data: {
-              inputs: originalImage,
+              inputs: base64Data,
               parameters: {
                 prompt: `A highly detailed, modern, photorealistic interior design of a ${roomType}`,
                 num_inference_steps: 30,
@@ -221,8 +221,11 @@ exports.createAIDesign = async (req, res) => {
           finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
           console.log("Successfully generated AI image from Hugging Face.");
         } catch (err) {
-          console.error("Hugging Face AI Generation Error:", err.message);
+          console.error("Hugging Face AI Generation Error:", err.response ? err.response.data.toString() : err.message);
+          return res.status(503).json({ success: false, message: 'AI Model is currently loading or failed. Please try again in 30 seconds.' });
         }
+      } else {
+        return res.status(400).json({ success: false, message: 'No AI token provided.' });
       }
     }
 
