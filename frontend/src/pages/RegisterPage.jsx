@@ -20,8 +20,16 @@ const RegisterPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [modalInfo, setModalInfo] = useState({ show: false, title: '', message: '', type: 'success' });
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/dashboard/admin', { replace: true });
+      else if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) navigate('/dashboard/vendor', { replace: true });
+      else navigate('/dashboard/user', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (searchParams.get('role')) {

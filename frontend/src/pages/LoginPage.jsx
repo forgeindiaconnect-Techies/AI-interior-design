@@ -8,9 +8,17 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/dashboard/admin', { replace: true });
+      else if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) navigate('/dashboard/vendor', { replace: true });
+      else navigate('/dashboard/user', { replace: true });
+    }
+  }, [user, navigate]);
   const registeredSuccess = location.state?.registeredSuccess || false;
   const isSessionExpired = new URLSearchParams(location.search).get('expired') === 'true';
 

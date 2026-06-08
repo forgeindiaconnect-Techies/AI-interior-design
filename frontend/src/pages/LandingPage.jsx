@@ -22,9 +22,20 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import HeroVideoSimulation from '../components/HeroVideoSimulation';
+import { useAuth } from '../context/AuthContext';
 
 const LandingPage = () => {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') navigate('/dashboard/admin', { replace: true });
+      else if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) navigate('/dashboard/vendor', { replace: true });
+      else navigate('/dashboard/user', { replace: true });
+    }
+  }, [user, navigate]);
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
