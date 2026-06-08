@@ -6,6 +6,7 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const Replicate = require('replicate');
 const axios = require('axios');
+const https = require('https');
 
 let mockManualDesigns = [
   {
@@ -216,6 +217,7 @@ exports.createAIDesign = async (req, res) => {
                 wait_for_model: true
               }
             },
+            httpsAgent: new https.Agent({ family: 4 }),
             responseType: 'arraybuffer'
           });
 
