@@ -237,7 +237,19 @@ exports.createAIDesign = async (req, res) => {
       'Living Room': [
         'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
         'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-        'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80'
+        'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80',
+        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+        'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+        'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+        'https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80',
+        'https://images.unsplash.com/photo-1593696140826-c58b021acf8b?w=800&q=80',
+        'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80',
+        'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
+        'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
+        'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80',
+        'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80',
+        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80'
       ],
       'Bedroom': [
         'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
