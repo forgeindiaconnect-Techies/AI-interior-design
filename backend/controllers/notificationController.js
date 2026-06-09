@@ -8,13 +8,7 @@ exports.getNotifications = async (req, res) => {
   try {
 
 
-    const filter = {
-      $or: [
-        { recipientUser: req.user.id },
-        { recipientRole: req.user.role, recipientUser: null },
-        { recipientRole: req.user.role, recipientUser: { $exists: false } }
-      ]
-    };
+    const filter = req.user.role === 'admin' ? { isAdmin: true } : { userId: req.user.id };
     const notifications = await Notification.find(filter).sort('-createdAt');
     res.status(200).json({ success: true, data: notifications });
   } catch (error) {

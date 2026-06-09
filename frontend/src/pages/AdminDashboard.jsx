@@ -2414,7 +2414,7 @@ const AdminDashboard = ({
                           <Bell size={14} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${!notif.read ? 'font-extrabold text-[#1F2937]' : 'font-bold text-gray-600'} truncate`}>{notif.title || (notif.message || '').split('\n')[0] || 'Notification'}</p>
+                          <p className={`text-sm ${!notif.read ? 'font-extrabold text-[#1F2937]' : 'font-bold text-gray-600'} truncate`}>{notif.message}</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">
                             {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                           </p>
@@ -5668,52 +5668,44 @@ const AdminDashboard = ({
                       <td colSpan="5" className="p-12 text-center text-gray-400 font-bold">No vendor registrations found.</td>
                     </tr>
                   ) : (
-                    vendorRegistrations.map((vendor) => {
-                      const userStatus = vendor.userId?.status || vendor.status || 'Pending';
-                      const vendorName = vendor.userId?.name || vendor.name || 'N/A';
-                      const vendorEmail = vendor.userId?.email || vendor.email || 'N/A';
-                      const vendorPhone = vendor.userId?.phone || vendor.phone || 'N/A';
-
-                      return (
-                        <tr key={vendor._id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="p-5">
-                            <p className="font-bold text-[#1F2937] text-sm">{vendorName}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{vendor.companyName || 'N/A'}</p>
-                          </td>
-                          <td className="p-5">
-                            <p className="text-sm font-medium text-gray-700">{vendorEmail}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{vendorPhone}</p>
-                          </td>
-                          <td className="p-5">
-                            <p className="text-sm text-gray-700">{new Date(vendor.createdAt).toLocaleDateString()}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">{new Date(vendor.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                          </td>
-                          <td className="p-5">
-                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                              userStatus === 'Approved' || userStatus === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                              userStatus === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' :
-                              'bg-amber-50 text-amber-600 border-amber-200'
-                            }`}>
-                              {userStatus === 'Active' ? 'Approved' : userStatus}
-                            </span>
-                          </td>
-                          <td className="p-5 text-right">
-                            <div className="flex justify-end items-center gap-2">
-                              <button onClick={() => alert(`Business Type: ${vendor.businessType}\nSpecialization: ${vendor.specialization}\nMonthly Capacity: ${vendor.monthlyCapacity}\nService Areas: ${vendor.serviceAreas?.join(', ')}\n\nDescription:\n${vendor.description || 'No description provided'}`)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs shadow-sm transition-all">Details</button>
-                              {(userStatus === 'Pending' || userStatus === 'pending') && (
-                                <>
-                                  <button onClick={() => handleApproveVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Approve</button>
-                                  <button onClick={() => handleRejectVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Reject</button>
-                                </>
-                              )}
-                              {(userStatus !== 'Pending' && userStatus !== 'pending') && (
-                                <span className="text-xs text-gray-400 italic px-2">Done</span>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })
+                    vendorRegistrations.map((vendor) => (
+                      <tr key={vendor._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-5">
+                          <p className="font-bold text-[#1F2937] text-sm">{vendor.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{vendor.companyName || 'N/A'}</p>
+                        </td>
+                        <td className="p-5">
+                          <p className="text-sm font-medium text-gray-700">{vendor.email}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{vendor.phone || 'N/A'}</p>
+                        </td>
+                        <td className="p-5">
+                          <p className="text-sm text-gray-700">{new Date(vendor.createdAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{new Date(vendor.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </td>
+                        <td className="p-5">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            vendor.status === 'Approved' || vendor.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                            vendor.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                            'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
+                            {vendor.status === 'Active' ? 'Approved' : vendor.status || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="p-5 text-right">
+                          <div className="flex justify-end gap-2">
+                            {(vendor.status === 'Pending' || vendor.status === 'pending') && (
+                              <>
+                                <button onClick={() => handleApproveVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Approve</button>
+                                <button onClick={() => handleRejectVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Reject</button>
+                              </>
+                            )}
+                            {(vendor.status !== 'Pending' && vendor.status !== 'pending') && (
+                              <span className="text-xs text-gray-400 italic">No actions available</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
@@ -6195,23 +6187,20 @@ const AdminDashboard = ({
                           )}
                         </div>
                         <div className="flex-1">
-                          {notif.title && (
-                            <p className="font-extrabold text-sm text-[#1F2937] mb-0.5">{notif.title}</p>
-                          )}
                           <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
-                            {notif.message || ''}
+                            {notif.message}
                           </p>
                           <p className="text-[10px] text-gray-400 mt-1">
                             {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
                           </p>
-                          {((notif.message || '').toLowerCase().includes('request') || (notif.message || '').toLowerCase().includes('manual')) ? (
+                          {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('manual')) && (
                             <button 
                               onClick={() => { if (setActiveTab) setActiveTab('manual_designs'); }} 
                               className="mt-2 text-xs font-bold text-[#1D3557] hover:underline block"
                             >
                               View Request
                             </button>
-                          ) : null}
+                          )}
                         </div>
                       </div>
                     );

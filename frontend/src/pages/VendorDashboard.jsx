@@ -3561,8 +3561,6 @@ const VendorDashboard = ({
             ) : (
               notifications.map((notif) => {
                 const isUnread = !notif.read;
-                const displayTitle = notif.title || (notif.message || '').split('\n')[0] || 'Notification';
-                const displayMessage = notif.message || '';
                 return (
                   <div 
                     key={notif._id} 
@@ -3582,30 +3580,27 @@ const VendorDashboard = ({
                     </div>
                     <div className="flex-1">
                       <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
-                        {displayTitle}
+                        {notif.message}
                       </p>
-                      {displayMessage && displayMessage !== displayTitle && (
-                        <p className="text-xs text-gray-500 mt-0.5">{displayMessage}</p>
-                      )}
                       <p className="text-[10px] text-gray-400 mt-1">
                         {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
                       </p>
-                      {displayMessage.toLowerCase().includes('request') || displayMessage.toLowerCase().includes('custom') ? (
+                      {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('custom')) && (
                         <button 
                           onClick={() => { if (setActiveTab) setActiveTab('custom_requests'); }} 
                           className="mt-2 text-xs font-bold text-[#2A9D8F] hover:underline block"
                         >
                           View Request
                         </button>
-                      ) : null}
-                      {displayMessage.toLowerCase().includes('order') && !displayMessage.toLowerCase().includes('request') ? (
+                      )}
+                      {notif.message.toLowerCase().includes('order') && !notif.message.toLowerCase().includes('request') && (
                         <button 
                           onClick={() => { if (setActiveTab) setActiveTab('orders'); }} 
                           className="mt-2 text-xs font-bold text-[#2A9D8F] hover:underline block"
                         >
                           View Order
                         </button>
-                      ) : null}
+                      )}
                     </div>
                   </div>
                 );

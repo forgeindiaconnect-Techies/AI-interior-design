@@ -2596,16 +2596,10 @@ exports.approveVendorRegistration = async (req, res) => {
     user.approvedBy = req.user.id;
     await user.save();
 
-    vendor.accountActivationStatus = 'Active';
-    vendor.storeSetupStatus = 'Pending';
-    await vendor.save();
-
     await Notification.create({
-      title: 'Account Approved',
+      userId: user._id,
       message: 'Congratulations! Your vendor account has been approved. You can now set up your store and start selling products.',
-      notificationType: 'success',
-      recipientRole: 'vendor',
-      recipientUser: user._id
+      type: 'success'
     });
 
     res.status(200).json({ success: true, message: 'Vendor approved successfully' });
@@ -2630,15 +2624,10 @@ exports.rejectVendorRegistration = async (req, res) => {
     user.rejectedReason = reason || 'Your registration does not meet our requirements at this time.';
     await user.save();
 
-    vendor.accountActivationStatus = 'Rejected';
-    await vendor.save();
-
     await Notification.create({
-      title: 'Registration Rejected',
+      userId: user._id,
       message: 'Your vendor registration has been rejected. Please contact support or update your details.',
-      notificationType: 'error',
-      recipientRole: 'vendor',
-      recipientUser: user._id
+      type: 'error'
     });
 
     res.status(200).json({ success: true, message: 'Vendor rejected successfully' });

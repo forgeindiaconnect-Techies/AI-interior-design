@@ -55,27 +55,23 @@ exports.register = async (req, res) => {
 
       // Notify Admin about new vendor
       await Notification.create({
-        title: 'New Vendor Registration',
+        isAdmin: true,
         message: `New Vendor Registration Request Received\nName: ${name}\nCompany: ${vendor.companyName}\nEmail: ${email}\nPhone: ${phone || 'N/A'}\nDate: ${new Date().toLocaleString()}`,
-        notificationType: 'warning',
-        recipientRole: 'admin'
+        type: 'warning'
       });
 
       // Notify Vendor about successful submission
       await Notification.create({
-        title: 'Registration Submitted',
+        userId: user._id,
         message: 'Your vendor registration has been submitted successfully and is awaiting admin approval.',
-        notificationType: 'info',
-        recipientRole: 'vendor',
-        recipientUser: user._id
+        type: 'info'
       });
     } else {
       // Notify Admin about normal user
       await Notification.create({
-        title: 'New User Registration',
-        message: 'A new customer account has been created and is ready to use.',
-        notificationType: 'info',
-        recipientRole: 'admin'
+        isAdmin: true,
+        message: 'New User Registration: A new customer account has been created and is ready to use.',
+        type: 'info'
       });
     }
 
