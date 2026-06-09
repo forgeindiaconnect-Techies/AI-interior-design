@@ -1,10 +1,11 @@
 const mongoose = require('mongoose');
 
 const NotificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // if null, it's for admin
-  isAdmin: { type: Boolean, default: false },
+  notificationType: { type: String, default: 'info' }, // 'info', 'success', 'warning', 'error'
+  title: { type: String, required: true },
   message: { type: String, required: true },
-  type: { type: String, default: 'info' },
+  recipientRole: { type: String, required: true }, // 'admin', 'vendor', 'user'
+  recipientUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Optional, targeted user
   isRead: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now }
 });
