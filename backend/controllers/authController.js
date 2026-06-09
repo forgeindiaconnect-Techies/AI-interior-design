@@ -23,21 +23,29 @@ exports.register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User already exists' });
     }
 
+    let finalRole = role || 'user';
+    let finalStatus = 'Active';
+
+    if (finalRole !== 'user') {
+      finalRole = 'vendor';
+      finalStatus = 'Pending';
+    }
+
     user = await User.create({
       name,
       email,
       password,
-      role: role || 'user',
+      role: finalRole,
       phone,
       address,
-      status: (!role || role === 'user') ? 'Active' : 'Pending'
+      status: finalStatus
     });
 
-    if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(role)) {
+    if (finalRole === 'vendor') {
       const vendor = await Vendor.create({
         userId: user._id,
         companyName: companyName || `${name}'s Business`,
-        businessType: businessType || (role === 'vendor' ? 'seller' : role)
+        businessType: 'seller' // Enforce seller as per requirement
       });
 
       await VendorVerification.create({
@@ -45,11 +53,18 @@ exports.register = async (req, res) => {
         status: 'Not Submitted'
       });
 
-      // Notify Admin about new partner
+      // Notify Admin about new vendor
       await Notification.create({
         isAdmin: true,
-        message: "New Partner Application: registered as a vendor.",
+        message: `New Vendor Registration Request Received\nName: ${name}\nCompany: ${vendor.companyName}\nEmail: ${email}\nPhone: ${phone || 'N/A'}\nDate: ${new Date().toLocaleString()}`,
         type: 'warning'
+      });
+
+      // Notify Vendor about successful submission
+      await Notification.create({
+        userId: user._id,
+        message: 'Your vendor registration has been submitted successfully and is awaiting admin approval.',
+        type: 'info'
       });
     } else {
       // Notify Admin about normal user
@@ -128,14 +143,8 @@ exports.login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (user.status === 'Pending') {
-      return res.status(401).json({ success: false, message: 'Your account is pending admin approval.' });
-    }
-
-    if (user.status === 'Rejected') {
-      return res.status(401).json({ success: false, message: 'Your account has been rejected. Please contact support.' });
-    }
-
+    // Users with 'Pending' or 'Rejected' statuses are allowed to log in,
+    // but the frontend will restrict their access based on their status.
     const token = generateToken(user._id, user.role);
 
     let vendorProfile = null;

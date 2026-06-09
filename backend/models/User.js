@@ -14,10 +14,13 @@ const UserSchema = new mongoose.Schema({
   address: { type: String },
   status: { 
     type: String, 
-    enum: ['Active', 'Suspended', 'Blocked', 'Pending', 'Rejected'], 
+    enum: ['Active', 'Suspended', 'Blocked', 'Pending', 'Approved', 'Rejected'], 
     default: 'Pending' 
   },
   suspensionReason: { type: String, default: '' },
+  approvedAt: { type: Date },
+  approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  rejectedReason: { type: String, default: '' },
   createdAt: { type: Date, default: Date.now }
 });
 

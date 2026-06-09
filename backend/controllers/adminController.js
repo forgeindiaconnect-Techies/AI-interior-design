@@ -2567,3 +2567,72 @@ exports.updateUserStatus = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Get all vendor registrations
+// @route   GET /api/admin/vendor-registrations
+// @access  Private (Admin)
+exports.getVendorRegistrations = async (req, res) => {
+  try {
+    const vendors = await Vendor.find().populate('userId', 'name email phone status createdAt');
+    res.status(200).json({ success: true, data: vendors });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Approve Vendor Registration
+// @route   PUT /api/admin/vendor-registrations/:id/approve
+// @access  Private (Admin)
+exports.approveVendorRegistration = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+    
+    const user = await User.findById(vendor.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = 'Approved';
+    user.approvedAt = new Date();
+    user.approvedBy = req.user.id;
+    await user.save();
+
+    await Notification.create({
+      userId: user._id,
+      message: 'Congratulations! Your vendor account has been approved. You can now set up your store and start selling products.',
+      type: 'success'
+    });
+
+    res.status(200).json({ success: true, message: 'Vendor approved successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Reject Vendor Registration
+// @route   PUT /api/admin/vendor-registrations/:id/reject
+// @access  Private (Admin)
+exports.rejectVendorRegistration = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const user = await User.findById(vendor.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = 'Rejected';
+    user.rejectedReason = reason || 'Your registration does not meet our requirements at this time.';
+    await user.save();
+
+    await Notification.create({
+      userId: user._id,
+      message: 'Your vendor registration has been rejected. Please contact support or update your details.',
+      type: 'error'
+    });
+
+    res.status(200).json({ success: true, message: 'Vendor rejected successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

@@ -51,7 +51,10 @@ const {
   getAllReviews,
   deleteReview,
   getAllUsers,
-  updateUserStatus
+  updateUserStatus,
+  getVendorRegistrations,
+  approveVendorRegistration,
+  rejectVendorRegistration
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -88,6 +91,11 @@ router.get('/manufacturers/:id/payments', getManufacturerPayments);
 // Vendor Verification Routes
 router.get('/verifications', getAllVerifications);
 router.put('/verifications/:id', updateVerificationStatus);
+
+// Vendor Registration Approval Routes
+router.get('/vendor-registrations', getVendorRegistrations);
+router.put('/vendor-registrations/:id/approve', approveVendorRegistration);
+router.put('/vendor-registrations/:id/reject', rejectVendorRegistration);
 
 // Store Approval Routes
 router.get('/store-approvals', getAllStoreApprovals);

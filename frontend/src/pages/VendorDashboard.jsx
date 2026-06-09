@@ -1617,6 +1617,14 @@ const VendorDashboard = ({
               <PlusCircle className="w-6 h-6 text-[#2A9D8F]" />
               <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Add Ready-Made Product</h2>
             </div>
+            
+            {user?.status !== 'Approved' && user?.status !== 'Active' ? (
+              <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 text-amber-800 text-center">
+                <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                <h3 className="font-bold text-lg mb-2">Access Restricted</h3>
+                <p className="text-sm">Your account is awaiting admin approval. You cannot add products until your vendor registration is approved.</p>
+              </div>
+            ) : (
             <form onSubmit={handleCreateProduct} className="space-y-6">
               <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Product Title</label><input type="text" required value={newTitle} onChange={(e) => setNewTitle(e.target.value)} placeholder="Velvet Lounge Chair" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
               <div className="grid grid-cols-2 gap-4">
@@ -1653,6 +1661,7 @@ const VendorDashboard = ({
               <div><label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Description</label><textarea rows={3} required value={newDesc} onChange={(e) => setNewDesc(e.target.value)} placeholder="Premium artisan crafted..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" /></div>
               <button type="submit" className="w-full py-4 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold shadow-md transition-all">List Product</button>
             </form>
+            )}
           </div>
 
           {/* Listed Products */}
@@ -1692,6 +1701,7 @@ const VendorDashboard = ({
                       </div>
                     </div>
                     {/* Action Buttons */}
+                    {(user?.status === 'Approved' || user?.status === 'Active') && (
                     <div className="flex sm:flex-col gap-2 w-full sm:w-auto pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-100 justify-end flex-shrink-0">
                       <button onClick={() => handleViewInMarketplace(p._id)} className="flex-1 sm:flex-none px-4 py-2.5 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl font-bold text-xs transition-colors shadow-sm flex items-center justify-center gap-2">
                         <Eye className="w-4 h-4" /> View in Marketplace
@@ -1703,6 +1713,7 @@ const VendorDashboard = ({
                         Delete
                       </button>
                     </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -3192,9 +3203,15 @@ const VendorDashboard = ({
             </div>
           </div>
           <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Profile Updated'); }}>
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Company Name</label>
-              <input type="text" defaultValue={profile?.companyName} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#2A9D8F] text-sm" />
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Company Name</label>
+                <input type="text" defaultValue={user?.companyName || profile?.companyName} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
+                <input type="text" defaultValue={user?.name} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed" />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div>
@@ -3202,9 +3219,26 @@ const VendorDashboard = ({
                 <input type="email" defaultValue={user?.email} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed" />
               </div>
               <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Business Type</label>
-                <input type="text" defaultValue={profile?.businessType || user?.role} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed uppercase" />
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Phone Number</label>
+                <input type="text" defaultValue={user?.phone} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed" />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Address</label>
+              <textarea rows={2} defaultValue={user?.address} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-500 text-sm cursor-not-allowed resize-none" />
+            </div>
+            
+            {/* VENDOR REGISTRATION STATUS */}
+            <div className={`p-5 rounded-2xl border ${user?.status === 'Approved' ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : user?.status === 'Rejected' ? 'bg-red-50 border-red-200 text-red-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+              <div className="flex items-center gap-3 mb-2">
+                {user?.status === 'Approved' ? <CheckCircle className="w-5 h-5 text-emerald-600" /> : user?.status === 'Rejected' ? <XCircle className="w-5 h-5 text-red-600" /> : <AlertCircle className="w-5 h-5 text-amber-600" />}
+                <h3 className="font-bold text-lg">Registration Status: {user?.status === 'Active' ? 'Approved' : user?.status || 'Pending'}</h3>
+              </div>
+              <p className="text-sm opacity-80">
+                {user?.status === 'Approved' || user?.status === 'Active' ? 'Your vendor account has been approved. You have full access to marketplace features.' :
+                 user?.status === 'Rejected' ? `Your registration was rejected. Reason: ${user?.rejectedReason || 'Please contact support.'}` :
+                 'Your account is awaiting admin approval. Some features will remain locked until your registration is approved.'}
+              </p>
             </div>
             <button type="submit" className="py-4 px-8 bg-[#1F2937] hover:bg-black text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all">Save Changes</button>
           </form>
@@ -3762,6 +3796,15 @@ const VendorDashboard = ({
               </div>
             </div>
 
+            {user?.status !== 'Approved' && user?.status !== 'Active' ? (
+              <div className="bg-amber-50 p-6 rounded-2xl border border-amber-200 text-amber-800 text-center max-w-2xl mx-auto mt-10">
+                <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+                <h3 className="font-bold text-lg mb-2">Access Restricted</h3>
+                <p className="text-sm">Your account is awaiting admin approval. You cannot manage inventory until your vendor registration is approved.</p>
+              </div>
+            ) : (
+            <>
+
             {/* Summary Stats */}
             <div className="grid grid-cols-3 gap-5">
               {[
@@ -3847,6 +3890,8 @@ const VendorDashboard = ({
                 </tbody>
               </table>
             </div>
+            </>
+            )}
           </div>
         );
       })()}

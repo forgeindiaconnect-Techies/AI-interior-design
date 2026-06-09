@@ -57,6 +57,7 @@ const AdminDashboard = ({
 
   // Verification, Store Setup & Product Quality Review States
   const [verificationSubmissions, setVerificationSubmissions] = useState([]);
+  const [vendorRegistrations, setVendorRegistrations] = useState([]);
   const [storeSetupSubmissions, setStoreSetupSubmissions] = useState([]);
   const [productReviewSubmissions, setProductReviewSubmissions] = useState([]);
   const [remarks, setRemarks] = useState({});
@@ -400,8 +401,20 @@ const AdminDashboard = ({
   }, []);
 
   useEffect(() => {
-    // Live-refresh verification submissions from localStorage when admin is on verifications tab
     if (activeTab === 'verifications') {
+      const loadVendorRegistrations = async () => {
+        try {
+          const res = await axios.get('/api/admin/vendor-registrations', {
+            headers: { Authorization: `Bearer ${user?.token}` }
+          });
+          if (res.data?.success) {
+            setVendorRegistrations(res.data.data);
+          }
+        } catch (err) {
+          console.error('Failed to load vendor registrations:', err);
+        }
+      };
+      
       const loadVerifFromStorage = () => {
         const localVer = [];
         if (localVer.length > 0) {
@@ -412,11 +425,16 @@ const AdminDashboard = ({
           });
         }
       };
+      
+      loadVendorRegistrations();
       loadVerifFromStorage();
-      const verifInterval = setInterval(loadVerifFromStorage, 3000);
+      const verifInterval = setInterval(() => {
+        loadVendorRegistrations();
+        loadVerifFromStorage();
+      }, 5000);
       return () => clearInterval(verifInterval);
     }
-  }, [activeTab]);
+  }, [activeTab, user?.token]);
 
   useEffect(() => {
     if (activeTab === 'reviews_management') {
@@ -1588,6 +1606,34 @@ const AdminDashboard = ({
   };
 
   // Verification & Review Admin Actions
+  const handleApproveVendorRegistration = async (id) => {
+    try {
+      await axios.put(`/api/admin/vendor-registrations/${id}/approve`, {}, { headers: { Authorization: `Bearer ${user?.token}` } });
+      alert('Vendor Approved successfully!');
+      if (activeTab === 'verifications') {
+        const res = await axios.get('/api/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
+        if (res.data?.success) setVendorRegistrations(res.data.data);
+      }
+    } catch (err) {
+      alert('Failed to approve vendor: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleRejectVendorRegistration = async (id) => {
+    const reason = prompt("Enter rejection reason:");
+    if (reason === null) return;
+    try {
+      await axios.put(`/api/admin/vendor-registrations/${id}/reject`, { reason }, { headers: { Authorization: `Bearer ${user?.token}` } });
+      alert('Vendor Rejected successfully!');
+      if (activeTab === 'verifications') {
+        const res = await axios.get('/api/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
+        if (res.data?.success) setVendorRegistrations(res.data.data);
+      }
+    } catch (err) {
+      alert('Failed to reject vendor: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
   const handleVerifyBusiness = async (id, status) => {
     try {
       const currentRemarks = remarks[id] || '';
@@ -5605,147 +5651,65 @@ const AdminDashboard = ({
           </div>
 
           <div className="space-y-6">
-            {verificationSubmissions.length === 0 ? (
-              <div className="bg-white p-12 rounded-3xl shadow-sm border border-[#D4A373]/30 text-center text-gray-500 font-bold">
-                No business verification documents submitted yet.
-              </div>
-            ) : (
-              verificationSubmissions.map((sub) => (
-                <div key={sub._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-4 gap-4">
-                    <div>
-                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{sub.businessName}</h3>
-                      <p className="text-xs text-gray-500 mt-1">Submitted by {sub.ownerName} ({sub.email})</p>
-                    </div>
-                    <span className={`px-4 py-2 rounded-full font-bold text-xs ${
-                      sub.status === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
-                      sub.status === 'Rejected' ? 'bg-[#E76F51]/10 text-[#E76F51]' :
-                      sub.status === 'Under Review' ? 'bg-blue-50 text-blue-600' : 'bg-[#E9C46A]/10 text-[#8B5E3C]'
-                    }`}>
-                      Verification Status: {sub.status}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#F8F5F0]/50 p-6 rounded-2xl border border-[#D4A373]/10 text-xs">
-                    <div>
-                      <p className="font-bold text-gray-400 uppercase tracking-wider">GSTIN Number</p>
-                      <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.gstNumber}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-400 uppercase tracking-wider">PAN Number</p>
-                      <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.panNumber}</p>
-                    </div>
-                    <div>
-                      <p className="font-bold text-gray-400 uppercase tracking-wider">Phone Contact</p>
-                      <p className="font-extrabold text-gray-800 mt-1">{sub.phone}</p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Owner ID Proof (PAN/Aadhaar)</p>
-                      <a href={sub.idProofUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                        <img src={sub.idProofUrl} alt="ID Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open ID URL</div>
-                      </a>
-                    </div>
-
-                  {/* New Business Fields */}
-                  {sub.businessAddress && (
-                    <div className="border border-[#D4A373]/20 rounded-2xl p-5 bg-[#F8F5F0]/50">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Business Address</p>
-                      <p className="text-sm text-gray-700">{sub.businessAddress}</p>
-                    </div>
+            <div className="bg-white rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Vendor Info</th>
+                    <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+                    <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Registration Date</th>
+                    <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="p-5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {vendorRegistrations.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="p-12 text-center text-gray-400 font-bold">No vendor registrations found.</td>
+                    </tr>
+                  ) : (
+                    vendorRegistrations.map((vendor) => (
+                      <tr key={vendor._id} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="p-5">
+                          <p className="font-bold text-[#1F2937] text-sm">{vendor.name}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{vendor.companyName || 'N/A'}</p>
+                        </td>
+                        <td className="p-5">
+                          <p className="text-sm font-medium text-gray-700">{vendor.email}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{vendor.phone || 'N/A'}</p>
+                        </td>
+                        <td className="p-5">
+                          <p className="text-sm text-gray-700">{new Date(vendor.createdAt).toLocaleDateString()}</p>
+                          <p className="text-xs text-gray-500 mt-0.5">{new Date(vendor.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        </td>
+                        <td className="p-5">
+                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                            vendor.status === 'Approved' || vendor.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                            vendor.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                            'bg-amber-50 text-amber-600 border-amber-200'
+                          }`}>
+                            {vendor.status === 'Active' ? 'Approved' : vendor.status || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="p-5 text-right">
+                          <div className="flex justify-end gap-2">
+                            {(vendor.status === 'Pending' || vendor.status === 'pending') && (
+                              <>
+                                <button onClick={() => handleApproveVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Approve</button>
+                                <button onClick={() => handleRejectVendorRegistration(vendor._id)} className="px-3 py-1.5 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-lg font-bold text-xs shadow-sm transition-all">Reject</button>
+                              </>
+                            )}
+                            {(vendor.status !== 'Pending' && vendor.status !== 'pending') && (
+                              <span className="text-xs text-gray-400 italic">No actions available</span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {sub.gstCertificateUrl && (
-                      <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">GST Certificate</p>
-                        <a href={sub.gstCertificateUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                          <img src={sub.gstCertificateUrl} alt="GST Certificate" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open GST Certificate</div>
-                        </a>
-                      </div>
-                    )}
-                    {sub.businessLicenseUrl && (
-                      <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
-                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Business License</p>
-                        <a href={sub.businessLicenseUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                          <img src={sub.businessLicenseUrl} alt="Business License" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
-                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open Business License</div>
-                        </a>
-                      </div>
-                    )}
-                  </div>
-
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="border border-gray-150 rounded-2xl p-5 space-y-3 bg-white">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Address Proof (GST/Utility Bill)</p>
-                      <a href={sub.addressProofUrl} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-100">
-                        <img src={sub.addressProofUrl} alt="Address Proof" className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">Open Address URL</div>
-                      </a>
-                    </div>
-                  </div>
-
-                  {/* Bank Details Section */}
-                  {sub.bankDetails && sub.bankDetails.accountNumber && (
-                    <div className="border border-[#D4A373]/20 rounded-2xl p-5 bg-[#F8F5F0]/50">
-                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Bank Account Details</p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                        <div>
-                          <p className="font-bold text-gray-400 uppercase tracking-wider">Account Number</p>
-                          <p className="font-extrabold text-gray-800 mt-1">{sub.bankDetails.accountNumber}</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-400 uppercase tracking-wider">IFSC Code</p>
-                          <p className="font-extrabold text-gray-800 mt-1 uppercase">{sub.bankDetails.ifscCode}</p>
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-400 uppercase tracking-wider">Bank Name</p>
-                          <p className="font-extrabold text-gray-800 mt-1">{sub.bankDetails.bankName}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Submission Date */}
-                  <div className="text-xs text-gray-400 font-medium flex items-center gap-1">
-                    <Calendar className="w-3.5 h-3.5" />
-                    Submitted: {new Date(sub.submittedAt || sub.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-
-                  {sub.adminRemarks && (
-                    <div className="p-4 bg-amber-50/50 rounded-xl border border-[#D4A373]/20">
-                      <p className="text-xs font-bold text-gray-700">Existing Remarks: <span className="font-normal text-gray-600">{sub.adminRemarks}</span></p>
-                    </div>
-                  )}
-
-                  <div className="pt-4 border-t border-gray-100 space-y-4">
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider">Evaluation Remarks / Feedback</label>
-                    <textarea rows={2} placeholder="Enter remarks regarding verification approval or rejection..." value={remarks[sub._id] || ''} onChange={(e) => setRemarks({ ...remarks, [sub._id]: e.target.value })} className="w-full p-4 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-[#8B5E3C]" />
-                    <div className="flex gap-4">
-                      {(sub.status === 'Submitted' || sub.status === 'Pending' || sub.status === 'Under Review') && (
-                        <>
-                          <button onClick={() => handleVerifyBusiness(sub._id, 'Approved')} className="px-6 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Approve Verification</button>
-                          <button onClick={() => handleVerifyBusiness(sub._id, 'Rejected')} className="px-6 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold text-xs shadow-md transition-all">Reject Verification</button>
-                          {(sub.status === 'Submitted' || sub.status === 'Pending') && (
-                            <button onClick={() => handleVerifyBusiness(sub._id, 'Under Review')} className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-bold text-xs shadow-md transition-all">Mark Under Review</button>
-                          )}
-                        </>
-                      )}
-                      {sub.status !== 'Submitted' && sub.status !== 'Pending' && sub.status !== 'Under Review' && (
-                        <span className="text-xs text-gray-400 italic">No further actions available (Verification is {sub.status})</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                </tbody>
+              </table>
+            </div>
         </div>
       )}
 
