@@ -384,118 +384,116 @@ const VendorDashboard = ({
 
       // ── Async: refresh from backend ──
       // 1. Get Vendor Profile & Stats
-      const profileRes = await axios.get('/vendor/profile');
-      if (profileRes.data.success) {
-        setProfile(profileRes.data.data.vendor);
-        setStats(profileRes.data.data.stats);
-      }
+      axios.get('/vendor/profile').then(profileRes => {
+        if (profileRes.data.success) {
+          setProfile(profileRes.data.data.vendor);
+          setStats(profileRes.data.data.stats);
+          
+          // 4. Products list (depends on vendor profile)
+          const vendorId = profileRes.data.data.vendor._id;
+          if (vendorId) {
+            axios.get('/products?vendorId=' + vendorId).then(productsRes => {
+              if (productsRes.data.success) {
+                setProducts(productsRes.data.data);
+              }
+            }).catch(err => console.warn('Backend products fetch failed:', err));
+          }
+        }
+      }).catch(err => console.warn('Backend profile fetch failed:', err));
 
       // 2. Verification Submission status lookup
-      const verifRes = await axios.get('/vendor/verification');
-      if (verifRes.data.success) {
-        const currentVerification = verifRes.data.data;
-        setVerificationDetails(currentVerification);
-        if (currentVerification && currentVerification.status !== 'Not Submitted') {
-          setVerifyBusinessName(currentVerification.businessName || '');
-          setVerifyOwnerName(currentVerification.ownerName || '');
-          setVerifyPhone(currentVerification.phone || '');
-          setVerifyEmail(currentVerification.email || '');
-          setVerifyGst(currentVerification.gstNumber || '');
-          setVerifyPan(currentVerification.panNumber || '');
-          setVerifyIdProof(currentVerification.idProofUrl || '');
-          setVerifyAddressProof(currentVerification.addressProofUrl || '');
+      axios.get('/vendor/verification').then(verifRes => {
+        if (verifRes.data.success) {
+          const currentVerification = verifRes.data.data;
+          setVerificationDetails(currentVerification);
+          if (currentVerification && currentVerification.status !== 'Not Submitted') {
+            setVerifyBusinessName(currentVerification.businessName || '');
+            setVerifyOwnerName(currentVerification.ownerName || '');
+            setVerifyPhone(currentVerification.phone || '');
+            setVerifyEmail(currentVerification.email || '');
+            setVerifyGst(currentVerification.gstNumber || '');
+            setVerifyPan(currentVerification.panNumber || '');
+            setVerifyIdProof(currentVerification.idProofUrl || '');
+            setVerifyAddressProof(currentVerification.addressProofUrl || '');
+          }
         }
-      }
+      }).catch(err => console.warn('Backend verification fetch failed:', err));
 
       // 3. Store Setup Lookup
-      const storeRes = await axios.get('/vendor/store-setup');
-      if (storeRes.data.success) {
-        const currentStoreSetup = storeRes.data.data;
-        setStoreSetupDetails(currentStoreSetup);
-        if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
-          setStoreBrandName(currentStoreSetup.brandName || '');
-          setStoreDescription(currentStoreSetup.description || '');
-          setStoreSupportEmail(currentStoreSetup.supportEmail || '');
-          setStoreSupportPhone(currentStoreSetup.supportPhone || '');
-          setStoreAddress(currentStoreSetup.address || '');
-          setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
-          setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
-          setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+      axios.get('/vendor/store-setup').then(storeRes => {
+        if (storeRes.data.success) {
+          const currentStoreSetup = storeRes.data.data;
+          setStoreSetupDetails(currentStoreSetup);
+          if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
+            setStoreBrandName(currentStoreSetup.brandName || '');
+            setStoreDescription(currentStoreSetup.description || '');
+            setStoreSupportEmail(currentStoreSetup.supportEmail || '');
+            setStoreSupportPhone(currentStoreSetup.supportPhone || '');
+            setStoreAddress(currentStoreSetup.address || '');
+            setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
+            setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
+            setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+          }
         }
-      }
-
-      // 4. Products list
-      const vendorId = profileRes.data?.data?.vendor?._id;
-      if (vendorId) {
-        const productsRes = await axios.get('/products?vendorId=' + vendorId);
-        if (productsRes.data.success) {
-          setProducts(productsRes.data.data);
-        }
-      }
+      }).catch(err => console.warn('Backend store setup fetch failed:', err));
 
       // 5. Custom Requests
-      let backendRequests = [];
-      try {
-        const reqRes = await axios.get('/vendor/requests');
-        if (reqRes.data.success) backendRequests = reqRes.data.data;
-      } catch (err) { console.warn('Backend custom requests fetch failed'); }
-      
-      setCustomRequests(backendRequests);
+      axios.get('/vendor/requests').then(reqRes => {
+        if (reqRes.data.success) setCustomRequests(reqRes.data.data);
+      }).catch(err => {
+        console.warn('Backend custom requests fetch failed');
+        setCustomRequests([]);
+      });
 
       // 6. Orders (Manufacturing and Delivery)
-      let localOrders = [];
-      let fetchedSuccessfully = false;
-      try {
-        const ordersRes = await axios.get('/vendor/orders');
+      axios.get('/vendor/orders').then(ordersRes => {
         if (ordersRes.data.success) {
-          localOrders = ordersRes.data.data;
-          fetchedSuccessfully = true;
+          const localOrders = ordersRes.data.data;
+          let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
+          setReadyMadeOrders(mktOrders);
+          
+          const mfgOrders = localOrders
+            .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
+            .map(o => ({
+              _id: o._id,
+              orderId: o._id,
+              designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
+                ? 'AI Design - ' + o.aiDesignData.roomType
+                : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+              measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
+                ? o.aiDesignData.measurements
+                : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+              materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
+              budget: o.quotationAmount || o.totalAmount,
+              status: o.orderStatus,
+              progressImages: o.progressImages || []
+            }));
+          setManufacturingOrders(mfgOrders);
+
+          const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
+          setPendingVerificationOrders(pendingOrders);
+
+          const deliveryTrackingStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
+          const delOrders = localOrders
+            .filter(o => deliveryTrackingStatuses.includes(o.orderStatus))
+            .map(o => ({
+              _id: o._id,
+              orderId: o._id,
+              shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
+              status: o.orderStatus,
+              trackingNotes: o.trackingNotes || 'Dispatched from central hub',
+              userId: o.userId,
+              customerName: o.customerName,
+              designDetails: o.designDetails
+            }));
+          setDeliveryOrders(delOrders);
+          
+          const aiOrders = localOrders.filter(o => o.orderType === 'AI Design');
+          setAiDesignOrders(aiOrders);
         }
-      } catch (err) { console.warn('Backend orders fetch failed'); }
-
-      if (fetchedSuccessfully) {
-        let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
-        setReadyMadeOrders(mktOrders);
-        
-        const mfgOrders = localOrders
-          .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
-          .map(o => ({
-            _id: o._id,
-            orderId: o._id,
-            designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
-              ? 'AI Design - ' + o.aiDesignData.roomType
-              : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
-            measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
-              ? o.aiDesignData.measurements
-              : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
-            materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
-            budget: o.quotationAmount || o.totalAmount,
-            status: o.orderStatus,
-            progressImages: o.progressImages || []
-          }));
-        setManufacturingOrders(mfgOrders);
-
-        const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
-        setPendingVerificationOrders(pendingOrders);
-
-        const deliveryTrackingStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
-        const delOrders = localOrders
-          .filter(o => deliveryTrackingStatuses.includes(o.orderStatus))
-          .map(o => ({
-            _id: o._id,
-            orderId: o._id,
-            shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
-            status: o.orderStatus,
-            trackingNotes: o.trackingNotes || 'Dispatched from central hub',
-            userId: o.userId,
-            customerName: o.customerName,
-            designDetails: o.designDetails
-          }));
-        setDeliveryOrders(delOrders);
-        
-        const aiOrders = localOrders.filter(o => o.orderType === 'AI Design');
-        setAiDesignOrders(aiOrders);
-      }
+      }).catch(err => {
+        console.warn('Backend orders fetch failed');
+      });
 
     } catch (error) {
       console.error('Error fetching vendor data', error);

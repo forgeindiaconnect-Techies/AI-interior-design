@@ -418,37 +418,27 @@ const UserDashboard = ({
     try {
 
       // 1. AI Designs (Fetch dynamic designs from backend)
-      try {
-        const res = await axios.get('/designs/ai');
+      axios.get('/designs/ai').then(res => {
         if (res.data && res.data.success) {
           setAiDesigns(res.data.data);
         }
-      } catch (err) {
-        console.warn('Backend ai designs fetch failed:', err);
-      }
+      }).catch(err => console.warn('Backend ai designs fetch failed:', err));
 
       // 2. Manual Requests
-      try {
-        const res = await axios.get('/designs/manual');
+      axios.get('/designs/manual').then(res => {
         if (res.data && res.data.success && res.data.data.length > 0) {
           setManualDesigns(res.data.data);
         }
-      } catch (err) {
-        console.warn('Backend manual designs fetch failed:', err);
-      }
+      }).catch(err => console.warn('Backend manual designs fetch failed:', err));
 
       // 3. Products
-      try {
-        const res = await axios.get('/products');
+      axios.get('/products').then(res => {
         const serverProds = res.data?.data || [];
         if (serverProds.length > 0) setProducts(serverProds);
-      } catch (err) {
-        console.warn('Backend products fetch failed in UserDashboard:', err);
-      }
+      }).catch(err => console.warn('Backend products fetch failed in UserDashboard:', err));
 
       // 4. Orders from backend (custom/design)
-      try {
-        const ordersRes = await axios.get('/orders/user');
+      axios.get('/orders/user').then(ordersRes => {
         if (ordersRes.data && ordersRes.data.success) {
           const dbOrders = ordersRes.data.data;
           setOrders(prev => {
@@ -459,13 +449,10 @@ const UserDashboard = ({
             return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           });
         }
-      } catch (err) {
-        console.warn('Backend orders fetch failed in UserDashboard:', err);
-      }
+      }).catch(err => console.warn('Backend orders fetch failed in UserDashboard:', err));
 
       // 5. Marketplace orders
-      try {
-        const mktRes = await axios.get('/marketplace-orders/myorders');
+      axios.get('/marketplace-orders/myorders').then(mktRes => {
         if (mktRes.data?.success && mktRes.data.data) {
           const mktOrders = mktRes.data.data.map(o => ({
             _id: o._id,
@@ -497,30 +484,22 @@ const UserDashboard = ({
             return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           });
         }
-      } catch (err) {
-        console.warn('Backend marketplace orders fetch failed:', err);
-      }
+      }).catch(err => console.warn('Backend marketplace orders fetch failed:', err));
 
       // 6. User reviews
-      try {
-        const reviewsRes = await axios.get('/orders/reviews/user');
+      axios.get('/orders/reviews/user').then(reviewsRes => {
         if (reviewsRes.data && reviewsRes.data.success && reviewsRes.data.data.length > 0) {
           setUserReviews(reviewsRes.data.data);
         }
-      } catch (err) {
-        console.warn('Backend reviews fetch failed in UserDashboard:', err);
-      }
+      }).catch(err => console.warn('Backend reviews fetch failed in UserDashboard:', err));
 
       // 7. Cart
-      try {
-        const cartRes = await axios.get('/cart');
+      axios.get('/cart').then(cartRes => {
         const cartData = cartRes.data?.data;
         if (cartData && cartData.items) {
           setCartItems(cartData.items.filter(item => item.productId));
         }
-      } catch (err) {
-        console.warn('Failed to fetch cart in fetchUserData:', err);
-      }
+      }).catch(err => console.warn('Failed to fetch cart in fetchUserData:', err));
     } catch (error) {
       console.error('Error fetching user dashboard data', error);
     }
