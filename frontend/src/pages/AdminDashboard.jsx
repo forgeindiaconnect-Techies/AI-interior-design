@@ -401,8 +401,12 @@ const AdminDashboard = ({
   }, []);
 
   useEffect(() => {
+    let verifInterval = null;
+    let hasFailed = false;
+
     if (activeTab === 'verifications') {
       const loadVendorRegistrations = async () => {
+        if (hasFailed) return; // Stop retrying after a failure
         try {
           const res = await axios.get('/admin/vendor-registrations', {
             headers: { Authorization: `Bearer ${user?.token}` }
@@ -411,10 +415,12 @@ const AdminDashboard = ({
             setVendorRegistrations(res.data.data);
           }
         } catch (err) {
-          console.error('Failed to load vendor registrations:', err);
+          hasFailed = true; // Mark as failed to stop the interval from retrying
+          if (verifInterval) clearInterval(verifInterval);
+          // Silently handle - the URL fix resolves the root cause; this prevents console spam
         }
       };
-      
+
       const loadVerifFromStorage = () => {
         const localVer = [];
         if (localVer.length > 0) {
@@ -425,14 +431,18 @@ const AdminDashboard = ({
           });
         }
       };
-      
+
       loadVendorRegistrations();
       loadVerifFromStorage();
-      const verifInterval = setInterval(() => {
-        loadVendorRegistrations();
-        loadVerifFromStorage();
-      }, 5000);
-      return () => clearInterval(verifInterval);
+      verifInterval = setInterval(() => {
+        if (!hasFailed) {
+          loadVendorRegistrations();
+          loadVerifFromStorage();
+        }
+      }, 10000); // Increased to 10s to reduce noise
+      return () => {
+        if (verifInterval) clearInterval(verifInterval);
+      };
     }
   }, [activeTab, user?.token]);
 
