@@ -522,8 +522,7 @@ exports.updateAIDesignStatus = async (req, res) => {
 // @access  Private
 exports.deleteAIDesign = async (req, res) => {
   try {
-    const design = await AIDesignRequest.findByIdAndDelete(req.params.id);
-    if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
+    await AIDesignRequest.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
