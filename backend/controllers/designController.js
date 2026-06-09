@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const Replicate = require('replicate');
 const axios = require('axios');
 const https = require('https');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 let mockManualDesigns = [
   {
@@ -292,6 +293,46 @@ exports.createAIDesign = async (req, res) => {
 
     let finalGeneratedImage = generatedImage || getFallbackImage(roomType);
 
+    let geminiAnalysis = null;
+    if (process.env.GEMINI_API_KEY && originalImage) {
+      try {
+        console.log(`Analyzing ${roomType} using Gemini Vision...`);
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        const base64Data = originalImage.split(',')[1];
+        const mimeType = originalImage.match(/data:([^;]+);/)[1];
+        
+        const prompt = `Analyze this empty room image.
+Detect: Room type, Empty walls, Available floor space, Corners, Windows, Doors, Existing furniture.
+Provide a structured JSON response EXACTLY matching this format (no markdown blocks, just raw JSON):
+{
+  "roomType": "${roomType}",
+  "detectedElements": {
+    "windows": ["string"],
+    "doors": ["string"],
+    "existingObjects": ["string"],
+    "emptyAreas": ["string"]
+  },
+  "recommendedFurniturePlacement": [
+    { "location": "string", "items": ["string"] }
+  ]
+}`;
+        
+        const result = await model.generateContent([
+          prompt,
+          { inlineData: { data: base64Data, mimeType } }
+        ]);
+        
+        const responseText = result.response.text();
+        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        geminiAnalysis = JSON.parse(jsonStr);
+        console.log("Successfully generated Gemini Room Analysis.");
+      } catch (err) {
+        console.error("Gemini Vision Error:", err.message);
+      }
+    }
+
     if (process.env.REPLICATE_API_TOKEN && originalImage) {
       try {
         const replicate = new Replicate({
@@ -331,7 +372,9 @@ exports.createAIDesign = async (req, res) => {
       try {
         const seed = Math.floor(Math.random() * 1000000);
         // Build a layout-aware prompt from the furniture plan
-        const layoutDesc = (currentRoom.furnitureLayout || []).slice(0, 4).map(f => `${f.item} on ${f.position}`).join(', ');
+        const layoutDesc = geminiAnalysis?.recommendedFurniturePlacement
+          ? geminiAnalysis.recommendedFurniturePlacement.map(p => `${p.items.join(', ')} on ${p.location}`).join(', ')
+          : (currentRoom.furnitureLayout || []).slice(0, 4).map(f => `${f.item} on ${f.position}`).join(', ');
         const prompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType} with ${layoutDesc}, architectural digest, beautiful lighting, 8k resolution`);
         
         // Pollinations AI returns a direct image buffer
@@ -370,7 +413,15 @@ exports.createAIDesign = async (req, res) => {
     };
 
     const finalAnalysis = analysis || {
-      detectedRoomType: roomType,
+      detectedRoomType: geminiAnalysis?.roomType || roomType,
+      detectedElements: geminiAnalysis?.detectedElements || {
+        windows: currentRoom.spatialFeatures?.windows || [],
+        doors: currentRoom.spatialFeatures?.doors || [],
+        existingObjects: currentRoom.detectedItems || [],
+        emptyAreas: currentRoom.spatialFeatures?.walls || []
+      },
+      recommendedFurniturePlacement: geminiAnalysis?.recommendedFurniturePlacement || 
+        (currentRoom.furnitureLayout || []).map(f => ({ location: f.position, items: [f.item] })),
       detectedItems: currentRoom.detectedItems,
       lightingAnalysis: currentRoom.analysis,
       colorProfile: currentRoom.palette,

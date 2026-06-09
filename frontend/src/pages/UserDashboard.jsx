@@ -1497,11 +1497,85 @@ Thank you for shopping with Artisan Studio!
                   <span>Start a New AI Design</span>
                 </button>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* Left Column: Image Viewer with Before/After Toggle */}
-                  <div className="lg:col-span-6 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                <div className="flex flex-col gap-8">
+                  {/* Top Section: AI Room Analysis Blueprint & Recommendations */}
+                  <div className="w-full space-y-8">
+                    {latestDesign.analysis && (
+                      <div className="bg-[#F8F5F0] p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                        <div className="flex items-center gap-2 border-b border-[#D4A373]/20 pb-4">
+                          <Eye className="w-5 h-5 text-[#8B5E3C]" />
+                          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Artisan AI Room Analysis Report</h3>
+                        </div>
+
+                        {/* Room Type */}
+                        <div className="grid grid-cols-2 gap-4 text-xs">
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Room Type DNA</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.detectedRoomType}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Space Flow Index</span>
+                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.spaceUtilization}</span>
+                          </div>
+                        </div>
+
+                        {/* Detected Elements (Gemini Data) */}
+                        {latestDesign.analysis.detectedElements && (
+                          <div className="border-t border-[#D4A373]/20 pt-4">
+                            <span className="text-[#1F2937] font-bold text-sm uppercase tracking-wider mb-3 block">Detected Elements</span>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-1">Windows</span>
+                                <span className="font-bold text-[#1F2937] text-xs">{(latestDesign.analysis.detectedElements.windows || []).join(', ') || 'None'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-1">Doors</span>
+                                <span className="font-bold text-[#1F2937] text-xs">{(latestDesign.analysis.detectedElements.doors || []).join(', ') || 'None'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-1">Existing Objects</span>
+                                <span className="font-bold text-[#1F2937] text-xs">{(latestDesign.analysis.detectedElements.existingObjects || []).join(', ') || 'None'}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-1">Empty Areas</span>
+                                <span className="font-bold text-[#1F2937] text-xs">{(latestDesign.analysis.detectedElements.emptyAreas || []).join(', ') || 'None'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Layout Plan */}
+                        {(latestDesign.analysis.recommendedFurniturePlacement || latestDesign.analysis.designPlan?.suggestedLayout) && (
+                          <div className="border-t border-[#D4A373]/20 pt-4 animate-fadeIn">
+                            <div className="flex items-center gap-2 mb-3">
+                              <LayoutDashboard className="w-4 h-4 text-[#2A9D8F]" />
+                              <span className="text-[#1F2937] font-bold text-sm uppercase tracking-wider">Suggested Layout & Positioning</span>
+                            </div>
+                            <div className="space-y-3">
+                              {(latestDesign.analysis.recommendedFurniturePlacement || latestDesign.analysis.designPlan.suggestedLayout).map((layout, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1">
+                                  <div className="flex justify-between items-start">
+                                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{layout.location || layout.position}</span>
+                                  </div>
+                                  <ul className="list-disc list-inside mt-1">
+                                    {(layout.items || [layout.furniture]).map((item, i) => (
+                                      <li key={i} className="font-bold text-[#1F2937] text-xs">{item}</li>
+                                    ))}
+                                  </ul>
+                                  {layout.reason && <span className="text-[#6B7280] text-[10px] italic">{layout.reason}</span>}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom Section: Image Viewer with Before/After Toggle */}
+                  <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                     <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Before & After Comparison</h3>
-                    <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] bg-gray-900 flex items-center justify-center">
+                    <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
                       <img 
                         src={showOriginalImage ? latestDesign.originalImage : latestDesign.generatedImage} 
                         alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
@@ -1528,75 +1602,7 @@ Thank you for shopping with Artisan Studio!
                       </button>
                     </div>
                   </div>
-
-                  {/* Right Column: AI Room Analysis Blueprint & Recommendations */}
-                  <div className="lg:col-span-6 space-y-8">
-                    {/* Blueprint Card */}
-                    {latestDesign.analysis && (
-                      <div className="bg-[#F8F5F0] p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                        <div className="flex items-center gap-2 border-b border-[#D4A373]/20 pb-4">
-                          <Eye className="w-5 h-5 text-[#8B5E3C]" />
-                          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Artisan AI Room Analysis Report</h3>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 text-xs">
-                          <div>
-                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Room Type DNA</span>
-                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.detectedRoomType}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Estimated Footprint</span>
-                            <span className="font-bold text-[#1F2937] text-sm">{roomType === 'Living Room' ? '180 sq ft' : roomType === 'Bedroom' ? '150 sq ft' : roomType === 'Kitchen' ? '120 sq ft' : 'Standard'}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Lighting Grid</span>
-                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.lightingAnalysis}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px]">Space Flow Index</span>
-                            <span className="font-bold text-[#1F2937] text-sm">{latestDesign.analysis.spaceUtilization}</span>
-                          </div>
-                        </div>
-
-                        <div className="border-t border-[#D4A373]/20 pt-4">
-                          <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-2">Dominant Colors Found</span>
-                          <div className="flex gap-2">
-                            {latestDesign.analysis.colorProfile?.map((color, i) => (
-                              <span key={i} className="px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700">{color}</span>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="border-t border-[#D4A373]/20 pt-4">
-                          <span className="text-gray-400 block font-medium uppercase tracking-wider text-[10px] mb-2">Styling Directives (WGAN-GP)</span>
-                          <ul className="text-xs text-gray-700 space-y-2 list-disc list-inside leading-relaxed">
-                            {latestDesign.analysis.recommendations?.map((rec, i) => (
-                              <li key={i}><span className="font-medium">{rec}</span></li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {latestDesign.analysis.designPlan && (
-                          <div className="border-t border-[#D4A373]/20 pt-4 animate-fadeIn">
-                            <div className="flex items-center gap-2 mb-3">
-                              <LayoutDashboard className="w-4 h-4 text-[#2A9D8F]" />
-                              <span className="text-[#1F2937] font-bold text-sm uppercase tracking-wider">Suggested Layout & Positioning</span>
-                            </div>
-                            <div className="space-y-3">
-                              {latestDesign.analysis.designPlan.suggestedLayout?.map((layout, idx) => (
-                                <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1">
-                                  <div className="flex justify-between items-start">
-                                    <span className="font-bold text-[#1F2937] text-xs">{layout.furniture}</span>
-                                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{layout.position}</span>
-                                  </div>
-                                  <span className="text-[#6B7280] text-[10px] italic">{layout.reason}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                </div>
 
                     {/* Suggestions Box */}
                     <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
@@ -1625,10 +1631,8 @@ Thank you for shopping with Artisan Studio!
                           </div>
                         </div>
                       </div>
-                    </div>
                   </div>
                 </div>
-              </div>
             );
           })()}
 
@@ -1796,19 +1800,23 @@ Thank you for shopping with Artisan Studio!
                               </ul>
                             </div>
                             
-                            {design.analysis.designPlan && (
+                            {(design.analysis.recommendedFurniturePlacement || design.analysis.designPlan?.suggestedLayout) && (
                               <div className="space-y-3 pt-3 border-t border-[#D4A373]/20">
                                 <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2 flex items-center gap-2">
                                   <LayoutDashboard className="w-4 h-4 text-[#2A9D8F]"/> Suggested Layout
                                 </h4>
                                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                                  {design.analysis.designPlan.suggestedLayout?.map((layout, idx) => (
+                                  {(design.analysis.recommendedFurniturePlacement || design.analysis.designPlan.suggestedLayout).map((layout, idx) => (
                                     <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm flex flex-col gap-0.5">
                                       <div className="flex justify-between items-start">
-                                        <span className="font-bold text-[#1F2937] text-[10px]">{layout.furniture}</span>
-                                        <span className="text-[#2A9D8F] text-[9px] font-bold">{layout.position}</span>
+                                        <span className="text-[#2A9D8F] text-[9px] font-bold">{layout.location || layout.position}</span>
                                       </div>
-                                      <span className="text-[#6B7280] text-[9px] italic">{layout.reason}</span>
+                                      <ul className="list-disc list-inside mt-1">
+                                        {(layout.items || [layout.furniture]).map((item, i) => (
+                                          <li key={i} className="font-bold text-[#1F2937] text-[10px]">{item}</li>
+                                        ))}
+                                      </ul>
+                                      {layout.reason && <span className="text-[#6B7280] text-[9px] italic">{layout.reason}</span>}
                                     </div>
                                   ))}
                                 </div>

@@ -20,14 +20,7 @@ const AIDesignRequestSchema = new mongoose.Schema({
     colorPalette: [{ type: String }],
     budgetEstimate: { type: Number }
   },
-  analysis: {
-    detectedRoomType: { type: String },
-    detectedItems: [{ type: String }],
-    lightingAnalysis: { type: String },
-    colorProfile: [{ type: String }],
-    spaceUtilization: { type: String },
-    recommendations: [{ type: String }]
-  },
+  analysis: { type: mongoose.Schema.Types.Mixed },
   status: { 
     type: String, 
     enum: ['pending', 'generated', 'accepted', 'rejected'], 
