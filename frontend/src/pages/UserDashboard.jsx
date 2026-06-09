@@ -553,6 +553,9 @@ const UserDashboard = ({
         addLog(`Item Detection: Processing ${roomType} layouts...`);
         await delay(500);
         setAiAnalysisProgress(80);
+        addLog("Analyzing spatial features and generating optimal furniture placement map...");
+        await delay(500);
+        setAiAnalysisProgress(90);
         addLog("Synthesizing modern architectural texture coordinates...");
         await delay(500);
         setAiAnalysisProgress(90);
@@ -1572,6 +1575,26 @@ Thank you for shopping with Artisan Studio!
                             ))}
                           </ul>
                         </div>
+
+                        {latestDesign.analysis.designPlan && (
+                          <div className="border-t border-[#D4A373]/20 pt-4 animate-fadeIn">
+                            <div className="flex items-center gap-2 mb-3">
+                              <LayoutDashboard className="w-4 h-4 text-[#2A9D8F]" />
+                              <span className="text-[#1F2937] font-bold text-sm uppercase tracking-wider">Suggested Layout & Positioning</span>
+                            </div>
+                            <div className="space-y-3">
+                              {latestDesign.analysis.designPlan.suggestedLayout?.map((layout, idx) => (
+                                <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex flex-col gap-1">
+                                  <div className="flex justify-between items-start">
+                                    <span className="font-bold text-[#1F2937] text-xs">{layout.furniture}</span>
+                                    <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-bold">{layout.position}</span>
+                                  </div>
+                                  <span className="text-[#6B7280] text-[10px] italic">{layout.reason}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
@@ -1763,13 +1786,34 @@ Thank you for shopping with Artisan Studio!
                               </div>
                             </div>
                           </div>
-                          <div className="space-y-3">
-                            <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2">💡 Styling Recommendations</h4>
-                            <ul className="text-xs text-gray-600 space-y-2 list-disc list-inside leading-relaxed">
-                              {design.analysis.recommendations?.map((rec, i) => (
-                                <li key={i}><span className="font-medium text-[#1F2937]">{rec}</span></li>
-                              ))}
-                            </ul>
+                          <div className="space-y-4">
+                            <div className="space-y-3">
+                              <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2">💡 Styling Recommendations</h4>
+                              <ul className="text-xs text-gray-600 space-y-2 list-disc list-inside leading-relaxed">
+                                {design.analysis.recommendations?.map((rec, i) => (
+                                  <li key={i}><span className="font-medium text-[#1F2937]">{rec}</span></li>
+                                ))}
+                              </ul>
+                            </div>
+                            
+                            {design.analysis.designPlan && (
+                              <div className="space-y-3 pt-3 border-t border-[#D4A373]/20">
+                                <h4 className="font-['Playfair_Display'] font-bold text-base text-[#1F2937] border-b border-[#D4A373]/20 pb-2 flex items-center gap-2">
+                                  <LayoutDashboard className="w-4 h-4 text-[#2A9D8F]"/> Suggested Layout
+                                </h4>
+                                <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                                  {design.analysis.designPlan.suggestedLayout?.map((layout, idx) => (
+                                    <div key={idx} className="bg-white p-2 rounded-lg border border-gray-100 shadow-sm flex flex-col gap-0.5">
+                                      <div className="flex justify-between items-start">
+                                        <span className="font-bold text-[#1F2937] text-[10px]">{layout.furniture}</span>
+                                        <span className="text-[#2A9D8F] text-[9px] font-bold">{layout.position}</span>
+                                      </div>
+                                      <span className="text-[#6B7280] text-[9px] italic">{layout.reason}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}

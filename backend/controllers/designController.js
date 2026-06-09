@@ -58,7 +58,18 @@ exports.createAIDesign = async (req, res) => {
         budget: 4500,
         detectedItems: ['Sofa', 'Coffee Table', 'Floor Lamp', 'Window'],
         analysis: 'Moderate natural light from side window, soft shadows in corners.',
-        recs: ['Contrast slate grey elements with warm teak wood accents.', 'Introduce warm brass wall sconces to elevate low-light areas.']
+        recs: ['Contrast slate grey elements with warm teak wood accents.', 'Introduce warm brass wall sconces to elevate low-light areas.'],
+        spatialFeatures: { walls: ['Left wall (3.6m)', 'Right wall (3.6m)', 'Front wall (4.2m)', 'Back wall (4.2m)'], windows: ['1 large window on right wall'], doors: ['1 entry door on back wall'], corners: ['4 accessible corners'], floorSpace: '15.1 sq m open floor area' },
+        furnitureLayout: [
+          { item: 'L-shaped Sofa', position: 'Left wall', reason: 'Maximizes seating against the longest uninterrupted wall, faces the entertainment zone' },
+          { item: 'TV Unit', position: 'Front wall (opposite sofa)', reason: 'Optimal 2.5m viewing distance from the sofa for comfortable viewing' },
+          { item: 'Coffee Table', position: 'Center (between sofa and TV)', reason: 'Creates a functional focal point within arm reach of all seating' },
+          { item: 'Floor Lamp', position: 'Right corner (near window)', reason: 'Supplements natural light from the window during evenings' },
+          { item: 'Indoor Plant', position: 'Near window (right wall)', reason: 'Receives maximum natural sunlight for healthy growth' },
+          { item: 'Wall Art / Gallery', position: 'Above sofa (left wall)', reason: 'Creates visual interest at eye level from the main seating area' },
+          { item: 'Accent Chair', position: 'Right side, angled toward sofa', reason: 'Creates conversational seating arrangement' },
+          { item: 'Side Table', position: 'Adjacent to accent chair', reason: 'Functional surface for drinks and lamps' }
+        ]
       },
       'Bedroom': {
         palette: ['#8B5E3C', '#E9C46A', '#F8F5F0', '#6B7280'],
@@ -67,7 +78,17 @@ exports.createAIDesign = async (req, res) => {
         budget: 3500,
         detectedItems: ['Bed Frame', 'Nightstand', 'Wardrobe', 'Pillow'],
         analysis: 'Soft diffused warm lighting, minimal natural glare.',
-        recs: ['Introduce a platform bed with floating nightstands to save floor space.', 'Add dimmable warm ambient lamps for a relaxed atmosphere.']
+        recs: ['Introduce a platform bed with floating nightstands to save floor space.', 'Add dimmable warm ambient lamps for a relaxed atmosphere.'],
+        spatialFeatures: { walls: ['Left wall (3.2m)', 'Right wall (3.2m)', 'Front wall (3.8m)', 'Back wall (3.8m)'], windows: ['1 window on front wall'], doors: ['1 entry door on left wall'], corners: ['4 corners, 2 usable'], floorSpace: '12.2 sq m usable floor area' },
+        furnitureLayout: [
+          { item: 'King/Queen Bed', position: 'Center of back wall', reason: 'Symmetrical placement creates balance; headboard anchors the room' },
+          { item: 'Nightstand (Left)', position: 'Left side of bed', reason: 'Easy access to alarm, phone, and reading lamp' },
+          { item: 'Nightstand (Right)', position: 'Right side of bed', reason: 'Symmetrical pairing enhances visual harmony' },
+          { item: 'Wardrobe', position: 'Right wall', reason: 'Keeps dressing area separate from sleeping zone' },
+          { item: 'Dressing Table', position: 'Front wall (near window)', reason: 'Natural light ideal for grooming' },
+          { item: 'Floor Lamp', position: 'Corner near bed (left)', reason: 'Ambient reading light without harsh overhead glare' },
+          { item: 'Wall-mounted Shelves', position: 'Above bed (back wall)', reason: 'Decorative storage without consuming floor space' }
+        ]
       },
       'Kitchen': {
         palette: ['#2F3E46', '#8B5E3C', '#F8F5F0', '#D4A373'],
@@ -76,7 +97,16 @@ exports.createAIDesign = async (req, res) => {
         budget: 8500,
         detectedItems: ['Cabinet', 'Countertop', 'Sink', 'Refrigerator'],
         analysis: 'Bright task lighting, overhead fluorescent glare.',
-        recs: ['Add a marble waterfall kitchen island to bridge workspace gap.', 'Install under-cabinet LED warm strip lights for functional elegance.']
+        recs: ['Add a marble waterfall kitchen island to bridge workspace gap.', 'Install under-cabinet LED warm strip lights for functional elegance.'],
+        spatialFeatures: { walls: ['Left wall (2.8m)', 'Right wall (2.8m)', 'Front wall (3.4m)', 'Back wall (3.4m)'], windows: ['1 window above sink area'], doors: ['1 entry from dining area'], corners: ['L-shaped counter corner'], floorSpace: '9.5 sq m total, 5.2 sq m walkway' },
+        furnitureLayout: [
+          { item: 'L-shaped Counter', position: 'Left wall + back wall', reason: 'Maximizes workspace following the kitchen work triangle' },
+          { item: 'Sink', position: 'Back wall (under window)', reason: 'Natural light for washing; ventilation for steam' },
+          { item: 'Refrigerator', position: 'Right wall (near entry)', reason: 'Accessible without entering the cooking zone' },
+          { item: 'Overhead Cabinets', position: 'Above counters (left + back wall)', reason: 'Vertical storage keeps counters clear' },
+          { item: 'Kitchen Island / Prep Table', position: 'Center', reason: 'Additional prep surface and casual dining spot' },
+          { item: 'Microwave / Oven Stack', position: 'Right wall (tall unit)', reason: 'Ergonomic height placement, away from wet zone' }
+        ]
       },
       'Dining Room': {
         palette: ['#E76F51', '#264653', '#E9C46A', '#FFFFFF'],
@@ -85,7 +115,15 @@ exports.createAIDesign = async (req, res) => {
         budget: 4200,
         detectedItems: ['Dining Table', 'Chairs', 'Lighting'],
         analysis: 'Centralized overhead lighting, balanced space around table.',
-        recs: ['Use a statement chandelier above the dining table.', 'Include a built-in buffet for additional storage.']
+        recs: ['Use a statement chandelier above the dining table.', 'Include a built-in buffet for additional storage.'],
+        spatialFeatures: { walls: ['Left wall (3.0m)', 'Right wall (3.0m)', 'Front wall (3.6m)', 'Back wall (3.6m)'], windows: ['1 window on front wall'], doors: ['1 archway to kitchen'], corners: ['4 corners'], floorSpace: '10.8 sq m, 60% occupied by dining set' },
+        furnitureLayout: [
+          { item: '6-seater Dining Table', position: 'Center of room', reason: 'Equal circulation space on all sides for comfortable movement' },
+          { item: 'Statement Chandelier', position: 'Ceiling, directly above table', reason: 'Focal lighting creates intimate dining atmosphere' },
+          { item: 'Buffet / Sideboard', position: 'Back wall', reason: 'Serves as serving station and tableware storage' },
+          { item: 'Wall Art / Mirror', position: 'Front wall (facing table)', reason: 'Reflects light and visually expands the space' },
+          { item: 'Indoor Plant', position: 'Corner near window', reason: 'Adds organic warmth to the dining atmosphere' }
+        ]
       },
       'Bathroom': {
         palette: ['#2A9D8F', '#2F3E46', '#FFFFFF', '#D4A373'],
@@ -94,7 +132,15 @@ exports.createAIDesign = async (req, res) => {
         budget: 3000,
         detectedItems: ['Vanity', 'Mirror', 'Shower Glass', 'Toilet'],
         analysis: 'Cool LED lighting, high reflective sheen.',
-        recs: ['Introduce a floating oak vanity to increase visual space.', 'Choose matte black plumbing fixtures for modern contrast.']
+        recs: ['Introduce a floating oak vanity to increase visual space.', 'Choose matte black plumbing fixtures for modern contrast.'],
+        spatialFeatures: { walls: ['Left wall (2.0m)', 'Right wall (2.0m)', 'Front wall (2.5m)', 'Back wall (2.5m)'], windows: ['1 frosted window on right wall'], doors: ['1 entry door on front wall'], corners: ['Shower corner, vanity corner'], floorSpace: '5.0 sq m, waterproof tiled floor' },
+        furnitureLayout: [
+          { item: 'Floating Vanity + Mirror', position: 'Left wall', reason: 'Eye-level mirror with under-vanity storage saves space' },
+          { item: 'Walk-in Shower', position: 'Back-right corner', reason: 'Enclosed wet zone away from the entrance' },
+          { item: 'Toilet', position: 'Right wall (near window)', reason: 'Ventilation from the frosted window' },
+          { item: 'Towel Rack / Heated Rail', position: 'Near shower (back wall)', reason: 'Immediate access after bathing' },
+          { item: 'Storage Cabinet', position: 'Above toilet (wall-mounted)', reason: 'Utilizes vertical dead space' }
+        ]
       },
       'Office Room': {
         palette: ['#1F2937', '#F8F5F0', '#4B5563', '#9CA3AF'],
@@ -103,7 +149,16 @@ exports.createAIDesign = async (req, res) => {
         budget: 2500,
         detectedItems: ['Work Desk', 'Office Chair', 'Bookshelf'],
         analysis: 'Focused task lighting with reduced glare.',
-        recs: ['Add ergonomic seating for prolonged work hours.', 'Incorporate floating shelves for organized storage.']
+        recs: ['Add ergonomic seating for prolonged work hours.', 'Incorporate floating shelves for organized storage.'],
+        spatialFeatures: { walls: ['Left wall (3.0m)', 'Right wall (3.0m)', 'Front wall (3.5m)', 'Back wall (3.5m)'], windows: ['1 window on front wall'], doors: ['1 entry door on left wall'], corners: ['3 usable corners'], floorSpace: '10.5 sq m, 40% open movement area' },
+        furnitureLayout: [
+          { item: 'L-shaped Work Desk', position: 'Front wall (facing window)', reason: 'Natural light reduces eye strain during work hours' },
+          { item: 'Ergonomic Chair', position: 'At desk, facing window', reason: 'Proper lumbar support for extended work sessions' },
+          { item: 'Bookshelf / Storage Unit', position: 'Right wall', reason: 'Within arm reach for reference materials' },
+          { item: 'Filing Cabinet', position: 'Under desk (right side)', reason: 'Hidden storage for documents' },
+          { item: 'Task Lamp', position: 'Desk corner (left)', reason: 'Directed light for focused tasks without screen glare' },
+          { item: 'Whiteboard / Pinboard', position: 'Back wall', reason: 'Visual planning area visible from desk' }
+        ]
       },
       'Kids Room': {
         palette: ['#FCA5A5', '#FCD34D', '#93C5FD', '#FFFFFF'],
@@ -112,7 +167,16 @@ exports.createAIDesign = async (req, res) => {
         budget: 3200,
         detectedItems: ['Single Bed', 'Toy bins', 'Play area'],
         analysis: 'Bright, colorful natural lighting with fun accents.',
-        recs: ['Use low-height accessible storage bins.', 'Incorporate a soft rug for the play area.']
+        recs: ['Use low-height accessible storage bins.', 'Incorporate a soft rug for the play area.'],
+        spatialFeatures: { walls: ['Left wall (3.0m)', 'Right wall (3.0m)', 'Front wall (3.5m)', 'Back wall (3.5m)'], windows: ['1 window on front wall (child-safe lock)'], doors: ['1 entry door on left wall'], corners: ['4 corners, all child-proofed'], floorSpace: '10.5 sq m, 50% play zone' },
+        furnitureLayout: [
+          { item: 'Single Bed / Bunk Bed', position: 'Back wall (corner)', reason: 'Frees up maximum floor space for play activities' },
+          { item: 'Study Desk', position: 'Front wall (near window)', reason: 'Natural light for homework and crafts' },
+          { item: 'Toy Storage Bins', position: 'Right wall (low shelves)', reason: 'Child-accessible height encourages independent tidying' },
+          { item: 'Play Area Rug', position: 'Center floor', reason: 'Soft, safe surface for floor activities' },
+          { item: 'Wall Decals / Art', position: 'Left wall + above bed', reason: 'Stimulating visuals at child eye level' },
+          { item: 'Wardrobe', position: 'Left wall (near door)', reason: 'Easy access for daily outfit selection' }
+        ]
       },
       'Balcony': {
         palette: ['#10B981', '#F8F5F0', '#8B5E3C', '#D1D5DB'],
@@ -121,7 +185,15 @@ exports.createAIDesign = async (req, res) => {
         budget: 1500,
         detectedItems: ['Patio chairs', 'Plant pots', 'Railing'],
         analysis: 'Abundant natural light, open-air environment.',
-        recs: ['Add weather-resistant rattan furniture.', 'Introduce vertical planters to maximize green space.']
+        recs: ['Add weather-resistant rattan furniture.', 'Introduce vertical planters to maximize green space.'],
+        spatialFeatures: { walls: ['Back wall (2.0m)', 'Left railing (3.0m)', 'Right railing (3.0m)'], windows: ['Open air — no windows'], doors: ['1 sliding door to living room'], corners: ['2 corners (left-back, right-back)'], floorSpace: '6.0 sq m outdoor area' },
+        furnitureLayout: [
+          { item: '2-seater Bistro Set', position: 'Center-right', reason: 'Cozy seating with garden view and morning sunlight' },
+          { item: 'Vertical Planter Wall', position: 'Back wall', reason: 'Maximizes greenery without consuming floor space' },
+          { item: 'Hanging Planters', position: 'Ceiling hooks along railing', reason: 'Cascading greenery creates natural privacy screen' },
+          { item: 'String Lights', position: 'Along railing + ceiling edge', reason: 'Warm ambient lighting for evening relaxation' },
+          { item: 'Small Side Table', position: 'Next to seating', reason: 'Functional surface for beverages and books' }
+        ]
       },
       'Pooja Room': {
         palette: ['#F59E0B', '#8B5E3C', '#FFFFFF', '#EF4444'],
@@ -130,7 +202,15 @@ exports.createAIDesign = async (req, res) => {
         budget: 2000,
         detectedItems: ['Mandir structure', 'Floor mats', 'Idols'],
         analysis: 'Warm, spiritual lighting with incense smoke handling.',
-        recs: ['Install carved wooden doors with bells.', 'Use warm brass lamps for a divine ambiance.']
+        recs: ['Install carved wooden doors with bells.', 'Use warm brass lamps for a divine ambiance.'],
+        spatialFeatures: { walls: ['Left wall (1.8m)', 'Right wall (1.8m)', 'Front wall (2.0m)', 'Back wall (2.0m)'], windows: ['1 small ventilation window'], doors: ['1 carved wooden door'], corners: ['Back corners for storage'], floorSpace: '3.6 sq m, dedicated sacred space' },
+        furnitureLayout: [
+          { item: 'Wooden Mandir / Temple', position: 'Center of back wall (elevated)', reason: 'Sacred focal point at eye level during prayer' },
+          { item: 'Prayer Mat Area', position: 'Floor in front of mandir', reason: 'Comfortable seating for prayer and meditation' },
+          { item: 'Brass Diya Stand', position: 'Both sides of mandir', reason: 'Traditional symmetrical lighting arrangement' },
+          { item: 'Incense Holder', position: 'Front shelf of mandir', reason: 'Ventilated position for smoke dispersal' },
+          { item: 'Storage Drawer', position: 'Below mandir (base unit)', reason: 'Keeps puja essentials organized and accessible' }
+        ]
       },
       'Commercial Space': {
         palette: ['#1F2937', '#374151', '#9CA3AF', '#F3F4F6'],
@@ -139,7 +219,16 @@ exports.createAIDesign = async (req, res) => {
         budget: 12000,
         detectedItems: ['Reception desk', 'Lobby seating', 'Workstations'],
         analysis: 'Professional, uniform lighting across large areas.',
-        recs: ['Create an inviting reception area with acoustic panels.', 'Use modular workstations for flexibility.']
+        recs: ['Create an inviting reception area with acoustic panels.', 'Use modular workstations for flexibility.'],
+        spatialFeatures: { walls: ['Multiple walls (open plan)', 'Glass partitions'], windows: ['Floor-to-ceiling windows (front facade)'], doors: ['Main entry + emergency exits'], corners: ['Column zones for partitioning'], floorSpace: '50+ sq m open plan area' },
+        furnitureLayout: [
+          { item: 'Reception Desk', position: 'Front-center (facing entry)', reason: 'First point of contact for visitors' },
+          { item: 'Waiting Lounge', position: 'Left of reception', reason: 'Comfortable holding area with visual separation' },
+          { item: 'Workstation Cluster', position: 'Center-back (open plan)', reason: 'Collaborative layout maximizes team interaction' },
+          { item: 'Conference Table', position: 'Right side (glass-enclosed)', reason: 'Private meeting space with sound isolation' },
+          { item: 'Break Area / Pantry', position: 'Back-right corner', reason: 'Away from client-facing zones to reduce distraction' },
+          { item: 'Storage / Filing Wall', position: 'Back wall', reason: 'Centralized document access for all workstations' }
+        ]
       }
     };
 
@@ -241,7 +330,9 @@ exports.createAIDesign = async (req, res) => {
       console.log(`Generating unique AI design for ${roomType} using Pollinations AI...`);
       try {
         const seed = Math.floor(Math.random() * 1000000);
-        const prompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType}, architectural digest, beautiful lighting, 8k resolution`);
+        // Build a layout-aware prompt from the furniture plan
+        const layoutDesc = (currentRoom.furnitureLayout || []).slice(0, 4).map(f => `${f.item} on ${f.position}`).join(', ');
+        const prompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType} with ${layoutDesc}, architectural digest, beautiful lighting, 8k resolution`);
         
         // Pollinations AI returns a direct image buffer
         const response = await axios.get(`https://image.pollinations.ai/prompt/${prompt}?width=800&height=600&seed=${seed}&nologo=true`, {
@@ -267,13 +358,27 @@ exports.createAIDesign = async (req, res) => {
       budgetEstimate: Math.floor(Math.random() * 1000) + currentRoom.budget
     };
 
+    // Build the structured design plan from spatial analysis
+    const designPlan = {
+      roomType: roomType,
+      spatialFeatures: currentRoom.spatialFeatures || {},
+      suggestedLayout: (currentRoom.furnitureLayout || []).map(f => ({
+        furniture: f.item,
+        position: f.position,
+        reason: f.reason
+      }))
+    };
+
     const finalAnalysis = analysis || {
       detectedRoomType: roomType,
       detectedItems: currentRoom.detectedItems,
       lightingAnalysis: currentRoom.analysis,
       colorProfile: currentRoom.palette,
       spaceUtilization: 'Optimized space flow based on modern design principles.',
-      recommendations: currentRoom.recs
+      recommendations: currentRoom.recs,
+      spatialFeatures: currentRoom.spatialFeatures || {},
+      furnitureLayout: currentRoom.furnitureLayout || [],
+      designPlan: designPlan
     };
 
     const aiDesign = await AIDesignRequest.create({
