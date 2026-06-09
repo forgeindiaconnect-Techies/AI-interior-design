@@ -2414,7 +2414,7 @@ const AdminDashboard = ({
                           <Bell size={14} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm ${!notif.read ? 'font-extrabold text-[#1F2937]' : 'font-bold text-gray-600'} truncate`}>{notif.message}</p>
+                          <p className={`text-sm ${!notif.read ? 'font-extrabold text-[#1F2937]' : 'font-bold text-gray-600'} truncate`}>{notif.title || (notif.message || '').split('\n')[0] || 'Notification'}</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">
                             {notif.createdAt ? new Date(notif.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                           </p>
@@ -6195,20 +6195,23 @@ const AdminDashboard = ({
                           )}
                         </div>
                         <div className="flex-1">
+                          {notif.title && (
+                            <p className="font-extrabold text-sm text-[#1F2937] mb-0.5">{notif.title}</p>
+                          )}
                           <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
-                            {notif.message}
+                            {notif.message || ''}
                           </p>
                           <p className="text-[10px] text-gray-400 mt-1">
                             {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
                           </p>
-                          {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('manual')) && (
+                          {((notif.message || '').toLowerCase().includes('request') || (notif.message || '').toLowerCase().includes('manual')) ? (
                             <button 
                               onClick={() => { if (setActiveTab) setActiveTab('manual_designs'); }} 
                               className="mt-2 text-xs font-bold text-[#1D3557] hover:underline block"
                             >
                               View Request
                             </button>
-                          )}
+                          ) : null}
                         </div>
                       </div>
                     );
