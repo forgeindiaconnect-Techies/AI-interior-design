@@ -404,7 +404,7 @@ const AdminDashboard = ({
     if (activeTab === 'verifications') {
       const loadVendorRegistrations = async () => {
         try {
-          const res = await axios.get('/api/admin/vendor-registrations', {
+          const res = await axios.get('/admin/vendor-registrations', {
             headers: { Authorization: `Bearer ${user?.token}` }
           });
           if (res.data?.success) {
@@ -1334,7 +1334,7 @@ const AdminDashboard = ({
   // Update User Status (Approve/Reject/Active)
   const handleUpdateUserStatus = async (userId, newStatus) => {
     try {
-      const res = await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/admin/users/${userId}/status`, { status: newStatus }, {
+      const res = await axios.put(`/admin/users/${userId}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       
@@ -1608,10 +1608,10 @@ const AdminDashboard = ({
   // Verification & Review Admin Actions
   const handleApproveVendorRegistration = async (id) => {
     try {
-      await axios.put(`/api/admin/vendor-registrations/${id}/approve`, {}, { headers: { Authorization: `Bearer ${user?.token}` } });
+      await axios.put(`/admin/vendor-registrations/${id}/approve`, {}, { headers: { Authorization: `Bearer ${user?.token}` } });
       alert('Vendor Approved successfully!');
       if (activeTab === 'verifications') {
-        const res = await axios.get('/api/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
+        const res = await axios.get('/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
         if (res.data?.success) setVendorRegistrations(res.data.data);
       }
     } catch (err) {
@@ -1623,10 +1623,10 @@ const AdminDashboard = ({
     const reason = prompt("Enter rejection reason:");
     if (reason === null) return;
     try {
-      await axios.put(`/api/admin/vendor-registrations/${id}/reject`, { reason }, { headers: { Authorization: `Bearer ${user?.token}` } });
+      await axios.put(`/admin/vendor-registrations/${id}/reject`, { reason }, { headers: { Authorization: `Bearer ${user?.token}` } });
       alert('Vendor Rejected successfully!');
       if (activeTab === 'verifications') {
-        const res = await axios.get('/api/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
+        const res = await axios.get('/admin/vendor-registrations', { headers: { Authorization: `Bearer ${user?.token}` } });
         if (res.data?.success) setVendorRegistrations(res.data.data);
       }
     } catch (err) {
