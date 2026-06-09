@@ -163,10 +163,6 @@ const RegisterPage = () => {
                   className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
                 >
                   <option value="seller">Furniture Vendor / Seller</option>
-                  <option value="manufacturer">Custom Furniture Manufacturer</option>
-                  <option value="delivery">Delivery & Logistics Partner</option>
-                  <option value="installation">Installation Expert</option>
-                  <option value="designer">Interior Designer</option>
                 </select>
               </div>
             )}
