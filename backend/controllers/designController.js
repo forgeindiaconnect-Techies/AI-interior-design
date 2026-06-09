@@ -144,21 +144,64 @@ exports.createAIDesign = async (req, res) => {
     };
 
     const mockFallbackImages = {
-      'Living Room': 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-      'Bedroom': 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
-      'Kitchen': 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
-      'Dining Room': 'https://images.unsplash.com/photo-1604578762246-41134e37f9cc?w=800&q=80',
-      'Bathroom': 'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
-      'Office Room': 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
-      'Kids Room': 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
-      'Balcony': 'https://images.unsplash.com/photo-1590005354167-6da97ce2311c?w=800&q=80',
-      'Pooja Room': '/pooja_room.png',
-      'Commercial Space': 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80'
+      'Living Room': [
+        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+        'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80'
+      ],
+      'Bedroom': [
+        'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
+        'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80',
+        'https://images.unsplash.com/photo-1505693314120-0d443867891c?w=800&q=80'
+      ],
+      'Kitchen': [
+        'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
+        'https://images.unsplash.com/photo-1556912173-3bb406ef7e77?w=800&q=80',
+        'https://images.unsplash.com/photo-1556156653-e5a7c69cc263?w=800&q=80'
+      ],
+      'Dining Room': [
+        'https://images.unsplash.com/photo-1604578762246-41134e37f9cc?w=800&q=80',
+        'https://images.unsplash.com/photo-1595514535316-836798bd1a1e?w=800&q=80',
+        'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80'
+      ],
+      'Bathroom': [
+        'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
+        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
+        'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80'
+      ],
+      'Office Room': [
+        'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+        'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&q=80'
+      ],
+      'Kids Room': [
+        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
+        'https://images.unsplash.com/photo-1519689680058-324335c77eba?w=800&q=80',
+        'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80'
+      ],
+      'Balcony': [
+        'https://images.unsplash.com/photo-1590005354167-6da97ce2311c?w=800&q=80',
+        'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=800&q=80',
+        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80'
+      ],
+      'Pooja Room': [
+        '/pooja_room.png'
+      ],
+      'Commercial Space': [
+        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+        'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
+        'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80'
+      ]
     };
 
     const currentRoom = roomData[roomType] || roomData['Living Room'];
 
-    let finalGeneratedImage = generatedImage || mockFallbackImages[roomType] || mockFallbackImages['Living Room'];
+    const getFallbackImage = (type) => {
+      const options = mockFallbackImages[type] || mockFallbackImages['Living Room'];
+      return options[Math.floor(Math.random() * options.length)];
+    };
+
+    let finalGeneratedImage = generatedImage || getFallbackImage(roomType);
 
     if (process.env.REPLICATE_API_TOKEN && originalImage) {
       try {
@@ -193,7 +236,8 @@ exports.createAIDesign = async (req, res) => {
     }
 
     // Fallback to Pollinations AI (Free Text-to-Image API) since Hugging Face dropped the free instruct-pix2pix model
-    if (finalGeneratedImage === generatedImage || finalGeneratedImage === mockFallbackImages[roomType] || finalGeneratedImage === mockFallbackImages['Living Room']) {
+    // Using random clear pictures if finalGeneratedImage is from the fallback list
+    if (finalGeneratedImage === generatedImage || mockFallbackImages[roomType]?.includes(finalGeneratedImage) || mockFallbackImages['Living Room']?.includes(finalGeneratedImage)) {
       console.log(`Generating unique AI design for ${roomType} using Pollinations AI...`);
       try {
         const seed = Math.floor(Math.random() * 1000000);
@@ -211,7 +255,7 @@ exports.createAIDesign = async (req, res) => {
         console.warn("Pollinations AI Generation Error:", err.message, "- Falling back to intelligent local mocks.");
         
         // Final ultimate fallback if even Pollinations AI fails (e.g. 402 Payment Required)
-        finalGeneratedImage = mockFallbackImages[roomType] || mockFallbackImages['Living Room'];
+        finalGeneratedImage = getFallbackImage(roomType);
         console.log("Successfully served room-specific fallback image to bypass API paywalls.");
       }
     }
