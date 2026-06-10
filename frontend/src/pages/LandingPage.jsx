@@ -28,13 +28,8 @@ const LandingPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (user) {
-      if (user.role === 'admin') navigate('/dashboard/admin', { replace: true });
-      else if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(user.role)) navigate('/dashboard/vendor', { replace: true });
-      else navigate('/dashboard/user', { replace: true });
-    }
-  }, [user, navigate]);
+  // The user should stay on the landing page even if logged in,
+  // they can navigate to their dashboard via the Navbar.
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
