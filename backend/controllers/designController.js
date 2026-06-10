@@ -524,16 +524,38 @@ exports.updateAIDesignStatus = async (req, res) => {
     if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
 
     if (status === 'regenerated') {
+      if (!design.originalImage) {
+        return res.status(400).json({ success: false, message: 'Cannot regenerate: no original image found.' });
+      }
       try {
         const newVersion = (design.versionNumber || 1) + 1;
         const newSeed = generateUniqueSeed(design.seeds || []);
         const variationPrompt = getVariationPrompt(design.roomType, newSeed);
-        const result = await generateImageWithAI({
-          image: design.originalImage,
-          roomType: design.roomType || 'Living Room',
-          seed: newSeed,
-          variationPrompt
-        });
+
+        let generatedImageUrl;
+        let usedPrompt;
+
+        try {
+          const result = await generateImageWithAI({
+            image: design.originalImage,
+            roomType: design.roomType || 'Living Room',
+            seed: newSeed,
+            variationPrompt
+          });
+          generatedImageUrl = result.imageUrl;
+          usedPrompt = result.prompt;
+        } catch (aiErr) {
+          console.warn('AI generation failed during regeneration, using fallback:', aiErr.message);
+          const fallbackImages = [
+            'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+            'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+            'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+            'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+            'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80'
+          ];
+          generatedImageUrl = fallbackImages[newSeed % fallbackImages.length];
+          usedPrompt = `Fallback: ${variationPrompt}`;
+        }
 
         const newDesignStyle = VARIATION_STYLES[newSeed % VARIATION_STYLES.length];
 
@@ -541,15 +563,15 @@ exports.updateAIDesignStatus = async (req, res) => {
           userId: design.userId,
           projectId: design._id,
           uploadedImage: design.originalImage,
-          generatedImage: result.imageUrl,
+          generatedImage: generatedImageUrl,
           roomType: design.roomType,
           designStyle: newDesignStyle,
-          promptUsed: result.prompt,
+          promptUsed: usedPrompt,
           seed: newSeed,
           versionNumber: newVersion
         });
 
-        design.generatedImage = result.imageUrl;
+        design.generatedImage = generatedImageUrl;
         design.versionNumber = newVersion;
         design.seeds.push(newSeed);
         design.generations.push(genHistory._id);
@@ -563,7 +585,7 @@ exports.updateAIDesignStatus = async (req, res) => {
 
         return res.status(200).json({ success: true, data: design });
       } catch (err) {
-        console.error('Regeneration failed:', err.message);
+        console.error('Regeneration failed:', err.message, err.stack);
         return res.status(500).json({ success: false, message: 'Regeneration failed: ' + err.message });
       }
     }

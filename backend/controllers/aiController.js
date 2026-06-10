@@ -194,8 +194,11 @@ const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) =
     const encodedPrompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType} ${layoutDesc}, architectural digest, beautiful lighting, 8k resolution`);
     const response = await axios.get(
       `https://image.pollinations.ai/prompt/${encodedPrompt}?width=800&height=600&seed=${seed}&nologo=true`,
-      { responseType: 'arraybuffer' }
+      { responseType: 'arraybuffer', timeout: 30000 }
     );
+    if (!response.data || response.data.length === 0) {
+      throw new Error('Pollinations returned empty response');
+    }
     const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
     const imageUrl = `data:image/jpeg;base64,${generatedImageBase64}`;
     console.log('Pollinations generation successful with seed', seed);
