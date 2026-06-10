@@ -9,7 +9,7 @@ const Replicate = require('replicate');
 const axios = require('axios');
 const https = require('https');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { generateImageWithAI, generateUniqueSeed, getVariationPrompt, saveGeneration, VARIATION_STYLES } = require('./aiController');
+const { generateImageWithAI, generateUniqueSeed, getVariationPrompt, saveGeneration, generateMultipleImages, generateOneImage, VARIATION_STYLES, FALLBACK_IMAGES } = require('./aiController');
 
 let mockManualDesigns = [
   {
@@ -383,21 +383,17 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
       }
     }
 
-    // Generate AI image with seed-based variation system
-    let generationSeed = null;
-    let generationPrompt = null;
+    // Generate 5 AI images with seed-based variation system
+    let initialVariations = [];
     if (originalImage) {
       try {
-        generationSeed = generateUniqueSeed([]);
-        const variationPrompt = getVariationPrompt(roomType, generationSeed);
-        const result = await generateImageWithAI({
+        initialVariations = await generateMultipleImages({
           image: originalImage,
           roomType: roomType || 'Living Room',
-          seed: generationSeed,
-          variationPrompt
+          count: 5,
+          existingSeeds: []
         });
-        finalGeneratedImage = result.imageUrl;
-        generationPrompt = result.prompt;
+        finalGeneratedImage = initialVariations[0].imageUrl;
       } catch (err) {
         console.warn('AI Generation failed, using fallback:', err.message);
         finalGeneratedImage = getFallbackImage(roomType);
@@ -453,27 +449,26 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
       analysis: finalAnalysis,
       status: 'generated',
       versionNumber: 1,
-      seeds: generationSeed ? [generationSeed] : [],
+      seeds: [],
       generations: []
     });
 
-    if (generationSeed && generationPrompt) {
-      const designStyle = generationSeed !== null
-        ? VARIATION_STYLES[generationSeed % VARIATION_STYLES.length]
-        : 'Modern';
-      const genHistory = await saveGeneration({
-        userId: req.user.id,
-        projectId: aiDesign._id,
-        uploadedImage: originalImage,
-        generatedImage: finalGeneratedImage,
-        roomType: roomType || 'Living Room',
-        designStyle,
-        promptUsed: generationPrompt,
-        seed: generationSeed,
-        versionNumber: 1
-      });
-      aiDesign.generations.push(genHistory._id);
-      aiDesign.seeds.push(generationSeed);
+    if (initialVariations.length > 0) {
+      for (const v of initialVariations) {
+        const genHistory = await saveGeneration({
+          userId: req.user.id,
+          projectId: aiDesign._id,
+          uploadedImage: originalImage,
+          generatedImage: v.imageUrl,
+          roomType: roomType || 'Living Room',
+          designStyle: VARIATION_STYLES[v.seed % VARIATION_STYLES.length],
+          promptUsed: v.prompt,
+          seed: v.seed,
+          versionNumber: 1
+        });
+        aiDesign.generations.push(genHistory._id);
+        aiDesign.seeds.push(v.seed);
+      }
       await aiDesign.save();
     }
 
@@ -529,61 +524,44 @@ exports.updateAIDesignStatus = async (req, res) => {
       }
       try {
         const newVersion = (design.versionNumber || 1) + 1;
-        const newSeed = generateUniqueSeed(design.seeds || []);
-        const variationPrompt = getVariationPrompt(design.roomType, newSeed);
 
-        let generatedImageUrl;
-        let usedPrompt;
-
-        try {
-          const result = await generateImageWithAI({
-            image: design.originalImage,
-            roomType: design.roomType || 'Living Room',
-            seed: newSeed,
-            variationPrompt
-          });
-          generatedImageUrl = result.imageUrl;
-          usedPrompt = result.prompt;
-        } catch (aiErr) {
-          console.warn('AI generation failed during regeneration, using fallback:', aiErr.message);
-          const fallbackImages = [
-            'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-            'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-            'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
-            'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
-            'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80'
-          ];
-          generatedImageUrl = fallbackImages[newSeed % fallbackImages.length];
-          usedPrompt = `Fallback: ${variationPrompt}`;
-        }
-
-        const newDesignStyle = VARIATION_STYLES[newSeed % VARIATION_STYLES.length];
-
-        const genHistory = await saveGeneration({
-          userId: design.userId,
-          projectId: design._id,
-          uploadedImage: design.originalImage,
-          generatedImage: generatedImageUrl,
-          roomType: design.roomType,
-          designStyle: newDesignStyle,
-          promptUsed: usedPrompt,
-          seed: newSeed,
-          versionNumber: newVersion
+        // Generate 5 variations in parallel
+        const variations = await generateMultipleImages({
+          image: design.originalImage,
+          roomType: design.roomType || 'Living Room',
+          count: 5,
+          existingSeeds: design.seeds || []
         });
 
-        design.generatedImage = generatedImageUrl;
+        // Save each variation as a GenerationHistory entry
+        const genHistoryIds = [];
+        for (const v of variations) {
+          const genHistory = await saveGeneration({
+            userId: design.userId,
+            projectId: design._id,
+            uploadedImage: design.originalImage,
+            generatedImage: v.imageUrl,
+            roomType: design.roomType,
+            designStyle: VARIATION_STYLES[v.seed % VARIATION_STYLES.length],
+            promptUsed: v.prompt,
+            seed: v.seed,
+            versionNumber: newVersion
+          });
+          genHistoryIds.push(genHistory._id);
+          design.seeds.push(v.seed);
+          design.generations.push(genHistory._id);
+        }
+
+        // Set first variation as the primary image
+        design.generatedImage = variations[0].imageUrl;
         design.versionNumber = newVersion;
-        design.seeds.push(newSeed);
-        design.generations.push(genHistory._id);
-        const newBudget = Math.floor(Math.random() * 1000) + 3000;
         if (design.aiSuggestion) {
-          design.aiSuggestion.budgetEstimate = newBudget;
+          design.aiSuggestion.budgetEstimate = Math.floor(Math.random() * 1000) + 3000;
         }
         await design.save();
-
         await design.populate('generations');
 
-        return res.status(200).json({ success: true, data: design });
+        return res.status(200).json({ success: true, data: design, variations: variations.map(v => ({ imageUrl: v.imageUrl, seed: v.seed })) });
       } catch (err) {
         console.error('Regeneration failed:', err.message, err.stack);
         return res.status(500).json({ success: false, message: 'Regeneration failed: ' + err.message });

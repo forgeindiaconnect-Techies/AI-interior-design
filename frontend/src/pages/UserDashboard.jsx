@@ -571,7 +571,8 @@ const UserDashboard = ({
       if (res.data.success) {
         setAiAnalysisProgress(100);
         addLog("Design rendering finished.");
-        setAiDesigns([res.data.data, ...aiDesigns]);
+        const newDesign = { ...res.data.data, _currentVariationIndex: 0 };
+        setAiDesigns([newDesign, ...aiDesigns]);
         showToast('AI Design & Image Analysis Generated Successfully!');
         setAiAnalysisStep('completed');
         setTimeout(() => {
@@ -625,7 +626,10 @@ const UserDashboard = ({
     try {
       const res = await axios.put(`/designs/ai/${id}`, { status });
       if (res.data.success) {
-        const updatedDesign = res.data.data;
+        const updatedDesign = { ...res.data.data, _currentVariationIndex: 0 };
+        if (res.data.variations) {
+          updatedDesign._variations = res.data.variations;
+        }
         setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
 
         if (status === 'regenerated') {
@@ -1582,15 +1586,27 @@ Thank you for shopping with Artisan Studio!
                       )}
                     </div>
                     <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
-                      <img 
-                        src={showOriginalImage ? latestDesign.originalImage : (latestDesign._displayImage || latestDesign.generatedImage)} 
-                        alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
-                        className="w-full h-full object-cover transition-all duration-300"
-                        onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
-                      />
-                      <span className="absolute top-4 left-4 bg-black/55 text-white text-xs px-3 py-1.5 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm shadow-sm">
-                        {showOriginalImage ? "Original View" : latestDesign._displayImage ? `V${latestDesign.versionNumber || '?'} Preview` : "AI Style Generated"}
-                      </span>
+                      {(() => {
+                        const viewingVersion = latestDesign._viewingVersion || latestDesign.versionNumber;
+                        const currentGens = (latestDesign.generations || []).filter(g => g.versionNumber === viewingVersion);
+                        const varIdx = latestDesign._currentVariationIndex || 0;
+                        const varImage = currentGens[varIdx]?.generatedImage || latestDesign.generatedImage;
+                        const displaySrc = showOriginalImage ? latestDesign.originalImage : varImage;
+                        const totalVars = currentGens.length;
+                        return (
+                          <>
+                            <img 
+                              src={displaySrc} 
+                              alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
+                              className="w-full h-full object-cover transition-all duration-300"
+                              onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                            />
+                            <span className="absolute top-4 left-4 bg-black/55 text-white text-xs px-3 py-1.5 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm shadow-sm">
+                              {showOriginalImage ? "Original View" : totalVars > 0 ? `V${latestDesign.versionNumber} — ${varIdx + 1}/${totalVars}` : `V${latestDesign.versionNumber}`}
+                            </span>
+                          </>
+                        );
+                      })()}
                     </div>
 
                     <div className="flex gap-4">
@@ -1607,68 +1623,107 @@ Thank you for shopping with Artisan Studio!
                         Show AI Design
                       </button>
                     </div>
+                    </div>
                   </div>
-                </div>
 
-                    {/* Version History Panel */}
-                    {latestDesign.generations && latestDesign.generations.length > 0 && (
-                      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Design Versions</h3>
-                          <span className="text-xs text-gray-400 font-medium">{latestDesign.generations.length} generation{latestDesign.generations.length !== 1 ? 's' : ''}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {latestDesign.generations.slice().reverse().map((gen, idx) => {
-                            const versionNum = gen.versionNumber || (latestDesign.generations.length - idx);
-                            const isActiveVersion = latestDesign.versionNumber === versionNum;
-                            const isSelected = latestDesign._displayVersion === gen._id;
-                            const isActive = isSelected || (!latestDesign._displayVersion && isActiveVersion);
-                            return (
+                    {/* Variation Thumbnails Grid */}
+                    {(() => {
+                      const viewingVersion = latestDesign._viewingVersion || latestDesign.versionNumber;
+                      const currentGens = (latestDesign.generations || []).filter(g => g.versionNumber === viewingVersion);
+                      if (currentGens.length < 2) return null;
+                      const varIdx = latestDesign._currentVariationIndex || 0;
+                      return (
+                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Variations</h3>
+                            <span className="text-xs text-gray-400 font-medium">{currentGens.length} designs</span>
+                          </div>
+                          <div className="grid grid-cols-5 gap-3">
+                            {currentGens.map((gen, idx) => (
                               <button
                                 key={gen._id}
                                 onClick={() => {
                                   setShowOriginalImage(false);
                                   const updatedDesigns = aiDesigns.map(d => {
                                     if (d._id === latestDesign._id) {
-                                      return { ...d, _displayVersion: gen._id, _displayImage: gen.generatedImage };
+                                      return { ...d, _currentVariationIndex: idx };
                                     }
                                     return d;
                                   });
                                   setAiDesigns(updatedDesigns);
                                 }}
-                                className={`relative px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
-                                  isActive
-                                    ? 'bg-[#8B5E3C] text-white border-[#8B5E3C] shadow-md'
-                                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#8B5E3C] hover:text-[#8B5E3C]'
+                                className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-[4/3] ${
+                                  idx === varIdx ? 'border-[#8B5E3C] ring-2 ring-[#8B5E3C]/30 shadow-md' : 'border-gray-200 hover:border-[#D4A373] opacity-70 hover:opacity-100'
                                 }`}
                               >
-                                <span>V{versionNum}</span>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isActiveVersion ? 'bg-green-400' : 'bg-gray-300'}`} />
-                                <span className="text-[10px] opacity-75">{new Date(gen.createdAt).toLocaleDateString()}</span>
+                                <img src={gen.generatedImage} alt={`Variation ${idx + 1}`} className="w-full h-full object-cover" />
+                                <span className={`absolute bottom-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                  idx === varIdx ? 'bg-[#8B5E3C] text-white' : 'bg-black/50 text-white'
+                                }`}>
+                                  {idx + 1}
+                                </span>
                               </button>
-                            );
-                          })}
+                            ))}
+                          </div>
                         </div>
-                        {latestDesign._displayImage && latestDesign._displayImage !== latestDesign.generatedImage && (
-                          <button
-                            onClick={() => {
-                              setShowOriginalImage(false);
-                              const updatedDesigns = aiDesigns.map(d => {
-                                if (d._id === latestDesign._id) {
-                                  const { _displayVersion, _displayImage, ...rest } = d;
-                                  return rest;
-                                }
-                                return d;
-                              });
-                              setAiDesigns(updatedDesigns);
-                            }}
-                            className="text-xs font-bold text-[#2A9D8F] hover:text-[#2A9D8F]/80 transition-colors"
-                          >
-                            &larr; View Latest Version (V{latestDesign.versionNumber})
-                          </button>
-                        )}
-                        {latestDesign.generations.length > 1 && (
-                          <p className="text-[10px] text-gray-400 italic">Click a version to preview. Current active version is marked with a green dot.</p>
+                      );
+                    })()}
+
+                    {/* Version History Panel */}
+                    {latestDesign.generations && latestDesign.generations.length > 0 && (
+                      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Design Versions</h3>
+                          <span className="text-xs text-gray-400 font-medium">{Object.keys((() => { const g = {}; (latestDesign.generations || []).forEach(gen => { g[gen.versionNumber] = true; }); return g; })()).length} versions</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            const versionGroups = {};
+                            (latestDesign.generations || []).forEach(gen => {
+                              const v = gen.versionNumber || 1;
+                              if (!versionGroups[v]) versionGroups[v] = [];
+                              versionGroups[v].push(gen);
+                            });
+                            const sortedVersions = Object.keys(versionGroups).sort((a, b) => b - a);
+                            return sortedVersions.map(vNum => {
+                              const gens = versionGroups[vNum];
+                              const firstGen = gens[0];
+                              const isViewingVersion = (latestDesign._viewingVersion || latestDesign.versionNumber) === Number(vNum);
+                              return (
+                                <button
+                                  key={vNum}
+                                  onClick={() => {
+                                    setShowOriginalImage(false);
+                                    const idx = 0;
+                                    const targetGen = gens[idx] || gens[0];
+                                    const updatedDesigns = aiDesigns.map(d => {
+                                      if (d._id === latestDesign._id) {
+                                        return { ...d, _viewingVersion: Number(vNum), _currentVariationIndex: 0, _displayVersion: targetGen._id, _displayImage: targetGen.generatedImage };
+                                      }
+                                      return d;
+                                    });
+                                    setAiDesigns(updatedDesigns);
+                                  }}
+                                  className={`relative px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                                    isViewingVersion
+                                      ? 'bg-[#8B5E3C] text-white border-[#8B5E3C] shadow-md'
+                                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#8B5E3C] hover:text-[#8B5E3C]'
+                                  }`}
+                                >
+                                  <span>V{vNum}</span>
+                                  <span className="text-[10px] opacity-75">{new Date(firstGen.createdAt).toLocaleDateString()}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+                                    isViewingVersion ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
+                                  }`}>
+                                    {gens.length}
+                                  </span>
+                                </button>
+                              );
+                            });
+                          })()}
+                        </div>
+                        {latestDesign.generations && latestDesign.generations.length > 1 && (
+                          <p className="text-[10px] text-gray-400 italic">Each version contains {latestDesign.generations.filter(g => g.versionNumber === (latestDesign._viewingVersion || latestDesign.versionNumber)).length} design variations. Click thumbnails above to switch between them.</p>
                         )}
                       </div>
                     )}

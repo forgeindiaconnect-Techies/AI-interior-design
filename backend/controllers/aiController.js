@@ -87,6 +87,24 @@ const FURNITURE_VARIATIONS = {
   ]
 };
 
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+  'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+  'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+  'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
+  'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
+  'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80'
+];
+
+const HF_MODELS = [
+  'stabilityai/stable-diffusion-2-1',
+  'runwayml/stable-diffusion-v1-5',
+  'prompthero/openjourney',
+  'timbrooks/instruct-pix2pix'
+];
+
 const generateUniqueSeed = (existingSeeds = []) => {
   let seed;
   do {
@@ -124,44 +142,42 @@ const getVariationPrompt = (roomType, seed) => {
   ];
   const lightingIdx = seed % lightingOptions.length;
   const lighting = lightingOptions[lightingIdx];
-
   return `Style: ${style}. Furniture: ${furniture}. Color scheme: ${palette}. Lighting: ${lighting}.`;
 };
 
 const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) => {
   const prompt = `A highly detailed, photorealistic interior design of a ${roomType}. ${variationPrompt} Professional architectural photography, 8k quality, editorial style.`;
 
-  const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-  const imageBuffer = Buffer.from(base64Data, 'base64');
-
+  // Try HuggingFace models
   if (process.env.HF_API_TOKEN) {
-    try {
-      const modelUrl = 'https://api-inference.huggingface.co/models/timbrooks/instruct-pix2pix';
-      const payload = {
-        inputs: image,
-        parameters: { prompt, num_inference_steps: 30, guidance_scale: 7.5 }
-      };
-      const response = await axios({
-        method: 'post',
-        url: modelUrl,
-        headers: {
-          'Authorization': `Bearer ${process.env.HF_API_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        data: payload,
-        responseType: 'arraybuffer'
-      });
-      const contentType = response.headers['content-type'];
-      if (!contentType || !contentType.includes('application/json')) {
-        const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
-        console.log('HF generation successful with seed', seed);
-        return { imageUrl: `data:image/jpeg;base64,${generatedImageBase64}`, prompt };
+    for (const model of HF_MODELS) {
+      try {
+        const modelUrl = `https://api-inference.huggingface.co/models/${model}`;
+        const isInstruct = model.includes('instruct-pix2pix');
+        let payload, headers;
+        if (isInstruct) {
+          payload = { inputs: image, parameters: { prompt, num_inference_steps: 30, guidance_scale: 7.5 } };
+          headers = { 'Authorization': `Bearer ${process.env.HF_API_TOKEN}`, 'Content-Type': 'application/json' };
+        } else {
+          payload = { inputs: prompt, parameters: { negative_prompt: 'lowres, bad anatomy, bad quality', num_inference_steps: 25 } };
+          headers = { 'Authorization': `Bearer ${process.env.HF_API_TOKEN}`, 'Content-Type': 'application/json' };
+        }
+        const response = await axios({ method: 'post', url: modelUrl, headers, data: payload, responseType: 'arraybuffer', timeout: 30000 });
+        const contentType = response.headers['content-type'];
+        if (!contentType || !contentType.includes('application/json')) {
+          if (response.data && response.data.length > 100) {
+            const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
+            console.log(`HF model ${model} successful with seed ${seed}`);
+            return { imageUrl: `data:image/jpeg;base64,${generatedImageBase64}`, prompt };
+          }
+        }
+      } catch (err) {
+        console.warn(`HF model ${model} failed:`, err.message);
       }
-    } catch (err) {
-      console.warn('HF generation failed:', err.message);
     }
   }
 
+  // Try Replicate
   if (process.env.REPLICATE_API_TOKEN) {
     try {
       const Replicate = require('replicate');
@@ -172,8 +188,7 @@ const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) =
           input: {
             image,
             prompt: `A beautiful interior design of a ${roomType}, ${variationPrompt} photorealistic, 8k`,
-            num_samples: '1',
-            image_resolution: '512',
+            num_samples: '1', image_resolution: '512',
             a_prompt: 'best quality, extremely detailed',
             n_prompt: 'longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality'
           }
@@ -189,6 +204,7 @@ const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) =
     }
   }
 
+  // Try Pollinations AI
   try {
     const layoutDesc = `with ${variationPrompt}`;
     const encodedPrompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType} ${layoutDesc}, architectural digest, beautiful lighting, 8k resolution`);
@@ -205,35 +221,43 @@ const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) =
     return { imageUrl, prompt };
   } catch (err) {
     console.warn('Pollinations generation failed:', err.message);
-    throw new Error('All AI generation services failed. Please try again later.');
+    throw new Error('All AI generation services failed.');
   }
+};
+
+const generateOneImage = async ({ image, roomType, seed, existingSeeds = [] }) => {
+  const actualSeed = seed || generateUniqueSeed(existingSeeds);
+  const variationPrompt = getVariationPrompt(roomType, actualSeed);
+  try {
+    const result = await generateImageWithAI({ image, roomType, seed: actualSeed, variationPrompt });
+    return { seed: actualSeed, imageUrl: result.imageUrl, prompt: result.prompt, variationPrompt, success: true };
+  } catch (err) {
+    console.warn('Image generation failed, using fallback:', err.message);
+    return { seed: actualSeed, imageUrl: FALLBACK_IMAGES[actualSeed % FALLBACK_IMAGES.length], prompt: `Fallback: ${variationPrompt}`, variationPrompt, success: false };
+  }
+};
+
+const generateMultipleImages = async ({ image, roomType, count = 5, existingSeeds = [] }) => {
+  const seedsInUse = [...existingSeeds];
+  const promises = [];
+  for (let i = 0; i < count; i++) {
+    const seed = generateUniqueSeed(seedsInUse);
+    seedsInUse.push(seed);
+    promises.push(generateOneImage({ image, roomType, seed, existingSeeds: seedsInUse }));
+  }
+  return Promise.all(promises);
 };
 
 exports.generateAIImage = async (req, res) => {
   try {
-    const { image, roomType, designStyle } = req.body;
+    const { image, roomType } = req.body;
     if (!image) {
       return res.status(400).json({ success: false, message: 'Image is required.' });
     }
-
     const seed = generateUniqueSeed();
     const variationPrompt = getVariationPrompt(roomType || 'Living Room', seed);
-
-    const result = await generateImageWithAI({
-      image,
-      roomType: roomType || 'Living Room',
-      seed,
-      variationPrompt
-    });
-
-    res.status(200).json({
-      success: true,
-      imageUrl: result.imageUrl,
-      roomType: roomType,
-      seed,
-      variationPrompt,
-      promptUsed: result.prompt
-    });
+    const result = await generateImageWithAI({ image, roomType: roomType || 'Living Room', seed, variationPrompt });
+    res.status(200).json({ success: true, imageUrl: result.imageUrl, roomType, seed, variationPrompt, promptUsed: result.prompt });
   } catch (error) {
     console.error('AI Generation Error:', error.message);
     res.status(500).json({ success: false, message: 'Failed to generate AI image', error: error.message });
@@ -242,16 +266,9 @@ exports.generateAIImage = async (req, res) => {
 
 exports.saveGeneration = async ({ userId, projectId, uploadedImage, generatedImage, roomType, designStyle, promptUsed, seed, versionNumber }) => {
   const generation = await GenerationHistory.create({
-    userId,
-    projectId,
-    uploadedImage,
-    generatedImage,
-    roomType,
+    userId, projectId, uploadedImage, generatedImage, roomType,
     designStyle: designStyle || VARIATION_STYLES[seed % VARIATION_STYLES.length],
-    promptUsed,
-    seed,
-    variationPrompt: getVariationPrompt(roomType, seed),
-    versionNumber
+    promptUsed, seed, variationPrompt: getVariationPrompt(roomType, seed), versionNumber
   });
   return generation;
 };
@@ -259,4 +276,7 @@ exports.saveGeneration = async ({ userId, projectId, uploadedImage, generatedIma
 exports.generateUniqueSeed = generateUniqueSeed;
 exports.getVariationPrompt = getVariationPrompt;
 exports.generateImageWithAI = generateImageWithAI;
+exports.generateOneImage = generateOneImage;
+exports.generateMultipleImages = generateMultipleImages;
 exports.VARIATION_STYLES = VARIATION_STYLES;
+exports.FALLBACK_IMAGES = FALLBACK_IMAGES;
