@@ -26,12 +26,6 @@ const AdminDashboard = ({
   const [expandedTrackingOrder, setExpandedTrackingOrder] = useState(null);
 
   // System Notification State
-  const [broadcastMessage, setBroadcastMessage] = useState('');
-  const [targetUserId, setTargetUserId] = useState('');
-  const [notificationType, setNotificationType] = useState('info');
-  const [targetUserName, setTargetUserName] = useState('');
-  const [sentAlerts, setSentAlerts] = useState([]);
-  const [notifSubTab, setNotifSubTab] = useState('compose');
 
   // Partner Assignment State
   const [assignmentOrder, setAssignmentOrder] = useState(null);
@@ -1443,36 +1437,6 @@ const AdminDashboard = ({
       }
       setCancelOrderObj(null);
       alert("❌ Order cancelled (offline mock updated).");
-    }
-  };
-
-  // System Notification Action
-  const handleBroadcastSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('/admin/system-notification', {
-        message: broadcastMessage,
-        targetUserId: targetUserId || null,
-        type: notificationType
-      }).catch(() => console.log('mock notify'));
-
-      // Log to local sent-alerts list
-      const newAlert = {
-        id: Date.now(),
-        message: broadcastMessage,
-        type: notificationType,
-        targetUserId: targetUserId || null,
-        targetUserName: targetUserName || (targetUserId ? `User #${targetUserId.slice(-6)}` : 'All Users'),
-        sentAt: new Date().toISOString()
-      };
-      setSentAlerts(prev => [newAlert, ...prev]);
-      alert('System notification sent successfully!');
-      setBroadcastMessage('');
-      setTargetUserId('');
-      setTargetUserName('');
-      setNotificationType('info');
-    } catch (error) {
-      alert('Error sending notification');
     }
   };
 
@@ -5982,299 +5946,64 @@ const AdminDashboard = ({
       {/* TAB 15: SYSTEM NOTIFICATIONS */}
       {activeTab === 'notifications' && (
         <div className="space-y-8 text-left animate-fadeIn">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">System Notifications</h2>
-              <p className="text-xs text-gray-500 mt-1">Broadcast platform-wide alerts or view received system events.</p>
-            </div>
-            {/* Sub-tab Toggle buttons */}
-            <div className="flex gap-2 p-1 bg-gray-100 rounded-2xl self-start md:self-auto border border-gray-200">
-              <button 
-                onClick={() => setNotifSubTab('compose')}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                  notifSubTab === 'compose' 
-                    ? 'bg-[#1D3557] text-white shadow-sm' 
-                    : 'text-gray-500 hover:text-[#1D3557] hover:bg-gray-50'
-                }`}
-              >
-                Compose & Broadcast
-              </button>
-              <button 
-                onClick={() => setNotifSubTab('received')}
-                className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 ${
-                  notifSubTab === 'received' 
-                    ? 'bg-[#1D3557] text-white shadow-sm' 
-                    : 'text-gray-500 hover:text-[#1D3557] hover:bg-gray-50'
-                }`}
-              >
-                Received Platform Logs
-                {notifications.filter(n => !n.read).length > 0 && (
-                  <span className="bg-[#E76F51] text-white text-[9.5px] font-extrabold px-1.5 py-0.5 rounded-full shrink-0 min-w-[16px] text-center">
-                    {notifications.filter(n => !n.read).length}
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {notifSubTab === 'received' ? (
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-3">
-                  <Bell className="w-6 h-6 text-[#1D3557]" /> Received Platform Logs
-                </h2>
-                {notifications.length > 0 && (
-                  <button onClick={onMarkAllRead} className="text-sm font-bold text-[#1D3557] hover:underline">
-                    Mark all as read
-                  </button>
-                )}
-              </div>
-              <div className="space-y-4">
-                {notifications.length === 0 ? (
-                  <div className="text-center py-12 text-gray-400 font-medium">
-                    No received system notifications yet.
-                  </div>
-                ) : (
-                  notifications.map((notif) => {
-                    const isUnread = !notif.read;
-                    return (
-                      <div 
-                        key={notif._id} 
-                        onClick={() => onNotifClick && onNotifClick(notif)}
-                        className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-sm ${
-                          isUnread 
-                            ? 'bg-[#1D3557]/5 border-[#1D3557]/20' 
-                            : 'bg-gray-50 border-gray-100'
-                        }`}
-                      >
-                        <div className="mt-1 shrink-0">
-                          {isUnread ? (
-                            <div className="w-2 h-2 bg-[#1D3557] rounded-full mt-1.5"></div>
-                          ) : (
-                            <CheckCircle className="w-4 h-4 text-gray-400 mt-0.5" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
-                            {notif.message}
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-1">
-                            {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
-                          </p>
-                          {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('manual')) && (
-                            <button 
-                              onClick={() => { if (setActiveTab) setActiveTab('manual_designs'); }} 
-                              className="mt-2 text-xs font-bold text-[#1D3557] hover:underline block"
-                            >
-                              View Request
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          ) : (
-            <>
-
-          {/* Metrics Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Sent</span>
-                <div className="p-1.5 bg-[#E76F51]/10 text-[#E76F51] rounded-lg"><Bell size={14} /></div>
-              </div>
-              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">{sentAlerts.length} Alerts</h4>
-            </div>
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Broadcast</span>
-                <div className="p-1.5 bg-blue-50 text-blue-600 rounded-lg"><Send size={14} /></div>
-              </div>
-              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">
-                {sentAlerts.filter(a => !a.targetUserId).length} Global
-              </h4>
-            </div>
-            <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Targeted</span>
-                <div className="p-1.5 bg-amber-50 text-amber-600 rounded-lg"><UserCheck size={14} /></div>
-              </div>
-              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">
-                {sentAlerts.filter(a => !!a.targetUserId).length} Users
-              </h4>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Broadcast Form */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
-              <div className="flex items-center gap-3 border-b border-gray-100 pb-4">
-                <div className="p-2 bg-[#E76F51]/10 rounded-xl"><Bell className="w-5 h-5 text-[#E76F51]" /></div>
-                <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Compose & Send</h3>
-              </div>
-
-              {/* Quick Templates */}
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-3">Quick Templates</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { label: '🔧 Maintenance', msg: 'Platform maintenance scheduled on May 25th, 2026 from 2:00 AM – 4:00 AM IST. Service may be temporarily unavailable.', type: 'warning' },
-                    { label: '🎉 New Feature', msg: 'Exciting news! A new feature has just been launched on the platform. Explore it now in your dashboard.', type: 'info' },
-                    { label: '⚠️ Policy Update', msg: 'Our Terms of Service & Privacy Policy have been updated. Please review the changes in your account settings.', type: 'warning' },
-                    { label: '💰 Payment Notice', msg: 'Your pending payout has been processed and will be credited to your bank account within 2–3 business days.', type: 'success' },
-                  ].map((t) => (
-                    <button
-                      key={t.label}
-                      type="button"
-                      onClick={() => { setBroadcastMessage(t.msg); setNotificationType(t.type); }}
-                      className="text-left px-3 py-2.5 bg-gray-50 hover:bg-gray-100 border border-gray-100 rounded-xl text-xs font-medium text-gray-700 transition-all"
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <form onSubmit={handleBroadcastSubmit} className="space-y-5">
-                {/* Notification Type */}
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Notification Type</label>
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      { value: 'info', label: 'Info', color: 'bg-blue-50 text-blue-700 border-blue-200' },
-                      { value: 'success', label: 'Success', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                      { value: 'warning', label: 'Warning', color: 'bg-amber-50 text-amber-700 border-amber-200' },
-                      { value: 'error', label: 'Alert', color: 'bg-red-50 text-red-700 border-red-200' },
-                    ].map((opt) => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setNotificationType(opt.value)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all ${
-                          notificationType === opt.value
-                            ? opt.color + ' shadow-sm'
-                            : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50'
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Message */}
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Message</label>
-                  <textarea
-                    rows={4}
-                    required
-                    value={broadcastMessage}
-                    onChange={(e) => setBroadcastMessage(e.target.value)}
-                    placeholder="Write your notification message here..."
-                    className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51] text-sm resize-none"
-                  />
-                  <p className="text-[11px] text-gray-400 mt-1">{broadcastMessage.length} characters</p>
-                </div>
-
-                {/* Target User */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Target User ID</label>
-                    <input
-                      type="text"
-                      value={targetUserId}
-                      onChange={(e) => setTargetUserId(e.target.value)}
-                      placeholder="Leave empty = All Users"
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51] text-sm"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Display Name (Optional)</label>
-                    <input
-                      type="text"
-                      value={targetUserName}
-                      onChange={(e) => setTargetUserName(e.target.value)}
-                      placeholder="e.g. John Doe"
-                      className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#E76F51] text-sm"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-4 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl font-bold shadow-md flex items-center justify-center gap-2 transition-all"
-                >
-                  <Send className="w-4 h-4" />
-                  Send Notification
+          <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-3">
+                <Bell className="w-6 h-6 text-[#1D3557]" /> Received Platform Logs
+              </h2>
+              {notifications.length > 0 && (
+                <button onClick={onMarkAllRead} className="text-sm font-bold text-[#1D3557] hover:underline">
+                  Mark all as read
                 </button>
-              </form>
+              )}
             </div>
-
-            {/* Recent Sent Alerts */}
-            <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-xl"><AlertCircle className="w-5 h-5 text-gray-600" /></div>
-                  <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Sent Alerts Log</h3>
-                </div>
-                {sentAlerts.length > 0 && (
-                  <button
-                    onClick={() => setSentAlerts([])}
-                    className="text-xs font-bold text-red-500 hover:text-red-700 transition-all"
-                  >
-                    Clear All
-                  </button>
-                )}
-              </div>
-
-              {sentAlerts.length === 0 ? (
-                <div className="py-12 text-center space-y-3">
-                  <Bell className="w-10 h-10 text-gray-200 mx-auto" />
-                  <p className="text-sm font-medium text-gray-400">No notifications sent yet.</p>
-                  <p className="text-xs text-gray-300">Compose a message on the left and send your first broadcast.</p>
+            <div className="space-y-4">
+              {notifications.length === 0 ? (
+                <div className="text-center py-12 text-gray-400 font-medium">
+                  No received system notifications yet.
                 </div>
               ) : (
-                <div className="space-y-4 max-h-[520px] overflow-y-auto pr-1">
-                  {sentAlerts.map((alert) => {
-                    const typeStyles = {
-                      info: 'bg-blue-50 text-blue-700 border-blue-100',
-                      success: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-                      warning: 'bg-amber-50 text-amber-700 border-amber-100',
-                      error: 'bg-red-50 text-red-700 border-red-100',
-                    };
-                    const typeIcons = {
-                      info: '📢',
-                      success: '✅',
-                      warning: '⚠️',
-                      error: '🚨',
-                    };
-                    return (
-                      <div key={alert.id} className={`p-4 rounded-2xl border ${typeStyles[alert.type] || typeStyles.info} space-y-2`}>
-                        <div className="flex justify-between items-start gap-2">
-                          <div className="flex items-center gap-2">
-                            <span>{typeIcons[alert.type] || '📢'}</span>
-                            <span className="text-[10px] font-bold uppercase tracking-wider">{alert.type}</span>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-[10px] font-bold">→ {alert.targetUserName}</p>
-                            <p className="text-[10px] opacity-70">{new Date(alert.sentAt).toLocaleString()}</p>
-                          </div>
-                        </div>
-                        <p className="text-xs leading-relaxed">{alert.message}</p>
+                notifications.map((notif) => {
+                  const isUnread = !notif.read;
+                  return (
+                    <div 
+                      key={notif._id} 
+                      onClick={() => onNotifClick && onNotifClick(notif)}
+                      className={`flex gap-4 p-4 rounded-2xl border transition-all cursor-pointer hover:shadow-sm ${
+                        isUnread 
+                          ? 'bg-[#1D3557]/5 border-[#1D3557]/20' 
+                          : 'bg-gray-50 border-gray-100'
+                      }`}
+                    >
+                      <div className="mt-1 shrink-0">
+                        {isUnread ? (
+                          <div className="w-2 h-2 bg-[#1D3557] rounded-full mt-1.5"></div>
+                        ) : (
+                          <CheckCircle className="w-4 h-4 text-gray-400 mt-0.5" />
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex-1">
+                        <p className={`font-bold text-sm ${isUnread ? 'text-[#1F2937]' : 'text-gray-500'}`}>
+                          {notif.message}
+                        </p>
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          {notif.createdAt ? new Date(notif.createdAt).toLocaleString() : 'Just now'}
+                        </p>
+                        {(notif.message.toLowerCase().includes('request') || notif.message.toLowerCase().includes('manual')) && (
+                          <button 
+                            onClick={() => { if (setActiveTab) setActiveTab('manual_designs'); }} 
+                            className="mt-2 text-xs font-bold text-[#1D3557] hover:underline block"
+                          >
+                            View Request
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
-          </>
-          )}
         </div>
       )}
 
