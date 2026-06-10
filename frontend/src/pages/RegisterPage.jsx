@@ -1,21 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, CheckCircle, ArrowRight, ShieldCheck, FileText, CreditCard, Armchair, Sparkles } from 'lucide-react';
+import { UserPlus, CheckCircle, ShieldCheck, Armchair, Sparkles } from 'lucide-react';
 
 const RegisterPage = () => {
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') || 'user';
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(initialRole);
-
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [businessType, setBusinessType] = useState('seller');
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,18 +23,9 @@ const RegisterPage = () => {
     }
   }, [user, navigate]);
 
-  useEffect(() => {
-    if (searchParams.get('role')) {
-      setRole(searchParams.get('role'));
-      if (searchParams.get('role') !== 'user' && searchParams.get('role') !== 'vendor') {
-        setBusinessType(searchParams.get('role'));
-      }
-    }
-  }, [searchParams]);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || !email || !password || (role !== 'user' && !companyName)) {
+    if (!name || !email || !password) {
       setModalInfo({
         show: true,
         title: 'Missing Information',
@@ -55,14 +38,8 @@ const RegisterPage = () => {
     setError('');
     setLoading(true);
 
-    let finalRole = 'user';
-    if (role !== 'user') {
-      if (businessType === 'seller') finalRole = 'vendor';
-      else finalRole = businessType;
-    }
-
     const userData = {
-      name, email, password, role: finalRole, phone, address, companyName, businessType
+      name, email, password, role: 'user', phone
     };
 
     const res = await register(userData);
@@ -72,9 +49,7 @@ const RegisterPage = () => {
       setModalInfo({
         show: true,
         title: 'Registration Successful',
-        message: finalRole === 'user' 
-          ? 'Your account has been created successfully. You can now log in and start using the platform.' 
-          : 'Your account has been created successfully. It is pending admin approval. You will be able to access all features once approved.',
+        message: 'Your account has been created successfully. You can now log in and start using the platform.',
         type: 'success'
       });
     } else {
@@ -117,7 +92,7 @@ const RegisterPage = () => {
           Create Your Account
         </h2>
         <p className="mt-2 text-sm text-[#6B7280]">
-          Join the elite AI interior design and partner marketplace
+          Join the elite AI interior design marketplace
         </p>
       </div>
 
@@ -130,43 +105,6 @@ const RegisterPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2 text-center">
-                Select Account Type
-              </label>
-              <div className="grid grid-cols-2 gap-4 bg-[#F8F5F0] p-1.5 rounded-2xl border border-[#D4A373]/30">
-                <button
-                  type="button"
-                  onClick={() => setRole('user')}
-                  className={`py-3 rounded-xl font-bold text-sm transition-all ${role === 'user' ? 'bg-[#8B5E3C] text-white shadow-md' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
-                >
-                  Customer / Homeowner
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('vendor')}
-                  className={`py-3 rounded-xl font-bold text-sm transition-all ${role !== 'user' ? 'bg-[#8B5E3C] text-white shadow-md' : 'text-[#6B7280] hover:text-[#1F2937]'}`}
-                >
-                  Business / Partner
-                </button>
-              </div>
-            </div>
-
-            {role !== 'user' && (
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">
-                  Partner Type
-                </label>
-                <select
-                  value={businessType}
-                  onChange={(e) => setBusinessType(e.target.value)}
-                  className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white"
-                >
-                  <option value="seller">Furniture Vendor / Seller</option>
-                </select>
-              </div>
-            )}
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
@@ -189,17 +127,8 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {role !== 'user' && (
-              <div>
-                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Company / Business Name</label>
-                <input type="text" required value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Artisan Furniture Ltd" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-              </div>
-            )}
-
-
-
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
               className="w-full flex items-center justify-center gap-2 py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-50"
             >
@@ -234,8 +163,8 @@ const RegisterPage = () => {
             <button
               onClick={handleModalClose}
               className={`w-full py-3 px-4 rounded-xl font-bold text-white shadow-md transition-all ${
-                modalInfo.type === 'success' 
-                  ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg' 
+                modalInfo.type === 'success'
+                  ? 'bg-emerald-600 hover:bg-emerald-700 hover:shadow-lg'
                   : 'bg-red-600 hover:bg-red-700 hover:shadow-lg'
               }`}
             >
