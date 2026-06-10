@@ -1728,9 +1728,9 @@ Thank you for shopping with Artisan Studio!
                               <div><strong className="text-[#1F2937]">Materials:</strong> {design.aiSuggestion?.materials?.join(', ') || 'Leather, Oak Wood'}</div>
                             </div>
                           </div>
-                          <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: ${design.aiSuggestion?.budgetEstimate || '4,500'}</span>
-                            <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 mt-2 border-t border-gray-100">
+                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C] shrink-0">Est. Budget: ${design.aiSuggestion?.budgetEstimate || '4,500'}</span>
+                            <div className="flex flex-wrap items-center gap-2">
                               {design.analysis && (
                                 <button 
                                   onClick={() => setExpandedAnalysisId(expandedAnalysisId === design._id ? null : design._id)}
