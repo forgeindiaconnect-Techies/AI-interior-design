@@ -1303,49 +1303,56 @@ const AdminDashboard = ({
     }
     try {
       await axios.put(`/admin/suspend-user/${suspendModalUser._id}`, { reason: suspensionReasonText });
+      
+      // Recalculate local stats dynamically
+      const updatedUsers = managementData.users.map(u => 
+        u._id === suspendModalUser._id ? { ...u, status: 'Suspended', suspensionReason: suspensionReasonText } : u
+      );
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          ...managementData.userStats,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
+        }
+      });
+      
+      alert(`User ${suspendModalUser.name} suspended successfully.`);
+      setSuspendModalUser(null);
+      setSuspensionReasonText('');
     } catch (error) {
-      console.warn('API failed, updating local state only:', error.message);
+      alert(error.response?.data?.message || 'Error suspending user');
     }
-    const updatedUsers = managementData.users.map(u => 
-      u._id === suspendModalUser._id ? { ...u, status: 'Suspended', suspensionReason: suspensionReasonText } : u
-    );
-    setManagementData({
-      ...managementData,
-      users: updatedUsers,
-      userStats: {
-        ...managementData.userStats,
-        activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
-        suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
-      }
-    });
-    alert(`User ${suspendModalUser.name} suspended successfully.`);
-    setSuspendModalUser(null);
-    setSuspensionReasonText('');
   };
 
   // Update User Status (Approve/Reject/Active)
   const handleUpdateUserStatus = async (userId, newStatus) => {
     try {
-      await axios.put(`/admin/users/${userId}/status`, { status: newStatus }, {
+      const res = await axios.put(`/admin/users/${userId}/status`, { status: newStatus }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      
+      const updatedUsers = managementData.users.map(u => 
+        u._id === userId ? { ...u, status: res.data.user.status } : u
+      );
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          ...managementData.userStats,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
+        }
+      });
+      
+      alert(`User status updated to ${newStatus} successfully.`);
+      setConfirmActionModal(null);
     } catch (error) {
-      console.warn('API failed, updating local state only:', error.message);
+      alert(error.response?.data?.message || 'Error updating user status');
     }
-    const updatedUsers = managementData.users.map(u => 
-      u._id === userId ? { ...u, status: newStatus } : u
-    );
-    setManagementData({
-      ...managementData,
-      users: updatedUsers,
-      userStats: {
-        ...managementData.userStats,
-        activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
-        suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
-      }
-    });
-    alert(`User status updated to ${newStatus} successfully.`);
-    setConfirmActionModal(null);
   };
 
 
@@ -1353,70 +1360,79 @@ const AdminDashboard = ({
   const handleReactivateUser = async (userId) => {
     try {
       await axios.put(`/admin/reactivate-user/${userId}`);
+      
+      const updatedUsers = managementData.users.map(u => 
+        u._id === userId ? { ...u, status: 'Active', suspensionReason: '' } : u
+      );
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          ...managementData.userStats,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
+        }
+      });
+      
+      alert('User reactivated successfully.');
+      setConfirmActionModal(null);
     } catch (error) {
-      console.warn('API failed, updating local state only:', error.message);
+      alert(error.response?.data?.message || 'Error reactivating user');
     }
-    const updatedUsers = managementData.users.map(u => 
-      u._id === userId ? { ...u, status: 'Active', suspensionReason: '' } : u
-    );
-    setManagementData({
-      ...managementData,
-      users: updatedUsers,
-      userStats: {
-        ...managementData.userStats,
-        activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
-        suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
-      }
-    });
-    alert('User reactivated successfully.');
-    setConfirmActionModal(null);
   };
 
   // Block User Action
   const handleBlockUser = async (userId) => {
     try {
       await axios.put(`/admin/block-user/${userId}`);
+      
+      const updatedUsers = managementData.users.map(u => 
+        u._id === userId ? { ...u, status: 'Blocked' } : u
+      );
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          ...managementData.userStats,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
+        }
+      });
+      
+      alert('User blocked successfully.');
+      setConfirmActionModal(null);
     } catch (error) {
-      console.warn('API failed, updating local state only:', error.message);
+      alert(error.response?.data?.message || 'Error blocking user');
     }
-    const updatedUsers = managementData.users.map(u => 
-      u._id === userId ? { ...u, status: 'Blocked' } : u
-    );
-    setManagementData({
-      ...managementData,
-      users: updatedUsers,
-      userStats: {
-        ...managementData.userStats,
-        activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
-        suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length
-      }
-    });
-    alert('User blocked successfully.');
-    setConfirmActionModal(null);
   };
 
   // Delete User Action
   const handleDeleteUser = async (userId) => {
     try {
       await axios.delete(`/admin/delete-user/${userId}`);
+      
+      const updatedUsers = managementData.users.filter(u => u._id !== userId);
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      setManagementData({
+        ...managementData,
+        users: updatedUsers,
+        userStats: {
+          totalUsers: updatedUsers.length,
+          activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
+          suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length,
+          newUsersThisMonth: updatedUsers.filter(u => new Date(u.createdAt) >= startOfMonth).length
+        }
+      });
+      
+      alert('User permanently deleted successfully.');
+      setConfirmActionModal(null);
     } catch (error) {
-      console.warn('API failed, deleting from local state only:', error.message);
+      alert(error.response?.data?.message || 'Error deleting user');
     }
-    const updatedUsers = managementData.users.filter(u => u._id !== userId);
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    setManagementData({
-      ...managementData,
-      users: updatedUsers,
-      userStats: {
-        totalUsers: updatedUsers.length,
-        activeUsers: updatedUsers.filter(u => u.status === 'Active').length,
-        suspendedUsers: updatedUsers.filter(u => u.status === 'Suspended').length,
-        newUsersThisMonth: updatedUsers.filter(u => new Date(u.createdAt) >= startOfMonth).length
-      }
-    });
-    alert('User permanently deleted successfully.');
-    setConfirmActionModal(null);
   };
 
   // Helper to persist order changes locally in mock/offline mode

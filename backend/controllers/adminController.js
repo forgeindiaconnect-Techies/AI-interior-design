@@ -775,9 +775,7 @@ exports.suspendUser = async (req, res) => {
     const { id } = req.params;
     const { reason } = req.body;
 
-    if (global.MOCK_DB) {
-      return res.status(200).json({ success: true, message: 'User suspended successfully (mock)' });
-    }
+
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -786,12 +784,14 @@ exports.suspendUser = async (req, res) => {
     user.suspensionReason = reason || 'Terms of Service violation';
     await user.save();
 
+    // Create admin log
     await AdminLog.create({ 
       adminId: req.user.id, 
       action: `Suspended user ${user.name}`, 
       details: `Reason: ${reason || 'No reason specified'}` 
     });
 
+    // Notify user
     await Notification.create({ 
       userId: user._id, 
       message: `Your account has been suspended by an administrator. Reason: ${reason || 'Terms of Service violation'}`,
@@ -811,9 +811,7 @@ exports.reactivateUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB) {
-      return res.status(200).json({ success: true, message: 'User reactivated successfully (mock)' });
-    }
+
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -822,12 +820,14 @@ exports.reactivateUser = async (req, res) => {
     user.suspensionReason = '';
     await user.save();
 
+    // Create admin log
     await AdminLog.create({ 
       adminId: req.user.id, 
       action: `Reactivated user ${user.name}`,
       details: 'Account status restored to Active.'
     });
 
+    // Notify user
     await Notification.create({ 
       userId: user._id, 
       message: 'Your account has been successfully reactivated. Welcome back!',
@@ -847,9 +847,7 @@ exports.blockUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB) {
-      return res.status(200).json({ success: true, message: 'User blocked successfully (mock)' });
-    }
+
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -858,6 +856,7 @@ exports.blockUser = async (req, res) => {
     user.suspensionReason = '';
     await user.save();
 
+    // Create admin log
     await AdminLog.create({ 
       adminId: req.user.id, 
       action: `Blocked user ${user.name}`,
@@ -877,9 +876,7 @@ exports.deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
 
-    if (global.MOCK_DB) {
-      return res.status(200).json({ success: true, message: 'User permanently deleted successfully (mock)' });
-    }
+
 
     const user = await User.findById(id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
@@ -887,6 +884,7 @@ exports.deleteUser = async (req, res) => {
     const userName = user.name;
     await User.findByIdAndDelete(id);
 
+    // Create admin log
     await AdminLog.create({ 
       adminId: req.user.id, 
       action: `Permanently deleted user ${userName}`,
@@ -2543,11 +2541,6 @@ exports.getAllUsers = async (req, res) => {
 exports.updateUserStatus = async (req, res) => {
   try {
     const { status } = req.body;
-
-    if (global.MOCK_DB) {
-      return res.status(200).json({ success: true, message: `User status updated to ${status} (mock)` });
-    }
-
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
