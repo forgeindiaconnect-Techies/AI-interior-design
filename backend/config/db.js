@@ -11,15 +11,10 @@ const connectDB = async () => {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 15000,
       connectTimeoutMS: 15000,
-      socketTimeoutMS: 60000,
-      family: 4,
-      keepAlive: true,
-      keepAliveInitialDelay: 300000,
+      socketTimeoutMS: 120000,
       maxPoolSize: 10,
       minPoolSize: 1,
-      heartbeatFrequencyMS: 10000,
-      retryWrites: true,
-      w: 'majority',
+      family: 4,
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     global.MOCK_DB = false;
