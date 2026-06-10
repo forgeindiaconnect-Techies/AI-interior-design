@@ -26,8 +26,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
     operations: true,
     ai_requests: true,
     finance: true,
-    support: true,
-    verifications: true
+    support: true
   });
 
   const toggleGroup = (group) => {
@@ -191,19 +190,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
         {/* Outer-level: Reports & Analytics */}
         <div>
           <NavItem name="Reports & Analytics" icon={BarChart2} tab="analytics" color="#A855F7" />
-        </div>
-
-        {/* Collapsible: VERIFICATION & REVIEWS */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <SectionLabel label="Verification & Reviews" group="verifications" />
-          {openGroups.verifications && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
-              <NavItem name="Vendor Verification" icon={CheckSquare} tab="verifications" color="#3B82F6" />
-              <NavItem name="Store Approval" icon={Store} tab="store-approvals" color="#F59E0B" />
-              <NavItem name="Product Quality Review" icon={AlertCircle} tab="product-reviews" color="#10B981" />
-              <NavItem name="Customer Reviews" icon={Sparkles} tab="reviews_management" color="#EC4899" />
-            </div>
-          )}
         </div>
 
         {/* Outer-level: Notifications */}

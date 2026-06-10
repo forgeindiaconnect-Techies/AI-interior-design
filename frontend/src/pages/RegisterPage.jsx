@@ -196,10 +196,7 @@ const RegisterPage = () => {
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Address</label>
-              <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Luxury Ave, Suite 400, NY" className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
-            </div>
+
 
             <button 
               type="submit" 

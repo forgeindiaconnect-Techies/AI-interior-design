@@ -25,8 +25,7 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
     products: true,
     orders: true,
     customers: true,
-    finance: true,
-    business: true
+    finance: true
   });
 
   const toggleGroup = (group) => {
@@ -139,14 +138,6 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
         { name: 'Payouts', icon: DollarSign, tab: 'payouts', color: '#EAB308' }
       ]
     },
-    {
-      group: 'business', label: 'Business Settings',
-      items: [
-        { name: 'Business Profile', icon: Briefcase, tab: 'profile', color: '#64748B' },
-        { name: 'Business Verification', icon: ShieldCheck, tab: 'verification', color: '#3B82F6' },
-        { name: 'Store Setup', icon: Store, tab: 'store_setup', color: '#A855F7' }
-      ]
-    }
   ];
 
   return (
