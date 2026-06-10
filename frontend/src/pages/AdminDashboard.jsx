@@ -6,7 +6,7 @@ import {
   DollarSign, Bell, AlertCircle, RefreshCw, Eye, Send, BarChart2, ShieldCheck,
   LayoutDashboard, Key, HelpCircle, FileText, Sparkles, UserCheck, CheckSquare,
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
-  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare
+  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare, RotateCcw
 } from 'lucide-react';
 import AdminContactMessages from './admin/AdminContactMessages';
 
@@ -693,6 +693,51 @@ const AdminDashboard = ({
             expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 7).toISOString(),
             createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString(),
             shippingAddress: '789 Designer Lane, New York, NY, USA'
+          },
+          {
+            _id: 'ord_ref_1',
+            orderType: 'Custom Design',
+            userId: { name: 'Priya Sharma', email: 'priya@example.com' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 3200,
+            paymentStatus: 'paid',
+            orderStatus: 'Cancelled',
+            expectedDeliveryDate: null,
+            createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(),
+            shippingAddress: '45 Lake View, Mumbai, India'
+          },
+          {
+            _id: 'ord_ref_2',
+            orderType: 'Marketplace Product',
+            userId: { name: 'Rahul Verma', email: 'rahul@example.com' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 1499,
+            paymentStatus: 'refunded',
+            orderStatus: 'Refunded',
+            expectedDeliveryDate: null,
+            createdAt: new Date(Date.now() - 3600000 * 24 * 14).toISOString(),
+            shippingAddress: '22 Green Park, Delhi, India'
+          },
+          {
+            _id: 'ord_ref_3',
+            orderType: 'AI Design',
+            userId: { name: 'Ananya Gupta', email: 'ananya@example.com' },
+            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+            manufacturerId: null,
+            deliveryPartnerId: null,
+            installationPartnerId: null,
+            totalAmount: 5800,
+            paymentStatus: 'paid',
+            orderStatus: 'Cancelled',
+            expectedDeliveryDate: null,
+            createdAt: new Date(Date.now() - 3600000 * 24 * 7).toISOString(),
+            shippingAddress: '77 Sunrise Ave, Pune, India'
           }
         ];
       }
@@ -4530,15 +4575,18 @@ const AdminDashboard = ({
 
       {/* TAB: REFUNDS */}
       {activeTab === 'refunds' && (() => {
-        const refundOrders = orders.filter(o => o.orderStatus === 'Cancelled' || o.paymentStatus === 'refunded');
+        const allOrders = managementData?.orders || [];
+        const refundOrders = allOrders.filter(o => o.orderStatus === 'Cancelled' || o.orderStatus === 'Refunded' || o.paymentStatus === 'refunded');
 
         const handleProcessRefund = (orderId) => {
-          const localOrders = [];
-          const updated = localOrders.map(o => o._id === orderId ? { ...o, paymentStatus: 'refunded', orderStatus: 'Refunded' } : o);
-          
+          const updated = allOrders.map(o => o._id === orderId ? { ...o, paymentStatus: 'refunded', orderStatus: 'Refunded' } : o);
           setManagementData(prev => ({ ...prev, orders: updated }));
           alert('✅ Refund processed successfully! The transaction has been updated in the ledger.');
         };
+
+        const pendingCount = refundOrders.filter(o => o.paymentStatus !== 'refunded').length;
+        const completedCount = refundOrders.filter(o => o.paymentStatus === 'refunded').length;
+        const totalRefunded = refundOrders.filter(o => o.paymentStatus === 'refunded').reduce((sum, o) => sum + (o.totalAmount || 0), 0);
 
         return (
           <div className="space-y-8 animate-fadeIn text-left">
@@ -4547,14 +4595,49 @@ const AdminDashboard = ({
               <p className="text-xs text-gray-500 mt-1">Approve and process refund transactions for cancelled designs or marketplace items.</p>
             </div>
 
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pending Refunds</span>
+                  <div className="w-10 h-10 bg-red-50 rounded-full flex items-center justify-center"><RotateCcw className="w-5 h-5 text-red-500" /></div>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-800">{pendingCount}</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-semibold">Awaiting processing</p>
+              </div>
+              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Completed</span>
+                  <div className="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center"><CheckCircle className="w-5 h-5 text-green-600" /></div>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-800">{completedCount}</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-semibold">Successfully refunded</p>
+              </div>
+              <div className="bg-white p-6 rounded-3xl border border-[#D4A373]/30 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Refunded</span>
+                  <div className="w-10 h-10 bg-amber-50 rounded-full flex items-center justify-center"><DollarSign className="w-5 h-5 text-amber-600" /></div>
+                </div>
+                <h3 className="text-3xl font-extrabold text-gray-800">${totalRefunded.toLocaleString()}</h3>
+                <p className="text-[10px] text-gray-400 mt-1 font-semibold">Lifetime refunds issued</p>
+              </div>
+            </div>
+
+            {/* Refund Table */}
             <div className="bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm overflow-hidden">
-              <div className="p-6 border-b border-gray-100 font-bold text-lg text-gray-850">Refund Processing Center</div>
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h3 className="font-bold text-lg text-gray-800">Refund Processing Center</h3>
+                {refundOrders.length > 0 && (
+                  <span className="text-xs text-gray-400 font-medium">{refundOrders.length} total</span>
+                )}
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100 text-gray-400 font-bold uppercase text-[9px] tracking-wider">
                       <th className="p-4 pl-8">Order ID</th>
                       <th className="p-4">Customer</th>
+                      <th className="p-4">Type</th>
                       <th className="p-4 text-right">Amount</th>
                       <th className="p-4">Status</th>
                       <th className="p-4 pr-8 text-right">Actions</th>
@@ -4563,37 +4646,50 @@ const AdminDashboard = ({
                   <tbody>
                     {refundOrders.length === 0 ? (
                       <tr>
-                        <td colSpan="5" className="text-center p-12 text-gray-400 font-medium">
-                          No pending refund claims.
+                        <td colSpan="6" className="text-center p-12 text-gray-400 font-medium">
+                          <div className="flex flex-col items-center gap-3">
+                            <RotateCcw className="w-10 h-10 text-gray-200" />
+                            <span>No refund claims yet. Cancelled orders will appear here.</span>
+                          </div>
                         </td>
                       </tr>
                     ) : (
                       refundOrders.map((order) => (
                         <tr key={order._id} className="border-b border-gray-150 text-xs hover:bg-[#FDFBF7] transition-all">
                           <td className="p-4 pl-8">
-                            <span className="font-mono font-bold text-gray-800">#{order._id}</span>
+                            <span className="font-mono font-bold text-gray-800">#{order._id?.toString().slice(-8)}</span>
                           </td>
                           <td className="p-4">
                             <span className="font-bold text-gray-700">{order.userId?.name || 'Customer'}</span>
+                            <p className="text-[9px] text-gray-400 mt-0.5">{order.userId?.email || ''}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-100">
+                              {order.orderType || 'Standard Order'}
+                            </span>
                           </td>
                           <td className="p-4 text-right font-bold text-gray-800 font-mono">
-                            ${order.totalAmount?.toLocaleString()}
+                            ${(order.totalAmount || 0).toLocaleString()}
                           </td>
                           <td className="p-4">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold inline-block ${
-                              order.paymentStatus === 'refunded' ? 'bg-gray-100 text-gray-605 border border-gray-200' : 'bg-red-50 text-red-600 border border-red-200'
+                              order.paymentStatus === 'refunded'
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : 'bg-red-50 text-red-600 border border-red-200'
                             }`}>
                               {order.paymentStatus === 'refunded' ? 'Refunded' : 'Awaiting Processing'}
                             </span>
                           </td>
                           <td className="p-4 pr-8 text-right">
-                            {order.paymentStatus !== 'refunded' && (
+                            {order.paymentStatus !== 'refunded' ? (
                               <button
                                 onClick={() => handleProcessRefund(order._id)}
                                 className="px-3.5 py-1.5 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-lg font-bold text-[10px] transition-all"
                               >
                                 Process Refund
                               </button>
+                            ) : (
+                              <span className="text-[10px] text-gray-400 font-medium">Completed</span>
                             )}
                           </td>
                         </tr>
