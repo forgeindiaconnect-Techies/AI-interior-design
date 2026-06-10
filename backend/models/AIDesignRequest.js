@@ -27,6 +27,9 @@ const AIDesignRequestSchema = new mongoose.Schema({
     default: 'pending' 
   },
   isBookmarked: { type: Boolean, default: false },
+  versionNumber: { type: Number, default: 1 },
+  seeds: [{ type: Number }],
+  generations: [{ type: mongoose.Schema.Types.ObjectId, ref: 'GenerationHistory' }],
   createdAt: { type: Date, default: Date.now }
 });
 

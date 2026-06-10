@@ -7077,7 +7077,7 @@ const AdminDashboard = ({
             <div className="bg-[#8B5E3C] p-6 text-white flex justify-between items-center">
               <div>
                 <h3 className="font-['Playfair_Display'] font-bold text-2xl">AI Studio Room Design Details</h3>
-                <p className="text-xs text-[#F8F5F0]/80 mt-1">ID: #{selectedAIDesign._id.toUpperCase()} • Requested by {selectedAIDesign.userId?.name || 'Customer'}</p>
+                <p className="text-xs text-[#F8F5F0]/80 mt-1">ID: #{selectedAIDesign._id.toUpperCase()} • V{selectedAIDesign.versionNumber || 1} • Requested by {selectedAIDesign.userId?.name || 'Customer'}</p>
               </div>
               <button onClick={() => setSelectedAIDesign(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
             </div>

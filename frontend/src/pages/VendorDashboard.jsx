@@ -2503,6 +2503,9 @@ const VendorDashboard = ({
                               <img src={req.generatedImage || req.referenceImages?.[0] || '/ai-results/living_room.png'} alt="AI Generated" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-[#2A9D8F]/30" />
                             </a>
                             <span className="absolute bottom-2 left-2 bg-[#2A9D8F]/90 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">AI Generated</span>
+                            {req.versionNumber > 1 && (
+                              <span className="absolute top-2 right-2 bg-[#8B5E3C]/90 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">V{req.versionNumber}</span>
+                            )}
                           </div>
                           {req.originalImage && (
                             <div className="relative">

@@ -1,6 +1,7 @@
 const AIDesignRequest = require('../models/AIDesignRequest');
 const ManualDesignRequest = require('../models/ManualDesignRequest');
 const InteriorDesignerRequest = require('../models/InteriorDesignerRequest');
+const GenerationHistory = require('../models/GenerationHistory');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const mongoose = require('mongoose');
@@ -8,6 +9,7 @@ const Replicate = require('replicate');
 const axios = require('axios');
 const https = require('https');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { generateImageWithAI, generateUniqueSeed, getVariationPrompt, saveGeneration, VARIATION_STYLES } = require('./aiController');
 
 let mockManualDesigns = [
   {
@@ -381,65 +383,27 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
       }
     }
 
-    if (process.env.REPLICATE_API_TOKEN && originalImage) {
+    // Generate AI image with seed-based variation system
+    let generationSeed = null;
+    let generationPrompt = null;
+    if (originalImage) {
       try {
-        const replicate = new Replicate({
-          auth: process.env.REPLICATE_API_TOKEN,
+        generationSeed = generateUniqueSeed([]);
+        const variationPrompt = getVariationPrompt(roomType, generationSeed);
+        const result = await generateImageWithAI({
+          image: originalImage,
+          roomType: roomType || 'Living Room',
+          seed: generationSeed,
+          variationPrompt
         });
-        
-        console.log(`Generating AI design for ${roomType} using Replicate...`);
-        const output = await replicate.run(
-          "jagilley/controlnet-hough:854e87270c1a024da3dbcd569aa1f807205a2786725227f272a806ea95d6771e",
-          {
-            input: {
-              image: originalImage,
-              prompt: `A beautiful interior design of a ${roomType}, photorealistic, 8k, modern interior design, high quality, highly detailed`,
-              num_samples: "1",
-              image_resolution: "512",
-              a_prompt: "best quality, extremely detailed",
-              n_prompt: "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
-            }
-          }
-        );
-        
-        // Output from jagilley/controlnet-hough is usually [annotated_image, generated_image]
-        if (output && output.length > 0) {
-          finalGeneratedImage = output.length > 1 ? output[1] : output[0];
-          console.log("Successfully generated AI image from Replicate.");
-        }
+        finalGeneratedImage = result.imageUrl;
+        generationPrompt = result.prompt;
       } catch (err) {
-        console.error("Replicate AI Generation Error:", err.message);
-        // Fall back below if Replicate fails
-      }
-    }
-
-    // Fallback to Pollinations AI (Free Text-to-Image API) since Hugging Face dropped the free instruct-pix2pix model
-    // Using random clear pictures if finalGeneratedImage is from the fallback list
-    if (finalGeneratedImage === generatedImage || mockFallbackImages[roomType]?.includes(finalGeneratedImage) || mockFallbackImages['Living Room']?.includes(finalGeneratedImage)) {
-      console.log(`Generating unique AI design for ${roomType} using Pollinations AI...`);
-      try {
-        const seed = Math.floor(Math.random() * 1000000);
-        // Build a layout-aware prompt from the furniture plan
-        const layoutDesc = geminiAnalysis?.recommendedFurniturePlacement
-          ? geminiAnalysis.recommendedFurniturePlacement.map(p => `${p.items.join(', ')} on ${p.location}`).join(', ')
-          : (currentRoom.furnitureLayout || []).slice(0, 4).map(f => `${f.item} on ${f.position}`).join(', ');
-        const prompt = encodeURIComponent(`A highly detailed, modern, photorealistic interior design of a ${roomType} with ${layoutDesc}, architectural digest, beautiful lighting, 8k resolution`);
-        
-        // Pollinations AI returns a direct image buffer
-        const response = await axios.get(`https://image.pollinations.ai/prompt/${prompt}?width=800&height=600&seed=${seed}&nologo=true`, {
-          responseType: 'arraybuffer'
-        });
-
-        const generatedImageBase64 = Buffer.from(response.data, 'binary').toString('base64');
-        finalGeneratedImage = `data:image/jpeg;base64,${generatedImageBase64}`;
-        console.log("Successfully generated AI image from Pollinations AI.");
-      } catch (err) {
-        console.warn("Pollinations AI Generation Error:", err.message, "- Falling back to intelligent local mocks.");
-        
-        // Final ultimate fallback if even Pollinations AI fails (e.g. 402 Payment Required)
+        console.warn('AI Generation failed, using fallback:', err.message);
         finalGeneratedImage = getFallbackImage(roomType);
-        console.log("Successfully served room-specific fallback image to bypass API paywalls.");
       }
+    } else {
+      finalGeneratedImage = generatedImage || getFallbackImage(roomType);
     }
 
     const finalAiSuggestion = aiSuggestion || {
@@ -487,11 +451,37 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
       generatedImage: finalGeneratedImage,
       aiSuggestion: finalAiSuggestion,
       analysis: finalAnalysis,
-      status: 'generated'
+      status: 'generated',
+      versionNumber: 1,
+      seeds: generationSeed ? [generationSeed] : [],
+      generations: []
     });
+
+    if (generationSeed && generationPrompt) {
+      const designStyle = generationSeed !== null
+        ? VARIATION_STYLES[generationSeed % VARIATION_STYLES.length]
+        : 'Modern';
+      const genHistory = await saveGeneration({
+        userId: req.user.id,
+        projectId: aiDesign._id,
+        uploadedImage: originalImage,
+        generatedImage: finalGeneratedImage,
+        roomType: roomType || 'Living Room',
+        designStyle,
+        promptUsed: generationPrompt,
+        seed: generationSeed,
+        versionNumber: 1
+      });
+      aiDesign.generations.push(genHistory._id);
+      aiDesign.seeds.push(generationSeed);
+      await aiDesign.save();
+    }
 
     await Notification.create({ userId: req.user.id, message: `Your ${roomType || 'Living Room'} AI design has been generated successfully.` });
     await Notification.create({ isAdmin: true, message: `New AI design generated for user ${req.user.name}` });
+
+    // Populate generations for the response
+    await aiDesign.populate('generations');
 
     res.status(201).json({ success: true, data: aiDesign });
   } catch (error) {
@@ -506,7 +496,7 @@ exports.getUserAIDesigns = async (req, res) => {
   try {
 
 
-    const designs = await AIDesignRequest.find({ userId: req.user.id }).sort('-createdAt');
+    const designs = await AIDesignRequest.find({ userId: req.user.id }).populate('generations').sort('-createdAt');
     res.status(200).json({ success: true, data: designs });
   } catch (error) {
     console.error('getUserAIDesigns error:', error);
@@ -534,10 +524,48 @@ exports.updateAIDesignStatus = async (req, res) => {
     if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
 
     if (status === 'regenerated') {
-      design.aiSuggestion.budgetEstimate = Math.floor(Math.random() * 3000) + 2500;
-      design.aiSuggestion.furniture.push('Premium Accent Chair');
-      await design.save();
-      return res.status(200).json({ success: true, data: design });
+      try {
+        const newVersion = (design.versionNumber || 1) + 1;
+        const newSeed = generateUniqueSeed(design.seeds || []);
+        const variationPrompt = getVariationPrompt(design.roomType, newSeed);
+        const result = await generateImageWithAI({
+          image: design.originalImage,
+          roomType: design.roomType || 'Living Room',
+          seed: newSeed,
+          variationPrompt
+        });
+
+        const newDesignStyle = VARIATION_STYLES[newSeed % VARIATION_STYLES.length];
+
+        const genHistory = await saveGeneration({
+          userId: design.userId,
+          projectId: design._id,
+          uploadedImage: design.originalImage,
+          generatedImage: result.imageUrl,
+          roomType: design.roomType,
+          designStyle: newDesignStyle,
+          promptUsed: result.prompt,
+          seed: newSeed,
+          versionNumber: newVersion
+        });
+
+        design.generatedImage = result.imageUrl;
+        design.versionNumber = newVersion;
+        design.seeds.push(newSeed);
+        design.generations.push(genHistory._id);
+        const newBudget = Math.floor(Math.random() * 1000) + 3000;
+        if (design.aiSuggestion) {
+          design.aiSuggestion.budgetEstimate = newBudget;
+        }
+        await design.save();
+
+        await design.populate('generations');
+
+        return res.status(200).json({ success: true, data: design });
+      } catch (err) {
+        console.error('Regeneration failed:', err.message);
+        return res.status(500).json({ success: false, message: 'Regeneration failed: ' + err.message });
+      }
     }
 
     if (status !== undefined) design.status = status;
@@ -638,6 +666,22 @@ exports.createDesignerRequest = async (req, res) => {
     });
 
     res.status(201).json({ success: true, data: request });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all generations for an AI design
+// @route   GET /api/designs/ai/:id/generations
+// @access  Private
+exports.getAIDesignGenerations = async (req, res) => {
+  try {
+    const design = await AIDesignRequest.findById(req.params.id).populate('generations');
+    if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
+    if (design.userId.toString() !== req.user.id) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+    res.status(200).json({ success: true, data: design.generations });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

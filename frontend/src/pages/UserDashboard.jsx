@@ -1571,17 +1571,25 @@ Thank you for shopping with Artisan Studio!
                   </div>
 
                   {/* Bottom Section: Image Viewer with Before/After Toggle */}
-                  <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                    <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Before & After Comparison</h3>
+                    <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Before & After Comparison</h3>
+                      {!showOriginalImage && (
+                        <span className="text-[10px] font-bold text-[#8B5E3C] bg-[#F8F5F0] px-3 py-1 rounded-full border border-[#D4A373]/30">
+                          V{latestDesign.versionNumber || 1}
+                          {latestDesign._displayImage && latestDesign._displayImage !== latestDesign.generatedImage && ' (preview)'}
+                        </span>
+                      )}
+                    </div>
                     <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
                       <img 
-                        src={showOriginalImage ? latestDesign.originalImage : latestDesign.generatedImage} 
+                        src={showOriginalImage ? latestDesign.originalImage : (latestDesign._displayImage || latestDesign.generatedImage)} 
                         alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
                         className="w-full h-full object-cover transition-all duration-300"
                         onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
                       />
                       <span className="absolute top-4 left-4 bg-black/55 text-white text-xs px-3 py-1.5 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm shadow-sm">
-                        {showOriginalImage ? "Original View" : "AI Style Generated"}
+                        {showOriginalImage ? "Original View" : latestDesign._displayImage ? `V${latestDesign.versionNumber || '?'} Preview` : "AI Style Generated"}
                       </span>
                     </div>
 
@@ -1601,6 +1609,69 @@ Thank you for shopping with Artisan Studio!
                     </div>
                   </div>
                 </div>
+
+                    {/* Version History Panel */}
+                    {latestDesign.generations && latestDesign.generations.length > 0 && (
+                      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Design Versions</h3>
+                          <span className="text-xs text-gray-400 font-medium">{latestDesign.generations.length} generation{latestDesign.generations.length !== 1 ? 's' : ''}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {latestDesign.generations.slice().reverse().map((gen, idx) => {
+                            const versionNum = gen.versionNumber || (latestDesign.generations.length - idx);
+                            const isActiveVersion = latestDesign.versionNumber === versionNum;
+                            const isSelected = latestDesign._displayVersion === gen._id;
+                            const isActive = isSelected || (!latestDesign._displayVersion && isActiveVersion);
+                            return (
+                              <button
+                                key={gen._id}
+                                onClick={() => {
+                                  setShowOriginalImage(false);
+                                  const updatedDesigns = aiDesigns.map(d => {
+                                    if (d._id === latestDesign._id) {
+                                      return { ...d, _displayVersion: gen._id, _displayImage: gen.generatedImage };
+                                    }
+                                    return d;
+                                  });
+                                  setAiDesigns(updatedDesigns);
+                                }}
+                                className={`relative px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                                  isActive
+                                    ? 'bg-[#8B5E3C] text-white border-[#8B5E3C] shadow-md'
+                                    : 'bg-white text-gray-600 border-gray-200 hover:border-[#8B5E3C] hover:text-[#8B5E3C]'
+                                }`}
+                              >
+                                <span>V{versionNum}</span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isActiveVersion ? 'bg-green-400' : 'bg-gray-300'}`} />
+                                <span className="text-[10px] opacity-75">{new Date(gen.createdAt).toLocaleDateString()}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {latestDesign._displayImage && latestDesign._displayImage !== latestDesign.generatedImage && (
+                          <button
+                            onClick={() => {
+                              setShowOriginalImage(false);
+                              const updatedDesigns = aiDesigns.map(d => {
+                                if (d._id === latestDesign._id) {
+                                  const { _displayVersion, _displayImage, ...rest } = d;
+                                  return rest;
+                                }
+                                return d;
+                              });
+                              setAiDesigns(updatedDesigns);
+                            }}
+                            className="text-xs font-bold text-[#2A9D8F] hover:text-[#2A9D8F]/80 transition-colors"
+                          >
+                            &larr; View Latest Version (V{latestDesign.versionNumber})
+                          </button>
+                        )}
+                        {latestDesign.generations.length > 1 && (
+                          <p className="text-[10px] text-gray-400 italic">Click a version to preview. Current active version is marked with a green dot.</p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Suggestions Box */}
                     <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
