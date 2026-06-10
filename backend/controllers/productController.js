@@ -3,6 +3,9 @@ const Vendor = require('../models/Vendor');
 const mongoose = require('mongoose');
 const Notification = require('../models/Notification');
 
+// Throttle repeated DB fallback warnings to 1 per 30s
+let lastFallbackLog = 0;
+
 
 
 // @desc    Get all products
@@ -69,7 +72,11 @@ exports.getProducts = async (req, res) => {
 
         return res.status(200).json({ success: true, count: responseData.length, data: responseData });
       } catch (dbErr) {
-        console.warn('DB products query failed, falling back to mock:', dbErr.message);
+        const now = Date.now();
+        if (now - lastFallbackLog > 30000) {
+          console.warn('DB products query failed, falling back to mock:', dbErr.message);
+          lastFallbackLog = now;
+        }
       }
     }
 

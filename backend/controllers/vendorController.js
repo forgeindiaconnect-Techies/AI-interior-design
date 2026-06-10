@@ -10,6 +10,8 @@ const { mockManualDesigns } = require('./designController');
 const VendorVerification = require('../models/VendorVerification');
 const OrderTracking = require('../models/OrderTracking');
 
+let lastVendorErrorLog = 0;
+
 // In-memory mock states for Demo Mode
 let mockVerification = {};
 let mockStoreSetup = {};
@@ -416,7 +418,11 @@ exports.getVendorOrders = async (req, res) => {
 
     res.status(200).json({ success: true, count: data.length, data });
   } catch (error) {
-    console.error('getVendorOrders error:', error);
+    const now = Date.now();
+    if (now - lastVendorErrorLog > 30000) {
+      console.error('getVendorOrders error:', error);
+      lastVendorErrorLog = now;
+    }
     if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
       try {
         await mongoose.connection.db.collection('orders').deleteMany({ userId: { $type: "string" } });
