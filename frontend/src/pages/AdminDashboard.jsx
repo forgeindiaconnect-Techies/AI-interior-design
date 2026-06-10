@@ -279,9 +279,6 @@ const AdminDashboard = ({
   const [joinedFilter, setJoinedFilter] = useState('all');
 
   const [selectedUser, setSelectedUser] = useState(null);
-  const [ordersModalUser, setOrdersModalUser] = useState(null);
-  const [userOrders, setUserOrders] = useState([]);
-  const [loadingOrders, setLoadingOrders] = useState(false);
   const [suspendModalUser, setSuspendModalUser] = useState(null);
   const [suspensionReasonText, setSuspensionReasonText] = useState('');
   const [confirmActionModal, setConfirmActionModal] = useState(null);
@@ -1294,20 +1291,6 @@ const AdminDashboard = ({
       alert(`Vendor verification updated to: ${isVerified}`);
     } catch (error) {
       alert('Error updating vendor verification');
-    }
-  };
-
-  // Fetch orders of specific user on demand
-  const fetchUserOrders = async (userId) => {
-    setLoadingOrders(true);
-    try {
-      const res = await axios.get(`/admin/users/${userId}/orders`);
-      setUserOrders(res.data?.data || []);
-    } catch (error) {
-      console.warn('Error fetching orders, using mock fallback', error);
-      setUserOrders([]);
-    } finally {
-      setLoadingOrders(false);
     }
   };
 
@@ -2693,7 +2676,6 @@ const AdminDashboard = ({
                       <th className="py-4 px-6">Email / Phone</th>
                       <th className="py-4 px-6">Role</th>
                       <th className="py-4 px-6">Joined Date</th>
-                      <th className="py-4 px-6 text-center">Orders</th>
                       <th className="py-4 px-6 text-right">Total Spending</th>
                       <th className="py-4 px-6 text-center">Status</th>
                       <th className="py-4 px-6 text-right">Actions</th>
@@ -2702,7 +2684,7 @@ const AdminDashboard = ({
                   <tbody>
                     {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={8} className="py-16 text-center font-bold text-gray-400">
+                        <td colSpan={7} className="py-16 text-center font-bold text-gray-400">
                           No users matching search or filter criteria.
                         </td>
                       </tr>
@@ -2721,9 +2703,6 @@ const AdminDashboard = ({
                           </td>
                           <td className="py-4 px-6 text-gray-500 font-medium">
                             {new Date(u.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                          </td>
-                          <td className="py-4 px-6 text-center font-bold text-gray-700">
-                            {u.totalOrders || 0}
                           </td>
                           <td className="py-4 px-6 text-right font-extrabold text-[#2F3E46]">
                             ${(u.totalSpending || 0).toLocaleString()}
@@ -2747,15 +2726,6 @@ const AdminDashboard = ({
                                 title="View Full Profile"
                               >
                                 <Eye className="w-3.5 h-3.5" />
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setOrdersModalUser(u);
-                                  fetchUserOrders(u._id);
-                                }}
-                                className="px-2.5 py-1.5 bg-[#8B5E3C]/10 hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl font-bold text-xs transition-all border border-[#8B5E3C]/20 shadow-sm"
-                              >
-                                Orders
                               </button>
                               {u.status === 'Suspended' ? (
                                 <button
@@ -6754,82 +6724,7 @@ const AdminDashboard = ({
         </div>
       )}
 
-      {/* MODAL 2: VIEW ORDERS */}
-      {ordersModalUser && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#F8F5F0] max-w-2xl w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fade-in flex flex-col max-h-[85vh]">
-            <div className="bg-[#1F2937] p-6 text-white flex justify-between items-center flex-shrink-0">
-              <div>
-                <h3 className="font-['Playfair_Display'] font-bold text-2xl">Orders for {ordersModalUser.name}</h3>
-                <p className="text-xs text-gray-400 mt-1">Transaction History & Fulfillments</p>
-              </div>
-              <button onClick={() => setOrdersModalUser(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-white hover:bg-white/20 transition-all">✕</button>
-            </div>
-            <div className="p-8 overflow-y-auto space-y-6 flex-1">
-              {loadingOrders ? (
-                <div className="py-24 text-center font-bold text-gray-500 animate-pulse">Loading orders list...</div>
-              ) : userOrders.length === 0 ? (
-                <div className="py-24 text-center text-gray-400 font-bold border-2 border-dashed border-gray-200 rounded-2xl bg-white p-8">
-                  No design packages or marketplace orders registered for this user yet.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {userOrders.map((ord) => (
-                    <div key={ord._id} className="bg-white p-5 rounded-2xl border border-gray-150 hover:shadow-sm transition-all space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
-                            ord.orderType === 'custom_design' ? 'bg-[#8B5E3C]/10 text-[#8B5E3C]' : 'bg-[#2A9D8F]/10 text-[#2A9D8F]'
-                          }`}>
-                            {ord.orderType === 'custom_design' ? 'Room Design' : 'Marketplace'}
-                          </span>
-                          <h4 className="font-bold text-gray-800 text-sm mt-1.5">{ord.title}</h4>
-                          <p className="text-[10px] text-gray-400 mt-0.5">Reference ID: {ord._id}</p>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-extrabold text-[#2F3E46]">${ord.totalAmount?.toLocaleString()}</span>
-                          <p className="text-[10px] text-gray-400 mt-0.5">{new Date(ord.createdAt).toLocaleDateString()}</p>
-                        </div>
-                      </div>
-
-                      {ord.items && ord.items.length > 0 && (
-                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1.5 text-xs text-gray-600">
-                          <span className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Purchased Products</span>
-                          {ord.items.map((item, idx) => (
-                            <div key={idx} className="flex justify-between font-medium">
-                              <span>{item.title} (x{item.quantity})</span>
-                              <span className="font-semibold">${(item.price * item.quantity).toLocaleString()}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex justify-between items-center text-xs border-t border-gray-100 pt-3">
-                        <span className="text-gray-500 font-medium">Vendor: <span className="font-bold text-gray-700">{ord.vendorName || 'Marketplace Warehouse'}</span></span>
-                        <div className="flex gap-2">
-                          <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${
-                            ord.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-[#E9C46A]/20 text-[#8B5E3C]'
-                          }`}>
-                            {ord.paymentStatus}
-                          </span>
-                          <span className="bg-[#1F2937] text-white px-2 py-0.5 rounded text-[9px] font-extrabold uppercase">
-                            {ord.orderStatus}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="p-6 bg-white border-t border-gray-150 flex-shrink-0">
-              <button onClick={() => setOrdersModalUser(null)} className="w-full py-3 bg-[#1F2937] hover:bg-black text-white rounded-xl font-bold shadow-md transition-all">Close History</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 3: SUSPEND WITH REASON */}
+      {/* MODAL 2: SUSPEND WITH REASON */}
       {suspendModalUser && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white max-w-md w-full rounded-3xl overflow-hidden border border-[#D4A373]/30 shadow-2xl animate-fade-in">
