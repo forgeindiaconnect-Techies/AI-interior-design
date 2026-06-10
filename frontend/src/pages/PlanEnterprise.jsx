@@ -54,7 +54,7 @@ const PlanEnterprise = () => {
             </h1>
             <p className="text-gray-300 text-lg leading-relaxed">Purpose-built for hotels, offices, property developers, and large-scale commercial interior projects. Dedicated account management, bulk AI mapping, and wholesale vendor pricing.</p>
             <div className="flex items-baseline gap-2">
-              <span className="font-['Playfair_Display'] font-extrabold text-6xl">$499</span>
+              <span className="font-['Playfair_Display'] font-extrabold text-6xl">₹499</span>
               <span className="text-gray-400 text-base">/ month · Custom enterprise pricing available</span>
             </div>
           </div>

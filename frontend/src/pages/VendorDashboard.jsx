@@ -1055,7 +1055,7 @@ const VendorDashboard = ({
     }
     const furniture = req.requirements?.match(/Furniture \(([^)]+)\)/)?.[1] || req.materials || 'Custom furniture set';
     const materials = req.requirements?.match(/Materials \(([^)]+)\)/)?.[1] || req.materialDetails || 'Premium materials';
-    const budget = req.budget || '$3,000 - $5,000';
+    const budget = req.budget || '₹3,000 - ₹5,000';
     printWindow.document.write(`
       <html>
         <head>
@@ -1346,14 +1346,14 @@ const VendorDashboard = ({
           { icon: '⭐', label: 'New Review Received', name: 'Sarah Jenkins rated 5 stars', time: new Date(Date.now() - 3600000 * 2).toISOString(), color: 'bg-yellow-50 text-yellow-600' },
           { icon: '📦', label: 'Order Dispatched', name: 'Order #ORD-10992 handed to delivery', time: new Date(Date.now() - 3600000 * 5).toISOString(), color: 'bg-emerald-50 text-emerald-600' },
           { icon: '📝', label: 'New Custom Request', name: 'Living Room Design Request', time: new Date(Date.now() - 3600000 * 12).toISOString(), color: 'bg-indigo-50 text-indigo-600' },
-          { icon: '💰', label: 'Quotation Accepted', name: 'Customer approved $4,850 bid', time: new Date(Date.now() - 3600000 * 24).toISOString(), color: 'bg-teal-50 text-teal-600' },
+          { icon: '💰', label: 'Quotation Accepted', name: 'Customer approved ₹4,850 bid', time: new Date(Date.now() - 3600000 * 24).toISOString(), color: 'bg-teal-50 text-teal-600' },
         ].slice(0, 4);
 
         const kpiCards = [
           { label: 'Total Orders', value: stats?.totalOrders || 15, trend: '+3', trendUp: true, sub: 'this month', icon: <ShoppingCart className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600', tab: 'orders' },
           { label: 'New Requests', value: newRequestsCount, trend: 'Action needed', trendUp: false, sub: 'awaiting quote', icon: <FileText className="w-5 h-5" />, color: 'bg-orange-50 text-orange-600', tab: 'custom_requests' },
           { label: 'Active Bids', value: activeBidsCount, trend: 'In progress', trendUp: true, sub: 'under review', icon: <Send className="w-5 h-5" />, color: 'bg-indigo-50 text-indigo-600', tab: 'quotations' },
-          { label: 'Total Earnings', value: `$${(stats?.revenue || 24500).toLocaleString()}`, trend: '+15%', trendUp: true, sub: 'revenue growth', icon: <DollarSign className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600', tab: 'earnings' },
+          { label: 'Total Earnings', value: `₹${(stats?.revenue || 24500).toLocaleString()}`, trend: '+15%', trendUp: true, sub: 'revenue growth', icon: <DollarSign className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600', tab: 'earnings' },
         ];
 
         return (
@@ -2529,7 +2529,7 @@ const VendorDashboard = ({
                             </div>
                           </div>
                           <div className="pt-2">
-                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: {req.budget || '$3,000'}</span>
+                            <span className="font-['Playfair_Display'] font-extrabold text-xl text-[#8B5E3C]">Est. Budget: {req.budget || '₹3,000'}</span>
                           </div>
                         </div>
                       </div>
@@ -2688,7 +2688,7 @@ const VendorDashboard = ({
                 <tr className="border-b border-gray-50">
                   <td className="p-4 font-bold text-[#1F2937]">#BID-8812</td>
                   <td className="p-4">Custom Living Room Set</td>
-                  <td className="p-4 font-bold text-[#2A9D8F]">$4,850.00</td>
+                  <td className="p-4 font-bold text-[#2A9D8F]">₹4,850.00</td>
                   <td className="p-4"><span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">Pending Approval</span></td>
                   <td className="p-4"><button className="text-[#2A9D8F] font-bold text-xs hover:underline">View</button></td>
                 </tr>

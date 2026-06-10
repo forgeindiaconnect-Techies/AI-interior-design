@@ -21,7 +21,7 @@ const PlanPremium = () => {
           <h1 className="font-['Playfair_Display'] text-5xl font-extrabold text-white mb-2">Premium <span className="text-[#D4A373]">Artisan</span></h1>
           <p className="text-gray-300 text-xl mb-8">Complete end-to-end interior design execution with unlimited AI generations, custom manufacturing partnerships, and a dedicated 1-on-1 designer.</p>
           <div className="flex items-baseline gap-2 mb-8">
-            <span className="font-['Playfair_Display'] font-extrabold text-7xl text-white">$149</span>
+            <span className="font-['Playfair_Display'] font-extrabold text-7xl text-white">₹149</span>
             <span className="text-gray-400 text-lg">/ project · Per room transformation</span>
           </div>
           <button
@@ -94,7 +94,7 @@ const PlanPremium = () => {
               <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="text-left p-5 text-gray-400 font-bold uppercase text-[10px] tracking-wider">Feature</th>
                 <th className="text-center p-5 text-gray-400 font-bold uppercase text-[10px] tracking-wider">Essential (Free)</th>
-                <th className="text-center p-5 text-[#D4A373] font-bold uppercase text-[10px] tracking-wider bg-[#2F3E46]/5">Premium ($149)</th>
+                <th className="text-center p-5 text-[#D4A373] font-bold uppercase text-[10px] tracking-wider bg-[#2F3E46]/5">Premium (₹149)</th>
               </tr>
             </thead>
             <tbody>
@@ -151,7 +151,7 @@ const PlanPremium = () => {
               className="inline-flex items-center gap-2 bg-[#D4A373] hover:bg-[#D4A373]/90 text-[#2F3E46] px-10 py-5 rounded-full font-bold text-lg shadow-2xl hover:shadow-3xl transition-all hover:-translate-y-0.5"
             >
               <Sparkles className="w-5 h-5" />
-              Get Started — $149 per Project
+              Get Started — ₹149 per Project
             </button>
             <p className="text-gray-500 text-xs">No recurring subscription. One-time per room transformation.</p>
           </div>

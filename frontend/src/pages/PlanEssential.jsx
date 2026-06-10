@@ -19,7 +19,7 @@ const PlanEssential = () => {
           <h1 className="font-['Playfair_Display'] text-5xl font-extrabold text-[#1F2937] mb-4">Essential AI</h1>
           <p className="text-[#6B7280] text-xl mb-8">Perfect for homeowners looking to visualize and redesign a single room using the power of AI — completely free.</p>
           <div className="flex items-baseline gap-2 mb-8">
-            <span className="font-['Playfair_Display'] font-extrabold text-7xl text-[#8B5E3C]">$0</span>
+            <span className="font-['Playfair_Display'] font-extrabold text-7xl text-[#8B5E3C]">₹0</span>
             <span className="text-[#6B7280] text-lg">/ Free Trial · No credit card required</span>
           </div>
           <button
@@ -99,7 +99,7 @@ const PlanEssential = () => {
         <div className="md:col-span-2 bg-white rounded-3xl border border-[#D4A373]/30 shadow-sm p-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div>
             <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] mb-1">Need more power?</h3>
-            <p className="text-sm text-[#6B7280]">Upgrade to Premium Artisan at $149/project for unlimited AI generations, custom manufacturing, and a dedicated designer.</p>
+            <p className="text-sm text-[#6B7280]">Upgrade to Premium Artisan at ₹149/project for unlimited AI generations, custom manufacturing, and a dedicated designer.</p>
           </div>
           <Link to="/plans/premium" className="flex-shrink-0 px-8 py-4 bg-[#D4A373] hover:bg-[#D4A373]/90 text-[#2F3E46] rounded-full font-bold shadow-md transition-all whitespace-nowrap">
             View Premium Plan →

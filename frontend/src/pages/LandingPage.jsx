@@ -357,7 +357,7 @@ const LandingPage = () => {
                   </div>
                   <div>
                     <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Est. Budget</span>
-                    <strong className="text-sm text-[#2A9D8F]">$3,200 - $4,500</strong>
+                    <strong className="text-sm text-[#2A9D8F]">₹3,200 - ₹4,500</strong>
                   </div>
                   <div className="col-span-2">
                     <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Generated Color Palette</span>

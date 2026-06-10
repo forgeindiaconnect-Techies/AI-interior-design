@@ -2136,7 +2136,7 @@ const AdminDashboard = ({
           { label: 'Total Users', value: stats?.totalUsers || 240, trend: '+12%', trendUp: true, sub: 'vs last month', icon: <Users className="w-5 h-5" />, color: 'bg-indigo-50 text-indigo-600', tab: 'users' },
           { label: 'Total Vendors', value: stats?.totalVendors || 35, trend: '+4%', trendUp: true, sub: 'verified partners', icon: <Store className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600', tab: 'vendors' },
           { label: 'Total Orders', value: stats?.totalOrders || 128, trend: '+8%', trendUp: true, sub: 'active this month', icon: <ShoppingBag className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600', tab: 'orders' },
-          { label: 'Total Revenue', value: `$${(stats?.totalRevenue || 45200).toLocaleString()}`, trend: '+19%', trendUp: true, sub: 'platform earnings', icon: <DollarSign className="w-5 h-5" />, color: 'bg-teal-50 text-teal-600', tab: 'payments' },
+          { label: 'Total Revenue', value: `₹${(stats?.totalRevenue || 45200).toLocaleString()}`, trend: '+19%', trendUp: true, sub: 'platform earnings', icon: <DollarSign className="w-5 h-5" />, color: 'bg-teal-50 text-teal-600', tab: 'payments' },
           { label: 'Sub-Admins', value: subAdmins?.length || 2, trend: 'Active', trendUp: true, sub: 'with ACL roles', icon: <ShieldCheck className="w-5 h-5" />, color: 'bg-purple-50 text-purple-600', tab: 'roles' },
           { label: 'Open Tickets', value: openTickets, trend: openTickets > 0 ? 'Needs attention' : 'All clear', trendUp: openTickets === 0, sub: 'support tickets', icon: <HelpCircle className="w-5 h-5" />, color: 'bg-rose-50 text-rose-600', tab: 'tickets' },
         ];
@@ -5335,7 +5335,7 @@ const AdminDashboard = ({
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Average Order Value</span>
                 <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg"><Activity size={14} /></div>
               </div>
-              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">$2,450.00</h4>
+              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">₹2,450.00</h4>
               <p className="text-[10px] text-green-500 font-bold">↑ 8.2% from last quarter</p>
             </div>
 
@@ -5420,12 +5420,12 @@ const AdminDashboard = ({
 
                 {/* X-Axis labels */}
                 <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold px-1 mt-2">
-                  <span>Jan ($5k)</span>
-                  <span>Feb ($12k)</span>
-                  <span>Mar ($18k)</span>
-                  <span>Apr ($15k)</span>
-                  <span>May ($32k)</span>
-                  <span>Jun ($45.2k)</span>
+                  <span>Jan (₹5k)</span>
+                  <span>Feb (₹12k)</span>
+                  <span>Mar (₹18k)</span>
+                  <span>Apr (₹15k)</span>
+                  <span>May (₹32k)</span>
+                  <span>Jun (₹45.2k)</span>
                 </div>
               </div>
             </div>
@@ -5441,7 +5441,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>AI Studio Designs</span>
-                    <span>45% ($24,500)</span>
+                    <span>45% (₹24,500)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#8B5E3C] h-full rounded-full" style={{ width: '45%' }}></div>
@@ -5451,7 +5451,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Premium Design Consultations</span>
-                    <span>32% ($18,200)</span>
+                    <span>32% (₹18,200)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#E76F51] h-full rounded-full" style={{ width: '32%' }}></div>
@@ -5461,7 +5461,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Custom Workshop Furniture</span>
-                    <span>18% ($12,100)</span>
+                    <span>18% (₹12,100)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#2A9D8F] h-full rounded-full" style={{ width: '18%' }}></div>
@@ -5471,7 +5471,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Logistics & Logistics Add-ons</span>
-                    <span>5% ($3,200)</span>
+                    <span>5% (₹3,200)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#1E293B] h-full rounded-full" style={{ width: '5%' }}></div>
@@ -5504,25 +5504,25 @@ const AdminDashboard = ({
                     <td className="p-4 pl-6 font-bold text-gray-800">Artisan Workshop</td>
                     <td className="p-4">Furniture Vendor</td>
                     <td className="p-4 text-center font-bold text-green-600">4.8 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$12,500.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$1,875.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$10,625.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹12,500.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹1,875.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹10,625.00</td>
                   </tr>
                   <tr className="border-b border-gray-100 hover:bg-[#FDFBF7] transition-all">
                     <td className="p-4 pl-6 font-bold text-gray-800">Elite Woodworks</td>
                     <td className="p-4">Manufacturer</td>
                     <td className="p-4 text-center font-bold text-green-600">4.6 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$8,500.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$1,275.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$7,225.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹8,500.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹1,275.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹7,225.00</td>
                   </tr>
                   <tr className="border-b border-gray-100 hover:bg-[#FDFBF7] transition-all">
                     <td className="p-4 pl-6 font-bold text-gray-800">Swift Logistics Solutions</td>
                     <td className="p-4">Logistics Partner</td>
                     <td className="p-4 text-center font-bold text-green-600">4.9 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$2,400.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$360.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$2,040.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹2,400.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹360.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹2,040.00</td>
                   </tr>
                 </tbody>
               </table>
