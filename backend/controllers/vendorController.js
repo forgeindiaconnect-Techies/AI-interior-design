@@ -9,6 +9,7 @@ const mongoose = require('mongoose');
 const { mockManualDesigns } = require('./designController');
 const VendorVerification = require('../models/VendorVerification');
 const OrderTracking = require('../models/OrderTracking');
+const Product = require('../models/Product');
 
 let lastVendorErrorLog = 0;
 
