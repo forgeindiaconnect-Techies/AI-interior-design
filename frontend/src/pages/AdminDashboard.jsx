@@ -514,6 +514,9 @@ const AdminDashboard = ({
         designerRequests: []
       });
 
+      // WE SET LOADING TO FALSE IMMEDIATELY TO ENSURE THE DASHBOARD OPENS QUICKLY
+      setLoading(false);
+
       // ── Async: refresh from backend ──
       const [statsRes, mgmtRes, mktOrdersRes, verRes, storeRes, prodRes] = await Promise.all([
         axios.get('/admin/stats').catch(() => ({ data: { data: { totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 } } })),

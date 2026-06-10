@@ -37,3 +37,9 @@ Thumbs.db
 *.sln
 *.sw?
 temp.jsx
+.venv/
+bathroom/
+bedroom/
+kitchen/
+living_room/
+*.csv
