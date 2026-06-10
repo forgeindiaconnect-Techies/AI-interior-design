@@ -492,21 +492,15 @@ const AdminDashboard = ({
       const now = new Date();
       setStats({ totalUsers: 240, totalVendors: 35, totalOrders: 128, totalRevenue: 45200, totalManufacturers: 14, totalDelivery: 18, estimatedCommission: 6780 });
       setManagementData({
-        users: [
-          { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com', phone: '+91 98765 43210', role: 'user', status: 'Active', createdAt: new Date(now - 86400000*40).toISOString(), totalOrders: 4, totalSpending: 2450, address: '12, MG Road, Bangalore' },
-          { _id: 'u_mock_2', name: 'Vendor Demo', email: 'vendor@example.com', phone: '+91 87654 32109', role: 'vendor', status: 'Active', createdAt: new Date(now - 86400000*10).toISOString(), totalOrders: 0, totalSpending: 0, address: '56, Industrial Area, Noida' },
-        ],
+        users: [],
         vendors: [
           { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop', businessType: 'vendor', userId: { email: 'vendor@example.com' }, isVerified: true, verificationStatus: 'Approved', storeSetupStatus: 'Approved', isActive: true },
           { _id: 'v2', companyName: 'Elite Woodworks', businessType: 'manufacturer', userId: { email: 'wood@example.com' }, isVerified: false, verificationStatus: 'Pending', storeSetupStatus: 'Pending', isActive: false },
         ],
         orders: [
-          { _id: 'ord_1', orderType: 'Marketplace Product', userId: { name: 'John Doe', email: 'john@example.com' }, vendorId: { companyName: 'Artisan Workshop' }, totalAmount: 1299, paymentStatus: 'paid', orderStatus: 'Pending Confirmation', createdAt: new Date().toISOString(), shippingAddress: '123 St', isMarketplace: false },
           { _id: 'ord_2', orderType: 'Marketplace Product', userId: { name: 'Alice Smith', email: 'alice@example.com' }, vendorId: { companyName: 'Artisan Workshop' }, totalAmount: 898, paymentStatus: 'paid', orderStatus: 'Dispatched', createdAt: new Date(now - 86400000*2).toISOString(), shippingAddress: '456 Elm St', isMarketplace: false },
         ],
-        aiDesigns: [
-          { _id: 'ai_1', roomType: 'Living Room', status: 'Quotation Sent', userId: { name: 'John Doe' }, createdAt: new Date(now - 86400000*5).toISOString() },
-        ],
+        aiDesigns: [],
         manualDesigns: [],
         designerRequests: []
       });
@@ -529,32 +523,6 @@ const AdminDashboard = ({
       const mockMgmtData = mgmtRes.data?.data || {};
       if (!mockMgmtData.users || mockMgmtData.users.length === 0) {
         mockMgmtData.users = [
-          { 
-            _id: 'u_mock_1', 
-            name: 'John Doe', 
-            email: 'john@example.com', 
-            phone: '+91 98765 43210', 
-            role: 'user', 
-            createdAt: new Date(Date.now() - 3600000 * 24 * 40).toISOString(),
-            status: 'Active',
-            suspensionReason: '',
-            totalOrders: 4,
-            totalSpending: 2450,
-            address: '12, Mahatma Gandhi Road, Bangalore, India'
-          },
-          { 
-            _id: 'u_mock_2', 
-            name: 'Vendor Demo', 
-            email: 'vendor@example.com', 
-            phone: '+91 87654 32109', 
-            role: 'vendor', 
-            createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-            status: 'Active',
-            suspensionReason: '',
-            totalOrders: 0,
-            totalSpending: 0,
-            address: '56, Industrial Area, Noida, India'
-          },
           { 
             _id: 'u_mock_3', 
             name: 'Alice Smith', 
@@ -700,21 +668,7 @@ const AdminDashboard = ({
             createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
             shippingAddress: '789 Designer Lane, New York, NY, USA'
           },
-          {
-            _id: 'ord_m_2210',
-            orderType: 'Manual Design',
-            userId: { name: 'John Doe', email: 'john@example.com' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
-            deliveryPartnerId: null,
-            installationPartnerId: null,
-            totalAmount: 8500,
-            paymentStatus: 'paid',
-            orderStatus: 'Manufacturer Assigned',
-            expectedDeliveryDate: new Date(Date.now() + 3600000 * 24 * 20).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString(),
-            shippingAddress: '12, Mahatma Gandhi Road, Bangalore, India'
-          },
+
           {
             _id: 'ord_p_1044',
             orderType: 'Marketplace Product',
@@ -730,21 +684,7 @@ const AdminDashboard = ({
             createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString(),
             shippingAddress: '456 Cinema Road, Los Angeles, CA, USA'
           },
-          {
-            _id: 'ord_d_3320',
-            orderType: 'AI Design',
-            userId: { name: 'John Doe', email: 'john@example.com' },
-            vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-            manufacturerId: { _id: 'v2', companyName: 'Elite Woodworks' },
-            deliveryPartnerId: { _id: 'del_mock_2', companyName: 'Apex Delivery & Assembly' },
-            installationPartnerId: { _id: 'del_mock_4', companyName: 'Elite Installers & Movers' },
-            totalAmount: 6200,
-            paymentStatus: 'paid',
-            orderStatus: 'Completed',
-            expectedDeliveryDate: new Date(Date.now() - 3600000 * 24 * 1).toISOString(),
-            createdAt: new Date(Date.now() - 3600000 * 24 * 18).toISOString(),
-            shippingAddress: '12, Mahatma Gandhi Road, Bangalore, India'
-          },
+
           {
             _id: 'ord_p_5541',
             orderType: 'Marketplace Product',
@@ -770,15 +710,6 @@ const AdminDashboard = ({
       }
       if (!mockMgmtData.designerRequests || mockMgmtData.designerRequests.length === 0) {
         mockMgmtData.designerRequests = [
-          {
-            _id: 'des_req_101',
-            userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com', phone: '+91 98765 43210' },
-            details: 'Looking for a complete premium redesign of our 3BHK apartment in Scandinavian style. High priority on space optimization and modular walk-in wardrobes.',
-            budget: 8000,
-            status: 'pending',
-            assignedDesignerId: null,
-            createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString()
-          },
           {
             _id: 'des_req_102',
             userId: { _id: 'u_mock_3', name: 'Alice Smith', email: 'alice@example.com', phone: '+1 555-0144' },
@@ -988,19 +919,7 @@ const AdminDashboard = ({
           type: 'Customer Payment',
           createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
         },
-        {
-          _id: 'txn_384729',
-          orderId: 'ord_m_2210',
-          userId: { name: 'John Doe', email: 'john@example.com' },
-          vendorId: { companyName: 'Artisan Workshop' },
-          amount: 8500,
-          commissionAmount: 1275,
-          netPayout: 7225,
-          paymentMethod: 'Card',
-          status: 'Paid',
-          type: 'Customer Payment',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 10).toISOString()
-        },
+
         {
           _id: 'txn_582910',
           orderId: 'ord_p_1044',
@@ -1014,19 +933,7 @@ const AdminDashboard = ({
           type: 'Vendor Payout',
           createdAt: new Date(Date.now() - 3600000 * 24 * 2).toISOString()
         },
-        {
-          _id: 'txn_901823',
-          orderId: 'ord_d_3320',
-          userId: { name: 'John Doe', email: 'john@example.com' },
-          vendorId: { companyName: 'Artisan Workshop' },
-          amount: 6200,
-          commissionAmount: 930,
-          netPayout: 5270,
-          paymentMethod: 'Bank Transfer',
-          status: 'Paid',
-          type: 'Customer Payment',
-          createdAt: new Date(Date.now() - 3600000 * 24 * 18).toISOString()
-        },
+
         {
           _id: 'txn_449201',
           orderId: 'ord_p_5541',
@@ -1109,14 +1016,6 @@ const AdminDashboard = ({
     } catch (error) {
       console.warn('Error fetching support tickets, falling back to mock');
       setTickets([
-        {
-          _id: 't_1',
-          subject: 'Delivery Delay Inquiry',
-          message: "The assigned delivery partner hasn't updated tracking for 2 days.",
-          status: 'open',
-          userId: { name: 'John Doe', email: 'john@example.com' },
-          createdAt: new Date(Date.now() - 3600000 * 24 * 1).toISOString()
-        }
       ]);
     } finally {
       setLoadingTickets(false);
@@ -1133,20 +1032,7 @@ const AdminDashboard = ({
     } catch (error) {
       console.warn('Error fetching sub-admins, falling back to mock');
       setSubAdmins([
-        {
-          _id: 'sub_1',
-          userId: { _id: 'u_mock_1', name: 'John Doe', email: 'john@example.com', phone: '+91 98765 43210', role: 'admin' },
-          roleName: 'Support Agent',
-          permissions: {
-            userManagement: false,
-            vendorVerification: false,
-            ordersWorkflow: false,
-            supportTickets: true,
-            analytics: false,
-            notifications: true
-          },
-          updatedAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString()
-        },
+
         {
           _id: 'sub_2',
           userId: { _id: 'u_mock_3', name: 'Alice Smith', email: 'alice@example.com', phone: '+1 555-0144', role: 'admin' },
@@ -1264,7 +1150,7 @@ const AdminDashboard = ({
       csvContent = "Partner,Role,QualityRating,TotalEarnings,CommissionGenerated\nArtisan Workshop,vendor,4.8,12500,1875\nElite Woodworks,manufacturer,4.6,8500,1275\nSwift Logistics,delivery,4.9,2400,360\nElite Installers,installation,4.7,1850,277.5\n";
       fileName = "artisan_partner_performance.csv";
     } else {
-      csvContent = "User,Email,Role,RegisteredDate,Status\nJohn Doe,john@example.com,user,2026-04-15,Active\nAlice Smith,alice@example.com,user,2026-05-14,Suspended\nBob Builder,bob@example.com,manufacturer,2026-05-17,Active\n";
+      csvContent = "User,Email,Role,RegisteredDate,Status\nAlice Smith,alice@example.com,user,2026-05-14,Suspended\nBob Builder,bob@example.com,manufacturer,2026-05-17,Active\n";
       fileName = "artisan_user_demographics.csv";
     }
 
