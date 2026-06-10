@@ -2588,12 +2588,8 @@ const VendorDashboard = ({
                             <div className="sm:col-span-2"><strong className="text-[#1F2937]">Designer Help:</strong> Customer requested interior designer consultation.</div>
                           )}
                           
-                          {(req.serviceAddress || req.vendorPreference || req.quotationType) && (
-                            <>
-                              <div className="sm:col-span-2"><strong className="text-[#1F2937]">Service Address:</strong> {req.serviceAddress || 'Default'}</div>
-                              <div><strong className="text-[#1F2937]">Vendor Preference:</strong> {req.vendorPreference || 'Any'}</div>
-                              <div><strong className="text-[#1F2937]">Quotation Type:</strong> {req.quotationType || 'Standard'}</div>
-                            </>
+                          {(req.serviceAddress) && (
+                            <div className="sm:col-span-2"><strong className="text-[#1F2937]">Service Address:</strong> {req.serviceAddress || 'Default'}</div>
                           )}
                         </div>
                       </div>

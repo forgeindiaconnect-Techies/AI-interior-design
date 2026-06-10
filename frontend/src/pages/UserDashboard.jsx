@@ -86,8 +86,6 @@ const UserDashboard = ({
   const [timeline, setTimeline] = useState('Flexible');
   const [needDesigner, setNeedDesigner] = useState('No');
   const [serviceAddress, setServiceAddress] = useState('');
-  const [vendorPref, setVendorPref] = useState('Any Vendor');
-  const [quotationType, setQuotationType] = useState('Fixed Budget');
   const [manualSubmitting, setManualSubmitting] = useState(false);
 
   // Marketplace State
@@ -813,7 +811,7 @@ Thank you for shopping with Artisan Studio!
         pickupAddress: ownMaterials === 'Yes' ? pickupAddress : '',
         materialPickupNeeded: ownMaterials === 'Yes' ? pickupNeeded : 'No',
         timeline, needDesignerHelp: needDesigner,
-        serviceAddress, vendorPreference: vendorPref, quotationType,
+        serviceAddress,
       };
 
       const res = await axios.post('/designs/manual', payload);
@@ -833,7 +831,7 @@ Thank you for shopping with Artisan Studio!
         setManualMaterials(''); setManualRequirements(''); setReferenceImages([]);
         setOwnMaterials('No'); setMaterialDetails(''); setMaterialQuantity(''); setMaterialImages([]); setPickupAddress('');
         setPickupNeeded('No'); setTimeline('Flexible'); setNeedDesigner('No');
-        setServiceAddress(''); setVendorPref('Any Vendor'); setQuotationType('Fixed Budget');
+        setServiceAddress('');
       }
     } catch (err) {
       console.error('Failed to submit manual design', err);
@@ -2032,24 +2030,7 @@ Thank you for shopping with Artisan Studio!
                 <textarea required rows={2} value={serviceAddress} onChange={(e) => setServiceAddress(e.target.value)} placeholder="Full address where the interior work should be done..." className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
               </div>
 
-              {/* Vendor Preference + Quotation Type */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Vendor Preference</label>
-                  <select value={vendorPref} onChange={(e) => setVendorPref(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
-                    <option value="Any Vendor">Any Vendor</option>
-                    <option value="Nearby Vendor">Nearby Vendor</option>
-                    <option value="Top Rated Vendor">Top Rated Vendor</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Quotation Type</label>
-                  <select value={quotationType} onChange={(e) => setQuotationType(e.target.value)} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm bg-white">
-                    <option value="Fixed Budget">Fixed Budget</option>
-                    <option value="Open Bidding">Open Bidding</option>
-                  </select>
-                </div>
-              </div>
+
 
               <button type="submit" disabled={manualSubmitting} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all disabled:opacity-60 flex items-center justify-center gap-2">
                 {manualSubmitting ? <><RefreshCw className="w-5 h-5 animate-spin" /> Submitting...</> : <><Hammer className="w-5 h-5" /> Submit Manual Request to Vendors</>}

@@ -18,8 +18,7 @@ const ManualDesignRequestSchema = new mongoose.Schema({
   timeline: { type: String },
   needDesignerHelp: { type: String, enum: ['Yes', 'No'], default: 'No' },
   serviceAddress: { type: String },
-  vendorPreference: { type: String, enum: ['Any Vendor', 'Nearby Vendor', 'Top Rated Vendor'], default: 'Any Vendor' },
-  quotationType: { type: String, enum: ['Fixed Budget', 'Open Bidding'], default: 'Fixed Budget' },
+
   status: { 
     type: String, 
     enum: ['Submitted', 'Under Review', 'Accepted', 'Rejected', 'Quotation Sent', 'Approved', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed'], 
