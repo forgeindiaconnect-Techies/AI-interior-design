@@ -83,8 +83,7 @@ const DashboardLayout = ({ children }) => {
 
   useEffect(() => {
     loadNotifications();
-    // Poll notifications every 8 seconds to show live updates
-    const interval = setInterval(loadNotifications, 8000);
+    const interval = setInterval(loadNotifications, 15000);
     return () => clearInterval(interval);
   }, [user?.role]);
 

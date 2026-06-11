@@ -386,7 +386,7 @@ const AdminDashboard = ({
     const syncInterval = setInterval(() => {
       fetchAdminData();
       loadContactMessages();
-    }, 10000);
+    }, 30000);
     return () => {
       clearInterval(syncInterval);
     };

@@ -49,7 +49,10 @@ export const AuthProvider = ({ children }) => {
       return null;
     }
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    // If we have a cached user and token, don't block the UI on page refresh
+    return !(localStorage.getItem('token') && localStorage.getItem('user'));
+  });
 
   const register = async (userData) => {
     try {
@@ -92,8 +95,12 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const cachedUser = localStorage.getItem('user');
     if (token) {
-      // Verify token & fetch user details
+      if (cachedUser) {
+        // Don't block UI — verify token in background
+        setLoading(false);
+      }
       axios.get('/auth/me')
         .then((res) => {
           if (res.data && res.data.success) {
@@ -102,13 +109,11 @@ export const AuthProvider = ({ children }) => {
           }
         })
         .catch((error) => {
-          // Only clear token if we explicitly get a 401 Unauthorized (invalid/expired)
           if (error.response && error.response.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setUser(null);
           } else {
-            // Keep the user logged in if it's a network error or 500 error
             console.warn('[AuthContext] Verification failed, but keeping session due to non-401 error', error);
           }
         })

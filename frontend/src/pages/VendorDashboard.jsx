@@ -366,138 +366,117 @@ const VendorDashboard = ({
       fetchPartnerData();
     };
 
-    const syncInterval = setInterval(() => {
-      fetchPartnerData();
-    }, 10000);
-
     window.addEventListener('storage', handleSync);
     window.addEventListener('focus', handleSync);
 
     return () => {
-      clearInterval(syncInterval);
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('focus', handleSync);
     };
   }, []);
 
     const fetchPartnerData = async () => {
-    try {
+    const vendorId = user?._id;
 
-      // ── Async: refresh from backend ──
-      // 1. Get Vendor Profile & Stats
-      axios.get('/vendor/profile').then(profileRes => {
-        if (profileRes.data.success) {
-          setProfile(profileRes.data.data.vendor);
-          setStats(profileRes.data.data.stats);
-          
-          // 4. Products list (depends on vendor profile)
-          const vendorId = profileRes.data.data.vendor._id;
-          if (vendorId) {
-            axios.get('/products?vendorId=' + vendorId).then(productsRes => {
-              if (productsRes.data.success) {
-                setProducts(productsRes.data.data);
-              }
-            }).catch(() => {});
-          }
-        }
-      }).catch(err => console.warn('Backend profile fetch failed:', err));
+    const results = await Promise.allSettled([
+      axios.get('/vendor/profile'),
+      axios.get('/vendor/verification'),
+      axios.get('/vendor/store-setup'),
+      axios.get('/vendor/requests'),
+      axios.get('/vendor/orders'),
+      vendorId ? axios.get('/products?vendorId=' + vendorId) : Promise.resolve(null),
+    ]);
 
-      // 2. Verification Submission status lookup
-      axios.get('/vendor/verification').then(verifRes => {
-        if (verifRes.data.success) {
-          const currentVerification = verifRes.data.data;
-          setVerificationDetails(currentVerification);
-          if (currentVerification && currentVerification.status !== 'Not Submitted') {
-            setVerifyBusinessName(currentVerification.businessName || '');
-            setVerifyOwnerName(currentVerification.ownerName || '');
-            setVerifyPhone(currentVerification.phone || '');
-            setVerifyEmail(currentVerification.email || '');
-            setVerifyGst(currentVerification.gstNumber || '');
-            setVerifyPan(currentVerification.panNumber || '');
-            setVerifyIdProof(currentVerification.idProofUrl || '');
-            setVerifyAddressProof(currentVerification.addressProofUrl || '');
-          }
-        }
-      }).catch(err => console.warn('Backend verification fetch failed:', err));
+    const [profileRes, verifRes, storeRes, reqRes, ordersRes, prodRes] = results;
 
-      // 3. Store Setup Lookup
-      axios.get('/vendor/store-setup').then(storeRes => {
-        if (storeRes.data.success) {
-          const currentStoreSetup = storeRes.data.data;
-          setStoreSetupDetails(currentStoreSetup);
-          if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
-            setStoreBrandName(currentStoreSetup.brandName || '');
-            setStoreDescription(currentStoreSetup.description || '');
-            setStoreSupportEmail(currentStoreSetup.supportEmail || '');
-            setStoreSupportPhone(currentStoreSetup.supportPhone || '');
-            setStoreAddress(currentStoreSetup.address || '');
-            setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
-            setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
-            setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
-          }
-        }
-      }).catch(err => console.warn('Backend store setup fetch failed:', err));
+    if (profileRes.status === 'fulfilled' && profileRes.value.data.success) {
+      setProfile(profileRes.value.data.data.vendor);
+      setStats(profileRes.value.data.data.stats);
+    }
 
-      // 5. Custom Requests
-      axios.get('/vendor/requests').then(reqRes => {
-        if (reqRes.data.success) setCustomRequests(reqRes.data.data);
-      }).catch(err => {
-        console.warn('Backend custom requests fetch failed');
-        setCustomRequests([]);
-      });
+    if (verifRes.status === 'fulfilled' && verifRes.value.data.success) {
+      const currentVerification = verifRes.value.data.data;
+      setVerificationDetails(currentVerification);
+      if (currentVerification && currentVerification.status !== 'Not Submitted') {
+        setVerifyBusinessName(currentVerification.businessName || '');
+        setVerifyOwnerName(currentVerification.ownerName || '');
+        setVerifyPhone(currentVerification.phone || '');
+        setVerifyEmail(currentVerification.email || '');
+        setVerifyGst(currentVerification.gstNumber || '');
+        setVerifyPan(currentVerification.panNumber || '');
+        setVerifyIdProof(currentVerification.idProofUrl || '');
+        setVerifyAddressProof(currentVerification.addressProofUrl || '');
+      }
+    }
 
-      // 6. Orders (Manufacturing and Delivery)
-      axios.get('/vendor/orders').then(ordersRes => {
-        if (ordersRes.data.success) {
-          const localOrders = ordersRes.data.data;
-          let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
-          setReadyMadeOrders(mktOrders);
-          
-          const mfgOrders = localOrders
-            .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
-            .map(o => ({
-              _id: o._id,
-              orderId: o._id,
-              designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
-                ? 'AI Design - ' + o.aiDesignData.roomType
-                : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
-              measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
-                ? o.aiDesignData.measurements
-                : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
-              materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
-              budget: o.quotationAmount || o.totalAmount,
-              status: o.orderStatus,
-              progressImages: o.progressImages || []
-            }));
-          setManufacturingOrders(mfgOrders);
+    if (storeRes.status === 'fulfilled' && storeRes.value.data.success) {
+      const currentStoreSetup = storeRes.value.data.data;
+      setStoreSetupDetails(currentStoreSetup);
+      if (currentStoreSetup && currentStoreSetup.status !== 'Not Submitted') {
+        setStoreBrandName(currentStoreSetup.brandName || '');
+        setStoreDescription(currentStoreSetup.description || '');
+        setStoreSupportEmail(currentStoreSetup.supportEmail || '');
+        setStoreSupportPhone(currentStoreSetup.supportPhone || '');
+        setStoreAddress(currentStoreSetup.address || '');
+        setStoreBankAcc(currentStoreSetup.bankDetails?.accountNumber || '');
+        setStoreIfsc(currentStoreSetup.bankDetails?.ifscCode || '');
+        setStoreBankName(currentStoreSetup.bankDetails?.bankName || '');
+      }
+    }
 
-          const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
-          setPendingVerificationOrders(pendingOrders);
+    if (reqRes.status === 'fulfilled' && reqRes.value.data.success) {
+      setCustomRequests(reqRes.value.data.data);
+    } else {
+      setCustomRequests([]);
+    }
 
-          const deliveryTrackingStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
-          const delOrders = localOrders
-            .filter(o => deliveryTrackingStatuses.includes(o.orderStatus))
-            .map(o => ({
-              _id: o._id,
-              orderId: o._id,
-              shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
-              status: o.orderStatus,
-              trackingNotes: o.trackingNotes || 'Dispatched from central hub',
-              userId: o.userId,
-              customerName: o.customerName,
-              designDetails: o.designDetails
-            }));
-          setDeliveryOrders(delOrders);
-          
-          const aiOrders = localOrders.filter(o => o.orderType === 'AI Design');
-          setAiDesignOrders(aiOrders);
-        }
-      }).catch(err => {
-        console.warn('Backend orders fetch failed');
-      });
+    if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success) {
+      const localOrders = ordersRes.value.data.data;
+      let mktOrders = localOrders.filter(o => o.orderType === 'Marketplace Product');
+      setReadyMadeOrders(mktOrders);
+      
+      const mfgOrders = localOrders
+        .filter(o => o.orderStatus === 'Production Started' || o.orderStatus === 'Manufacturing' || o.orderStatus === 'Ready for Delivery')
+        .map(o => ({
+          _id: o._id,
+          orderId: o._id,
+          designDetails: o.orderType === 'AI Design' && o.aiDesignData?.roomType
+            ? 'AI Design - ' + o.aiDesignData.roomType
+            : o.orderType + ' - Order ' + o._id.substring(o._id.length - 4),
+          measurements: o.orderType === 'AI Design' && o.aiDesignData?.measurements
+            ? o.aiDesignData.measurements
+            : o.designRequestId ? 'Standard dimensions / Custom details on request' : 'Standard Product Size',
+          materials: o.quotationMaterials || (o.orderType === 'AI Design' && o.aiDesignData?.materials?.join(', ')) || 'Wood, Premium Fabrics',
+          budget: o.quotationAmount || o.totalAmount,
+          status: o.orderStatus,
+          progressImages: o.progressImages || []
+        }));
+      setManufacturingOrders(mfgOrders);
 
-    } catch (error) {
-      console.error('Error fetching vendor data', error);
+      const pendingOrders = localOrders.filter(o => o.orderStatus === 'Awaiting Vendor Verification');
+      setPendingVerificationOrders(pendingOrders);
+
+      const deliveryTrackingStatuses = ['Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed', 'Completed'];
+      const delOrders = localOrders
+        .filter(o => deliveryTrackingStatuses.includes(o.orderStatus))
+        .map(o => ({
+          _id: o._id,
+          orderId: o._id,
+          shippingAddress: o.shippingAddress || '742 Evergreen Terrace, Springfield',
+          status: o.orderStatus,
+          trackingNotes: o.trackingNotes || 'Dispatched from central hub',
+          userId: o.userId,
+          customerName: o.customerName,
+          designDetails: o.designDetails
+        }));
+      setDeliveryOrders(delOrders);
+      
+      const aiOrders = localOrders.filter(o => o.orderType === 'AI Design');
+      setAiDesignOrders(aiOrders);
+    }
+
+    if (prodRes.status === 'fulfilled' && prodRes.value?.data?.success) {
+      setProducts(prodRes.value.data.data);
     }
   };
   // Ready-made Orders Action Handlers

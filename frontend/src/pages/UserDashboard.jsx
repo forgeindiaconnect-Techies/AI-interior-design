@@ -452,93 +452,83 @@ const UserDashboard = ({
   }, [activeTab, fetchCart]);
 
   const fetchUserData = async () => {
-    try {
+    const results = await Promise.allSettled([
+      axios.get('/designs/ai'),
+      axios.get('/designs/manual'),
+      axios.get('/products'),
+      axios.get('/orders/user'),
+      axios.get('/marketplace-orders/myorders'),
+      axios.get('/orders/reviews/user'),
+      axios.get('/cart'),
+    ]);
 
-      // 1. AI Designs (Fetch dynamic designs from backend)
-      axios.get('/designs/ai').then(res => {
-        if (res.data && res.data.success) {
-          setAiDesigns(res.data.data);
-        }
-      }).catch(err => console.warn('Backend ai designs fetch failed:', err));
+    const [aiRes, manualRes, prodRes, ordersRes, mktOrdersRes, reviewsRes, cartRes] = results;
 
-      // 2. Manual Requests
-      axios.get('/designs/manual').then(res => {
-        if (res.data && res.data.success && res.data.data.length > 0) {
-          setManualDesigns(res.data.data);
-        }
-      }).catch(err => console.warn('Backend manual designs fetch failed:', err));
+    if (aiRes.status === 'fulfilled' && aiRes.value.data?.success) {
+      setAiDesigns(aiRes.value.data.data);
+    }
 
-      // 3. Products
-      axios.get('/products').then(res => {
-        const serverProds = res.data?.data || [];
-        if (serverProds.length > 0) setProducts(serverProds);
-      }).catch(() => {});
+    if (manualRes.status === 'fulfilled' && manualRes.value.data?.success && manualRes.value.data.data.length > 0) {
+      setManualDesigns(manualRes.value.data.data);
+    }
 
-      // 4. Orders from backend (custom/design)
-      axios.get('/orders/user').then(ordersRes => {
-        if (ordersRes.data && ordersRes.data.success) {
-          const dbOrders = ordersRes.data.data;
-          setOrders(prev => {
-            const map = new Map();
-            let localOrders = Array.isArray(prev) ? prev : [];
-            dbOrders.forEach(o => map.set(o._id, o));
-            localOrders.forEach(o => map.set(o._id, o));
-            return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          });
-        }
-      }).catch(err => console.warn('Backend orders fetch failed in UserDashboard:', err));
+    if (prodRes.status === 'fulfilled') {
+      const serverProds = prodRes.value.data?.data || [];
+      if (serverProds.length > 0) setProducts(serverProds);
+    }
 
-      // 5. Marketplace orders
-      axios.get('/marketplace-orders/myorders').then(mktRes => {
-        if (mktRes.data?.success && mktRes.data.data) {
-          const mktOrders = mktRes.data.data.map(o => ({
-            _id: o._id,
-            orderType: 'Marketplace Product',
-            userId: o.userId,
-            vendorId: o.items[0]?.vendorId || { companyName: 'Artisan Workshop' },
-            totalAmount: o.totalAmount,
-            paymentStatus: o.paymentStatus,
-            orderStatus: o.orderStatus,
-            shippingAddress: o.shippingAddress,
-            createdAt: o.createdAt,
-            productDetails: o.items[0]?.productId ? {
-              _id: o.items[0].productId._id,
-              title: o.items[0].productId.title,
-              price: o.items[0].price,
-              images: o.items[0].productId.images || [],
-              quantity: o.items.reduce((sum, i) => sum + i.quantity, 0)
-            } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
-            items: o.items,
-            subtotal: o.subtotal,
-            tax: o.tax,
-            shippingFee: o.shippingFee
-          }));
-          setOrders(prev => {
-            const map = new Map();
-            let localOrders = Array.from(prev || []);
-            mktOrders.forEach(o => map.set(o._id, o));
-            localOrders.forEach(o => map.set(o._id, o));
-            return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          });
-        }
-      }).catch(err => console.warn('Backend marketplace orders fetch failed:', err));
+    if (ordersRes.status === 'fulfilled' && ordersRes.value.data?.success) {
+      const dbOrders = ordersRes.value.data.data;
+      setOrders(prev => {
+        const map = new Map();
+        let localOrders = Array.isArray(prev) ? prev : [];
+        dbOrders.forEach(o => map.set(o._id, o));
+        localOrders.forEach(o => map.set(o._id, o));
+        return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      });
+    }
 
-      // 6. User reviews
-      axios.get('/orders/reviews/user').then(reviewsRes => {
-        if (reviewsRes.data && reviewsRes.data.success && reviewsRes.data.data.length > 0) {
-          setUserReviews(reviewsRes.data.data);
-        }
-      }).catch(err => console.warn('Backend reviews fetch failed in UserDashboard:', err));
+    if (mktOrdersRes.status === 'fulfilled' && mktOrdersRes.value.data?.success) {
+      const mktOrders = mktOrdersRes.value.data.data.map(o => ({
+        _id: o._id,
+        orderType: 'Marketplace Product',
+        userId: o.userId,
+        vendorId: o.items[0]?.vendorId || { companyName: 'Artisan Workshop' },
+        totalAmount: o.totalAmount,
+        paymentStatus: o.paymentStatus,
+        orderStatus: o.orderStatus,
+        shippingAddress: o.shippingAddress,
+        createdAt: o.createdAt,
+        productDetails: o.items[0]?.productId ? {
+          _id: o.items[0].productId._id,
+          title: o.items[0].productId.title,
+          price: o.items[0].price,
+          images: o.items[0].productId.images || [],
+          quantity: o.items.reduce((sum, i) => sum + i.quantity, 0)
+        } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
+        items: o.items,
+        subtotal: o.subtotal,
+        tax: o.tax,
+        shippingFee: o.shippingFee
+      }));
+      setOrders(prev => {
+        const map = new Map();
+        let localOrders = Array.from(prev || []);
+        mktOrders.forEach(o => map.set(o._id, o));
+        localOrders.forEach(o => map.set(o._id, o));
+        return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      });
+    }
 
-      // 7. Cart
-      axios.get('/cart').then(cartRes => {
-        const cartData = cartRes.data?.data;
-        if (cartData && cartData.items) {
-          setCartItems(cartData.items.filter(item => item.productId));
-        }
-      }).catch(err => console.warn('Failed to fetch cart in fetchUserData:', err));
-    } catch (error) {
-      console.error('Error fetching user dashboard data', error);
+    if (reviewsRes.status === 'fulfilled' && reviewsRes.value.data?.success && reviewsRes.value.data.data.length > 0) {
+      setUserReviews(reviewsRes.value.data.data);
+    }
+
+    if (cartRes.status === 'fulfilled') {
+      const cartData = cartRes.value.data?.data;
+      if (cartData && cartData.items) {
+        setCartItems(cartData.items.filter(item => item.productId));
+      }
     }
   };
 
@@ -865,7 +855,6 @@ Thank you for shopping with Artisan Studio!
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     setManualSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
       const payload = {
@@ -1060,7 +1049,6 @@ Thank you for shopping with Artisan Studio!
   const handleConfirmAiQuotationPayment = async () => {
     if (!aiQuotationPayment) return;
     setAiQuotationProcessing(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
 
     const orderId = aiQuotationPayment._id;
     const localOrders = [];
