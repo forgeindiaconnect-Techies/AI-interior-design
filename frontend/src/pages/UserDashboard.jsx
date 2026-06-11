@@ -385,9 +385,48 @@ const UserDashboard = ({
     }
   }, []);
 
+  const fetchMarketplaceOrders = useCallback(async () => {
+    try {
+      const res = await axios.get('/marketplace-orders/myorders');
+      if (res.data?.success && res.data.data) {
+        const mktOrders = res.data.data.map(o => ({
+          _id: o._id,
+          orderType: 'Marketplace Product',
+          userId: o.userId,
+          vendorId: o.items[0]?.vendorId || { companyName: 'Artisan Workshop' },
+          totalAmount: o.totalAmount,
+          paymentStatus: o.paymentStatus,
+          orderStatus: o.orderStatus,
+          shippingAddress: o.shippingAddress,
+          createdAt: o.createdAt,
+          productDetails: o.items[0]?.productId ? {
+            _id: o.items[0].productId._id,
+            title: o.items[0].productId.title,
+            price: o.items[0].price,
+            images: o.items[0].productId.images || [],
+            quantity: o.items.reduce((sum, i) => sum + i.quantity, 0)
+          } : { title: 'Marketplace Product', quantity: o.items.reduce((sum, i) => sum + i.quantity, 0) },
+          items: o.items,
+          subtotal: o.subtotal,
+          tax: o.tax,
+          shippingFee: o.shippingFee
+        }));
+        setOrders(prev => {
+          const map = new Map();
+          (Array.isArray(prev) ? prev : []).forEach(o => map.set(o._id, o));
+          mktOrders.forEach(o => map.set(o._id, o));
+          return Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        });
+      }
+    } catch (err) {
+      console.warn('Failed to fetch marketplace orders:', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'cart') {
       fetchCart();
+      fetchMarketplaceOrders();
       const syncProducts = async () => {
         try {
           const res = await axios.get('/products');
@@ -401,7 +440,7 @@ const UserDashboard = ({
     } else {
       setShowCheckoutSummary(false);
     }
-  }, [activeTab, fetchCart]);
+  }, [activeTab, fetchCart, fetchMarketplaceOrders]);
 
   useEffect(() => {
     const onCartUpdated = () => {
@@ -2550,6 +2589,48 @@ Thank you for shopping with Artisan Studio!
               )}
             </div>
           </div>
+
+          {/* PURCHASE HISTORY */}
+          {(() => {
+            const purchasedOrders = orders.filter(o => o.orderType === 'Marketplace Product' && (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid'));
+            return purchasedOrders.length > 0 && (
+              <div className="mt-12 animate-fadeIn">
+                <div className="flex items-center gap-3 mb-6">
+                  <Package className="w-6 h-6 text-[#2A9D8F]" />
+                  <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Purchase History</h3>
+                  <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold">Past Orders</span>
+                </div>
+                <div className="space-y-3">
+                  {purchasedOrders.map(order => {
+                    const item = order.productDetails || (order.items?.[0]?.productId ? {
+                      title: order.items[0].productId.title,
+                      images: order.items[0].productId.images || [],
+                      quantity: order.items.reduce((s, i) => s + i.quantity, 0)
+                    } : { title: 'Product', images: [], quantity: 1 });
+                    return (
+                      <div key={order._id} className="bg-white p-4 rounded-2xl shadow-sm border border-[#D4A373]/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer" onClick={() => { if (setActiveTab) setActiveTab('orders'); }}>
+                        <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200'} alt={item.title} className="w-16 h-16 object-cover rounded-xl shrink-0 bg-gray-50" />
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-[#1F2937] truncate text-sm">{item.title}</h4>
+                          <p className="text-xs text-gray-500">Qty: {item.quantity} • {new Date(order.createdAt).toLocaleDateString()}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${order.orderStatus === 'Delivered' || order.orderStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : order.orderStatus === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{order.orderStatus}</span>
+                            <span className="font-bold text-[#8B5E3C] text-sm">${order.totalAmount}</span>
+                          </div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-gray-300 shrink-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+                {purchasedOrders.length > 5 && (
+                  <div className="text-center mt-4">
+                    <button onClick={() => { if (setActiveTab) setActiveTab('orders'); }} className="text-[#8B5E3C] font-bold text-sm hover:underline">View All Orders →</button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         );
       })()}
 
