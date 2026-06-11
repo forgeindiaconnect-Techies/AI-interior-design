@@ -87,82 +87,16 @@ const FURNITURE_VARIATIONS = {
   ]
 };
 
-// Room-type specific fallback images — each key maps to curated, correct-room photos
-const FALLBACK_IMAGES_BY_ROOM = {
-  'Living Room': [
-    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
-    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
-    'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?w=800&q=80'
-  ],
-  'Bedroom': [
-    'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=80',
-    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
-    'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
-    'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80',
-    'https://images.unsplash.com/photo-1588046130717-0eb0c9a3ba15?w=800&q=80'
-  ],
-  'Bathroom': [
-    'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
-    'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&q=80',
-    'https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=800&q=80',
-    'https://images.unsplash.com/photo-1620626011761-996317702149?w=800&q=80',
-    'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80'
-  ],
-  'Kitchen': [
-    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
-    'https://images.unsplash.com/photo-1565538810643-b5bdb714032a?w=800&q=80',
-    'https://images.unsplash.com/photo-1556909172-54557c7e4fb7?w=800&q=80',
-    'https://images.unsplash.com/photo-1600489000022-c2086d79f9d4?w=800&q=80',
-    'https://images.unsplash.com/photo-1556909075-7b1c2a5c1a8e?w=800&q=80'
-  ],
-  'Dining Room': [
-    'https://images.unsplash.com/photo-1615968679312-9b7ed9f04e79?w=800&q=80',
-    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80',
-    'https://images.unsplash.com/photo-1600210491892-03d54c2b2b7d?w=800&q=80',
-    'https://images.unsplash.com/photo-1617104678098-de229db51175?w=800&q=80',
-    'https://images.unsplash.com/photo-1592078615290-033ee584e267?w=800&q=80'
-  ],
-  'Office Room': [
-    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
-    'https://images.unsplash.com/photo-1593642532559-0c6d3fc62b89?w=800&q=80',
-    'https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=800&q=80',
-    'https://images.unsplash.com/photo-1583062150831-d95d9b4fbc3e?w=800&q=80'
-  ],
-  'Kids Room': [
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
-    'https://images.unsplash.com/photo-1622296089863-eb7fc530daa8?w=800&q=80',
-    'https://images.unsplash.com/photo-1566312922674-dc89b6a8a38e?w=800&q=80',
-    'https://images.unsplash.com/photo-1617361407418-d0a3f6b5c6a1?w=800&q=80',
-    'https://images.unsplash.com/photo-1519710164239-da123dc03ef4?w=800&q=80'
-  ],
-  'Balcony': [
-    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
-    'https://images.unsplash.com/photo-1558618047-f4e50e609e76?w=800&q=80',
-    'https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80',
-    'https://images.unsplash.com/photo-1602872029708-84d970d3382b?w=800&q=80',
-    'https://images.unsplash.com/photo-1505254422-beb7edfc5f5b?w=800&q=80'
-  ],
-  'Pooja Room': [
-    'https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800&q=80',
-    'https://images.unsplash.com/photo-1621570168426-ea93fca8aa0b?w=800&q=80',
-    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-    'https://images.unsplash.com/photo-1617529497471-9218633199c0?w=800&q=80',
-    'https://images.unsplash.com/photo-1604014654291-e0e04e31613b?w=800&q=80'
-  ],
-  'Commercial Space': [
-    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-    'https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=800&q=80',
-    'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
-    'https://images.unsplash.com/photo-1556761175-4b46a572b786?w=800&q=80',
-    'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80'
-  ]
-};
-
-// Flat fallback list used only for legacy export compatibility
-const FALLBACK_IMAGES = FALLBACK_IMAGES_BY_ROOM['Living Room'];
+const FALLBACK_IMAGES = [
+  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+  'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+  'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+  'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
+  'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
+  'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80'
+];
 
 const HF_MODELS = [
   'stabilityai/stable-diffusion-2-1',
@@ -299,9 +233,7 @@ const generateOneImage = async ({ image, roomType, seed, existingSeeds = [] }) =
     return { seed: actualSeed, imageUrl: result.imageUrl, prompt: result.prompt, variationPrompt, success: true };
   } catch (err) {
     console.warn('Image generation failed, using fallback:', err.message);
-    // Pick a room-specific fallback so the image always matches the selected room type
-    const roomFallbacks = FALLBACK_IMAGES_BY_ROOM[roomType] || FALLBACK_IMAGES_BY_ROOM['Living Room'];
-    return { seed: actualSeed, imageUrl: roomFallbacks[actualSeed % roomFallbacks.length], prompt: `Fallback: ${variationPrompt}`, variationPrompt, success: false };
+    return { seed: actualSeed, imageUrl: FALLBACK_IMAGES[actualSeed % FALLBACK_IMAGES.length], prompt: `Fallback: ${variationPrompt}`, variationPrompt, success: false };
   }
 };
 

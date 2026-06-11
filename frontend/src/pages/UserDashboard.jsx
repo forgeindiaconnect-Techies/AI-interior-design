@@ -59,7 +59,7 @@ const UserDashboard = ({
   const [aiAnalysisLogs, setAiAnalysisLogs] = useState([]);
   const [activeAnalysisResult, setActiveAnalysisResult] = useState(null);
   const [expandedAnalysisId, setExpandedAnalysisId] = useState(null);
-  const [showOriginalImage, setShowOriginalImage] = useState(false);
+
 
   // Manual Design State
   const [manualStyle, setManualStyle] = useState('Modern');
@@ -627,15 +627,46 @@ const UserDashboard = ({
   };
 
   const handleAiStatus = async (id, status) => {
+    if (status === 'regenerated') {
+      const design = aiDesigns.find(d => d._id === id);
+      if (!design) return;
+      setLoadingAi(true);
+      setAiAnalysisStep('generating');
+      setAiAnalysisProgress(0);
+      setAiAnalysisLogs([]);
+      try {
+        const payload = {
+          roomType: design.roomType || 'Living Room',
+          originalImage: design.originalImage
+        };
+        const res = await axios.post('/designs/ai', payload);
+        if (res.data.success) {
+          const newDesign = { ...res.data.data, _currentVariationIndex: 0 };
+          setAiDesigns([newDesign, ...aiDesigns.filter(d => d._id !== id)]);
+          setAiAnalysisStep('completed');
+          setAiAnalysisProgress(100);
+          showToast('✨ AI Design regenerated with new style!');
+          setTimeout(() => {
+            document.getElementById('ai-new-design-result')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
+      } catch (err) {
+        console.error('Failed to regenerate AI design', err);
+        showToast('Failed to regenerate design. Please try again.', 'error');
+        setAiAnalysisStep('completed');
+      } finally {
+        setLoadingAi(false);
+      }
+      return;
+    }
+
     if (String(id).startsWith('ai_')) {
       const design = aiDesigns.find(d => d._id === id);
       if (!design) return;
       const updatedDesign = { ...design, status };
       setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
 
-      if (status === 'regenerated') {
-        alert('✨ AI Design regenerated with new style! Check the new design above.');
-      } else if (status === 'accepted') {
+      if (status === 'accepted') {
         const payload = {
           _id: 'man_mock_' + Date.now(),
           requestType: 'AI Generated',
@@ -653,9 +684,9 @@ const UserDashboard = ({
           status: 'Submitted'
         };
         setManualDesigns([payload, ...manualDesigns]);
-        alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+        showToast('✅ AI Design accepted! Order request has been forwarded to vendors.', 'success');
       } else if (status === 'rejected') {
-        alert('AI Design rejected. You can now submit a manual design request.');
+        showToast('AI Design rejected. You can now submit a manual design request.', 'info');
         if (setActiveTab) setActiveTab('manual');
       }
       return;
@@ -665,14 +696,9 @@ const UserDashboard = ({
       const res = await axios.put(`/designs/ai/${id}`, { status });
       if (res.data.success) {
         const updatedDesign = { ...res.data.data, _currentVariationIndex: 0 };
-        if (res.data.variations) {
-          updatedDesign._variations = res.data.variations;
-        }
         setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
 
-        if (status === 'regenerated') {
-          alert('✨ AI Design regenerated with new style! Check the new design above.');
-        } else if (status === 'accepted') {
+        if (status === 'accepted') {
           const payload = {
             requestType: 'AI Generated',
             roomType: updatedDesign.roomType || 'Living Room',
@@ -691,18 +717,18 @@ const UserDashboard = ({
           const manualRes = await axios.post('/designs/manual', payload);
           if (manualRes.data.success) {
             setManualDesigns([manualRes.data.data, ...manualDesigns]);
-            alert('✅ AI Design accepted! Order request has been forwarded to vendors.');
+            showToast('✅ AI Design accepted! Order request has been forwarded to vendors.', 'success');
           } else {
-            alert('Failed to forward request to vendors. Please try again.');
+            showToast('Failed to forward request to vendors. Please try again.', 'error');
           }
         } else if (status === 'rejected') {
-          alert('AI Design rejected. You can now submit a manual design request.');
+          showToast('AI Design rejected. You can now submit a manual design request.', 'info');
           if (setActiveTab) setActiveTab('manual');
         }
       }
     } catch (err) {
       console.error('Failed to update AI design status', err);
-      alert('Failed to update design status.');
+      showToast('Failed to update design status.', 'error');
     }
   };
 
@@ -1612,159 +1638,21 @@ Thank you for shopping with Artisan Studio!
                     )}
                   </div>
 
-                  {/* Bottom Section: Image Viewer with Before/After Toggle */}
+                  {/* Bottom Section: AI Design Image Display */}
                     <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Before & After Comparison</h3>
-                      {!showOriginalImage && (
-                        <span className="text-[10px] font-bold text-[#8B5E3C] bg-[#F8F5F0] px-3 py-1 rounded-full border border-[#D4A373]/30">
-                          V{latestDesign.versionNumber || 1}
-                          {latestDesign._displayImage && latestDesign._displayImage !== latestDesign.generatedImage && ' (preview)'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
-                      {(() => {
-                        const viewingVersion = latestDesign._viewingVersion || latestDesign.versionNumber;
-                        const currentGens = (latestDesign.generations || []).filter(g => g.versionNumber === viewingVersion);
-                        const varIdx = latestDesign._currentVariationIndex || 0;
-                        const varImage = currentGens[varIdx]?.generatedImage || latestDesign.generatedImage;
-                        const displaySrc = showOriginalImage ? latestDesign.originalImage : varImage;
-                        const totalVars = currentGens.length;
-                        return (
-                          <>
-                            <img 
-                              src={displaySrc} 
-                              alt={showOriginalImage ? "Original Room" : "AI Design Output"} 
-                              className="w-full h-full object-cover transition-all duration-300"
-                              onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
-                            />
-                            <span className="absolute top-4 left-4 bg-black/55 text-white text-xs px-3 py-1.5 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm shadow-sm">
-                              {showOriginalImage ? "Original View" : totalVars > 0 ? `V${latestDesign.versionNumber} — ${varIdx + 1}/${totalVars}` : `V${latestDesign.versionNumber}`}
-                            </span>
-                          </>
-                        );
-                      })()}
-                    </div>
-
-                    <div className="flex gap-4">
-                      <button 
-                        onClick={() => setShowOriginalImage(true)}
-                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold border transition-all ${showOriginalImage ? 'bg-[#8B5E3C] text-white border-[#8B5E3C]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                      >
-                        Show Original
-                      </button>
-                      <button 
-                        onClick={() => setShowOriginalImage(false)}
-                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold border transition-all ${!showOriginalImage ? 'bg-[#8B5E3C] text-white border-[#8B5E3C]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
-                      >
-                        Show AI Design
-                      </button>
-                    </div>
-                    </div>
-                  </div>
-
-                    {/* Variation Thumbnails Grid */}
-                    {(() => {
-                      const viewingVersion = latestDesign._viewingVersion || latestDesign.versionNumber;
-                      const currentGens = (latestDesign.generations || []).filter(g => g.versionNumber === viewingVersion);
-                      if (currentGens.length < 2) return null;
-                      const varIdx = latestDesign._currentVariationIndex || 0;
-                      return (
-                        <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Variations</h3>
-                            <span className="text-xs text-gray-400 font-medium">{currentGens.length} designs</span>
-                          </div>
-                          <div className="grid grid-cols-5 gap-3">
-                            {currentGens.map((gen, idx) => (
-                              <button
-                                key={gen._id}
-                                onClick={() => {
-                                  setShowOriginalImage(false);
-                                  const updatedDesigns = aiDesigns.map(d => {
-                                    if (d._id === latestDesign._id) {
-                                      return { ...d, _currentVariationIndex: idx };
-                                    }
-                                    return d;
-                                  });
-                                  setAiDesigns(updatedDesigns);
-                                }}
-                                className={`relative rounded-xl overflow-hidden border-2 transition-all aspect-[4/3] ${
-                                  idx === varIdx ? 'border-[#8B5E3C] ring-2 ring-[#8B5E3C]/30 shadow-md' : 'border-gray-200 hover:border-[#D4A373] opacity-70 hover:opacity-100'
-                                }`}
-                              >
-                                <img src={gen.generatedImage} alt={`Variation ${idx + 1}`} className="w-full h-full object-cover" />
-                                <span className={`absolute bottom-1 right-1 text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                  idx === varIdx ? 'bg-[#8B5E3C] text-white' : 'bg-black/50 text-white'
-                                }`}>
-                                  {idx + 1}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Version History Panel */}
-                    {latestDesign.generations && latestDesign.generations.length > 0 && (
-                      <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-['Playfair_Display'] font-bold text-lg text-[#1F2937]">Design Versions</h3>
-                          <span className="text-xs text-gray-400 font-medium">{Object.keys((() => { const g = {}; (latestDesign.generations || []).forEach(gen => { g[gen.versionNumber] = true; }); return g; })()).length} versions</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(() => {
-                            const versionGroups = {};
-                            (latestDesign.generations || []).forEach(gen => {
-                              const v = gen.versionNumber || 1;
-                              if (!versionGroups[v]) versionGroups[v] = [];
-                              versionGroups[v].push(gen);
-                            });
-                            const sortedVersions = Object.keys(versionGroups).sort((a, b) => b - a);
-                            return sortedVersions.map(vNum => {
-                              const gens = versionGroups[vNum];
-                              const firstGen = gens[0];
-                              const isViewingVersion = (latestDesign._viewingVersion || latestDesign.versionNumber) === Number(vNum);
-                              return (
-                                <button
-                                  key={vNum}
-                                  onClick={() => {
-                                    setShowOriginalImage(false);
-                                    const idx = 0;
-                                    const targetGen = gens[idx] || gens[0];
-                                    const updatedDesigns = aiDesigns.map(d => {
-                                      if (d._id === latestDesign._id) {
-                                        return { ...d, _viewingVersion: Number(vNum), _currentVariationIndex: 0, _displayVersion: targetGen._id, _displayImage: targetGen.generatedImage };
-                                      }
-                                      return d;
-                                    });
-                                    setAiDesigns(updatedDesigns);
-                                  }}
-                                  className={`relative px-4 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
-                                    isViewingVersion
-                                      ? 'bg-[#8B5E3C] text-white border-[#8B5E3C] shadow-md'
-                                      : 'bg-white text-gray-600 border-gray-200 hover:border-[#8B5E3C] hover:text-[#8B5E3C]'
-                                  }`}
-                                >
-                                  <span>V{vNum}</span>
-                                  <span className="text-[10px] opacity-75">{new Date(firstGen.createdAt).toLocaleDateString()}</span>
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                                    isViewingVersion ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-500'
-                                  }`}>
-                                    {gens.length}
-                                  </span>
-                                </button>
-                              );
-                            });
-                          })()}
-                        </div>
-                        {latestDesign.generations && latestDesign.generations.length > 1 && (
-                          <p className="text-[10px] text-gray-400 italic">Each version contains {latestDesign.generations.filter(g => g.versionNumber === (latestDesign._viewingVersion || latestDesign.versionNumber)).length} design variations. Click thumbnails above to switch between them.</p>
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Wand2 className="w-5 h-5 text-[#8B5E3C]" />
+                        <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">AI Generated Design</h3>
                       </div>
-                    )}
+                      <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
+                        <img
+                          src={latestDesign.generatedImage}
+                          alt="AI Design Output"
+                          className="w-full h-full object-cover"
+                          onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
+                        />
+                      </div>
+                    </div>
 
                     {/* Suggestions Box */}
                     <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
