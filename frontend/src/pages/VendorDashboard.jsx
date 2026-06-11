@@ -1227,7 +1227,20 @@ const VendorDashboard = ({
       return;
     }
     setIsPayoutRequested(true);
-    alert('✅ Instant payout requested successfully! Your funds ($' + (stats?.revenue?.toLocaleString() || '24,500') + ') are being transferred to your registered bank account.');
+
+    // Send notification to admin
+    const amount = stats?.revenue || 24500;
+    const notifObj = {
+      _id: `pnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      message: `💰 Instant payout requested by ${profile?.companyName || 'Vendor'}: ₹${amount.toLocaleString()}`,
+      type: 'info',
+      createdAt: new Date().toISOString(),
+      read: false
+    };
+    const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+    localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...adminNotifs]));
+
+    alert('✅ Instant payout requested successfully! Your funds (₹' + amount.toLocaleString() + ') are being transferred to your registered bank account.');
   };
 
   // Verification and Store Setup Handlers
@@ -3902,6 +3915,17 @@ const VendorDashboard = ({
           setReqAmount(''); setReqAccount(''); setReqNote('');
           setSubmitted(true);
           setTimeout(() => setSubmitted(false), 3000);
+
+          // Send notification to admin
+          const notifObj = {
+            _id: `pnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+            message: `💰 New payout request from ${profile?.companyName || 'Vendor'}: ₹${Number(reqAmount).toLocaleString()} via ${reqMethod}`,
+            type: 'info',
+            createdAt: new Date().toISOString(),
+            read: false
+          };
+          const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
+          localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...adminNotifs]));
         };
 
         return (
