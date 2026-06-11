@@ -2532,105 +2532,106 @@ Thank you for shopping with Artisan Studio!
         }
 
         return (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
-            <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Shopping Cart</h2>
-              <div className="space-y-4">
-                {resolvedItems.length === 0 ? (
-                  <div className="text-center py-12 space-y-4">
-                    <ShoppingCart className="w-12 h-12 text-[#D4A373] mx-auto" />
-                    <p className="text-gray-500 font-bold">Your shopping cart is empty.</p>
-                    <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Continue Shopping</button>
-                  </div>
-                ) : (
-                  <>
-                    {resolvedItems.map(item => (
-                      <div key={item._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-gray-100 rounded-2xl">
-                        <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-50" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
-                          <p className="text-xs text-gray-500 mt-0.5">Vendor: {item.vendorId?.companyName || 'Artisan Workshop'}</p>
-                          <div className="flex items-center gap-4 mt-2">
-                            <span className="font-extrabold text-[#8B5E3C]">${item.price}</span>
-                            <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1 bg-white">
-                              <button onClick={() => updateCartQuantity(item._id, -1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">-</button>
-                              <span className="w-4 text-center">{item.quantity}</span>
-                              <button onClick={() => updateCartQuantity(item._id, 1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">+</button>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-fadeIn">
+              <div className="lg:col-span-8 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] border-b border-gray-100 pb-4">Shopping Cart</h2>
+                <div className="space-y-4">
+                  {resolvedItems.length === 0 ? (
+                    <div className="text-center py-12 space-y-4">
+                      <ShoppingCart className="w-12 h-12 text-[#D4A373] mx-auto" />
+                      <p className="text-gray-500 font-bold">Your shopping cart is empty.</p>
+                      <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="px-5 py-2.5 bg-[#8B5E3C] text-white font-bold rounded-xl text-sm hover:bg-[#8B5E3C]/90 transition-all">Continue Shopping</button>
+                    </div>
+                  ) : (
+                    <>
+                      {resolvedItems.map(item => (
+                        <div key={item._id} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 border border-gray-100 rounded-2xl">
+                          <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600'} alt={item.title} className="w-20 h-20 object-cover rounded-xl shrink-0 bg-gray-50" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-[#1F2937] truncate">{item.title}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">Vendor: {item.vendorId?.companyName || 'Artisan Workshop'}</p>
+                            <div className="flex items-center gap-4 mt-2">
+                              <span className="font-extrabold text-[#8B5E3C]">${item.price}</span>
+                              <div className="flex items-center gap-2 text-sm font-bold border border-gray-200 rounded-lg px-2 py-1 bg-white">
+                                <button onClick={() => updateCartQuantity(item._id, -1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">-</button>
+                                <span className="w-4 text-center">{item.quantity}</span>
+                                <button onClick={() => updateCartQuantity(item._id, 1)} className="text-gray-400 hover:text-[#8B5E3C] px-1">+</button>
+                              </div>
                             </div>
                           </div>
+                          <button onClick={() => removeFromCart(item._id)} className="self-end sm:self-center p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
                         </div>
-                        <button onClick={() => removeFromCart(item._id)} className="self-end sm:self-center p-2 text-red-400 hover:text-red-600 transition-colors"><XCircle className="w-5 h-5" /></button>
+                      ))}
+                      <div className="pt-2">
+                        <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1.5 hover:underline transition-all">
+                          Continue Shopping
+                        </button>
                       </div>
-                    ))}
-                    <div className="pt-2">
-                      <button onClick={() => setActiveTab && setActiveTab('marketplace')} className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1.5 hover:underline transition-all">
-                        Continue Shopping
-                      </button>
-                    </div>
-                  </>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="lg:col-span-4 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
+                <h3 className="font-bold text-lg text-[#1F2937]">Order Summary</h3>
+                <div className="space-y-3 text-sm text-gray-600 border-b border-gray-100 pb-4">
+                  <div className="flex justify-between"><span>Subtotal</span><span className="font-bold text-[#1F2937]">${subtotal.toLocaleString()}</span></div>
+                  <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">${shipping}</span></div>
+                  <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">${tax}</span></div>
+                </div>
+                <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
+                  <span>Total</span>
+                  <span>${total.toLocaleString()}</span>
+                </div>
+                {resolvedItems.length > 0 && (
+                  <button onClick={handleCheckout} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                    Proceed to Checkout <ArrowRight className="w-4 h-4" />
+                  </button>
                 )}
               </div>
             </div>
-            <div className="lg:col-span-4 bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 self-start">
-              <h3 className="font-bold text-lg text-[#1F2937]">Order Summary</h3>
-              <div className="space-y-3 text-sm text-gray-600 border-b border-gray-100 pb-4">
-                <div className="flex justify-between"><span>Subtotal</span><span className="font-bold text-[#1F2937]">${subtotal.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Shipping</span><span className="font-bold text-[#1F2937]">${shipping}</span></div>
-                <div className="flex justify-between"><span>Tax (8%)</span><span className="font-bold text-[#1F2937]">${tax}</span></div>
-              </div>
-              <div className="flex justify-between text-lg font-extrabold text-[#8B5E3C]">
-                <span>Total</span>
-                <span>${total.toLocaleString()}</span>
-              </div>
-              {resolvedItems.length > 0 && (
-                <button onClick={handleCheckout} className="w-full py-4 bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                  Proceed to Checkout <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
 
-          {/* PURCHASE HISTORY */}
-          {(() => {
-            const purchasedOrders = orders.filter(o => o.orderType === 'Marketplace Product' && (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid'));
-            return purchasedOrders.length > 0 && (
-              <div className="mt-12 animate-fadeIn">
-                <div className="flex items-center gap-3 mb-6">
-                  <Package className="w-6 h-6 text-[#2A9D8F]" />
-                  <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Purchase History</h3>
-                  <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold">Past Orders</span>
-                </div>
-                <div className="space-y-3">
-                  {purchasedOrders.map(order => {
-                    const item = order.productDetails || (order.items?.[0]?.productId ? {
-                      title: order.items[0].productId.title,
-                      images: order.items[0].productId.images || [],
-                      quantity: order.items.reduce((s, i) => s + i.quantity, 0)
-                    } : { title: 'Product', images: [], quantity: 1 });
-                    return (
-                      <div key={order._id} className="bg-white p-4 rounded-2xl shadow-sm border border-[#D4A373]/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer" onClick={() => { if (setActiveTab) setActiveTab('orders'); }}>
-                        <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200'} alt={item.title} className="w-16 h-16 object-cover rounded-xl shrink-0 bg-gray-50" />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-[#1F2937] truncate text-sm">{item.title}</h4>
-                          <p className="text-xs text-gray-500">Qty: {item.quantity} • {new Date(order.createdAt).toLocaleDateString()}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${order.orderStatus === 'Delivered' || order.orderStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : order.orderStatus === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{order.orderStatus}</span>
-                            <span className="font-bold text-[#8B5E3C] text-sm">${order.totalAmount}</span>
-                          </div>
-                        </div>
-                        <ArrowRight className="w-5 h-5 text-gray-300 shrink-0" />
-                      </div>
-                    );
-                  })}
-                </div>
-                {purchasedOrders.length > 5 && (
-                  <div className="text-center mt-4">
-                    <button onClick={() => { if (setActiveTab) setActiveTab('orders'); }} className="text-[#8B5E3C] font-bold text-sm hover:underline">View All Orders →</button>
+            {(() => {
+              const purchasedOrders = orders.filter(o => o.orderType === 'Marketplace Product' && (o.paymentStatus === 'paid' || o.paymentStatus === 'Paid'));
+              return purchasedOrders.length > 0 && (
+                <div className="mt-12 animate-fadeIn">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Package className="w-6 h-6 text-[#2A9D8F]" />
+                    <h3 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Purchase History</h3>
+                    <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold">Past Orders</span>
                   </div>
-                )}
-              </div>
-            );
-          })()}
+                  <div className="space-y-3">
+                    {purchasedOrders.map(order => {
+                      const item = order.productDetails || (order.items?.[0]?.productId ? {
+                        title: order.items[0].productId.title,
+                        images: order.items[0].productId.images || [],
+                        quantity: order.items.reduce((s, i) => s + i.quantity, 0)
+                      } : { title: 'Product', images: [], quantity: 1 });
+                      return (
+                        <div key={order._id} className="bg-white p-4 rounded-2xl shadow-sm border border-[#D4A373]/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer" onClick={() => { if (setActiveTab) setActiveTab('orders'); }}>
+                          <img src={item.images?.[0] || 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=200'} alt={item.title} className="w-16 h-16 object-cover rounded-xl shrink-0 bg-gray-50" />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-[#1F2937] truncate text-sm">{item.title}</h4>
+                            <p className="text-xs text-gray-500">Qty: {item.quantity} • {new Date(order.createdAt).toLocaleDateString()}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${order.orderStatus === 'Delivered' || order.orderStatus === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : order.orderStatus === 'Cancelled' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>{order.orderStatus}</span>
+                              <span className="font-bold text-[#8B5E3C] text-sm">${order.totalAmount}</span>
+                            </div>
+                          </div>
+                          <ArrowRight className="w-5 h-5 text-gray-300 shrink-0" />
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {purchasedOrders.length > 5 && (
+                    <div className="text-center mt-4">
+                      <button onClick={() => { if (setActiveTab) setActiveTab('orders'); }} className="text-[#8B5E3C] font-bold text-sm hover:underline">View All Orders →</button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </>
         );
       })()}
 
