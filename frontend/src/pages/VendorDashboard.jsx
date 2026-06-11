@@ -296,7 +296,7 @@ const VendorDashboard = ({
     // Trigger notification to user
     const notifObj = {
       _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      message: `New message from ${vendorName}: "${vendorMsgInput.substring(0, 30)}..."`,
+      message: `New message from ${profile?.companyName || 'Vendor'}: "${vendorMsgInput.substring(0, 30)}..."`,
       type: 'info',
       createdAt: new Date().toISOString(),
       read: false
@@ -307,7 +307,7 @@ const VendorDashboard = ({
     // Trigger notification to admin
     const aNotifObj = {
       _id: `anotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      message: `Vendor reply from ${vendorName} to ${selectedUserMsg}: "${vendorMsgInput.substring(0, 30)}..."`,
+      message: `Vendor reply from ${profile?.companyName || 'Vendor'} to ${selectedUserMsg}: "${vendorMsgInput.substring(0, 30)}..."`,
       type: 'info',
       createdAt: new Date().toISOString(),
       read: false
@@ -359,23 +359,7 @@ const VendorDashboard = ({
     
   };
 
-  useEffect(() => {
-    fetchPartnerData();
-
-    const handleSync = () => {
-      fetchPartnerData();
-    };
-
-    window.addEventListener('storage', handleSync);
-    window.addEventListener('focus', handleSync);
-
-    return () => {
-      window.removeEventListener('storage', handleSync);
-      window.removeEventListener('focus', handleSync);
-    };
-  }, []);
-
-    const fetchPartnerData = async () => {
+  const fetchPartnerData = async () => {
     const vendorId = user?._id;
 
     const results = await Promise.allSettled([
@@ -479,6 +463,23 @@ const VendorDashboard = ({
       setProducts(prodRes.value.data.data);
     }
   };
+
+  useEffect(() => {
+    fetchPartnerData();
+
+    const handleSync = () => {
+      fetchPartnerData();
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('focus', handleSync);
+
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, []);
+
   // Ready-made Orders Action Handlers
   const triggerNotification = (recipient, message, type = 'info') => {
     // API based notifications should ideally be triggered by the backend controllers during the update process.
