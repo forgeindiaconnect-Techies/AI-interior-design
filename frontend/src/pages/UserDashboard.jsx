@@ -1866,15 +1866,9 @@ Thank you for shopping with Artisan Studio!
                   filteredAiDesigns.map((design) => (
                     <div key={design._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
                       <div className="flex flex-col sm:flex-row items-center gap-6">
-                        {design.originalImage && (
-                          <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
-                            <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
-                            <img src={design.originalImage} alt="Original" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
-                          </div>
-                        )}
-                        <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
+                        <div className="w-full sm:w-64 shrink-0 relative group overflow-hidden rounded-2xl">
                           <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
-                          <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+                          <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
                         </div>
                         <div className="space-y-4 flex-1 w-full">
                           <div className="flex items-center justify-between">
