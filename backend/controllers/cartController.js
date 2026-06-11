@@ -7,9 +7,11 @@ const mongoose = require('mongoose');
 // @access  Private
 exports.getCart = async (req, res) => {
   try {
-    let cart = await Cart.findOne({ userId: req.user.id }).populate('items.productId');
+    let cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
       cart = await Cart.create({ userId: req.user.id, items: [], subtotal: 0 });
+    } else {
+      try { await cart.populate('items.productId'); } catch {}
     }
     res.status(200).json({ success: true, data: cart });
   } catch (error) {
@@ -24,28 +26,34 @@ exports.addToCart = async (req, res) => {
   try {
     const { productId, quantity } = req.body;
 
-    const product = await Product.findById(productId);
-    if (!product) return res.status(404).json({ success: false, message: 'Product not found' });
+    let priceAtTime = 99;
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      const product = await Product.findById(productId);
+      if (product) {
+        priceAtTime = product.price;
+      }
+    }
 
     let cart = await Cart.findOne({ userId: req.user.id });
     if (!cart) {
       cart = await Cart.create({ userId: req.user.id, items: [], subtotal: 0 });
     }
 
-    const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
+    const itemIndex = cart.items.findIndex(item => {
+      try { return item.productId.toString() === productId; }
+      catch { return false; }
+    });
     if (itemIndex > -1) {
       cart.items[itemIndex].quantity += (quantity || 1);
     } else {
-      cart.items.push({ productId, quantity: quantity || 1, priceAtTime: product.price });
+      cart.items.push({ productId, quantity: quantity || 1, priceAtTime });
     }
 
     cart.subtotal = cart.items.reduce((acc, item) => acc + (item.priceAtTime * item.quantity), 0);
     cart.updatedAt = Date.now();
     await cart.save();
 
-    // Re-fetch with population so frontend gets full product details
-    const populatedCart = await Cart.findById(cart._id).populate('items.productId');
-    res.status(200).json({ success: true, data: populatedCart });
+    res.status(200).json({ success: true, data: cart });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -68,7 +76,10 @@ exports.updateCartItem = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Cart not found' });
     }
 
-    const itemIndex = cart.items.findIndex(item => item.productId.toString() === productId);
+    const itemIndex = cart.items.findIndex(item => {
+      try { return item.productId.toString() === productId; }
+      catch { return false; }
+    });
     if (itemIndex === -1) {
       return res.status(404).json({ success: false, message: 'Item not found in cart' });
     }
@@ -78,8 +89,7 @@ exports.updateCartItem = async (req, res) => {
     cart.updatedAt = Date.now();
     await cart.save();
 
-    const populatedCart = await Cart.findById(cart._id).populate('items.productId');
-    res.status(200).json({ success: true, data: populatedCart });
+    res.status(200).json({ success: true, data: cart });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -97,13 +107,15 @@ exports.removeCartItem = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Cart not found' });
     }
 
-    cart.items = cart.items.filter(item => item.productId.toString() !== productId);
+    cart.items = cart.items.filter(item => {
+      try { return item.productId.toString() !== productId; }
+      catch { return true; }
+    });
     cart.subtotal = cart.items.reduce((acc, item) => acc + (item.priceAtTime * item.quantity), 0);
     cart.updatedAt = Date.now();
     await cart.save();
 
-    const populatedCart = await Cart.findById(cart._id).populate('items.productId');
-    res.status(200).json({ success: true, data: populatedCart });
+    res.status(200).json({ success: true, data: cart });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

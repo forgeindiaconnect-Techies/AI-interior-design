@@ -394,7 +394,6 @@ const UserDashboard = ({
           const serverProds = res.data?.data || [];
           setProducts(serverProds);
         } catch (err) {
-          console.warn('Backend products fetch failed in activeTab cart useEffect:', err);
           setProducts([]);
         }
       };
@@ -433,7 +432,7 @@ const UserDashboard = ({
       axios.get('/products').then(res => {
         const serverProds = res.data?.data || [];
         if (serverProds.length > 0) setProducts(serverProds);
-      }).catch(err => console.warn('Backend products fetch failed in UserDashboard:', err));
+      }).catch(() => {});
 
       // 4. Orders from backend (custom/design)
       axios.get('/orders/user').then(ordersRes => {

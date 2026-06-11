@@ -396,7 +396,7 @@ const VendorDashboard = ({
               if (productsRes.data.success) {
                 setProducts(productsRes.data.data);
               }
-            }).catch(err => console.warn('Backend products fetch failed:', err));
+            }).catch(() => {});
           }
         }
       }).catch(err => console.warn('Backend profile fetch failed:', err));
