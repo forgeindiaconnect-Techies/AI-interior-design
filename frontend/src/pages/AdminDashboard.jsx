@@ -8,6 +8,7 @@ import {
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
   Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare, RotateCcw
 } from 'lucide-react';
+import AiFallbackImage from '../components/AiFallbackImage';
 import AdminContactMessages from './admin/AdminContactMessages';
 
 const AdminDashboard = ({ 
@@ -7087,11 +7088,11 @@ const AdminDashboard = ({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Original Uploaded Room Photo</p>
-                  <img src={selectedAIDesign.originalImage || selectedAIDesign.aiDesignData?.originalImage || 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800'} alt="Original uploaded room" className="w-full h-64 object-cover rounded-2xl border border-gray-200 shadow-inner" />
+                  <img src={selectedAIDesign.originalImage || selectedAIDesign.aiDesignData?.originalImage || ''} alt="Original uploaded room" className="w-full h-64 object-cover rounded-2xl border border-gray-200 shadow-inner" onError={(e) => { if (e.target.src && !e.target.src.endsWith('/room-images/')) { e.target.style.display = 'none'; } }} />
                 </div>
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">AI Studio Stylized Design Output</p>
-                  <img src={selectedAIDesign.generatedImage || selectedAIDesign.aiDesignData?.generatedImage || selectedAIDesign.aiDesignData?.image || 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800'} alt="AI stylized room" className="w-full h-64 object-cover rounded-2xl border border-[#D4A373]/30 shadow-sm" />
+                  <AiFallbackImage src={selectedAIDesign.generatedImage || selectedAIDesign.aiDesignData?.generatedImage || selectedAIDesign.aiDesignData?.image} roomType={selectedAIDesign.roomType} alt="AI stylized room" className="w-full h-64 object-cover rounded-2xl border border-[#D4A373]/30 shadow-sm" />
                 </div>
               </div>
 

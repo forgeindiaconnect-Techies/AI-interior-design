@@ -23,6 +23,7 @@ import {
 import axios from 'axios';
 import HeroVideoSimulation from '../components/HeroVideoSimulation';
 import { useAuth } from '../context/AuthContext';
+import { loadManifest, buildRoomImageUrl } from '../utils/roomImages';
 
 const LandingPage = () => {
   const { user } = useAuth();
@@ -77,14 +78,20 @@ const LandingPage = () => {
         setAnalysisStep(steps[stepIndex]);
       } else {
         clearInterval(interval);
-        // Randomly select one of the pre-generated images
-        const mockResults = [
-          '/ai-results/living_room.png',
-          '/ai-results/bedroom.png',
-          '/ai-results/kitchen.png'
-        ];
-        setAiResultImage(mockResults[Math.floor(Math.random() * mockResults.length)]);
-        setAiState('complete');
+        // Use room images as AI mock results
+        loadManifest().then(() => {
+          const picks = [
+            { room: 'living_room', style: 'modern' },
+            { room: 'bedroom', style: 'scandinavian' },
+            { room: 'kitchen', style: 'modern' },
+            { room: 'bathroom', style: 'minimalist' },
+          ];
+          const pick = picks[Math.floor(Math.random() * picks.length)];
+          const url = buildRoomImageUrl(pick.room, pick.style, 0)
+            || `/room-images/${pick.room}/${pick.style}/${pick.room}_${pick.style}_0.jpg`;
+          setAiResultImage(url);
+          setAiState('complete');
+        });
       }
     }, 1500); // Takes about 9 seconds total
   };

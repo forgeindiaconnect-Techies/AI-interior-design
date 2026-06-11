@@ -38,8 +38,9 @@ Thumbs.db
 *.sw?
 temp.jsx
 .venv/
-bathroom/
-bedroom/
-kitchen/
-living_room/
+/bathroom/
+/bedroom/
+/kitchen/
+/living_room/
+# frontend/public/room-images/ is tracked (it's a subset of the above)
 *.csv

@@ -1,0 +1,325 @@
+{
+  "rooms": {
+    "kitchen": {
+      "styles": {
+        "boho": {
+          "total": 472,
+          "copied": [
+            "kitchen_boho_0.jpg",
+            "kitchen_boho_1.jpg",
+            "kitchen_boho_2.jpg",
+            "kitchen_boho_3.jpg",
+            "kitchen_boho_4.jpg",
+            "kitchen_boho_5.jpg",
+            "kitchen_boho_6.jpg",
+            "kitchen_boho_7.jpg",
+            "kitchen_boho_8.jpg",
+            "kitchen_boho_9.jpg"
+          ]
+        },
+        "industrial": {
+          "total": 300,
+          "copied": [
+            "kitchen_industrial_0.jpg",
+            "kitchen_industrial_1.jpg",
+            "kitchen_industrial_2.jpg",
+            "kitchen_industrial_3.jpg",
+            "kitchen_industrial_4.jpg",
+            "kitchen_industrial_5.jpg",
+            "kitchen_industrial_6.jpg",
+            "kitchen_industrial_7.jpg",
+            "kitchen_industrial_8.jpg",
+            "kitchen_industrial_9.jpg"
+          ]
+        },
+        "minimalist": {
+          "total": 189,
+          "copied": [
+            "kitchen_minimalist_0.jpg",
+            "kitchen_minimalist_1.jpg",
+            "kitchen_minimalist_2.jpg",
+            "kitchen_minimalist_3.jpg",
+            "kitchen_minimalist_4.jpg",
+            "kitchen_minimalist_5.jpg",
+            "kitchen_minimalist_6.jpg",
+            "kitchen_minimalist_7.jpg",
+            "kitchen_minimalist_8.jpg",
+            "kitchen_minimalist_9.jpg"
+          ]
+        },
+        "modern": {
+          "total": 387,
+          "copied": [
+            "kitchen_modern_0.jpg",
+            "kitchen_modern_1.jpg",
+            "kitchen_modern_2.jpg",
+            "kitchen_modern_3.jpg",
+            "kitchen_modern_4.jpg",
+            "kitchen_modern_5.jpg",
+            "kitchen_modern_6.jpg",
+            "kitchen_modern_7.jpg",
+            "kitchen_modern_8.jpg",
+            "kitchen_modern_9.jpg"
+          ]
+        },
+        "scandinavian": {
+          "total": 150,
+          "copied": [
+            "kitchen_scandinavian_0.jpg",
+            "kitchen_scandinavian_1.jpg",
+            "kitchen_scandinavian_2.jpg",
+            "kitchen_scandinavian_3.jpg",
+            "kitchen_scandinavian_4.jpg",
+            "kitchen_scandinavian_5.jpg",
+            "kitchen_scandinavian_6.jpg",
+            "kitchen_scandinavian_7.jpg",
+            "kitchen_scandinavian_8.jpg",
+            "kitchen_scandinavian_9.jpg"
+          ]
+        }
+      }
+    },
+    "bedroom": {
+      "styles": {
+        "boho": {
+          "total": 140,
+          "copied": [
+            "bedroom_boho_0.jpg",
+            "bedroom_boho_1.jpg",
+            "bedroom_boho_2.jpg",
+            "bedroom_boho_3.jpg",
+            "bedroom_boho_4.jpg",
+            "bedroom_boho_5.jpg",
+            "bedroom_boho_6.jpg",
+            "bedroom_boho_7.jpg",
+            "bedroom_boho_8.jpg",
+            "bedroom_boho_9.jpg"
+          ]
+        },
+        "industrial": {
+          "total": 203,
+          "copied": [
+            "bedroom_industrial_0.jpg",
+            "bedroom_industrial_1.jpg",
+            "bedroom_industrial_2.jpg",
+            "bedroom_industrial_3.jpg",
+            "bedroom_industrial_4.jpg",
+            "bedroom_industrial_5.jpg",
+            "bedroom_industrial_6.jpg",
+            "bedroom_industrial_7.jpg",
+            "bedroom_industrial_8.jpg",
+            "bedroom_industrial_9.jpg"
+          ]
+        },
+        "minimalist": {
+          "total": 184,
+          "copied": [
+            "bedroom_minimalist_0.jpg",
+            "bedroom_minimalist_1.jpg",
+            "bedroom_minimalist_2.jpg",
+            "bedroom_minimalist_3.jpg",
+            "bedroom_minimalist_4.jpg",
+            "bedroom_minimalist_5.jpg",
+            "bedroom_minimalist_6.jpg",
+            "bedroom_minimalist_7.jpg",
+            "bedroom_minimalist_8.jpg",
+            "bedroom_minimalist_9.jpg"
+          ]
+        },
+        "modern": {
+          "total": 201,
+          "copied": [
+            "bedroom_modern_0.jpg",
+            "bedroom_modern_1.jpg",
+            "bedroom_modern_2.jpg",
+            "bedroom_modern_3.jpg",
+            "bedroom_modern_4.jpg",
+            "bedroom_modern_5.jpg",
+            "bedroom_modern_6.jpg",
+            "bedroom_modern_7.jpg",
+            "bedroom_modern_8.jpg",
+            "bedroom_modern_9.jpg"
+          ]
+        },
+        "scandinavian": {
+          "total": 153,
+          "copied": [
+            "bedroom_scandinavian_0.jpg",
+            "bedroom_scandinavian_1.jpg",
+            "bedroom_scandinavian_2.jpg",
+            "bedroom_scandinavian_3.jpg",
+            "bedroom_scandinavian_4.jpg",
+            "bedroom_scandinavian_5.jpg",
+            "bedroom_scandinavian_6.jpg",
+            "bedroom_scandinavian_7.jpg",
+            "bedroom_scandinavian_8.jpg",
+            "bedroom_scandinavian_9.jpg"
+          ]
+        }
+      }
+    },
+    "bathroom": {
+      "styles": {
+        "boho": {
+          "total": 122,
+          "copied": [
+            "bathroom_boho_0.jpg",
+            "bathroom_boho_1.jpg",
+            "bathroom_boho_2.jpg",
+            "bathroom_boho_3.jpg",
+            "bathroom_boho_4.jpg",
+            "bathroom_boho_5.jpg",
+            "bathroom_boho_6.jpg",
+            "bathroom_boho_7.jpg",
+            "bathroom_boho_8.jpg",
+            "bathroom_boho_9.jpg"
+          ]
+        },
+        "industrial": {
+          "total": 155,
+          "copied": [
+            "bathroom_industrial_0.jpg",
+            "bathroom_industrial_1.jpg",
+            "bathroom_industrial_2.jpg",
+            "bathroom_industrial_3.jpg",
+            "bathroom_industrial_4.jpg",
+            "bathroom_industrial_5.jpg",
+            "bathroom_industrial_6.jpg",
+            "bathroom_industrial_7.jpg",
+            "bathroom_industrial_8.jpg",
+            "bathroom_industrial_9.jpg"
+          ]
+        },
+        "minimalist": {
+          "total": 168,
+          "copied": [
+            "bathroom_minimalist_0.jpg",
+            "bathroom_minimalist_1.jpg",
+            "bathroom_minimalist_2.jpg",
+            "bathroom_minimalist_3.jpg",
+            "bathroom_minimalist_4.jpg",
+            "bathroom_minimalist_5.jpg",
+            "bathroom_minimalist_6.jpg",
+            "bathroom_minimalist_7.jpg",
+            "bathroom_minimalist_8.jpg",
+            "bathroom_minimalist_9.jpg"
+          ]
+        },
+        "modern": {
+          "total": 138,
+          "copied": [
+            "bathroom_modern_0.jpg",
+            "bathroom_modern_1.jpg",
+            "bathroom_modern_2.jpg",
+            "bathroom_modern_3.jpg",
+            "bathroom_modern_4.jpg",
+            "bathroom_modern_5.jpg",
+            "bathroom_modern_6.jpg",
+            "bathroom_modern_7.jpg",
+            "bathroom_modern_8.jpg",
+            "bathroom_modern_9.jpg"
+          ]
+        },
+        "scandinavian": {
+          "total": 121,
+          "copied": [
+            "bathroom_scandinavian_0.jpg",
+            "bathroom_scandinavian_1.jpg",
+            "bathroom_scandinavian_2.jpg",
+            "bathroom_scandinavian_3.jpg",
+            "bathroom_scandinavian_4.jpg",
+            "bathroom_scandinavian_5.jpg",
+            "bathroom_scandinavian_6.jpg",
+            "bathroom_scandinavian_7.jpg",
+            "bathroom_scandinavian_8.jpg",
+            "bathroom_scandinavian_9.jpg"
+          ]
+        }
+      }
+    },
+    "living_room": {
+      "styles": {
+        "boho": {
+          "total": 184,
+          "copied": [
+            "living_room_boho_0.jpg",
+            "living_room_boho_1.jpg",
+            "living_room_boho_2.jpg",
+            "living_room_boho_3.jpg",
+            "living_room_boho_4.jpg",
+            "living_room_boho_5.jpg",
+            "living_room_boho_6.jpg",
+            "living_room_boho_7.jpg",
+            "living_room_boho_8.jpg",
+            "living_room_boho_9.jpg"
+          ]
+        },
+        "industrial": {
+          "total": 201,
+          "copied": [
+            "living_room_industrial_0.jpg",
+            "living_room_industrial_1.jpg",
+            "living_room_industrial_2.jpg",
+            "living_room_industrial_3.jpg",
+            "living_room_industrial_4.jpg",
+            "living_room_industrial_5.jpg",
+            "living_room_industrial_6.jpg",
+            "living_room_industrial_7.jpg",
+            "living_room_industrial_8.jpg",
+            "living_room_industrial_9.jpg"
+          ]
+        },
+        "minimalist": {
+          "total": 203,
+          "copied": [
+            "living_room_minimalist_0.jpg",
+            "living_room_minimalist_1.jpg",
+            "living_room_minimalist_2.jpg",
+            "living_room_minimalist_3.jpg",
+            "living_room_minimalist_4.jpg",
+            "living_room_minimalist_5.jpg",
+            "living_room_minimalist_6.jpg",
+            "living_room_minimalist_7.jpg",
+            "living_room_minimalist_8.jpg",
+            "living_room_minimalist_9.jpg"
+          ]
+        },
+        "modern": {
+          "total": 300,
+          "copied": [
+            "living_room_modern_0.jpg",
+            "living_room_modern_1.jpg",
+            "living_room_modern_2.jpg",
+            "living_room_modern_3.jpg",
+            "living_room_modern_4.jpg",
+            "living_room_modern_5.jpg",
+            "living_room_modern_6.jpg",
+            "living_room_modern_7.jpg",
+            "living_room_modern_8.jpg",
+            "living_room_modern_9.jpg"
+          ]
+        },
+        "scandinavian": {
+          "total": 168,
+          "copied": [
+            "living_room_scandinavian_0.jpg",
+            "living_room_scandinavian_1.jpg",
+            "living_room_scandinavian_2.jpg",
+            "living_room_scandinavian_3.jpg",
+            "living_room_scandinavian_4.jpg",
+            "living_room_scandinavian_5.jpg",
+            "living_room_scandinavian_6.jpg",
+            "living_room_scandinavian_7.jpg",
+            "living_room_scandinavian_8.jpg",
+            "living_room_scandinavian_9.jpg"
+          ]
+        }
+      }
+    }
+  },
+  "_meta": {
+    "generatedAt": "2026-06-11T11:02:46.305Z",
+    "totalImagesCopied": 200,
+    "note": "Images are copied from root-level room folders. Add new images to those folders and rebuild to update."
+  }
+}

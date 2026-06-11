@@ -8,6 +8,7 @@ import {
   Star, Briefcase, ShieldCheck, Bell, ShoppingCart, FileText, Activity,
   Search, Filter, Calendar, MapPin, Phone, Mail, Check, X, Download, AlertTriangle, ChevronRight, Bot, AlertCircle, HelpCircle, XCircle, CreditCard, Trash2
 } from 'lucide-react';
+import AiFallbackImage from '../components/AiFallbackImage';
 
 const VendorDashboard = ({ 
   activeTab = 'overview', 
@@ -2500,7 +2501,7 @@ const VendorDashboard = ({
                         <div className="flex gap-3 shrink-0">
                           <div className="relative">
                             <a href={req.generatedImage || req.referenceImages?.[0]} target="_blank" rel="noreferrer">
-                              <img src={req.generatedImage || req.referenceImages?.[0] || '/ai-results/living_room.png'} alt="AI Generated" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-[#2A9D8F]/30" />
+                              <AiFallbackImage src={req.generatedImage || req.referenceImages?.[0]} roomType={req.roomType} alt="AI Generated" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-[#2A9D8F]/30" />
                             </a>
                             <span className="absolute bottom-2 left-2 bg-[#2A9D8F]/90 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">AI Generated</span>
                             {req.versionNumber > 1 && (

@@ -8,6 +8,7 @@ import {
   LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, ArrowLeft, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
+import AiFallbackImage from '../components/AiFallbackImage';
 import Marketplace from './Marketplace';
 
 
@@ -1645,12 +1646,12 @@ Thank you for shopping with Artisan Studio!
                         <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">AI Generated Design</h3>
                       </div>
                       <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
-                        <img
-                          src={latestDesign.generatedImage}
-                          alt="AI Design Output"
-                          className="w-full h-full object-cover"
-                          onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'}
-                        />
+                          <AiFallbackImage
+                            src={latestDesign.generatedImage}
+                            roomType={latestDesign.roomType}
+                            alt="AI Design Output"
+                            className="w-full h-full object-cover"
+                          />
                       </div>
                     </div>
 
@@ -1758,12 +1759,12 @@ Thank you for shopping with Artisan Studio!
                         {design.originalImage && (
                           <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
                             <span className="absolute top-2 left-2 bg-black/50 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Original</span>
-                            <img src={design.originalImage} alt="Original" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
+                            <img src={design.originalImage} alt="Original" className="w-full sm:w-48 h-36 sm:h-48 object-cover rounded-2xl shadow-inner border-2 border-dashed border-gray-200" />
                           </div>
                         )}
                         <div className="flex-1 w-full sm:w-auto relative group overflow-hidden rounded-2xl">
                           <span className="absolute top-2 left-2 bg-[#8B5E3C]/80 text-white text-[10px] px-2 py-1 rounded-full uppercase font-bold tracking-wider z-10 backdrop-blur-sm">Generated</span>
-                          <img src={design.generatedImage} alt="AI Design" onError={(e) => e.target.src = 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'} className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
+                          <AiFallbackImage src={design.generatedImage} roomType={design.roomType} alt="AI Design" className="w-full sm:w-64 h-48 object-cover rounded-2xl shadow-inner border-2 border-transparent group-hover:border-[#8B5E3C] transition-all" />
                         </div>
                         <div className="space-y-4 flex-1 w-full">
                           <div className="flex items-center justify-between">
@@ -3826,7 +3827,7 @@ Thank you for shopping with Artisan Studio!
             ) : (
               savedDesigns.map(design => (
                 <div key={design._id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/20 group relative">
-                  <img src={design.generatedImage || "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=500"} alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <AiFallbackImage src={design.generatedImage} roomType={design.roomType} alt="Saved" className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
                   <div className="absolute top-3 right-3 flex flex-col gap-2">
                     <button onClick={() => handleToggleBookmark(design._id)} className="p-2 bg-white rounded-full shadow-md text-red-500 hover:text-red-700 transition-all" title="Unsave">
                       <Bookmark className="w-4 h-4 fill-current" />
