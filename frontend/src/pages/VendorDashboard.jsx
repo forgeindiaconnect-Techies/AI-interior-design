@@ -814,6 +814,8 @@ const VendorDashboard = ({
         ]);
         await fetchPartnerData(); // Refresh products so it appears on User Dashboard too.
         showToast('✅ Product listed successfully. Now live in Marketplace!', 'success');
+        // Switch to inventory tab showing the newly added product
+        if (setActiveTab) setActiveTab('inventory');
       } else {
         showToast(res.data?.message || 'Failed to list product.', 'error');
       }
