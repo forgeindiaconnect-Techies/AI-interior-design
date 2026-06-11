@@ -439,7 +439,8 @@ const getStageIndex = (status) => TRACKING_STAGE_SEQUENCE.indexOf(status);
 // @access  Private
 exports.getOrderTracking = async (req, res) => {
   try {
-    let order = await Order.findById(req.params.id)
+    const orderId = req.params.orderId || req.params.id;
+    let order = await Order.findById(orderId)
       .populate('userId', 'name email phone')
       .populate('vendorId', 'companyName');
 
@@ -447,7 +448,7 @@ exports.getOrderTracking = async (req, res) => {
 
     if (!order) {
       const MarketplaceOrder = require('../models/MarketplaceOrder');
-      const mktOrder = await MarketplaceOrder.findById(req.params.id)
+      const mktOrder = await MarketplaceOrder.findById(orderId)
         .populate('userId', 'name email phone')
         .populate('items.productId', 'title images')
         .populate('items.vendorId', 'companyName');
@@ -475,10 +476,10 @@ exports.getOrderTracking = async (req, res) => {
       };
     }
 
-    let tracking = await OrderTracking.findOne({ orderId: req.params.id });
+    let tracking = await OrderTracking.findOne({ orderId });
     if (!tracking) {
       tracking = {
-        orderId: req.params.id,
+        orderId,
         userId: order.userId,
         vendorId: order.vendorId,
         orderStatus: order.orderStatus,
