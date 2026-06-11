@@ -994,12 +994,35 @@ const AdminDashboard = ({
       localTxns.forEach(lt => {
         if (!mergedTxns.find(t => t._id === lt._id)) mergedTxns.push(lt);
       });
+
+      // Read vendor payout requests from localStorage and add as pending transactions
+      const vendorPayouts = JSON.parse(localStorage.getItem('mockVendorPayouts') || '[]');
+      let pendingPayoutsTotal = 1600;
+      vendorPayouts.forEach(vp => {
+        const txnId = 'vp_' + vp.id;
+        if (!mergedTxns.find(t => t._id === txnId)) {
+          mergedTxns.push({
+            _id: txnId,
+            orderId: 'payout_req_' + vp.id,
+            vendorId: { companyName: vp.vendorName },
+            amount: vp.amount,
+            commissionAmount: Math.round(vp.amount * (commissionRate || 15) / 100),
+            netPayout: vp.amount,
+            status: 'Pending',
+            type: 'Vendor Payout',
+            createdAt: new Date().toISOString(),
+            vendorEmail: vp.vendorEmail || ''
+          });
+          pendingPayoutsTotal += vp.amount;
+        }
+      });
+
       setTransactions(mergedTxns);
       setPaymentStats({
-        totalPlatformRevenue: 19550,
-        estimatedCommission: 2932.5,
+        totalPlatformRevenue: 19550 + pendingPayoutsTotal,
+        estimatedCommission: Math.round((19550 + pendingPayoutsTotal) * (commissionRate || 15) / 100),
         disbursedPayouts: 11050,
-        pendingPayouts: 1600
+        pendingPayouts: pendingPayoutsTotal
       });
     } finally {
       setLoadingTransactions(false);

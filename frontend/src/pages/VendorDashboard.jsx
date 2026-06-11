@@ -1228,8 +1228,14 @@ const VendorDashboard = ({
     }
     setIsPayoutRequested(true);
 
-    // Send notification to admin
+    // Persist to localStorage for admin to read
     const amount = stats?.revenue || 24500;
+    const payoutEntry = { id: Date.now(), date: new Date().toLocaleString(), amount, method: 'Bank Transfer', account: 'Registered Account', status: 'Processing', vendorName: profile?.companyName || 'Vendor', vendorEmail: user?.email || '' };
+    const vendorPayouts = JSON.parse(localStorage.getItem('mockVendorPayouts') || '[]');
+    vendorPayouts.push(payoutEntry);
+    localStorage.setItem('mockVendorPayouts', JSON.stringify(vendorPayouts));
+
+    // Send notification to admin
     const notifObj = {
       _id: `pnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       message: `💰 Instant payout requested by ${profile?.companyName || 'Vendor'}: ₹${amount.toLocaleString()}`,
@@ -3915,6 +3921,11 @@ const VendorDashboard = ({
           setReqAmount(''); setReqAccount(''); setReqNote('');
           setSubmitted(true);
           setTimeout(() => setSubmitted(false), 3000);
+
+          // Persist to localStorage for admin to read
+          const vendorPayouts = JSON.parse(localStorage.getItem('mockVendorPayouts') || '[]');
+          vendorPayouts.push({ ...newPayout, vendorName: profile?.companyName || 'Vendor', vendorEmail: user?.email || '' });
+          localStorage.setItem('mockVendorPayouts', JSON.stringify(vendorPayouts));
 
           // Send notification to admin
           const notifObj = {
