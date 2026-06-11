@@ -1,8 +1,82 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Star, ShoppingCart, Heart, Eye, ArrowRight, Truck } from 'lucide-react';
+import { Search, Star, ShoppingCart, Heart, Eye, ArrowRight, Truck, ChevronDown } from 'lucide-react';
 import axios from 'axios';
 import { useToast } from '../components/Toast';
+
+const ITEMS_PER_PAGE = 8;
+
+const ProductCard = React.memo(({ product, onAddToCart, onSaveItem, onNavigate }) => (
+  <div
+    className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/30 hover:shadow-xl transition-all cursor-pointer group flex flex-col h-full"
+    onClick={() => onNavigate(product._id)}
+  >
+    <div className="relative h-64 overflow-hidden bg-[#F3F0EB]">
+      <img
+        src={product.images[0]}
+        alt={product.title}
+        loading="lazy"
+        decoding="async"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+      />
+      <div className="absolute top-4 right-4 flex flex-col gap-2">
+        <button onClick={(e) => onSaveItem(e, product._id)} className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white transition-all shadow-sm">
+          <Heart className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="absolute bottom-4 left-4">
+        <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-[#1F2937] shadow-sm">
+          {product.category}
+        </span>
+      </div>
+    </div>
+
+    <div className="p-6 flex flex-col flex-grow">
+      <div className="flex justify-between items-start mb-2">
+        <div>
+          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] line-clamp-1">{product.title}</h3>
+          <p className="text-xs text-[#6B7280] font-medium mt-1">by {product.vendorId?.companyName || 'Artisan Workshop'}</p>
+        </div>
+        <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C] whitespace-nowrap">₹{product.price}</span>
+      </div>
+
+      <div className="flex items-center gap-4 mt-2 mb-4">
+        <div className="flex items-center gap-1 text-[#E9C46A]">
+          <Star className="w-4 h-4 fill-current" />
+          <span className="text-sm font-bold text-[#1F2937]">{product.rating || 4.8}</span>
+          <span className="text-xs text-[#6B7280]">({product.reviewsCount || 0})</span>
+        </div>
+        <div className="flex items-center gap-1 text-[#2A9D8F]">
+          <Truck className="w-4 h-4" />
+          <span className="text-xs font-bold uppercase tracking-wider">3-5 Days</span>
+        </div>
+      </div>
+
+      <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
+        <button onClick={(e) => onAddToCart(e, product._id)} className="flex-1 bg-[#1F2937] hover:bg-black text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
+          <ShoppingCart className="w-4 h-4" /> Add to Cart
+        </button>
+        <button className="px-4 py-3 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl transition-colors shadow-inner flex items-center justify-center">
+          <Eye className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  </div>
+));
+
+const SkeletonCard = () => (
+  <div className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/30 flex flex-col h-full animate-pulse">
+    <div className="relative h-64 bg-gray-200" />
+    <div className="p-6 flex flex-col flex-grow space-y-3">
+      <div className="h-5 bg-gray-200 rounded w-3/4" />
+      <div className="h-3 bg-gray-200 rounded w-1/2" />
+      <div className="h-4 bg-gray-200 rounded w-1/4" />
+      <div className="mt-auto pt-4 border-t border-gray-100">
+        <div className="h-11 bg-gray-200 rounded-xl" />
+      </div>
+    </div>
+  </div>
+);
 
 const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
   const { showToast } = useToast();
@@ -11,6 +85,11 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  useEffect(() => {
+    setVisibleCount(ITEMS_PER_PAGE);
+  }, [activeCategory, searchQuery]);
 
   const categories = ['All', 'Living Room', 'Bedroom', 'Dining Room', 'Lighting', 'Decor', 'Outdoor'];
 
@@ -49,12 +128,9 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     }
   };
 
-  const handleAddToCart = (e, productId) => {
+  const handleAddToCart = useCallback((e, productId) => {
     e.stopPropagation();
-    
-    // Fire API call in the background without awaiting it to ensure instant UI response
     axios.post('/cart', { productId, quantity: 1 }).catch(() => {});
-    
     window.dispatchEvent(new Event('cartUpdated'));
     showToast('🛒 Product added to your cart!');
     if (onGoToCart) {
@@ -63,9 +139,9 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
       localStorage.setItem('activeDashboardTab', 'cart');
       navigate('/dashboard/user');
     }
-  };
+  }, [showToast, onGoToCart, navigate]);
 
-  const handleSaveItem = async (e, productId) => {
+  const handleSaveItem = useCallback(async (e, productId) => {
     e.stopPropagation();
     try {
       await axios.post('/wishlist/toggle', { productId });
@@ -73,64 +149,30 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
     } catch (error) {
       alert('Saved to wishlist (Demo mode)');
     }
+  }, []);
+
+  const handleNavigate = useCallback((id) => {
+    navigate(`/marketplace/product/${id}`);
+  }, [navigate]);
+
+  const handleLoadMore = () => {
+    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
   };
 
-  const filteredProducts = products.filter(p => 
-    (activeCategory === 'All' || p.category === activeCategory) &&
-    p.title.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProducts = useMemo(() =>
+    products.filter(p =>
+      (activeCategory === 'All' || p.category === activeCategory) &&
+      p.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ),
+    [products, activeCategory, searchQuery]
   );
 
-  const ProductCard = ({ product }) => (
-    <div 
-      className="bg-white rounded-3xl overflow-hidden shadow-sm border border-[#D4A373]/30 hover:shadow-xl transition-all cursor-pointer group flex flex-col h-full"
-      onClick={() => navigate(`/marketplace/product/${product._id}`)}
-    >
-      <div className="relative h-64 overflow-hidden">
-        <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-        <div className="absolute top-4 right-4 flex flex-col gap-2">
-          <button onClick={(e) => handleSaveItem(e, product._id)} className="w-10 h-10 bg-white/80 backdrop-blur-md rounded-full flex items-center justify-center text-gray-500 hover:text-red-500 hover:bg-white transition-all shadow-sm">
-            <Heart className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="absolute bottom-4 left-4">
-          <span className="bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-[#1F2937] shadow-sm">
-            {product.category}
-          </span>
-        </div>
-      </div>
-      
-      <div className="p-6 flex flex-col flex-grow">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937] line-clamp-1">{product.title}</h3>
-            <p className="text-xs text-[#6B7280] font-medium mt-1">by {product.vendorId?.companyName || 'Artisan Workshop'}</p>
-          </div>
-          <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">₹{product.price}</span>
-        </div>
-        
-        <div className="flex items-center gap-4 mt-2 mb-4">
-          <div className="flex items-center gap-1 text-[#E9C46A]">
-            <Star className="w-4 h-4 fill-current" />
-            <span className="text-sm font-bold text-[#1F2937]">{product.rating || 4.8}</span>
-            <span className="text-xs text-[#6B7280]">({product.reviewsCount || 0})</span>
-          </div>
-          <div className="flex items-center gap-1 text-[#2A9D8F]">
-            <Truck className="w-4 h-4" />
-            <span className="text-xs font-bold uppercase tracking-wider">3-5 Days</span>
-          </div>
-        </div>
-        
-        <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
-          <button onClick={(e) => handleAddToCart(e, product._id)} className="flex-1 bg-[#1F2937] hover:bg-black text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
-            <ShoppingCart className="w-4 h-4" /> Add to Cart
-          </button>
-          <button className="px-4 py-3 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl transition-colors shadow-inner flex items-center justify-center">
-            <Eye className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </div>
+  const visibleProducts = useMemo(() =>
+    filteredProducts.slice(0, visibleCount),
+    [filteredProducts, visibleCount]
   );
+
+  const hasMore = visibleProducts.length < filteredProducts.length;
 
   const content = (
     <>
@@ -192,7 +234,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
               <button className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1 hover:underline">View All <ArrowRight className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.slice(0, 3).map(p => <ProductCard key={p._id} product={p} />)}
+              {products.slice(0, 3).map(p => <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} onSaveItem={handleSaveItem} onNavigate={handleNavigate} />)}
             </div>
           </div>
         )}
@@ -204,13 +246,24 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
               {searchQuery ? 'Search Results' : activeCategory === 'All' ? 'Trending Collection' : `${activeCategory} Collection`}
             </h2>
           </div>
-          
+
           {loading ? (
-            <div className="h-64 flex items-center justify-center font-bold text-[#8B5E3C]">Loading collection...</div>
-          ) : filteredProducts.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredProducts.map(p => <ProductCard key={p._id} product={p} />)}
+              {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
             </div>
+          ) : visibleProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {visibleProducts.map(p => <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} onSaveItem={handleSaveItem} onNavigate={handleNavigate} />)}
+              </div>
+              {hasMore && (
+                <div className="flex justify-center pt-4">
+                  <button onClick={handleLoadMore} className="px-8 py-3 bg-white border-2 border-[#D4A373]/50 hover:border-[#8B5E3C] text-[#8B5E3C] rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm">
+                    Show More <ChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-20 bg-white rounded-3xl border border-gray-100">
               <p className="text-gray-500 font-bold">No products found matching your search.</p>
