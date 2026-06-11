@@ -4041,6 +4041,125 @@ const VendorDashboard = ({
         );
       })()}
 
+      {/* ACCOUNT INFORMATION TAB */}
+      {activeTab === 'account' && (
+        <div className="max-w-4xl space-y-8 animate-fadeIn">
+          <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
+            <div className="w-12 h-12 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Account Information</h2>
+              <p className="text-gray-500 text-sm">Your vendor account details and registration status.</p>
+            </div>
+          </div>
+
+          {!profile ? (
+            <div className="flex items-center justify-center py-16">
+              <RefreshCw className="w-6 h-6 animate-spin text-[#2A9D8F]" />
+            </div>
+          ) : (
+            <>
+              {/* Profile Header */}
+              <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30">
+                <div className="flex items-start gap-6">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#2A9D8F] to-[#21867a] text-white flex items-center justify-center font-bold text-3xl shadow-lg shrink-0">
+                    {(profile.companyName || user?.companyName || 'V').charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-2xl text-[#1F2937]">{profile.companyName || user?.companyName || 'Your Store'}</h3>
+                    <p className="text-gray-500 mt-1">{profile.description || 'Furniture & Interior Vendor'}</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                        profile.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'
+                      }`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${profile.isActive ? 'bg-[#2A9D8F]' : 'bg-[#E76F51]'}`} />
+                        {profile.isActive ? 'Active' : 'Suspended'}
+                      </span>
+                      {(profile.verificationStatus === 'Approved' || profile.isVerified) && (
+                        <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600">
+                          <CheckCircle className="w-3 h-3" /> Verified
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-6">
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-5">
+                  <h4 className="font-bold text-sm text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-3">Business Information</h4>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Company Name</p>
+                      <p className="font-semibold text-[#1F2937] mt-0.5">{profile.companyName || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Owner Name</p>
+                      <p className="font-semibold text-[#1F2937] mt-0.5">{profile.name || user?.name || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Category</p>
+                      <p className="font-semibold text-[#1F2937] mt-0.5 capitalize">{profile.businessType || profile.category || 'General'}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Registered Since</p>
+                      <p className="font-semibold text-[#1F2937] mt-0.5">{profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-5">
+                  <h4 className="font-bold text-sm text-gray-500 uppercase tracking-wider border-b border-gray-100 pb-3">Contact Information</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</p>
+                        <p className="font-semibold text-[#1F2937] mt-0.5">{profile.email || user?.email || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-gray-400 shrink-0" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</p>
+                        <p className="font-semibold text-[#1F2937] mt-0.5">{profile.phone || user?.phone || '—'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <MapPin className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</p>
+                        <p className="font-semibold text-[#1F2937] mt-0.5">{profile.address || user?.address || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Registration Status */}
+              <div className={`p-6 rounded-3xl border ${
+                user?.status === 'Approved' || user?.status === 'Active' ? 'bg-emerald-50 border-emerald-200' :
+                user?.status === 'Rejected' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'
+              }`}>
+                <div className="flex items-center gap-3 mb-3">
+                  {user?.status === 'Approved' || user?.status === 'Active' ? <CheckCircle className="w-5 h-5 text-emerald-600" /> :
+                   user?.status === 'Rejected' ? <XCircle className="w-5 h-5 text-red-600" /> : <AlertCircle className="w-5 h-5 text-amber-600" />}
+                  <h3 className="font-bold text-lg">Registration Status: {user?.status === 'Active' ? 'Approved' : user?.status || 'Pending'}</h3>
+                </div>
+                <p className="text-sm opacity-80">
+                  {user?.status === 'Approved' || user?.status === 'Active'
+                    ? 'Your vendor account has been approved. You have full access to marketplace features.'
+                    : user?.status === 'Rejected'
+                    ? `Your registration was rejected. Reason: ${user?.rejectedReason || 'Please contact support.'}`
+                    : 'Your account is awaiting admin approval. Some features will remain locked until your registration is approved.'}
+                </p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };

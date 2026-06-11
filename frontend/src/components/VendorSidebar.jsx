@@ -187,6 +187,9 @@ const VendorSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0
           </div>
         ))}
 
+        {/* Account Information */}
+        <NavItem name="Account Information" icon={ShieldCheck} tab="account" color="#2A9D8F" />
+
         {/* Outer-level Notifications Item */}
         <div style={{ marginTop: 10 }}>
           <NavItem name="Notifications" icon={Bell} tab="notifications" badge={unreadNotifCount} isBadgeCoral={true} color="#EF4444" />

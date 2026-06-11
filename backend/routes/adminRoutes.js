@@ -54,7 +54,14 @@ const {
   updateUserStatus,
   getVendorRegistrations,
   approveVendorRegistration,
-  rejectVendorRegistration
+  rejectVendorRegistration,
+  addVendor,
+  editVendor,
+  getAllVendors,
+  getVendorDetails,
+  deleteVendor,
+  approveVendor,
+  rejectVendor
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -143,5 +150,14 @@ router.delete('/permissions/:id', deleteSubAdmin);
 // Platform Reviews Management Routes
 router.get('/reviews', getAllReviews);
 router.delete('/reviews/:id', deleteReview);
+
+// Vendor CRUD Routes
+router.get('/vendors', getAllVendors);
+router.post('/vendors', addVendor);
+router.get('/vendors/:id', getVendorDetails);
+router.put('/vendors/:id', editVendor);
+router.delete('/vendors/:id', deleteVendor);
+router.put('/vendors/:id/approve', approveVendor);
+router.put('/vendors/:id/reject', rejectVendor);
 
 module.exports = router;

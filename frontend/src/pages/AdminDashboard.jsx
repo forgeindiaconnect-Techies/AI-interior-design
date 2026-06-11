@@ -6,7 +6,7 @@ import {
   DollarSign, Bell, AlertCircle, RefreshCw, Eye, Send, BarChart2, ShieldCheck,
   LayoutDashboard, Key, HelpCircle, FileText, Sparkles, UserCheck, CheckSquare,
   UserX, UserPlus, Search, Filter, Calendar, Trash2, Lock, Unlock, Info, Plus, CreditCard, Activity,
-  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare, RotateCcw
+  Wrench, Package, List, MapPin, Download, Layers, Clock, Paintbrush, ArrowRight, MessageSquare, RotateCcw, X
 } from 'lucide-react';
 import AiFallbackImage from '../components/AiFallbackImage';
 import AdminContactMessages from './admin/AdminContactMessages';
@@ -367,6 +367,23 @@ const AdminDashboard = ({
   const [designerRequestStatusFilter, setDesignerRequestStatusFilter] = useState('all');
   const [designerRequestBudgetFilter, setDesignerRequestBudgetFilter] = useState('all');
   const [selectedRequestDesignerId, setSelectedRequestDesignerId] = useState('');
+
+  // Vendor CRUD States
+  const [vendors, setVendors] = useState([]);
+  const [loadingVendors, setLoadingVendors] = useState(false);
+  const [vendorSearch, setVendorSearch] = useState('');
+  const [vendorStatusFilter, setVendorStatusFilter] = useState('all');
+  const [showAddVendorModal, setShowAddVendorModal] = useState(false);
+  const [showEditVendorModal, setShowEditVendorModal] = useState(false);
+  const [showViewVendorModal, setShowViewVendorModal] = useState(false);
+  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [deleteConfirmVendor, setDeleteConfirmVendor] = useState(null);
+  const [vendorForm, setVendorForm] = useState({
+    name: '', companyName: '', email: '', phone: '', password: '',
+    address: '', businessType: 'vendor', category: '', status: 'Active'
+  });
+  const [vendorFormErrors, setVendorFormErrors] = useState({});
+  const [vendorActionLoading, setVendorActionLoading] = useState(false);
 
   // Sync global header search query to all local tab search filters
   useEffect(() => {
@@ -1622,6 +1639,291 @@ const AdminDashboard = ({
     }
   };
 
+  // ── Vendor CRUD Handlers ──
+  const fetchVendors = async (showLoading = true) => {
+    if (showLoading) setLoadingVendors(true);
+    try {
+      const res = await axios.get('/admin/vendors');
+      if (res.data?.success) {
+        setVendors(res.data.data);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch vendors from API, using management data fallback');
+      const fallbackVendors = (managementData?.vendors || []).filter(v => v.businessType === 'vendor');
+      setVendors(fallbackVendors.length > 0 ? fallbackVendors : []);
+    } finally {
+      if (showLoading) setLoadingVendors(false);
+    }
+  };
+
+  const handleAddVendor = async (e) => {
+    e.preventDefault();
+    setVendorFormErrors({});
+    const errors = {};
+    if (!vendorForm.name.trim()) errors.name = 'Name is required';
+    if (!vendorForm.companyName.trim()) errors.companyName = 'Company name is required';
+    if (!vendorForm.email.trim()) errors.email = 'Email is required';
+    if (!vendorForm.password) errors.password = 'Password is required';
+    if (!vendorForm.phone.trim()) errors.phone = 'Phone is required';
+    if (Object.keys(errors).length > 0) { setVendorFormErrors(errors); return; }
+    setVendorActionLoading(true);
+    try {
+      await axios.post('/admin/vendors', vendorForm);
+      alert('Vendor added successfully');
+      setShowAddVendorModal(false);
+      resetVendorForm();
+      fetchVendors(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to add vendor');
+    } finally {
+      setVendorActionLoading(false);
+    }
+  };
+
+  const handleEditVendor = async (e) => {
+    e.preventDefault();
+    if (!selectedVendor) return;
+    setVendorFormErrors({});
+    const errors = {};
+    if (!vendorForm.name.trim()) errors.name = 'Name is required';
+    if (!vendorForm.companyName.trim()) errors.companyName = 'Company name is required';
+    if (!vendorForm.email.trim()) errors.email = 'Email is required';
+    if (!vendorForm.phone.trim()) errors.phone = 'Phone is required';
+    if (Object.keys(errors).length > 0) { setVendorFormErrors(errors); return; }
+    setVendorActionLoading(true);
+    try {
+      const payload = { ...vendorForm };
+      delete payload.password;
+      await axios.put(`/admin/vendors/${selectedVendor._id}`, payload);
+      alert('Vendor updated successfully');
+      setShowEditVendorModal(false);
+      setSelectedVendor(null);
+      resetVendorForm();
+      fetchVendors(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update vendor');
+    } finally {
+      setVendorActionLoading(false);
+    }
+  };
+
+  const handleDeleteVendor = async (vendorId) => {
+    try {
+      await axios.delete(`/admin/vendors/${vendorId}`);
+      alert('Vendor deleted successfully');
+      setDeleteConfirmVendor(null);
+      fetchVendors(false);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete vendor');
+    }
+  };
+
+  const handleToggleVendorStatus = async (vendor) => {
+    try {
+      const newStatus = vendor.isActive ? 'Suspended' : 'Active';
+      await axios.put(`/admin/vendors/${vendor._id}`, { status: newStatus });
+      setVendors(prev => prev.map(v => v._id === vendor._id ? { ...v, isActive: !v.isActive, status: newStatus } : v));
+      alert(`Vendor ${newStatus === 'Active' ? 'activated' : 'suspended'} successfully`);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update vendor status');
+    }
+  };
+
+  const resetVendorForm = () => {
+    setVendorForm({ name: '', companyName: '', email: '', phone: '', password: '', address: '', businessType: 'vendor', category: '', status: 'Active' });
+    setVendorFormErrors({});
+  };
+
+  const openAddVendorModal = () => {
+    resetVendorForm();
+    setShowAddVendorModal(true);
+  };
+
+  const openEditVendorModal = (vendor) => {
+    setSelectedVendor(vendor);
+    setVendorForm({
+      name: vendor.name || '',
+      companyName: vendor.companyName || '',
+      email: vendor.email || '',
+      phone: vendor.phone || '',
+      password: '',
+      address: vendor.address || '',
+      businessType: vendor.businessType || 'vendor',
+      category: vendor.category || '',
+      status: vendor.status || (vendor.isActive ? 'Active' : 'Suspended')
+    });
+    setVendorFormErrors({});
+    setShowEditVendorModal(true);
+  };
+
+  const openViewVendorModal = (vendor) => {
+    setSelectedVendor(vendor);
+    setShowViewVendorModal(true);
+  };
+
+  // Fetch vendors when tab is selected
+  useEffect(() => {
+    if (activeTab === 'vendors') {
+      fetchVendors();
+    }
+  }, [activeTab]);
+
+  // Also refetch when managementData updates (for fallback)
+  useEffect(() => {
+    if (activeTab === 'vendors' && managementData) {
+      fetchVendors(false);
+    }
+  }, [managementData?.vendors?.length]);
+
+  // ── Vendors Modal Components ──
+  const VendorFormModal = ({ isEdit = false }) => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { if (!isEdit) { setShowAddVendorModal(false); resetVendorForm(); } else { setShowEditVendorModal(false); setSelectedVendor(null); resetVendorForm(); } }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#2A9D8F]/10 flex items-center justify-center">
+              <Store className="w-5 h-5 text-[#2A9D8F]" />
+            </div>
+            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{isEdit ? 'Edit Vendor' : 'Add New Vendor'}</h3>
+          </div>
+          <button onClick={() => { if (isEdit) { setShowEditVendorModal(false); setSelectedVendor(null); } else { setShowAddVendorModal(false); } resetVendorForm(); }} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+        <form onSubmit={isEdit ? handleEditVendor : handleAddVendor} className="p-6 space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Full Name <span className="text-red-400">*</span></label>
+              <input type="text" value={vendorForm.name} onChange={e => setVendorForm({...vendorForm, name: e.target.value})} placeholder="John Doe" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+              {vendorFormErrors.name && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.name}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Company Name <span className="text-red-400">*</span></label>
+              <input type="text" value={vendorForm.companyName} onChange={e => setVendorForm({...vendorForm, companyName: e.target.value})} placeholder="Artisan Workshop" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.companyName ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+              {vendorFormErrors.companyName && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.companyName}</p>}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Email <span className="text-red-400">*</span></label>
+              <input type="email" value={vendorForm.email} onChange={e => setVendorForm({...vendorForm, email: e.target.value})} placeholder="vendor@example.com" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+              {vendorFormErrors.email && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Phone <span className="text-red-400">*</span></label>
+              <input type="text" value={vendorForm.phone} onChange={e => setVendorForm({...vendorForm, phone: e.target.value})} placeholder="+1 555-0123" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+              {vendorFormErrors.phone && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.phone}</p>}
+            </div>
+          </div>
+          {!isEdit && (
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Password <span className="text-red-400">*</span></label>
+              <input type="password" value={vendorForm.password} onChange={e => setVendorForm({...vendorForm, password: e.target.value})} placeholder="Min 6 characters" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+              {vendorFormErrors.password && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.password}</p>}
+            </div>
+          )}
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Category</label>
+            <input type="text" value={vendorForm.category} onChange={e => setVendorForm({...vendorForm, category: e.target.value})} placeholder="Furniture, Decor, etc." className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Address</label>
+            <textarea rows={2} value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="123 Business St, City" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all resize-none" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Status</label>
+            <select value={vendorForm.status} onChange={e => setVendorForm({...vendorForm, status: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
+              <option value="Active">Active</option>
+              <option value="Suspended">Suspended</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={() => { if (isEdit) { setShowEditVendorModal(false); setSelectedVendor(null); } else { setShowAddVendorModal(false); } resetVendorForm(); }} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
+            <button type="submit" disabled={vendorActionLoading} className="px-6 py-3 rounded-xl bg-[#1F2937] text-white font-bold text-sm hover:bg-black disabled:opacity-50 transition-all shadow-sm flex items-center gap-2">
+              {vendorActionLoading ? <><RefreshCw className="w-4 h-4 animate-spin" /> {isEdit ? 'Updating...' : 'Adding...'}</> : (isEdit ? 'Update Vendor' : 'Add Vendor')}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const ViewVendorModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+              <Store className="w-5 h-5 text-blue-500" />
+            </div>
+            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Vendor Details</h3>
+          </div>
+          <button onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+            <X className="w-4 h-4 text-gray-400" />
+          </button>
+        </div>
+        {selectedVendor && (
+          <div className="p-6 space-y-5">
+            <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+              <div className="w-16 h-16 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center font-bold text-2xl shadow-md">
+                {(selectedVendor.companyName || selectedVendor.name || 'V').charAt(0)}
+              </div>
+              <div>
+                <h4 className="font-bold text-lg text-[#1F2937]">{selectedVendor.companyName || selectedVendor.name}</h4>
+                <p className="text-sm text-gray-500">{selectedVendor.email} · {selectedVendor.phone || 'No phone'}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="p-4 rounded-2xl bg-gray-50">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</p>
+                <p className="font-semibold text-[#1F2937]">{selectedVendor.category || 'General'}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Type</p>
+                <p className="font-semibold text-[#1F2937] capitalize">{selectedVendor.businessType || 'vendor'}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50 col-span-2">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
+                <p className="font-semibold text-[#1F2937]">{selectedVendor.address || 'Not provided'}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</p>
+                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${selectedVendor.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'}`}>
+                  {selectedVendor.isActive ? 'Active' : 'Suspended'}
+                </span>
+              </div>
+              <div className="p-4 rounded-2xl bg-gray-50">
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered</p>
+                <p className="font-semibold text-[#1F2937]">{selectedVendor.createdAt ? new Date(selectedVendor.createdAt).toLocaleDateString() : 'N/A'}</p>
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-all">Close</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const DeleteConfirmModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirmVendor(null)}>
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+        <div className="p-6 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+            <Trash2 className="w-7 h-7 text-red-500" />
+          </div>
+          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Delete Vendor</h3>
+          <p className="text-sm text-gray-500">Are you sure you want to delete <strong>{deleteConfirmVendor?.companyName || deleteConfirmVendor?.name}</strong>? This action cannot be undone.</p>
+          <div className="flex justify-center gap-3">
+            <button onClick={() => setDeleteConfirmVendor(null)} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
+            <button onClick={() => handleDeleteVendor(deleteConfirmVendor?._id)} className="px-6 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-sm">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // Upgraded Manufacturer Administration Actions
   const fetchMfgLoad = async (mfgId) => {
     setLoadingMfgLoad(true);
@@ -2705,68 +3007,133 @@ const AdminDashboard = ({
         );
       })()}
 
-      {/* TAB 3: VENDOR MANAGEMENT */}
-      {activeTab === 'vendors' && (
+      {/* TAB 3: VENDOR MANAGEMENT (Full CRUD) */}
+      {activeTab === 'vendors' && (() => {
+        const vendorStats = {
+          total: vendors.length,
+          active: vendors.filter(v => v.isActive).length,
+          suspended: vendors.filter(v => !v.isActive).length,
+          pending: vendors.filter(v => v.verificationStatus === 'Pending' || v.status === 'Pending').length
+        };
+        const filteredVendors = vendors.filter(v => {
+          const q = vendorSearch.toLowerCase();
+          const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || (v.name && v.name.toLowerCase().includes(q)) || (v.email && v.email.toLowerCase().includes(q)) || (v.phone && v.phone.toLowerCase().includes(q));
+          const matchStatus = vendorStatusFilter === 'all' ||
+            (vendorStatusFilter === 'active' && v.isActive) ||
+            (vendorStatusFilter === 'suspended' && !v.isActive);
+          return matchSearch && matchStatus;
+        });
+        return (
         <div className="space-y-8">
           <div className="flex justify-between items-center border-b border-gray-100 pb-4">
-            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Partner & Vendor Management</h2>
-            <span className="text-xs text-gray-500 font-bold">Manage system logins, business verification, and live marketplace activation.</span>
+            <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Vendor Management</h2>
+            <span className="text-xs text-gray-500 font-bold">Add, edit, activate/suspend, and manage vendor accounts.</span>
           </div>
-          <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 overflow-hidden">
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-4 gap-5">
+            {[
+              { label: 'Total Vendors', value: vendorStats.total, color: 'bg-blue-50 text-blue-600', icon: <Users className="w-5 h-5" /> },
+              { label: 'Active', value: vendorStats.active, color: 'bg-emerald-50 text-emerald-600', icon: <CheckCircle className="w-5 h-5" /> },
+              { label: 'Suspended', value: vendorStats.suspended, color: 'bg-red-50 text-red-600', icon: <XCircle className="w-5 h-5" /> },
+              { label: 'Pending', value: vendorStats.pending, color: 'bg-amber-50 text-amber-600', icon: <AlertCircle className="w-5 h-5" /> }
+            ].map(card => (
+              <div key={card.label} className="bg-white p-5 rounded-2xl border border-[#D4A373]/20 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-10 h-10 rounded-xl ${card.color} flex items-center justify-center`}>{card.icon}</div>
+                  <span className="text-2xl font-bold text-[#1F2937] font-['Playfair_Display']">{card.value}</span>
+                </div>
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">{card.label}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Search & Add Bar */}
+          <div className="flex justify-between items-center gap-4">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input type="text" placeholder="Search vendors by name, email, or phone..." value={vendorSearch} onChange={e => setVendorSearch(e.target.value)} className="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+            </div>
+            <div className="flex items-center gap-3">
+              <select value={vendorStatusFilter} onChange={e => setVendorStatusFilter(e.target.value)} className="px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 bg-white">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="suspended">Suspended</option>
+              </select>
+              <button onClick={openAddVendorModal} className="px-5 py-3 rounded-xl bg-[#1F2937] text-white font-bold text-sm hover:bg-black transition-all shadow-sm flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Add Vendor
+              </button>
+            </div>
+          </div>
+
+          {/* Vendors Table */}
+          <div className="bg-white rounded-3xl shadow-sm border border-[#D4A373]/20 overflow-hidden">
+            {loadingVendors ? (
+              <div className="flex items-center justify-center py-20">
+                <RefreshCw className="w-6 h-6 animate-spin text-[#2A9D8F]" />
+              </div>
+            ) : filteredVendors.length === 0 ? (
+              <div className="text-center py-16">
+                <Store className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500 font-bold">No vendors found</p>
+                <p className="text-xs text-gray-400 mt-1">{vendorSearch ? 'Try a different search term' : 'Click "Add Vendor" to create one'}</p>
+              </div>
+            ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-[#6B7280]">
-                    <th className="py-4 px-4">Partner Name</th>
-                    <th className="py-4 px-4">Role / Type</th>
-                    <th className="py-4 px-4">Verification & Store Setup</th>
-                    <th className="py-4 px-4">Platform Status</th>
-                    <th className="py-4 px-4 text-right">Activation Controls</th>
+                  <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wider text-[#6B7280] bg-gray-50/50">
+                    <th className="py-4 px-5">Vendor</th>
+                    <th className="py-4 px-5">Contact</th>
+                    <th className="py-4 px-5">Category</th>
+                    <th className="py-4 px-5">Status</th>
+                    <th className="py-4 px-5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {managementData?.vendors?.map((vendor) => (
-                    <tr key={vendor._id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="py-4 px-4">
-                        <p className="font-bold text-[#1F2937]">{vendor.companyName}</p>
-                        <p className="text-xs text-gray-400">{vendor.userId?.email || 'partner@example.com'}</p>
+                  {filteredVendors.map((vendor) => (
+                    <tr key={vendor._id} className="border-b border-gray-50 hover:bg-[#F0F9F8]/50 transition-colors">
+                      <td className="py-4 px-5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#2A9D8F]/10 text-[#2A9D8F] flex items-center justify-center font-bold text-sm">
+                            {(vendor.companyName || vendor.name || 'V').charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-bold text-[#1F2937]">{vendor.companyName || vendor.name}</p>
+                            <p className="text-xs text-gray-400">{vendor.name && vendor.companyName ? vendor.name : vendor.email}</p>
+                          </div>
+                        </div>
                       </td>
-                      <td className="py-4 px-4">
+                      <td className="py-4 px-5">
+                        <p className="text-sm text-gray-600">{vendor.email}</p>
+                        <p className="text-xs text-gray-400">{vendor.phone || '—'}</p>
+                      </td>
+                      <td className="py-4 px-5">
                         <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-                          {vendor.businessType}
+                          {vendor.businessType || (vendor.category || 'General')}
                         </span>
                       </td>
-                      <td className="py-4 px-4 space-y-1">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase">Verification:</span>
-                          <span className={`text-[10px] font-bold ${vendor.verificationStatus === 'Approved' || vendor.isVerified ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
-                            {vendor.verificationStatus || (vendor.isVerified ? 'Approved' : 'Pending')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-gray-400 font-bold uppercase">Store Setup:</span>
-                          <span className={`text-[10px] font-bold ${vendor.storeSetupStatus === 'Approved' ? 'text-[#2A9D8F]' : 'text-[#E76F51]'}`}>
-                            {vendor.storeSetupStatus || 'Pending'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${vendor.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'}`}>
-                          {vendor.isActive ? 'LIVE & ACTIVE' : 'SUSPENDED/INACTIVE'}
+                      <td className="py-4 px-5">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${
+                          vendor.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${vendor.isActive ? 'bg-[#2A9D8F]' : 'bg-[#E76F51]'}`} />
+                          {vendor.isActive ? 'Active' : 'Suspended'}
                         </span>
                       </td>
-                      <td className="py-4 px-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button onClick={() => alert(`Reviewing Verification/Setup details for ${vendor.companyName}...`)} className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-bold text-xs transition-all">
-                            View Profile
+                      <td className="py-4 px-5 text-right">
+                        <div className="flex justify-end gap-1.5">
+                          <button onClick={() => openViewVendorModal(vendor)} className="p-2 rounded-lg hover:bg-blue-50 text-blue-500 transition-colors" title="View Details">
+                            <Eye className="w-4 h-4" />
                           </button>
-                          <button 
-                            onClick={() => handleVendorActivationToggle(vendor._id, !vendor.isActive)} 
-                            className={`px-4 py-1.5 rounded-lg font-bold text-xs transition-all shadow-sm ${
-                              vendor.isActive ? 'bg-[#E76F51] text-white hover:bg-[#E76F51]/90' : 'bg-[#2A9D8F] text-white hover:bg-[#2A9D8F]/90'
-                            }`}
-                          >
-                            {vendor.isActive ? 'Suspend Live' : 'Activate Live'}
+                          <button onClick={() => openEditVendorModal(vendor)} className="p-2 rounded-lg hover:bg-amber-50 text-amber-500 transition-colors" title="Edit Vendor">
+                            <FileText className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleToggleVendorStatus(vendor)} className={`p-2 rounded-lg transition-colors ${vendor.isActive ? 'hover:bg-red-50 text-red-500' : 'hover:bg-emerald-50 text-emerald-500'}`} title={vendor.isActive ? 'Suspend' : 'Activate'}>
+                            {vendor.isActive ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+                          </button>
+                          <button onClick={() => setDeleteConfirmVendor(vendor)} className="p-2 rounded-lg hover:bg-red-50 text-red-400 transition-colors" title="Delete Vendor">
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
@@ -2775,9 +3142,17 @@ const AdminDashboard = ({
                 </tbody>
               </table>
             </div>
+            )}
           </div>
+
+          {/* Modals */}
+          {showAddVendorModal && <VendorFormModal isEdit={false} />}
+          {showEditVendorModal && <VendorFormModal isEdit={true} />}
+          {showViewVendorModal && <ViewVendorModal />}
+          {deleteConfirmVendor && <DeleteConfirmModal />}
         </div>
-      )}
+        );
+      })()}
 
       {/* TAB 4: MANUFACTURER MANAGEMENT */}
       {activeTab === 'manufacturers' && (() => {

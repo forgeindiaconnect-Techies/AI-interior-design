@@ -452,8 +452,9 @@ const DashboardLayout = ({ children }) => {
                           className={`px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50/50 flex gap-2 items-start cursor-pointer ${!notif.read ? 'bg-[#8B5E3C]/5' : ''}`}
                         >
                           <span className="mt-0.5 text-xs">🔔</span>
-                          <div className="flex-1">
-                            <p className="text-[11px] font-bold text-gray-700 leading-tight truncate">{notif.message.split('\n')[0]}</p>
+                          <div className="flex-1 min-w-0">
+                            {notif.title && <p className="text-[12px] font-bold text-[#1F2937] leading-tight truncate">{notif.title}</p>}
+                            <p className={`text-[11px] leading-tight truncate ${notif.title ? 'text-gray-500' : 'font-bold text-gray-700'}`}>{notif.message.split('\n')[0]}</p>
                             <span className="text-[9px] text-gray-400 mt-1 block">
                               {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>

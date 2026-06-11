@@ -2626,3 +2626,270 @@ exports.rejectVendorRegistration = async (req, res) => {
   }
 };
 
+// @desc    Add new vendor (creates User + Vendor)
+// @route   POST /api/admin/vendors
+// @access  Private (Admin)
+exports.addVendor = async (req, res) => {
+  try {
+    const { name, businessName, email, phone, address, category, password, status } = req.body;
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: 'A user with this email already exists' });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: 'vendor',
+      phone: phone || '',
+      address: address || '',
+      status: status || 'Active'
+    });
+
+    const vendor = await Vendor.create({
+      userId: user._id,
+      companyName: businessName || `${name}'s Business`,
+      businessType: category || 'seller',
+      isActive: status === 'Active',
+      accountActivationStatus: status === 'Active' ? 'Active' : 'Pending Verification',
+      verificationStatus: status === 'Active' ? 'Approved' : 'Pending',
+      storeSetupStatus: 'Pending'
+    });
+
+    await Notification.create({
+      userId: user._id,
+      title: 'Vendor Account Created',
+      message: `Your vendor account has been created successfully. Welcome to the platform, ${name}! You can now log in and start managing your store.`,
+      type: 'success'
+    });
+
+    await Notification.create({
+      isAdmin: true,
+      title: 'New Vendor Added',
+      message: `Admin created a new vendor account: ${name} (${businessName || name}) - ${email}`,
+      type: 'info'
+    });
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: `Created vendor account for ${name} (${email})`
+    });
+
+    res.status(201).json({
+      success: true,
+      data: {
+        user: { id: user._id, name: user.name, email: user.email, role: user.role, status: user.status },
+        vendor: { id: vendor._id, companyName: vendor.companyName, businessType: vendor.businessType, isActive: vendor.isActive }
+      },
+      message: 'Vendor created successfully'
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Edit vendor details
+// @route   PUT /api/admin/vendors/:id
+// @access  Private (Admin)
+exports.editVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const user = await User.findById(vendor.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    const { name, businessName, email, phone, address, category, status, password } = req.body;
+
+    if (name) user.name = name;
+    if (email && email !== user.email) {
+      const emailExists = await User.findOne({ email, _id: { $ne: user._id } });
+      if (emailExists) return res.status(400).json({ success: false, message: 'Email already in use' });
+      user.email = email;
+    }
+    if (phone) user.phone = phone;
+    if (address) user.address = address;
+    if (status) user.status = status;
+    if (password) user.password = password;
+    await user.save();
+
+    if (businessName) vendor.companyName = businessName;
+    if (category) vendor.businessType = category;
+    if (status) {
+      vendor.isActive = status === 'Active';
+      vendor.accountActivationStatus = status === 'Active' ? 'Active' : 'Inactive';
+      if (status === 'Approved') {
+        vendor.verificationStatus = 'Approved';
+        vendor.accountActivationStatus = 'Active';
+        vendor.isActive = true;
+      }
+      if (status === 'Rejected') {
+        vendor.verificationStatus = 'Rejected';
+        vendor.accountActivationStatus = 'Rejected';
+        vendor.isActive = false;
+      }
+    }
+    await vendor.save();
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: `Updated vendor ${user.name} (${vendor.companyName})`
+    });
+
+    res.status(200).json({ success: true, data: { user, vendor }, message: 'Vendor updated successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get all vendors with populated user data
+// @route   GET /api/admin/vendors
+// @access  Private (Admin)
+exports.getAllVendors = async (req, res) => {
+  try {
+    const vendors = await Vendor.find().populate('userId', 'name email phone address status role createdAt').sort('-createdAt');
+    res.status(200).json({ success: true, data: vendors });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get single vendor details
+// @route   GET /api/admin/vendors/:id
+// @access  Private (Admin)
+exports.getVendorDetails = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id).populate('userId', 'name email phone address status role createdAt');
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+    res.status(200).json({ success: true, data: vendor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Delete vendor
+// @route   DELETE /api/admin/vendors/:id
+// @access  Private (Admin)
+exports.deleteVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const user = await User.findById(vendor.userId);
+    if (user) {
+      await Notification.create({
+        userId: user._id,
+        title: 'Account Deleted',
+        message: 'Your vendor account has been deleted by the admin. Please contact support for more information.',
+        type: 'error'
+      });
+      await User.findByIdAndDelete(user._id);
+    }
+
+    await Vendor.findByIdAndDelete(req.params.id);
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: `Deleted vendor ${vendor.companyName}`
+    });
+
+    res.status(200).json({ success: true, message: 'Vendor deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Approve vendor account with notification title
+// @route   PUT /api/admin/vendors/:id/approve
+// @access  Private (Admin)
+exports.approveVendor = async (req, res) => {
+  try {
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const user = await User.findById(vendor.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = 'Approved';
+    user.approvedAt = new Date();
+    user.approvedBy = req.user.id;
+    await user.save();
+
+    vendor.isActive = true;
+    vendor.accountActivationStatus = 'Active';
+    vendor.verificationStatus = 'Approved';
+    await vendor.save();
+
+    await Notification.create({
+      userId: user._id,
+      title: 'Vendor Account Approved',
+      message: 'Congratulations! Your vendor account has been approved. You can now log in and start managing your store.',
+      type: 'success'
+    });
+
+    await Notification.create({
+      isAdmin: true,
+      title: 'Vendor Approved',
+      message: `Vendor ${user.name} (${vendor.companyName}) has been approved by ${req.user.name || 'Admin'}.`,
+      type: 'info'
+    });
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: `Approved vendor account: ${user.name} (${vendor.companyName})`
+    });
+
+    res.status(200).json({ success: true, message: 'Vendor approved successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Reject vendor account with notification title
+// @route   PUT /api/admin/vendors/:id/reject
+// @access  Private (Admin)
+exports.rejectVendor = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const vendor = await Vendor.findById(req.params.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
+
+    const user = await User.findById(vendor.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.status = 'Rejected';
+    user.rejectedReason = reason || 'Your vendor account registration has been rejected.';
+    await user.save();
+
+    vendor.isActive = false;
+    vendor.accountActivationStatus = 'Rejected';
+    vendor.verificationStatus = 'Rejected';
+    await vendor.save();
+
+    await Notification.create({
+      userId: user._id,
+      title: 'Vendor Account Rejected',
+      message: reason || 'Your vendor registration has been rejected. Please contact support for more details.',
+      type: 'error'
+    });
+
+    await Notification.create({
+      isAdmin: true,
+      title: 'Vendor Rejected',
+      message: `Vendor ${user.name} (${vendor.companyName}) has been rejected by ${req.user.name || 'Admin'}.`,
+      type: 'warning'
+    });
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: `Rejected vendor account: ${user.name} (${vendor.companyName}). Reason: ${reason || 'Not specified'}`
+    });
+
+    res.status(200).json({ success: true, message: 'Vendor rejected successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
