@@ -1682,6 +1682,7 @@ Thank you for shopping with Artisan Studio!
                         </div>
                       </div>
                   </div>
+                 </div>
                 </div>
             );
           })()}
