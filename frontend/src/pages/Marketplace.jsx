@@ -230,7 +230,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
                 <span className="text-[#E76F51] font-bold text-xs uppercase tracking-wider">Personalized</span>
                 <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">AI Suggested For Your Room</h2>
               </div>
-              <button className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1 hover:underline">View All <ArrowRight className="w-4 h-4" /></button>
+              <button onClick={() => { setVisibleCount(filteredProducts.length); document.getElementById('marketplace-grid')?.scrollIntoView({ behavior: 'smooth' }); }} className="text-[#8B5E3C] font-bold text-sm flex items-center gap-1 hover:underline">View All <ArrowRight className="w-4 h-4" /></button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {products.slice(0, 3).map(p => <ProductCard key={p._id} product={p} onAddToCart={handleAddToCart} onSaveItem={handleSaveItem} onNavigate={handleNavigate} />)}
@@ -239,7 +239,7 @@ const Marketplace = ({ isEmbedded = false, onGoToCart }) => {
         )}
 
         {/* Main Grid */}
-        <div className="space-y-6 pt-8 border-t border-gray-200">
+        <div id="marketplace-grid" className="space-y-6 pt-8 border-t border-gray-200">
           <div className="flex justify-between items-end">
             <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">
               {searchQuery ? 'Search Results' : activeCategory === 'All' ? 'Trending Collection' : `${activeCategory} Collection`}
