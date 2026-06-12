@@ -29,9 +29,8 @@ axios.interceptors.response.use(
           window.location.href = '/login';
         }
       } else if (error.response.status === 403) {
-        console.warn('[Axios Interceptor] 403 Forbidden:', error.response.data?.message || 'Access denied');
-        // If they get 403 on a critical route, maybe they are in the wrong dashboard.
-        window.location.href = '/';
+        console.warn('[Axios Interceptor] 403 Forbidden on ' + error.config.url + ':', error.response.data?.message || 'Access denied');
+        // Do not force redirect on 403, just let the specific component handle the lack of access.
       }
     }
     return Promise.reject(error);
