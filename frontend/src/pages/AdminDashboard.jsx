@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { 
@@ -256,7 +256,7 @@ const AdminDashboard = ({
         }
       };
       loadHelpMessages();
-      const interval = setInterval(loadHelpMessages, 1000);
+      const interval = setInterval(loadHelpMessages, 3000);
       return () => clearInterval(interval);
     }
   }, [activeTab, selectedHelpUser]);
@@ -3010,20 +3010,20 @@ const AdminDashboard = ({
 
       {/* TAB 3: VENDOR MANAGEMENT (Full CRUD) */}
       {activeTab === 'vendors' && (() => {
-        const vendorStats = {
+        const vendorStats = useMemo(() => ({
           total: vendors.length,
           active: vendors.filter(v => v.isActive).length,
           suspended: vendors.filter(v => !v.isActive).length,
           pending: vendors.filter(v => v.verificationStatus === 'Pending' || v.status === 'Pending').length
-        };
-        const filteredVendors = vendors.filter(v => {
+        }), [vendors]);
+        const filteredVendors = useMemo(() => vendors.filter(v => {
           const q = vendorSearch.toLowerCase();
           const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || ((v.userId?.name || v.name) && (v.userId?.name || v.name).toLowerCase().includes(q)) || ((v.userId?.email || v.email) && (v.userId?.email || v.email).toLowerCase().includes(q)) || ((v.userId?.phone || v.phone) && (v.userId?.phone || v.phone).toLowerCase().includes(q));
           const matchStatus = vendorStatusFilter === 'all' ||
             (vendorStatusFilter === 'active' && v.isActive) ||
             (vendorStatusFilter === 'suspended' && !v.isActive);
           return matchSearch && matchStatus;
-        });
+        }), [vendors, vendorSearch, vendorStatusFilter]);
         return (
         <div className="space-y-8">
           <div className="flex justify-between items-center border-b border-gray-100 pb-4">

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -6,9 +6,6 @@ import Footer from './components/Footer';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import UserDashboard from './pages/UserDashboard';
-import VendorDashboard from './pages/VendorDashboard';
-import AdminDashboard from './pages/AdminDashboard';
 import DashboardLayout from './components/DashboardLayout';
 import { ToastProvider } from './components/Toast';
 import Marketplace from './pages/Marketplace';
@@ -19,6 +16,19 @@ import PlanEssential from './pages/PlanEssential';
 import PlanPremium from './pages/PlanPremium';
 import PlanEnterprise from './pages/PlanEnterprise';
 import axios from 'axios';
+
+const UserDashboard = lazy(() => import('./pages/UserDashboard'));
+const VendorDashboard = lazy(() => import('./pages/VendorDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+
+const DashLoader = () => (
+  <div className="min-h-screen bg-[#F8F5F0] flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-10 h-10 border-4 border-[#2A9D8F] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <p className="text-sm font-bold text-[#8B5E3C]">Loading dashboard...</p>
+    </div>
+  </div>
+);
 
 // Removed SyncManager as part of removing mock data
 
@@ -67,9 +77,11 @@ const AppRoutes = () => {
         path="/dashboard/user" 
         element={
           <ProtectedRoute allowedRoles={['user']}>
-            <DashboardLayout>
-              <UserDashboard />
-            </DashboardLayout>
+            <Suspense fallback={<DashLoader />}>
+              <DashboardLayout>
+                <UserDashboard />
+              </DashboardLayout>
+            </Suspense>
           </ProtectedRoute>
         } 
       />
@@ -78,9 +90,11 @@ const AppRoutes = () => {
         path="/dashboard/vendor" 
         element={
           <ProtectedRoute allowedRoles={['vendor', 'manufacturer', 'delivery', 'installation']}>
-            <DashboardLayout>
-              <VendorDashboard />
-            </DashboardLayout>
+            <Suspense fallback={<DashLoader />}>
+              <DashboardLayout>
+                <VendorDashboard />
+              </DashboardLayout>
+            </Suspense>
           </ProtectedRoute>
         } 
       />
@@ -89,9 +103,11 @@ const AppRoutes = () => {
         path="/dashboard/admin" 
         element={
           <ProtectedRoute allowedRoles={['admin']}>
-            <DashboardLayout>
-              <AdminDashboard />
-            </DashboardLayout>
+            <Suspense fallback={<DashLoader />}>
+              <DashboardLayout>
+                <AdminDashboard />
+              </DashboardLayout>
+            </Suspense>
           </ProtectedRoute>
         } 
       />

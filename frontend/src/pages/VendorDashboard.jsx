@@ -262,7 +262,7 @@ const VendorDashboard = ({
         }
       };
       loadHelpMessages();
-      const interval = setInterval(loadHelpMessages, 1000);
+      const interval = setInterval(loadHelpMessages, 3000);
       return () => clearInterval(interval);
     }
   }, [activeTab, selectedHelpUser]);

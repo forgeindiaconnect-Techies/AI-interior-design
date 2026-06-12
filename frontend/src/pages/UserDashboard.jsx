@@ -45,13 +45,13 @@ const UserDashboard = ({
   const [roomType, setRoomType] = useState('Living Room');
   const [originalImage, setOriginalImage] = useState('');
   const [aiDesigns, setAiDesigns] = useState([]);
-  const filteredAiDesigns = aiDesigns.filter(d => 
+  const filteredAiDesigns = useMemo(() => aiDesigns.filter(d => 
     !searchQuery || 
     d.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.status?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.aiSuggestion?.furniture?.some(f => f.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-  const savedDesigns = filteredAiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution');
+  ), [aiDesigns, searchQuery]);
+  const savedDesigns = useMemo(() => filteredAiDesigns.filter(d => d.isBookmarked || d.status === 'accepted' || d.status === 'execution'), [filteredAiDesigns]);
   const [loadingAi, setLoadingAi] = useState(false);
 
   // AI Room Vision states for sequential analysis & WGAN generation
@@ -69,13 +69,13 @@ const UserDashboard = ({
   const [manualMaterials, setManualMaterials] = useState('');
   const [manualRequirements, setManualRequirements] = useState('');
   const [manualDesigns, setManualDesigns] = useState([]);
-  const filteredManualDesigns = manualDesigns.filter(d => 
+  const filteredManualDesigns = useMemo(() => manualDesigns.filter(d => 
     !searchQuery || 
     d.roomType?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.style?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.requirements?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     d.status?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [manualDesigns, searchQuery]);
   // --- New fields ---
   const [referenceImages, setReferenceImages] = useState([]);
   const [ownMaterials, setOwnMaterials] = useState('No');
@@ -99,7 +99,7 @@ const UserDashboard = ({
   // Orders & Quotations State
   const [orders, setOrders] = useState([]);
   const [trackingOrderId, setTrackingOrderId] = useState(localStorage.getItem('activeTrackingOrderId') || '');
-  const filteredOrders = orders.filter(o => 
+  const filteredOrders = useMemo(() => orders.filter(o => 
     !searchQuery || 
     o._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.orderStatus?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -107,7 +107,7 @@ const UserDashboard = ({
     o.shippingAddress?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.vendorId?.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     o.productDetails?.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ), [orders, searchQuery]);
   const [pendingPaid, setPendingPaid] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [showCheckoutSummary, setShowCheckoutSummary] = useState(false);

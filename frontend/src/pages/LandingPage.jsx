@@ -45,7 +45,17 @@ const LandingPage = () => {
   const [analysisStep, setAnalysisStep] = useState('');
   const [aiResultImage, setAiResultImage] = useState(null);
   const fileInputRef = useRef(null);
+  const analysisIntervalRef = useRef(null);
   const [activeDemoTab, setActiveDemoTab] = useState('split'); // split, original, ai
+
+  useEffect(() => {
+    return () => {
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -72,12 +82,13 @@ const LandingPage = () => {
     let stepIndex = 0;
     setAnalysisStep(steps[0]);
 
-    const interval = setInterval(() => {
+    analysisIntervalRef.current = setInterval(() => {
       stepIndex++;
       if (stepIndex < steps.length) {
         setAnalysisStep(steps[stepIndex]);
       } else {
-        clearInterval(interval);
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
         // Use room images as AI mock results
         loadManifest().then(() => {
           const picks = [
