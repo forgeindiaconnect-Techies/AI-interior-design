@@ -29,8 +29,16 @@ axios.interceptors.response.use(
           window.location.href = '/login';
         }
       } else if (error.response.status === 403) {
+        const msg = (error.response.data?.message || '').toLowerCase();
+        if (msg.includes('suspended') || msg.includes('blocked')) {
+          console.warn('[Axios Interceptor] Account suspended/blocked, logging out');
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/login?suspended=true';
+          return Promise.reject(error);
+        }
         console.warn('[Axios Interceptor] 403 Forbidden on ' + error.config.url + ':', error.response.data?.message || 'Access denied');
-        // Do not force redirect on 403, just let the specific component handle the lack of access.
+        // Do not force redirect on other 403s, let the specific component handle the lack of access.
       }
     }
     return Promise.reject(error);
@@ -103,8 +111,17 @@ export const AuthProvider = ({ children }) => {
       axios.get('/auth/me')
         .then((res) => {
           if (res.data && res.data.success) {
-            setUser(res.data.user);
-            localStorage.setItem('user', JSON.stringify(res.data.user));
+            const userData = res.data.user;
+            // If account is suspended, log them out with a clear message
+            if (userData.status === 'Suspended' || userData.status === 'Blocked') {
+              localStorage.removeItem('token');
+              localStorage.removeItem('user');
+              setUser(null);
+              window.location.href = '/login?suspended=true';
+              return;
+            }
+            setUser(userData);
+            localStorage.setItem('user', JSON.stringify(userData));
           }
         })
         .catch((error) => {

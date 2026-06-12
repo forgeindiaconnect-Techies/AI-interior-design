@@ -65,18 +65,21 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'User not found' });
       }
 
-      if (req.user.status === 'Suspended') {
-        return res.status(403).json({ 
-          success: false, 
-          message: `Your account has been suspended. Reason: ${req.user.suspensionReason || 'No reason specified'}` 
-        });
-      }
+      // Allow /auth/me to return user data even when suspended/blocked so the frontend can show a proper message
+      if (req.originalUrl !== '/api/auth/me' && req.path !== '/auth/me') {
+        if (req.user.status === 'Suspended') {
+          return res.status(403).json({ 
+            success: false, 
+            message: `Your account has been suspended. Reason: ${req.user.suspensionReason || 'No reason specified'}` 
+          });
+        }
 
-      if (req.user.status === 'Blocked') {
-        return res.status(403).json({ 
-          success: false, 
-          message: 'Your account has been blocked by system administrators.' 
-        });
+        if (req.user.status === 'Blocked') {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Your account has been blocked by system administrators.' 
+          });
+        }
       }
 
       return next();

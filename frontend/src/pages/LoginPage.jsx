@@ -21,6 +21,7 @@ const LoginPage = () => {
   }, [user, navigate]);
   const registeredSuccess = location.state?.registeredSuccess || false;
   const isSessionExpired = new URLSearchParams(location.search).get('expired') === 'true';
+  const isSuspended = new URLSearchParams(location.search).get('suspended') === 'true';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -70,7 +71,13 @@ const LoginPage = () => {
               <span>Account created successfully! Please log in to continue.</span>
             </div>
           )}
-          {isSessionExpired && !registeredSuccess && !error && (
+          {isSuspended && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-2xl text-sm font-semibold text-center flex items-center justify-center gap-2">
+              <span>🛑</span>
+              <span>Your account has been suspended. Please contact support for assistance.</span>
+            </div>
+          )}
+          {isSessionExpired && !registeredSuccess && !error && !isSuspended && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-2xl text-sm font-semibold text-center flex items-center justify-center gap-2">
               <span>⚠️</span>
               <span>Session expired or unauthorized. Please log in again.</span>
