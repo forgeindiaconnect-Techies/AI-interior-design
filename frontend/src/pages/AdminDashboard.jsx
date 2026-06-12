@@ -534,6 +534,22 @@ const AdminDashboard = ({
   const [vendorFormErrors, setVendorFormErrors] = useState({});
   const [vendorActionLoading, setVendorActionLoading] = useState(false);
 
+  const vendorStats = useMemo(() => ({
+    total: vendors.length,
+    active: vendors.filter(v => v.isActive).length,
+    suspended: vendors.filter(v => !v.isActive).length,
+    pending: vendors.filter(v => v.verificationStatus === 'Pending' || v.status === 'Pending').length
+  }), [vendors]);
+
+  const filteredVendors = useMemo(() => vendors.filter(v => {
+    const q = vendorSearch.toLowerCase();
+    const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || ((v.userId?.name || v.name) && (v.userId?.name || v.name).toLowerCase().includes(q)) || ((v.userId?.email || v.email) && (v.userId?.email || v.email).toLowerCase().includes(q)) || ((v.userId?.phone || v.phone) && (v.userId?.phone || v.phone).toLowerCase().includes(q));
+    const matchStatus = vendorStatusFilter === 'all' ||
+      (vendorStatusFilter === 'active' && v.isActive) ||
+      (vendorStatusFilter === 'suspended' && !v.isActive);
+    return matchSearch && matchStatus;
+  }), [vendors, vendorSearch, vendorStatusFilter]);
+
   // Sync global header search query to all local tab search filters
   useEffect(() => {
     setTransactionSearch(searchQuery);
@@ -3009,22 +3025,7 @@ const AdminDashboard = ({
       })()}
 
       {/* TAB 3: VENDOR MANAGEMENT (Full CRUD) */}
-      {activeTab === 'vendors' && (() => {
-        const vendorStats = useMemo(() => ({
-          total: vendors.length,
-          active: vendors.filter(v => v.isActive).length,
-          suspended: vendors.filter(v => !v.isActive).length,
-          pending: vendors.filter(v => v.verificationStatus === 'Pending' || v.status === 'Pending').length
-        }), [vendors]);
-        const filteredVendors = useMemo(() => vendors.filter(v => {
-          const q = vendorSearch.toLowerCase();
-          const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || ((v.userId?.name || v.name) && (v.userId?.name || v.name).toLowerCase().includes(q)) || ((v.userId?.email || v.email) && (v.userId?.email || v.email).toLowerCase().includes(q)) || ((v.userId?.phone || v.phone) && (v.userId?.phone || v.phone).toLowerCase().includes(q));
-          const matchStatus = vendorStatusFilter === 'all' ||
-            (vendorStatusFilter === 'active' && v.isActive) ||
-            (vendorStatusFilter === 'suspended' && !v.isActive);
-          return matchSearch && matchStatus;
-        }), [vendors, vendorSearch, vendorStatusFilter]);
-        return (
+      {activeTab === 'vendors' && (() => { return (
         <div className="space-y-8">
           <div className="flex justify-between items-center border-b border-gray-100 pb-4">
             <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Vendor Management</h2>
