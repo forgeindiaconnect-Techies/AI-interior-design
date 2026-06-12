@@ -11,6 +11,155 @@ import {
 import AiFallbackImage from '../components/AiFallbackImage';
 import AdminContactMessages from './admin/AdminContactMessages';
 
+// ── Vendor Modal Components ──
+const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, onClose, onSubmit, vendorActionLoading }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+      <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#2A9D8F]/10 flex items-center justify-center">
+            <Store className="w-5 h-5 text-[#2A9D8F]" />
+          </div>
+          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{isEdit ? 'Edit Vendor' : 'Add New Vendor'}</h3>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+          <X className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
+      <form onSubmit={onSubmit} className="p-6 space-y-5">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Full Name <span className="text-red-400">*</span></label>
+            <input type="text" value={vendorForm.name} onChange={e => setVendorForm({...vendorForm, name: e.target.value})} placeholder="John Doe" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+            {vendorFormErrors.name && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.name}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Company Name <span className="text-red-400">*</span></label>
+            <input type="text" value={vendorForm.companyName} onChange={e => setVendorForm({...vendorForm, companyName: e.target.value})} placeholder="Artisan Workshop" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.companyName ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+            {vendorFormErrors.companyName && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.companyName}</p>}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Email <span className="text-red-400">*</span></label>
+            <input type="email" value={vendorForm.email} onChange={e => setVendorForm({...vendorForm, email: e.target.value})} placeholder="vendor@example.com" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+            {vendorFormErrors.email && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.email}</p>}
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Phone <span className="text-red-400">*</span></label>
+            <input type="text" value={vendorForm.phone} onChange={e => setVendorForm({...vendorForm, phone: e.target.value})} placeholder="+1 555-0123" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+            {vendorFormErrors.phone && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.phone}</p>}
+          </div>
+        </div>
+        {!isEdit && (
+          <div>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Password <span className="text-red-400">*</span></label>
+            <input type="password" value={vendorForm.password} onChange={e => setVendorForm({...vendorForm, password: e.target.value})} placeholder="Min 6 characters" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
+            {vendorFormErrors.password && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.password}</p>}
+          </div>
+        )}
+        <div>
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Category</label>
+          <input type="text" value={vendorForm.category} onChange={e => setVendorForm({...vendorForm, category: e.target.value})} placeholder="Furniture, Decor, etc." className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Address</label>
+          <textarea rows={2} value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="123 Business St, City" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all resize-none" />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Status</label>
+          <select value={vendorForm.status} onChange={e => setVendorForm({...vendorForm, status: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
+            <option value="Active">Active</option>
+            <option value="Suspended">Suspended</option>
+          </select>
+        </div>
+        <div className="flex justify-end gap-3 pt-2">
+          <button type="button" onClick={onClose} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
+          <button type="submit" disabled={vendorActionLoading} className="px-6 py-3 rounded-xl bg-[#1F2937] text-white font-bold text-sm hover:bg-black disabled:opacity-50 transition-all shadow-sm flex items-center gap-2">
+            {vendorActionLoading ? <><RefreshCw className="w-4 h-4 animate-spin" /> {isEdit ? 'Updating...' : 'Adding...'}</> : (isEdit ? 'Update Vendor' : 'Add Vendor')}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+);
+
+const ViewVendorModal = ({ selectedVendor, onClose }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
+      <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+            <Store className="w-5 h-5 text-blue-500" />
+          </div>
+          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Vendor Details</h3>
+        </div>
+        <button onClick={onClose} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
+          <X className="w-4 h-4 text-gray-400" />
+        </button>
+      </div>
+      {selectedVendor && (
+        <div className="p-6 space-y-5">
+          <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+            <div className="w-16 h-16 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center font-bold text-2xl shadow-md">
+              {(selectedVendor.companyName || selectedVendor.name || 'V').charAt(0)}
+            </div>
+            <div>
+              <h4 className="font-bold text-lg text-[#1F2937]">{selectedVendor.companyName || selectedVendor.name}</h4>
+              <p className="text-sm text-gray-500">{selectedVendor.email} · {selectedVendor.phone || 'No phone'}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</p>
+              <p className="font-semibold text-[#1F2937]">{selectedVendor.category || 'General'}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Type</p>
+              <p className="font-semibold text-[#1F2937] capitalize">{selectedVendor.businessType || 'vendor'}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50 col-span-2">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
+              <p className="font-semibold text-[#1F2937]">{selectedVendor.address || 'Not provided'}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</p>
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${selectedVendor.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'}`}>
+                {selectedVendor.isActive ? 'Active' : 'Suspended'}
+              </span>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered</p>
+              <p className="font-semibold text-[#1F2937]">{selectedVendor.createdAt ? new Date(selectedVendor.createdAt).toLocaleDateString() : 'N/A'}</p>
+            </div>
+          </div>
+          <div className="flex justify-end pt-2">
+            <button onClick={onClose} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-all">Close</button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const DeleteConfirmModal = ({ deleteConfirmVendor, onCancel, onConfirm }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onCancel}>
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
+      <div className="p-6 text-center space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+          <Trash2 className="w-7 h-7 text-red-500" />
+        </div>
+        <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Delete Vendor</h3>
+        <p className="text-sm text-gray-500">Are you sure you want to delete <strong>{deleteConfirmVendor?.companyName || deleteConfirmVendor?.name}</strong>? This action cannot be undone.</p>
+        <div className="flex justify-center gap-3">
+          <button onClick={onCancel} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
+          <button onClick={onConfirm} className="px-6 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-sm">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 const AdminDashboard = ({ 
   activeTab = 'overview', 
   setActiveTab,
@@ -1775,155 +1924,6 @@ const AdminDashboard = ({
     }
   }, [managementData?.vendors?.length]);
 
-  // ── Vendors Modal Components ──
-  const VendorFormModal = ({ isEdit = false }) => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { if (!isEdit) { setShowAddVendorModal(false); resetVendorForm(); } else { setShowEditVendorModal(false); setSelectedVendor(null); resetVendorForm(); } }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#2A9D8F]/10 flex items-center justify-center">
-              <Store className="w-5 h-5 text-[#2A9D8F]" />
-            </div>
-            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">{isEdit ? 'Edit Vendor' : 'Add New Vendor'}</h3>
-          </div>
-          <button onClick={() => { if (isEdit) { setShowEditVendorModal(false); setSelectedVendor(null); } else { setShowAddVendorModal(false); } resetVendorForm(); }} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
-        <form onSubmit={isEdit ? handleEditVendor : handleAddVendor} className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Full Name <span className="text-red-400">*</span></label>
-              <input type="text" value={vendorForm.name} onChange={e => setVendorForm({...vendorForm, name: e.target.value})} placeholder="John Doe" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
-              {vendorFormErrors.name && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.name}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Company Name <span className="text-red-400">*</span></label>
-              <input type="text" value={vendorForm.companyName} onChange={e => setVendorForm({...vendorForm, companyName: e.target.value})} placeholder="Artisan Workshop" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.companyName ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
-              {vendorFormErrors.companyName && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.companyName}</p>}
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Email <span className="text-red-400">*</span></label>
-              <input type="email" value={vendorForm.email} onChange={e => setVendorForm({...vendorForm, email: e.target.value})} placeholder="vendor@example.com" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
-              {vendorFormErrors.email && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.email}</p>}
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Phone <span className="text-red-400">*</span></label>
-              <input type="text" value={vendorForm.phone} onChange={e => setVendorForm({...vendorForm, phone: e.target.value})} placeholder="+1 555-0123" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
-              {vendorFormErrors.phone && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.phone}</p>}
-            </div>
-          </div>
-          {!isEdit && (
-            <div>
-              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Password <span className="text-red-400">*</span></label>
-              <input type="password" value={vendorForm.password} onChange={e => setVendorForm({...vendorForm, password: e.target.value})} placeholder="Min 6 characters" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.password ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
-              {vendorFormErrors.password && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.password}</p>}
-            </div>
-          )}
-          <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Category</label>
-            <input type="text" value={vendorForm.category} onChange={e => setVendorForm({...vendorForm, category: e.target.value})} placeholder="Furniture, Decor, etc." className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Address</label>
-            <textarea rows={2} value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="123 Business St, City" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all resize-none" />
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Status</label>
-            <select value={vendorForm.status} onChange={e => setVendorForm({...vendorForm, status: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
-              <option value="Active">Active</option>
-              <option value="Suspended">Suspended</option>
-            </select>
-          </div>
-          <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={() => { if (isEdit) { setShowEditVendorModal(false); setSelectedVendor(null); } else { setShowAddVendorModal(false); } resetVendorForm(); }} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
-            <button type="submit" disabled={vendorActionLoading} className="px-6 py-3 rounded-xl bg-[#1F2937] text-white font-bold text-sm hover:bg-black disabled:opacity-50 transition-all shadow-sm flex items-center gap-2">
-              {vendorActionLoading ? <><RefreshCw className="w-4 h-4 animate-spin" /> {isEdit ? 'Updating...' : 'Adding...'}</> : (isEdit ? 'Update Vendor' : 'Add Vendor')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-
-  const ViewVendorModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Store className="w-5 h-5 text-blue-500" />
-            </div>
-            <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Vendor Details</h3>
-          </div>
-          <button onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }} className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors">
-            <X className="w-4 h-4 text-gray-400" />
-          </button>
-        </div>
-        {selectedVendor && (
-          <div className="p-6 space-y-5">
-            <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
-              <div className="w-16 h-16 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center font-bold text-2xl shadow-md">
-                {(selectedVendor.companyName || selectedVendor.name || 'V').charAt(0)}
-              </div>
-              <div>
-                <h4 className="font-bold text-lg text-[#1F2937]">{selectedVendor.companyName || selectedVendor.name}</h4>
-                <p className="text-sm text-gray-500">{selectedVendor.email} · {selectedVendor.phone || 'No phone'}</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="p-4 rounded-2xl bg-gray-50">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</p>
-                <p className="font-semibold text-[#1F2937]">{selectedVendor.category || 'General'}</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-gray-50">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Type</p>
-                <p className="font-semibold text-[#1F2937] capitalize">{selectedVendor.businessType || 'vendor'}</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-gray-50 col-span-2">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
-                <p className="font-semibold text-[#1F2937]">{selectedVendor.address || 'Not provided'}</p>
-              </div>
-              <div className="p-4 rounded-2xl bg-gray-50">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Status</p>
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${selectedVendor.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : 'bg-[#E76F51]/10 text-[#E76F51]'}`}>
-                  {selectedVendor.isActive ? 'Active' : 'Suspended'}
-                </span>
-              </div>
-              <div className="p-4 rounded-2xl bg-gray-50">
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered</p>
-                <p className="font-semibold text-[#1F2937]">{selectedVendor.createdAt ? new Date(selectedVendor.createdAt).toLocaleDateString() : 'N/A'}</p>
-              </div>
-            </div>
-            <div className="flex justify-end pt-2">
-              <button onClick={() => { setShowViewVendorModal(false); setSelectedVendor(null); }} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-all">Close</button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const DeleteConfirmModal = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setDeleteConfirmVendor(null)}>
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm mx-4" onClick={e => e.stopPropagation()}>
-        <div className="p-6 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
-            <Trash2 className="w-7 h-7 text-red-500" />
-          </div>
-          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Delete Vendor</h3>
-          <p className="text-sm text-gray-500">Are you sure you want to delete <strong>{deleteConfirmVendor?.companyName || deleteConfirmVendor?.name}</strong>? This action cannot be undone.</p>
-          <div className="flex justify-center gap-3">
-            <button onClick={() => setDeleteConfirmVendor(null)} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold text-sm hover:bg-gray-50 transition-all">Cancel</button>
-            <button onClick={() => handleDeleteVendor(deleteConfirmVendor?._id)} className="px-6 py-3 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-sm">Delete</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   // Upgraded Manufacturer Administration Actions
   const fetchMfgLoad = async (mfgId) => {
     setLoadingMfgLoad(true);
@@ -3146,10 +3146,41 @@ const AdminDashboard = ({
           </div>
 
           {/* Modals */}
-          {showAddVendorModal && <VendorFormModal isEdit={false} />}
-          {showEditVendorModal && <VendorFormModal isEdit={true} />}
-          {showViewVendorModal && <ViewVendorModal />}
-          {deleteConfirmVendor && <DeleteConfirmModal />}
+          {showAddVendorModal && (
+            <VendorFormModal
+              isEdit={false}
+              vendorForm={vendorForm}
+              setVendorForm={setVendorForm}
+              vendorFormErrors={vendorFormErrors}
+              onClose={() => { setShowAddVendorModal(false); resetVendorForm(); }}
+              onSubmit={handleAddVendor}
+              vendorActionLoading={vendorActionLoading}
+            />
+          )}
+          {showEditVendorModal && (
+            <VendorFormModal
+              isEdit={true}
+              vendorForm={vendorForm}
+              setVendorForm={setVendorForm}
+              vendorFormErrors={vendorFormErrors}
+              onClose={() => { setShowEditVendorModal(false); setSelectedVendor(null); resetVendorForm(); }}
+              onSubmit={handleEditVendor}
+              vendorActionLoading={vendorActionLoading}
+            />
+          )}
+          {showViewVendorModal && (
+            <ViewVendorModal
+              selectedVendor={selectedVendor}
+              onClose={() => { setShowViewVendorModal(false); setSelectedVendor(null); }}
+            />
+          )}
+          {deleteConfirmVendor && (
+            <DeleteConfirmModal
+              deleteConfirmVendor={deleteConfirmVendor}
+              onCancel={() => setDeleteConfirmVendor(null)}
+              onConfirm={() => handleDeleteVendor(deleteConfirmVendor?._id)}
+            />
+          )}
         </div>
         );
       })()}
