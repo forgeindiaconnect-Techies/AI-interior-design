@@ -42,6 +42,12 @@ app.use('/api/chat', require('./routes/chatRoutes'));
 app.use('/api/contact', require('./routes/contactRoutes'));
 const aiRoutes = require('./routes/aiRoutes');
 app.use('/api/ai', aiRoutes);
+
+// Serve static dataset folders
+['bathroom', 'bedroom', 'living_room', 'kitchen'].forEach(dir => {
+  app.use(`/dataset/${dir}`, express.static(path.join(__dirname, `../${dir}`)));
+});
+
 app.get('/', (req, res) => res.send('AI Interior Marketplace API Running'));
 
 const PORT = process.env.PORT || 5000;

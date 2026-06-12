@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const AIDesignRequestSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   roomType: { type: String, required: true }, // e.g., Kitchen, Living Room, Bedroom
-  originalImage: { type: String, required: true },
+  originalImage: { type: String, required: false },
   generatedImage: { type: String }, // Stable Diffusion output
   stylePreference: { type: String, default: 'Modern Minimalist' },
   assignedVendor: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },

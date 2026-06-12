@@ -1,4 +1,5 @@
 const AIDesignRequest = require('../models/AIDesignRequest');
+const DatasetImage = require('../models/DatasetImage');
 const ManualDesignRequest = require('../models/ManualDesignRequest');
 const InteriorDesignerRequest = require('../models/InteriorDesignerRequest');
 const GenerationHistory = require('../models/GenerationHistory');
@@ -7,6 +8,104 @@ const User = require('../models/User');
 const mongoose = require('mongoose');
 const Replicate = require('replicate');
 const axios = require('axios');
+
+const mockFallbackImages = {
+  'Living Room': [
+    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+    'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80',
+    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+    'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80',
+    'https://images.unsplash.com/photo-1593696140826-c58b021acf8b?w=800&q=80',
+    'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80',
+    'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
+    'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
+    'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80',
+    'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80',
+    'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+    'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80'
+  ],
+  'Bedroom': [
+    'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
+    'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80',
+    'https://images.unsplash.com/photo-1505693314120-0d443867891c?w=800&q=80',
+    'https://images.unsplash.com/photo-1522771731535-62bbacf240b9?w=800&q=80',
+    'https://images.unsplash.com/photo-1531835551805-16d8e487eb28?w=800&q=80',
+    'https://images.unsplash.com/photo-1595514535133-c15112f453cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1585128719715-46776b56a0fb?w=800&q=80',
+    'https://images.unsplash.com/photo-1582582621959-48d27397dc69?w=800&q=80',
+    'https://images.unsplash.com/photo-1574871796859-99c687e6717a?w=800&q=80',
+    'https://images.unsplash.com/photo-1617325247661-675ab0340793?w=800&q=80'
+  ],
+  'Kitchen': [
+    'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&q=80',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
+    'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
+    'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
+    'https://images.unsplash.com/photo-1524813686514-a57563d77965?w=800&q=80',
+    'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=800&q=80',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+    'https://images.unsplash.com/photo-1600607686527-6fb886090705?w=800&q=80'
+  ],
+  'Dining Room': [
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1581428982868-e410dd047a90?w=800&q=80',
+    'https://images.unsplash.com/photo-1615529141018-b223d30906cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=800&q=80',
+    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80',
+    'https://images.unsplash.com/photo-1540932239986-30128078f3ea?w=800&q=80'
+  ],
+  'Bathroom': [
+    'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
+    'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
+    'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&q=80',
+    'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?w=800&q=80',
+    'https://images.unsplash.com/photo-1604709177225-055f99402ea3?w=800&q=80',
+    'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
+    'https://images.unsplash.com/photo-1507652313519-cb08e3eb5a43?w=800&q=80',
+    'https://images.unsplash.com/photo-1564540586847-f4e91458039e?w=800&q=80'
+  ],
+  'Office Room': [
+    'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+    'https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4?w=800&q=80',
+    'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=800&q=80',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
+    'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
+    'https://images.unsplash.com/photo-1589834390005-5d4fb9bf3d32?w=800&q=80'
+  ],
+  'Kids Room': [
+    'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
+    'https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=800&q=80',
+    'https://images.unsplash.com/photo-1584347714856-d8f99e3065b2?w=800&q=80',
+    'https://images.unsplash.com/photo-1582273010505-c1fcb2ce7fb7?w=800&q=80',
+    'https://images.unsplash.com/photo-1603513364969-cfae7d4a2754?w=800&q=80',
+    'https://images.unsplash.com/photo-1579222409749-983178df88cd?w=800&q=80'
+  ],
+  'Balcony': [
+    'https://images.unsplash.com/photo-1581428982868-e410dd047a90?w=800&q=80',
+    'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=800&q=80',
+    'https://images.unsplash.com/photo-1580047648356-9a25b2a0c4f3?w=800&q=80',
+    'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?w=800&q=80',
+    'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80'
+  ],
+  'Pooja Room': [
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+    'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
+    'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80'
+  ],
+  'Commercial Space': [
+    'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
+    'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
+    'https://images.unsplash.com/photo-1582457635677-4b7ea2fb449d?w=800&q=80',
+    'https://images.unsplash.com/photo-1574958269340-fa927503f3dd?w=800&q=80',
+    'https://images.unsplash.com/photo-1582655299285-d62f4eabdd77?w=800&q=80'
+  ]
+};
 const https = require('https');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { generateImageWithAI, generateUniqueSeed, getVariationPrompt, saveGeneration, generateMultipleImages, generateOneImage, VARIATION_STYLES, FALLBACK_IMAGES } = require('./aiController');
@@ -235,104 +334,7 @@ exports.createAIDesign = async (req, res) => {
       }
     };
 
-    const mockFallbackImages = {
-      'Living Room': [
-        'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-        'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-        'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80',
-        'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
-        'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
-        'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
-        'https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80',
-        'https://images.unsplash.com/photo-1593696140826-c58b021acf8b?w=800&q=80',
-        'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80',
-        'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
-        'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
-        'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80',
-        'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80',
-        'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
-        'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80'
-      ],
-      'Bedroom': [
-        'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
-        'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80',
-        'https://images.unsplash.com/photo-1505693314120-0d443867891c?w=800&q=80',
-        'https://images.unsplash.com/photo-1522771731535-62bbacf240b9?w=800&q=80',
-        'https://images.unsplash.com/photo-1531835551805-16d8e487eb28?w=800&q=80',
-        'https://images.unsplash.com/photo-1595514535133-c15112f453cb?w=800&q=80',
-        'https://images.unsplash.com/photo-1585128719715-46776b56a0fb?w=800&q=80',
-        'https://images.unsplash.com/photo-1582582621959-48d27397dc69?w=800&q=80',
-        'https://images.unsplash.com/photo-1574871796859-99c687e6717a?w=800&q=80',
-        'https://images.unsplash.com/photo-1617325247661-675ab0340793?w=800&q=80'
-      ],
-      'Kitchen': [
-        'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&q=80',
-        'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
-        'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
-        'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
-        'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
-        'https://images.unsplash.com/photo-1524813686514-a57563d77965?w=800&q=80',
-        'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=800&q=80',
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
-        'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80',
-        'https://images.unsplash.com/photo-1600607686527-6fb886090705?w=800&q=80'
-      ],
-      'Dining Room': [
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
-        'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
-        'https://images.unsplash.com/photo-1581428982868-e410dd047a90?w=800&q=80',
-        'https://images.unsplash.com/photo-1615529141018-b223d30906cb?w=800&q=80',
-        'https://images.unsplash.com/photo-1503174971373-b1f69850bded?w=800&q=80',
-        'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80',
-        'https://images.unsplash.com/photo-1540932239986-30128078f3ea?w=800&q=80'
-      ],
-      'Bathroom': [
-        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
-        'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
-        'https://images.unsplash.com/photo-1600566752355-35792bedcfea?w=800&q=80',
-        'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?w=800&q=80',
-        'https://images.unsplash.com/photo-1604709177225-055f99402ea3?w=800&q=80',
-        'https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800&q=80',
-        'https://images.unsplash.com/photo-1507652313519-cb08e3eb5a43?w=800&q=80',
-        'https://images.unsplash.com/photo-1564540586847-f4e91458039e?w=800&q=80'
-      ],
-      'Office Room': [
-        'https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80',
-        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-        'https://images.unsplash.com/photo-1505330622279-bf7d7fc918f4?w=800&q=80',
-        'https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=800&q=80',
-        'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=800&q=80',
-        'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
-        'https://images.unsplash.com/photo-1589834390005-5d4fb9bf3d32?w=800&q=80'
-      ],
-      'Kids Room': [
-        'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
-        'https://images.unsplash.com/photo-1544457070-4cd773b4d71e?w=800&q=80',
-        'https://images.unsplash.com/photo-1584347714856-d8f99e3065b2?w=800&q=80',
-        'https://images.unsplash.com/photo-1582273010505-c1fcb2ce7fb7?w=800&q=80',
-        'https://images.unsplash.com/photo-1603513364969-cfae7d4a2754?w=800&q=80',
-        'https://images.unsplash.com/photo-1579222409749-983178df88cd?w=800&q=80'
-      ],
-      'Balcony': [
-        'https://images.unsplash.com/photo-1581428982868-e410dd047a90?w=800&q=80',
-        'https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=800&q=80',
-        'https://images.unsplash.com/photo-1580047648356-9a25b2a0c4f3?w=800&q=80',
-        'https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?w=800&q=80',
-        'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80'
-      ],
-      'Pooja Room': [
-        'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
-        'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80',
-        'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80'
-      ],
-      'Commercial Space': [
-        'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80',
-        'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&q=80',
-        'https://images.unsplash.com/photo-1582457635677-4b7ea2fb449d?w=800&q=80',
-        'https://images.unsplash.com/photo-1574958269340-fa927503f3dd?w=800&q=80',
-        'https://images.unsplash.com/photo-1582655299285-d62f4eabdd77?w=800&q=80'
-      ]
-    };
+
 
     const currentRoom = roomData[roomType] || roomData['Living Room'];
 
@@ -383,24 +385,45 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
       }
     }
 
-    // Generate 5 AI images with seed-based variation system
-    let initialVariations = [];
-    if (originalImage) {
+    finalGeneratedImage = generatedImage;
+    const datasetRooms = ['Bathroom', 'Bedroom', 'Kitchen', 'Living Room'];
+
+    if (datasetRooms.includes(roomType)) {
       try {
-        initialVariations = await generateMultipleImages({
-          image: originalImage,
-          roomType: roomType || 'Living Room',
-          count: 5,
-          existingSeeds: []
-        });
-        finalGeneratedImage = initialVariations[0].imageUrl;
+        const randomImage = await DatasetImage.aggregate([
+          { $match: { roomType } },
+          { $sample: { size: 1 } }
+        ]);
+        if (randomImage && randomImage.length > 0) {
+          const baseUrl = `${req.protocol}://${req.get('host')}`;
+          finalGeneratedImage = baseUrl + randomImage[0].url;
+        }
       } catch (err) {
-        console.warn('AI Generation failed, using fallback:', err.message);
+        console.error('Error fetching dataset image:', err);
+      }
+    }
+
+    let initialVariations = [];
+    if (!finalGeneratedImage) {
+      if (originalImage) {
+        try {
+          initialVariations = await generateMultipleImages({
+            image: originalImage,
+            roomType: roomType || 'Living Room',
+            count: 5,
+            existingSeeds: []
+          });
+          finalGeneratedImage = initialVariations[0].imageUrl;
+        } catch (err) {
+          console.warn('AI Generation failed, using fallback:', err.message);
+          finalGeneratedImage = getFallbackImage(roomType);
+        }
+      } else {
         finalGeneratedImage = getFallbackImage(roomType);
       }
-    } else {
-      finalGeneratedImage = generatedImage || getFallbackImage(roomType);
     }
+
+    const savedOriginalImage = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
 
     const finalAiSuggestion = aiSuggestion || {
       furniture: currentRoom.furniture,
@@ -443,7 +466,7 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
     const aiDesign = await AIDesignRequest.create({
       userId: req.user.id,
       roomType: roomType || 'Living Room',
-      originalImage,
+      originalImage: savedOriginalImage,
       generatedImage: finalGeneratedImage,
       aiSuggestion: finalAiSuggestion,
       analysis: finalAnalysis,
@@ -519,51 +542,49 @@ exports.updateAIDesignStatus = async (req, res) => {
     if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
 
     if (status === 'regenerated') {
-      if (!design.originalImage) {
-        return res.status(400).json({ success: false, message: 'Cannot regenerate: no original image found.' });
-      }
       try {
-        const newVersion = (design.versionNumber || 1) + 1;
+        const roomType = design.roomType || 'Living Room';
+        const currentImage = design.generatedImage;
+        let nextImage = null;
 
-        // Generate 5 variations in parallel
-        const variations = await generateMultipleImages({
-          image: design.originalImage,
-          roomType: design.roomType || 'Living Room',
-          count: 5,
-          existingSeeds: design.seeds || []
-        });
-
-        // Save each variation as a GenerationHistory entry
-        const genHistoryIds = [];
-        for (const v of variations) {
-          const genHistory = await saveGeneration({
-            userId: design.userId,
-            projectId: design._id,
-            uploadedImage: design.originalImage,
-            generatedImage: v.imageUrl,
-            roomType: design.roomType,
-            designStyle: VARIATION_STYLES[v.seed % VARIATION_STYLES.length],
-            promptUsed: v.prompt,
-            seed: v.seed,
-            versionNumber: newVersion
-          });
-          genHistoryIds.push(genHistory._id);
-          design.seeds.push(v.seed);
-          design.generations.push(genHistory._id);
+        const datasetRooms = ['Bathroom', 'Bedroom', 'Kitchen', 'Living Room'];
+        if (datasetRooms.includes(roomType)) {
+          // Fetch a random image from DatasetImage for this roomType, excluding currentImage
+          const currentUrlPath = currentImage && currentImage.includes('/dataset/') ? currentImage.substring(currentImage.indexOf('/dataset/')) : null;
+          
+          let query = { roomType };
+          if (currentUrlPath) {
+            query.url = { $ne: currentUrlPath };
+          }
+          
+          const images = await DatasetImage.find(query);
+          if (images.length > 0) {
+            const randomPick = images[Math.floor(Math.random() * images.length)];
+            const baseUrl = `${req.protocol}://${req.get('host')}`;
+            nextImage = baseUrl + randomPick.url;
+          }
         }
 
-        // Set first variation as the primary image
-        design.generatedImage = variations[0].imageUrl;
-        design.versionNumber = newVersion;
+        if (!nextImage) {
+          // Fallback to Unsplash
+          const options = (mockFallbackImages[roomType] || mockFallbackImages['Living Room']).filter(url => url !== currentImage);
+          nextImage = options[Math.floor(Math.random() * options.length)] || currentImage;
+        }
+
+        design.generatedImage = nextImage;
+        design.versionNumber = (design.versionNumber || 1) + 1;
+        
+        // Randomize the budget slightly for variety
         if (design.aiSuggestion) {
           design.aiSuggestion.budgetEstimate = Math.floor(Math.random() * 1000) + 3000;
         }
+        
         await design.save();
         await design.populate('generations');
 
-        return res.status(200).json({ success: true, data: design, variations: variations.map(v => ({ imageUrl: v.imageUrl, seed: v.seed })) });
+        return res.status(200).json({ success: true, data: design });
       } catch (err) {
-        console.error('Regeneration failed:', err.message, err.stack);
+        console.error('Regeneration failed:', err.message);
         return res.status(500).json({ success: false, message: 'Regeneration failed: ' + err.message });
       }
     }

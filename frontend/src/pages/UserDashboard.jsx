@@ -548,10 +548,6 @@ const UserDashboard = ({
 
   const handleAiSubmit = async (e) => {
     e.preventDefault();
-    if (!originalImage) {
-      alert("Please upload a room photo before generating AI design.");
-      return;
-    }
 
     setLoadingAi(true);
     setAiAnalysisStep('generating');
@@ -626,14 +622,10 @@ const UserDashboard = ({
       setAiAnalysisProgress(0);
       setAiAnalysisLogs([]);
       try {
-        const payload = {
-          roomType: design.roomType || 'Living Room',
-          originalImage: design.originalImage
-        };
-        const res = await axios.post('/designs/ai', payload);
+        const res = await axios.put(`/designs/ai/${id}`, { status: 'regenerated' });
         if (res.data.success) {
-          const newDesign = { ...res.data.data, _currentVariationIndex: 0 };
-          setAiDesigns([newDesign, ...aiDesigns.filter(d => d._id !== id)]);
+          const updatedDesign = { ...res.data.data, _currentVariationIndex: 0 };
+          setAiDesigns(aiDesigns.map(d => d._id === id ? updatedDesign : d));
           setAiAnalysisStep('completed');
           setAiAnalysisProgress(100);
           showToast('✨ AI Design regenerated with new style!');
