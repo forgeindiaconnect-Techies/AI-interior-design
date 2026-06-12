@@ -32,6 +32,12 @@ const DashLoader = () => (
 
 // Removed SyncManager as part of removing mock data
 
+const getDashboardPath = (role) => {
+  if (role === 'admin') return '/dashboard/admin';
+  if (['vendor', 'manufacturer', 'delivery', 'installation'].includes(role)) return '/dashboard/vendor';
+  return '/dashboard/user';
+};
+
 // Protected Route Wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -44,11 +50,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // NOTE: Strict role-based redirects can be added here if needed
-  // if (allowedRoles && !allowedRoles.includes(user.role)) {
-  //    // If user is logged in but doesn't have the right role, send them home
-  //    return <Navigate to="/" replace />;
-  // }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={getDashboardPath(user.role)} replace />;
+  }
 
   return children;
 };
