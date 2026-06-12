@@ -4687,61 +4687,67 @@ const AdminDashboard = ({
 
                             {/* Assignments */}
                             <td className="py-4 px-6 text-xs space-y-1.5">
-                              {/* Manufacturer */}
-                              {order.orderType !== 'Marketplace Product' && (
-                                <div className="flex items-center gap-2 justify-between">
-                                  <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Manufacturer:</span>
-                                  {order.manufacturerId ? (
-                                    <span className="font-bold text-gray-700">{order.manufacturerId.companyName}</span>
-                                  ) : (
-                                    <button
-                                      onClick={() => {
-                                        setAssignmentOrder(order);
-                                        setSelectedPartnerType('manufacturer');
-                                      }}
-                                      className="text-blue-500 font-bold hover:underline text-[10px]"
-                                    >
-                                      + Assign
-                                    </button>
+                              {['Completed', 'Order Completed'].includes(order.orderStatus) ? (
+                                <div className="text-center text-gray-400 font-bold">—</div>
+                              ) : (
+                                <>
+                                  {/* Manufacturer */}
+                                  {order.orderType !== 'Marketplace Product' && (
+                                    <div className="flex items-center gap-2 justify-between">
+                                      <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Manufacturer:</span>
+                                      {order.manufacturerId ? (
+                                        <span className="font-bold text-gray-700">{order.manufacturerId.companyName}</span>
+                                      ) : (
+                                        <button
+                                          onClick={() => {
+                                            setAssignmentOrder(order);
+                                            setSelectedPartnerType('manufacturer');
+                                          }}
+                                          className="text-blue-500 font-bold hover:underline text-[10px]"
+                                        >
+                                          + Assign
+                                        </button>
+                                      )}
+                                    </div>
                                   )}
-                                </div>
+
+                                  {/* Delivery */}
+                                  <div className="flex items-center gap-2 justify-between">
+                                    <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Delivery:</span>
+                                    {order.deliveryPartnerId ? (
+                                      <span className="font-bold text-gray-700">{order.deliveryPartnerId.companyName}</span>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setAssignmentOrder(order);
+                                          setSelectedPartnerType('delivery');
+                                        }}
+                                        className="text-blue-500 font-bold hover:underline text-[10px]"
+                                      >
+                                        + Assign
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* Installation */}
+                                  <div className="flex items-center gap-2 justify-between">
+                                    <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Installation:</span>
+                                    {order.installationPartnerId ? (
+                                      <span className="font-bold text-gray-700">{order.installationPartnerId.companyName}</span>
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          setAssignmentOrder(order);
+                                          setSelectedPartnerType('installation');
+                                        }}
+                                        className="text-blue-500 font-bold hover:underline text-[10px]"
+                                      >
+                                        + Assign
+                                      </button>
+                                    )}
+                                  </div>
+                                </>
                               )}
-
-                              {/* Delivery */}
-                              <div className="flex items-center gap-2 justify-between">
-                                <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Delivery:</span>
-                                {order.deliveryPartnerId ? (
-                                  <span className="font-bold text-gray-700">{order.deliveryPartnerId.companyName}</span>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setAssignmentOrder(order);
-                                      setSelectedPartnerType('delivery');
-                                    }}
-                                    className="text-blue-500 font-bold hover:underline text-[10px]"
-                                  >
-                                    + Assign
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Installation */}
-                              <div className="flex items-center gap-2 justify-between">
-                                <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Installation:</span>
-                                {order.installationPartnerId ? (
-                                  <span className="font-bold text-gray-700">{order.installationPartnerId.companyName}</span>
-                                ) : (
-                                  <button
-                                    onClick={() => {
-                                      setAssignmentOrder(order);
-                                      setSelectedPartnerType('installation');
-                                    }}
-                                    className="text-blue-500 font-bold hover:underline text-[10px]"
-                                  >
-                                    + Assign
-                                  </button>
-                                )}
-                              </div>
                             </td>
 
                             {/* Actions */}
