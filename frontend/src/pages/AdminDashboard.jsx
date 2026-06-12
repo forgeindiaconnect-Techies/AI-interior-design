@@ -166,7 +166,8 @@ const AdminDashboard = ({
   notifications = [],
   onNotifClick,
   onMarkAllRead,
-  searchQuery = ''
+  searchQuery = '',
+  highlightRequestId = null
 }) => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
@@ -573,6 +574,18 @@ const AdminDashboard = ({
       clearInterval(syncInterval);
     };
   }, []);
+
+  // Scroll to and highlight the request from notification
+  useEffect(() => {
+    if (managementData?.manualDesigns?.length > 0 && highlightRequestId) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`admin-request-${highlightRequestId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        localStorage.removeItem('highlightRequestId');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [managementData?.manualDesigns, highlightRequestId]);
 
   useEffect(() => {
     let verifInterval = null;
@@ -4281,8 +4294,13 @@ const AdminDashboard = ({
                           r.status === 'Under Review' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
                           'bg-indigo-50 text-indigo-700 border border-indigo-100';
 
+                        const isHighlighted = highlightRequestId === r._id;
                         return (
-                          <tr key={r._id} className="hover:bg-gray-50/40 transition-colors">
+                          <tr
+                            key={r._id}
+                            id={`admin-request-${r._id}`}
+                            className={`hover:bg-gray-50/40 transition-colors ${isHighlighted ? 'bg-blue-50 ring-2 ring-blue-300' : ''}`}
+                          >
                             <td className="p-5 font-mono text-[11px] text-gray-500">{r._id}</td>
                             <td className="p-5 font-bold">
                               <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#F8F5F0] text-[#8B5E3C] border border-[#D4A373]/20">

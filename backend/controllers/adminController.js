@@ -2045,8 +2045,12 @@ exports.assignManualDesignVendor = async (req, res) => {
     if (vendor && vendor.userId) {
       await Notification.create({
         userId: vendor.userId._id,
-        message: `New manual design request assigned to you: Room - ${design.roomType}, Style - ${design.style}`,
-        type: 'info'
+        title: 'New Design Request Assigned',
+        message: `New manual design request assigned to you.\nRoom: ${design.roomType} | Style: ${design.style} | Budget: ${design.budget}`,
+        type: 'info',
+        relatedId: design._id,
+        relatedModel: 'ManualDesignRequest',
+        details: { roomType: design.roomType, style: design.style, budget: design.budget, status: design.status }
       });
     }
 
@@ -2084,8 +2088,12 @@ exports.assignManualDesignDesigner = async (req, res) => {
     if (designer && designer.userId) {
       await Notification.create({
         userId: designer.userId._id,
-        message: `New interior designer consultation request assigned to you: Room - ${design.roomType}, Style - ${design.style}`,
-        type: 'info'
+        title: 'New Designer Consultation',
+        message: `New interior designer consultation request assigned to you.\nRoom: ${design.roomType} | Style: ${design.style}`,
+        type: 'info',
+        relatedId: design._id,
+        relatedModel: 'ManualDesignRequest',
+        details: { roomType: design.roomType, style: design.style, budget: design.budget, status: design.status }
       });
     }
 
@@ -2119,8 +2127,12 @@ exports.updateManualDesignStatus = async (req, res) => {
     // Notify User
     await Notification.create({
       userId: design.userId,
-      message: `Your manual interior design request status has been updated to: ${status}`,
-      type: 'info'
+      title: 'Status Updated',
+      message: `Your manual interior design request status has been updated to: ${status}\nRoom: ${design.roomType} | Style: ${design.style}`,
+      type: 'info',
+      relatedId: design._id,
+      relatedModel: 'ManualDesignRequest',
+      details: { roomType: design.roomType, style: design.style, budget: design.budget, status }
     });
 
     res.status(200).json({ success: true, message: `Status updated to ${status} successfully`, data: updated });
@@ -2152,8 +2164,12 @@ exports.approveManualDesign = async (req, res) => {
     // Notify User
     await Notification.create({
       userId: design.userId,
-      message: `🎉 Congratulations! Your custom design quotation has been approved. Manufacturing phase will commence shortly.`,
-      type: 'info'
+      title: 'Quotation Approved',
+      message: `🎉 Congratulations! Your custom design quotation has been approved for ${design.roomType} (${design.style}). Manufacturing phase will commence shortly.`,
+      type: 'info',
+      relatedId: design._id,
+      relatedModel: 'ManualDesignRequest',
+      details: { roomType: design.roomType, style: design.style, budget: design.budget, status: 'User Approved' }
     });
 
     // Notify Vendor
@@ -2162,8 +2178,12 @@ exports.approveManualDesign = async (req, res) => {
       if (vendor && vendor.userId) {
         await Notification.create({
           userId: vendor.userId._id,
-          message: `User has approved the quotation for custom room design request ${design._id}. Please start manufacturing.`,
-          type: 'info'
+          title: 'Quotation Approved by User',
+          message: `User has approved the quotation for custom room design request ${design._id} (${design.roomType}). Please start manufacturing.`,
+          type: 'info',
+          relatedId: design._id,
+          relatedModel: 'ManualDesignRequest',
+          details: { roomType: design.roomType, style: design.style, budget: design.budget, status: 'User Approved' }
         });
       }
     }
@@ -2197,8 +2217,12 @@ exports.rejectManualDesign = async (req, res) => {
     // Notify User
     await Notification.create({
       userId: design.userId,
-      message: `Your quotation for manual design request ${design._id} could not be approved. Request reset to Submitted.`,
-      type: 'alert'
+      title: 'Quotation Not Approved',
+      message: `Your quotation for manual design request (${design.roomType} - ${design.style}) could not be approved. Request reset to Submitted.`,
+      type: 'alert',
+      relatedId: design._id,
+      relatedModel: 'ManualDesignRequest',
+      details: { roomType: design.roomType, style: design.style, budget: design.budget, status: 'Submitted' }
     });
 
     res.status(200).json({ success: true, message: 'Manual request rejected/reset successfully', data: updated });

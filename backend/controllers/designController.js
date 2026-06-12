@@ -621,14 +621,32 @@ exports.createManualDesign = async (req, res) => {
   try {
     const manualDesign = await ManualDesignRequest.create({ userId: req.user.id, requestType: req.body.requestType || 'Manual Design', ...req.body, status: 'Submitted' });
     
+    const detailInfo = {
+      roomType: manualDesign.roomType,
+      style: manualDesign.style,
+      budget: manualDesign.budget,
+      status: manualDesign.status
+    };
+
     // Notify Admin
-    await Notification.create({ isAdmin: true, message: `New manual design request submitted by ${req.user.name || 'User'}.` });
+    await Notification.create({
+      isAdmin: true,
+      title: 'New Manual Design Request',
+      message: `New manual design request submitted by ${req.user.name || 'User'}.\nRoom: ${manualDesign.roomType} | Style: ${manualDesign.style} | Budget: ${manualDesign.budget}`,
+      relatedId: manualDesign._id,
+      relatedModel: 'ManualDesignRequest',
+      details: detailInfo
+    });
     
     // Notify Vendors
     const vendors = await User.find({ role: 'vendor' });
     const vendorNotifications = vendors.map(v => ({
       userId: v._id,
-      message: `New manual design request received in your area.`
+      title: 'New Custom Order Available',
+      message: `New manual design request received.\nRoom: ${manualDesign.roomType} | Style: ${manualDesign.style} | Budget: ${manualDesign.budget}`,
+      relatedId: manualDesign._id,
+      relatedModel: 'ManualDesignRequest',
+      details: detailInfo
     }));
     if (vendorNotifications.length > 0) {
       await Notification.insertMany(vendorNotifications);

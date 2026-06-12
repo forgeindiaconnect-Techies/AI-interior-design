@@ -122,18 +122,40 @@ exports.sendQuotation = async (req, res) => {
     if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
 
     const quotation = await Quotation.create({ vendorId: vendor._id, userId, designType, designRequestId, budgetAmount, materialsBreakdown, estimatedTime, status: 'pending' });
+    let design;
     if (designType === 'manual') {
-      await ManualDesignRequest.findByIdAndUpdate(designRequestId, { 
+      design = await ManualDesignRequest.findByIdAndUpdate(designRequestId, { 
         status: 'Quotation Sent',
         quotationAmount: budgetAmount,
         quotationMaterials: materialsBreakdown,
         quotationTime: estimatedTime,
         assignedVendorId: vendor._id
-      });
+      }, { returnDocument: 'after' });
     }
 
-    await Notification.create({ userId, message: `Vendor ${vendor.companyName} shared a budget quotation.` });
-    await Notification.create({ isAdmin: true, message: `Quotation sent to user by vendor.` });
+    const detailInfo = design ? {
+      roomType: design.roomType,
+      style: design.style,
+      budget: design.budget,
+      status: 'Quotation Sent'
+    } : {};
+
+    await Notification.create({
+      userId,
+      title: 'Quotation Received',
+      message: `Vendor ${vendor.companyName} shared a budget quotation for your design request.\nAmount: ${budgetAmount} | Time: ${estimatedTime}`,
+      relatedId: designRequestId,
+      relatedModel: 'ManualDesignRequest',
+      details: detailInfo
+    });
+    await Notification.create({
+      isAdmin: true,
+      title: 'Quotation Sent by Vendor',
+      message: `Quotation sent to user by vendor ${vendor.companyName}.\nAmount: ${budgetAmount}`,
+      relatedId: designRequestId,
+      relatedModel: 'ManualDesignRequest',
+      details: detailInfo
+    });
 
     res.status(201).json({ success: true, data: quotation });
   } catch (error) {
@@ -196,7 +218,14 @@ exports.acceptRequest = async (req, res) => {
 
     const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Accepted' }, { returnDocument: 'after' });
     if (request) {
-      await Notification.create({ userId: request.userId, message: `Vendor accepted your design request and will provide a quotation.` });
+      await Notification.create({
+        userId: request.userId,
+        title: 'Request Accepted',
+        message: `Vendor accepted your design request and will provide a quotation.\nRoom: ${request.roomType} | Style: ${request.style}`,
+        relatedId: request._id,
+        relatedModel: 'ManualDesignRequest',
+        details: { roomType: request.roomType, style: request.style, budget: request.budget, status: 'Accepted' }
+      });
     }
     res.status(200).json({ success: true, message: 'Request accepted successfully', data: request });
   } catch (error) {
@@ -213,7 +242,14 @@ exports.rejectRequest = async (req, res) => {
 
     const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { returnDocument: 'after' });
     if (request) {
-      await Notification.create({ userId: request.userId, message: `Vendor rejected your design request.` });
+      await Notification.create({
+        userId: request.userId,
+        title: 'Request Rejected',
+        message: `Vendor rejected your design request.\nRoom: ${request.roomType} | Style: ${request.style}`,
+        relatedId: request._id,
+        relatedModel: 'ManualDesignRequest',
+        details: { roomType: request.roomType, style: request.style, budget: request.budget, status: 'Rejected' }
+      });
     }
     res.status(200).json({ success: true, message: 'Request rejected', data: request });
   } catch (error) {

@@ -6,10 +6,8 @@ const mongoose = require('mongoose');
 // @access  Private
 exports.getNotifications = async (req, res) => {
   try {
-
-
     const filter = req.user.role === 'admin' ? { isAdmin: true } : { userId: req.user.id };
-    const notifications = await Notification.find(filter).sort('-createdAt');
+    const notifications = await Notification.find(filter).sort('-createdAt').lean();
     res.status(200).json({ success: true, data: notifications });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

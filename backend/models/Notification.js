@@ -7,6 +7,14 @@ const NotificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   type: { type: String, default: 'info' },
   isRead: { type: Boolean, default: false },
+  relatedId: { type: mongoose.Schema.Types.ObjectId },
+  relatedModel: { type: String },
+  details: {
+    roomType: { type: String },
+    style: { type: String },
+    budget: { type: String },
+    status: { type: String }
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

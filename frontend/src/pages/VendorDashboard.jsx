@@ -16,7 +16,8 @@ const VendorDashboard = ({
   notifications = [],
   onNotifClick,
   onMarkAllRead,
-  searchQuery = ''
+  searchQuery = '',
+  highlightRequestId = null
 }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -479,6 +480,18 @@ const VendorDashboard = ({
       window.removeEventListener('focus', handleSync);
     };
   }, []);
+
+  // Scroll to and highlight the request from notification
+  useEffect(() => {
+    if (customRequests.length > 0 && highlightRequestId) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`request-${highlightRequestId}`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        localStorage.removeItem('highlightRequestId');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [customRequests, highlightRequestId]);
 
   // Ready-made Orders Action Handlers
   const triggerNotification = (recipient, message, type = 'info') => {
@@ -2386,8 +2399,15 @@ const VendorDashboard = ({
                     req.status === 'Quotation Sent' || req.status === 'budget_shared' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' :
                     req.status === 'Rejected' ? 'bg-red-100 text-red-600' : 'bg-[#E9C46A]/20 text-[#8B5E3C]';
 
+                  const isHighlighted = highlightRequestId === req._id;
                   return (
-                    <div key={req._id} className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6 hover:shadow-md transition-all">
+                    <div
+                      key={req._id}
+                      id={`request-${req._id}`}
+                      className={`bg-white p-8 rounded-3xl shadow-sm border space-y-6 hover:shadow-md transition-all ${
+                        isHighlighted ? 'border-[#2A9D8F] ring-2 ring-[#2A9D8F]/30 animate-pulse' : 'border-[#D4A373]/30'
+                      }`}
+                    >
                       {/* Header */}
                       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-gray-100 pb-6">
                         <div className="space-y-1">

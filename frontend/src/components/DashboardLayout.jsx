@@ -119,6 +119,16 @@ const DashboardLayout = ({ children }) => {
     if (notif._id && notif._id.length === 24) {
       try { await axios.put(`/notifications/${notif._id}/read`); } catch(e){}
     }
+
+    // Navigate to relevant dashboard tab when notification has related request
+    if (notif.relatedId && notif.relatedModel === 'ManualDesignRequest') {
+      const targetTab = isAdmin ? 'custom_design_requests' : isVendor ? 'custom_requests' : null;
+      if (targetTab) {
+        // Store the related ID so the dashboard tab can highlight/scroll to it
+        localStorage.setItem('highlightRequestId', notif.relatedId);
+        setActiveTab(targetTab);
+      }
+    }
   };
 
   const handleClearNotifications = () => {
@@ -259,7 +269,8 @@ const DashboardLayout = ({ children }) => {
         notifications,
         onNotifClick: handleNotifClick,
         onMarkAllRead: handleMarkAllRead,
-        searchQuery
+        searchQuery,
+        highlightRequestId: localStorage.getItem('highlightRequestId')
       });
     }
     return child;
@@ -577,9 +588,28 @@ const DashboardLayout = ({ children }) => {
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div className="flex-1">
+                  {selectedNotif.title && (
+                    <p className="font-extrabold text-gray-800 text-sm mb-1">{selectedNotif.title}</p>
+                  )}
                   <p className="font-bold text-gray-800 text-sm leading-relaxed whitespace-pre-line">
                     {selectedNotif.message}
                   </p>
+                  {selectedNotif.details && (
+                    <div className="mt-3 bg-gray-50 p-3 rounded-xl border border-gray-100 space-y-1.5">
+                      {selectedNotif.details.roomType && (
+                        <p className="text-xs text-gray-600"><strong>Room:</strong> {selectedNotif.details.roomType}</p>
+                      )}
+                      {selectedNotif.details.style && (
+                        <p className="text-xs text-gray-600"><strong>Style:</strong> {selectedNotif.details.style}</p>
+                      )}
+                      {selectedNotif.details.budget && (
+                        <p className="text-xs text-gray-600"><strong>Budget:</strong> {selectedNotif.details.budget}</p>
+                      )}
+                      {selectedNotif.details.status && (
+                        <p className="text-xs text-gray-600"><strong>Status:</strong> {selectedNotif.details.status}</p>
+                      )}
+                    </div>
+                  )}
                   <p className="text-[10px] text-gray-400 mt-2 font-semibold">
                     Received on: {selectedNotif.createdAt ? new Date(selectedNotif.createdAt).toLocaleString() : 'Just now'}
                   </p>
@@ -589,9 +619,21 @@ const DashboardLayout = ({ children }) => {
 
             {/* Modal Footer */}
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
-              
-
-
+              {selectedNotif.relatedId && selectedNotif.relatedModel === 'ManualDesignRequest' && (
+                <button 
+                  onClick={() => {
+                    const targetTab = isAdmin ? 'custom_design_requests' : isVendor ? 'custom_requests' : null;
+                    if (targetTab) {
+                      localStorage.setItem('highlightRequestId', selectedNotif.relatedId);
+                      setActiveTab(targetTab);
+                      setSelectedNotif(null);
+                    }
+                  }}
+                  className="px-4 py-2 bg-[#1F2937] hover:bg-[#374151] text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  View Request Details
+                </button>
+              )}
               <button 
                 onClick={() => setSelectedNotif(null)}
                 className="px-4 py-2 border border-gray-200 hover:bg-gray-100 rounded-xl text-xs font-bold text-gray-500 transition-colors"
