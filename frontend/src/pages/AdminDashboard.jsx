@@ -1868,12 +1868,13 @@ const AdminDashboard = ({
   };
 
   const handleToggleVendorStatus = async (vendor) => {
+    const newStatus = vendor.isActive ? 'Suspended' : 'Active';
     try {
-      const newStatus = vendor.isActive ? 'Suspended' : 'Active';
       await axios.put(`/admin/vendors/${vendor._id}`, { status: newStatus });
-      setVendors(prev => prev.map(v => v._id === vendor._id ? { ...v, isActive: !v.isActive, status: newStatus } : v));
+      setVendors(prev => prev.map(v => v._id === vendor._id ? { ...v, isActive: !v.isActive } : v));
       alert(`Vendor ${newStatus === 'Active' ? 'activated' : 'suspended'} successfully`);
     } catch (err) {
+      setVendors(prev => prev.map(v => v._id === vendor._id ? { ...v, isActive: !v.isActive } : v));
       alert(err.response?.data?.message || 'Failed to update vendor status');
     }
   };

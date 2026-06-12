@@ -2719,7 +2719,7 @@ exports.editVendor = async (req, res) => {
     if (category) vendor.businessType = category;
     if (status) {
       vendor.isActive = status === 'Active';
-      vendor.accountActivationStatus = status === 'Active' ? 'Active' : 'Inactive';
+      vendor.accountActivationStatus = status === 'Active' ? 'Active' : 'Suspended';
       if (status === 'Approved') {
         vendor.verificationStatus = 'Approved';
         vendor.accountActivationStatus = 'Active';

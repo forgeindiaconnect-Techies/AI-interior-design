@@ -14,7 +14,7 @@ const VendorSchema = new mongoose.Schema({
   isVerified: { type: Boolean, default: false },
   accountActivationStatus: { 
     type: String, 
-    enum: ['Pending Verification', 'Verification Submitted', 'Under Review', 'Store Setup Pending', 'Active', 'Rejected'], 
+    enum: ['Pending Verification', 'Verification Submitted', 'Under Review', 'Store Setup Pending', 'Active', 'Rejected', 'Suspended'], 
     default: 'Pending Verification' 
   },
   verificationStatus: { type: String, enum: ['Pending', 'Submitted', 'Under Review', 'Approved', 'Rejected'], default: 'Pending' },
