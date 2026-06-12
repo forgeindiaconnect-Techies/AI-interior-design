@@ -46,7 +46,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
             {vendorFormErrors.email && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.email}</p>}
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Phone <span className="text-red-400">*</span></label>
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Contact Number <span className="text-red-400">*</span></label>
             <input type="text" value={vendorForm.phone} onChange={e => setVendorForm({...vendorForm, phone: e.target.value})} placeholder="+1 555-0123" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.phone ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
             {vendorFormErrors.phone && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.phone}</p>}
           </div>
@@ -100,13 +100,13 @@ const ViewVendorModal = ({ selectedVendor, onClose }) => (
       </div>
       {selectedVendor && (
         <div className="p-6 space-y-5">
-          <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
+            <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
             <div className="w-16 h-16 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center font-bold text-2xl shadow-md">
-              {(selectedVendor.companyName || selectedVendor.name || 'V').charAt(0)}
+              {(selectedVendor.companyName || selectedVendor.userId?.name || selectedVendor.name || 'V').charAt(0)}
             </div>
             <div>
-              <h4 className="font-bold text-lg text-[#1F2937]">{selectedVendor.companyName || selectedVendor.name}</h4>
-              <p className="text-sm text-gray-500">{selectedVendor.email} · {selectedVendor.phone || 'No phone'}</p>
+              <h4 className="font-bold text-lg text-[#1F2937]">{selectedVendor.companyName || selectedVendor.userId?.name || selectedVendor.name}</h4>
+              <p className="text-sm text-gray-500">{selectedVendor.userId?.email || selectedVendor.email} · {selectedVendor.userId?.phone || selectedVendor.phone || 'No contact'}</p>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1813,7 +1813,7 @@ const AdminDashboard = ({
     if (!vendorForm.companyName.trim()) errors.companyName = 'Company name is required';
     if (!vendorForm.email.trim()) errors.email = 'Email is required';
     if (!vendorForm.password) errors.password = 'Password is required';
-    if (!vendorForm.phone.trim()) errors.phone = 'Phone is required';
+    if (!vendorForm.phone.trim()) errors.phone = 'Contact number is required';
     if (Object.keys(errors).length > 0) { setVendorFormErrors(errors); return; }
     setVendorActionLoading(true);
     try {
@@ -1837,7 +1837,7 @@ const AdminDashboard = ({
     if (!vendorForm.name.trim()) errors.name = 'Name is required';
     if (!vendorForm.companyName.trim()) errors.companyName = 'Company name is required';
     if (!vendorForm.email.trim()) errors.email = 'Email is required';
-    if (!vendorForm.phone.trim()) errors.phone = 'Phone is required';
+    if (!vendorForm.phone.trim()) errors.phone = 'Contact number is required';
     if (Object.keys(errors).length > 0) { setVendorFormErrors(errors); return; }
     setVendorActionLoading(true);
     try {
@@ -1891,12 +1891,12 @@ const AdminDashboard = ({
   const openEditVendorModal = (vendor) => {
     setSelectedVendor(vendor);
     setVendorForm({
-      name: vendor.name || '',
+      name: vendor.userId?.name || vendor.name || '',
       companyName: vendor.companyName || '',
-      email: vendor.email || '',
-      phone: vendor.phone || '',
+      email: vendor.userId?.email || vendor.email || '',
+      phone: vendor.userId?.phone || vendor.phone || '',
       password: '',
-      address: vendor.address || '',
+      address: vendor.userId?.address || vendor.address || '',
       businessType: vendor.businessType || 'vendor',
       category: vendor.category || '',
       status: vendor.status || (vendor.isActive ? 'Active' : 'Suspended')
@@ -3017,7 +3017,7 @@ const AdminDashboard = ({
         };
         const filteredVendors = vendors.filter(v => {
           const q = vendorSearch.toLowerCase();
-          const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || (v.name && v.name.toLowerCase().includes(q)) || (v.email && v.email.toLowerCase().includes(q)) || (v.phone && v.phone.toLowerCase().includes(q));
+          const matchSearch = !q || (v.companyName && v.companyName.toLowerCase().includes(q)) || ((v.userId?.name || v.name) && (v.userId?.name || v.name).toLowerCase().includes(q)) || ((v.userId?.email || v.email) && (v.userId?.email || v.email).toLowerCase().includes(q)) || ((v.userId?.phone || v.phone) && (v.userId?.phone || v.phone).toLowerCase().includes(q));
           const matchStatus = vendorStatusFilter === 'all' ||
             (vendorStatusFilter === 'active' && v.isActive) ||
             (vendorStatusFilter === 'suspended' && !v.isActive);
@@ -3094,19 +3094,19 @@ const AdminDashboard = ({
                   {filteredVendors.map((vendor) => (
                     <tr key={vendor._id} className="border-b border-gray-50 hover:bg-[#F0F9F8]/50 transition-colors">
                       <td className="py-4 px-5">
-                        <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl bg-[#2A9D8F]/10 text-[#2A9D8F] flex items-center justify-center font-bold text-sm">
-                            {(vendor.companyName || vendor.name || 'V').charAt(0)}
+                            {(vendor.companyName || vendor.userId?.name || vendor.name || 'V').charAt(0)}
                           </div>
                           <div>
-                            <p className="font-bold text-[#1F2937]">{vendor.companyName || vendor.name}</p>
-                            <p className="text-xs text-gray-400">{vendor.name && vendor.companyName ? vendor.name : vendor.email}</p>
+                            <p className="font-bold text-[#1F2937]">{vendor.companyName || vendor.userId?.name || vendor.name}</p>
+                            <p className="text-xs text-gray-400">{vendor.userId?.name || vendor.name}</p>
                           </div>
                         </div>
                       </td>
                       <td className="py-4 px-5">
-                        <p className="text-sm text-gray-600">{vendor.email}</p>
-                        <p className="text-xs text-gray-400">{vendor.phone || '—'}</p>
+                        <p className="text-sm text-gray-600">{vendor.userId?.email || vendor.email}</p>
+                        <p className="text-xs text-gray-400">{vendor.userId?.phone || vendor.phone || '—'}</p>
                       </td>
                       <td className="py-4 px-5">
                         <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">

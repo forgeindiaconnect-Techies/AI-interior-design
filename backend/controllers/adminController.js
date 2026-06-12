@@ -2631,7 +2631,7 @@ exports.rejectVendorRegistration = async (req, res) => {
 // @access  Private (Admin)
 exports.addVendor = async (req, res) => {
   try {
-    const { name, businessName, email, phone, address, category, password, status } = req.body;
+    const { name, companyName, email, phone, address, category, password, status } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -2650,7 +2650,7 @@ exports.addVendor = async (req, res) => {
 
     const vendor = await Vendor.create({
       userId: user._id,
-      companyName: businessName || `${name}'s Business`,
+      companyName: companyName || `${name}'s Business`,
       businessType: category || 'seller',
       isActive: status === 'Active',
       accountActivationStatus: status === 'Active' ? 'Active' : 'Pending Verification',
@@ -2668,7 +2668,7 @@ exports.addVendor = async (req, res) => {
     await Notification.create({
       isAdmin: true,
       title: 'New Vendor Added',
-      message: `Admin created a new vendor account: ${name} (${businessName || name}) - ${email}`,
+      message: `Admin created a new vendor account: ${name} (${companyName || name}) - ${email}`,
       type: 'info'
     });
 
@@ -2701,7 +2701,7 @@ exports.editVendor = async (req, res) => {
     const user = await User.findById(vendor.userId);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    const { name, businessName, email, phone, address, category, status, password } = req.body;
+    const { name, companyName, email, phone, address, category, status, password } = req.body;
 
     if (name) user.name = name;
     if (email && email !== user.email) {
@@ -2715,7 +2715,7 @@ exports.editVendor = async (req, res) => {
     if (password) user.password = password;
     await user.save();
 
-    if (businessName) vendor.companyName = businessName;
+    if (companyName) vendor.companyName = companyName;
     if (category) vendor.businessType = category;
     if (status) {
       vendor.isActive = status === 'Active';
