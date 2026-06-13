@@ -513,6 +513,32 @@ const VendorDashboard = ({
     };
   }, []);
 
+  const fetchCustomRequests = async () => {
+    try {
+      const res = await axios.get('/vendor/requests');
+      if (res.data && res.data.success) {
+        setCustomRequests(res.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching custom requests:', error.message);
+    }
+  };
+
+  useEffect(() => {
+    let intervalId;
+    if (activeTab === 'custom_requests') {
+      // Poll every 1 second
+      intervalId = setInterval(() => {
+        fetchCustomRequests();
+      }, 1000);
+    }
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [activeTab]);
+
   // Scroll to and highlight the request from notification
   useEffect(() => {
     if (customRequests.length > 0 && highlightRequestId) {
