@@ -4228,34 +4228,6 @@ const AdminDashboard = ({
                   <option value="Office">Office</option>
                   <option value="Bathroom">Bathroom</option>
                 </select>
-
-                <select
-                  value={customRequestStatusFilter}
-                  onChange={(e) => setCustomRequestStatusFilter(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:border-blue-600"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="submitted">Submitted</option>
-                  <option value="under review">Under Review</option>
-                  <option value="approved">Approved</option>
-                  <option value="assigned">Assigned</option>
-                  <option value="quotation sent">Quotation Sent</option>
-                  <option value="payment received">Payment Received</option>
-                  <option value="in progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
-                </select>
-
-                <select
-                  value={customRequestBudgetFilter}
-                  onChange={(e) => setCustomRequestBudgetFilter(e.target.value)}
-                  className="px-4 py-2.5 rounded-xl border border-gray-200 text-xs font-medium text-gray-700 bg-white focus:outline-none focus:border-blue-600"
-                >
-                  <option value="all">All Budgets</option>
-                  <option value="low">Under ₹5,000 / Low</option>
-                  <option value="mid">₹5,000 - ₹15,000 / Mid</option>
-                  <option value="high">Over ₹15,000 / High</option>
-                </select>
               </div>
             </div>
 
@@ -4346,9 +4318,10 @@ const AdminDashboard = ({
                                       setSelectedManualDesign(r.raw);
                                     }
                                   }}
-                                  className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-colors"
+                                  title="View Details"
+                                  className="p-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl transition-all"
                                 >
-                                  View Details
+                                  <Eye size={14} />
                                 </button>
 
                                 <select
@@ -4367,7 +4340,6 @@ const AdminDashboard = ({
                                   <option value="Delivered">Delivered</option>
                                   <option value="Installation Completed">Installation Completed</option>
                                   <option value="Rejected">Rejected</option>
-                                  <option value="Delete" className="text-red-600 font-bold">Delete</option>
                                 </select>
 
                                 {!r.assignedVendorId && !r.assignedDesignerId && (
@@ -4375,7 +4347,7 @@ const AdminDashboard = ({
                                     {r.requestType !== 'Interior Designer Help' && (
                                       <button
                                         onClick={() => setAssignVendorManualDesign(r.raw)}
-                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors"
+                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors text-xs"
                                       >
                                         Assign Vendor
                                       </button>
@@ -4389,13 +4361,21 @@ const AdminDashboard = ({
                                             setAssignDesignerManualDesign(r.raw);
                                           }
                                         }}
-                                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors"
+                                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors text-xs"
                                       >
                                         Assign Designer
                                       </button>
                                     )}
                                   </div>
                                 )}
+
+                                <button
+                                  onClick={() => handleAdminUpdateStatus(r._id, 'Delete')}
+                                  title="Delete Request"
+                                  className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
                               </div>
                             </td>
                           </tr>
