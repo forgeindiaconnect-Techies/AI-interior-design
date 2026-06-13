@@ -4324,24 +4324,6 @@ const AdminDashboard = ({
                                   <Eye size={14} />
                                 </button>
 
-                                <select
-                                  value={r.status}
-                                  onChange={(e) => handleAdminUpdateStatus(r._id, e.target.value)}
-                                  className="px-2 py-1.5 rounded-lg border border-gray-200 text-xs font-semibold text-gray-700 bg-white focus:outline-none focus:border-blue-600 cursor-pointer"
-                                >
-                                  <option value="Submitted">Submitted</option>
-                                  <option value="Under Review">Under Review</option>
-                                  <option value="Assigned">Assigned</option>
-                                  <option value="Quotation Sent">Quotation Sent</option>
-                                  <option value="Accepted">Accepted</option>
-                                  <option value="Production Started">Production Started</option>
-                                  <option value="Manufacturing">Manufacturing</option>
-                                  <option value="Ready for Delivery">Ready for Delivery</option>
-                                  <option value="Delivered">Delivered</option>
-                                  <option value="Installation Completed">Installation Completed</option>
-                                  <option value="Rejected">Rejected</option>
-                                </select>
-
                                 <button
                                   onClick={() => handleAdminUpdateStatus(r._id, 'Delete')}
                                   title="Delete Request"
