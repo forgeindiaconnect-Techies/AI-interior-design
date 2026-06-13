@@ -50,8 +50,9 @@ app.use('/api/ai', aiRoutes);
 
 app.get('/', (req, res) => res.send('AI Interior Marketplace API Running'));
 
-// Health check endpoint
+// Health check endpoints
 app.get('/api/health', (req, res) => res.status(200).json({ success: true, message: 'API is healthy' }));
+app.get('/login/api/health', (req, res) => res.status(200).json({ success: true, message: 'API is healthy' }));
 
 const PORT = process.env.PORT || 5000;
 
