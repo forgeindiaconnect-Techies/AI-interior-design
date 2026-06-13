@@ -43,15 +43,6 @@ exports.getProducts = async (req, res) => {
     });
   }
 };
-      .populate('vendorId', 'companyName rating')
-  .sort({ createdAt: -1 })
-  .lean();
-
-res.status(200).json({ success: true, count: products.length, data: products });
-  } catch (error) {
-  res.status(500).json({ success: false, message: error.message });
-}
-};
 
 // @desc    Get single product
 // @route   GET /api/products/:id
