@@ -1484,7 +1484,10 @@ exports.updateVerificationStatus = async (req, res) => {
 // @access  Private (Admin)
 exports.deleteManualDesign = async (req, res) => {
   try {
-    const deleted = await ManualDesignRequest.findByIdAndDelete(req.params.id);
+    let deleted = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      deleted = await ManualDesignRequest.findByIdAndDelete(req.params.id);
+    }
     if (!deleted) {
       const idx = controllerMockManualDesigns.findIndex(m => m._id === req.params.id);
       if (idx !== -1) controllerMockManualDesigns.splice(idx, 1);
@@ -1500,7 +1503,9 @@ exports.deleteManualDesign = async (req, res) => {
 // @access  Private (Admin)
 exports.deleteDesignerRequest = async (req, res) => {
   try {
-    await InteriorDesignerRequest.findByIdAndDelete(req.params.id);
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      await InteriorDesignerRequest.findByIdAndDelete(req.params.id);
+    }
     res.status(200).json({ success: true, message: 'Deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -1512,8 +1517,11 @@ exports.deleteDesignerRequest = async (req, res) => {
 // @access  Private (Admin)
 exports.deleteOrder = async (req, res) => {
   try {
-    let deleted = await Order.findByIdAndDelete(req.params.id);
-    if (!deleted) deleted = await MarketplaceOrder.findByIdAndDelete(req.params.id);
+    let deleted = null;
+    if (mongoose.Types.ObjectId.isValid(req.params.id)) {
+      deleted = await Order.findByIdAndDelete(req.params.id);
+      if (!deleted) deleted = await MarketplaceOrder.findByIdAndDelete(req.params.id);
+    }
     res.status(200).json({ success: true, message: 'Deleted successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

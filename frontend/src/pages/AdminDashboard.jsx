@@ -2399,13 +2399,19 @@ const AdminDashboard = ({
 
   };
 
-  const handleAdminUpdateStatus = async (id, status) => {
+  const handleAdminUpdateStatus = async (id, status, requestType = null) => {
     if (status === 'Delete') {
       const confirmDelete = window.confirm('Are you sure you want to delete this request? This action cannot be undone.');
       if (!confirmDelete) return;
 
       try {
-        await axios.delete(`/admin/manual-designs/${id}`);
+        let url = `/admin/manual-designs/${id}`;
+        if (requestType === 'Interior Designer Help') {
+          url = `/admin/designer-requests/${id}`;
+        } else if (requestType === 'AI Generated') {
+          url = `/admin/orders/${id}`;
+        }
+        await axios.delete(url);
         if (selectedAIDesign && selectedAIDesign._id === id) setSelectedAIDesign(null);
         if (selectedManualDesign && selectedManualDesign._id === id) setSelectedManualDesign(null);
         if (selectedDesignerRequest && selectedDesignerRequest._id === id) setSelectedDesignerRequest(null);
@@ -4325,7 +4331,7 @@ const AdminDashboard = ({
                                 </button>
 
                                 <button
-                                  onClick={() => handleAdminUpdateStatus(r._id, 'Delete')}
+                                  onClick={() => handleAdminUpdateStatus(r._id, 'Delete', r.requestType)}
                                   title="Delete Request"
                                   className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-all"
                                 >
