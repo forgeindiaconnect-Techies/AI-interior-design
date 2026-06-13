@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true, index: true },
   orderType: { type: String, enum: ['product', 'custom_design'], required: true },
   referenceId: { type: mongoose.Schema.Types.ObjectId, required: true }, // Product ID or Quotation ID
   totalAmount: { type: Number, required: true },

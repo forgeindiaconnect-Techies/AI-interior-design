@@ -2,13 +2,13 @@ const mongoose = require('mongoose');
 
 const OrderItemSchema = new mongoose.Schema({
   productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
-  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true },
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', required: true, index: true },
   quantity: { type: Number, required: true },
   price: { type: Number, required: true }
 });
 
 const MarketplaceOrderSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   items: [OrderItemSchema],
   subtotal: { type: Number, required: true },
   tax: { type: Number, default: 0 },

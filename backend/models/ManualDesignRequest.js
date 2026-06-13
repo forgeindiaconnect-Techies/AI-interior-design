@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const ManualDesignRequestSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   roomType: { type: String, required: true },
   style: { type: String, required: true },
   budget: { type: String, required: true },
@@ -36,8 +36,8 @@ const ManualDesignRequestSchema = new mongoose.Schema({
     budgetEstimate: { type: Number }
   },
   requestType: { type: String, enum: ['Manual Design', 'Interior Designer Help', 'AI Generated'], default: 'Manual Design' },
-  assignedVendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
-  assignedDesignerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
+  assignedVendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', index: true },
+  assignedDesignerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', index: true },
   createdAt: { type: Date, default: Date.now }
 });
 

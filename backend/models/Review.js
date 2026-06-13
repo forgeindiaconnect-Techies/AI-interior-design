@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const ReviewSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor' },
-  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+  vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Vendor', index: true },
+  productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', index: true },
   rating: { type: Number, required: true, min: 1, max: 5 },
   comment: { type: String, required: true },
   createdAt: { type: Date, default: Date.now }

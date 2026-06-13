@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const VendorSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true, index: true },
   companyName: { type: String, required: true },
   businessType: { 
     type: String, 

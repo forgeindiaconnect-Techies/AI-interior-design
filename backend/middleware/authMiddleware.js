@@ -20,6 +20,10 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
       }
 
+      if (!decoded || !decoded.id || !mongoose.Types.ObjectId.isValid(decoded.id)) {
+        return res.status(401).json({ success: false, message: 'Not authorized, invalid token payload' });
+      }
+
       req.user = await User.findById(decoded.id).select('-password');
       if (req.user && decoded.role) {
         req.user.role = decoded.role;
