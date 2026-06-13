@@ -13,18 +13,44 @@ let lastFallbackLog = 0;
 // @access  Public
 exports.getProducts = async (req, res) => {
   try {
+    const { category, vendorId } = req.query;
+
     let query = { approvalStatus: 'Approved' };
-    if (category && category !== 'All') query.category = category;
-    if (vendorId) query.vendorId = vendorId;
+
+    if (category && category !== 'All') {
+      query.category = category;
+    }
+
+    if (vendorId) {
+      query.vendorId = vendorId;
+    }
+
     const products = await Product.find(query)
       .populate('vendorId', 'companyName rating')
       .sort({ createdAt: -1 })
       .lean();
 
-    res.status(200).json({ success: true, count: products.length, data: products });
+    res.status(200).json({
+      success: true,
+      count: products.length,
+      data: products
+    });
+
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
+};
+      .populate('vendorId', 'companyName rating')
+  .sort({ createdAt: -1 })
+  .lean();
+
+res.status(200).json({ success: true, count: products.length, data: products });
+  } catch (error) {
+  res.status(500).json({ success: false, message: error.message });
+}
 };
 
 // @desc    Get single product
