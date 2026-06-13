@@ -4342,33 +4342,6 @@ const AdminDashboard = ({
                                   <option value="Rejected">Rejected</option>
                                 </select>
 
-                                {!r.assignedVendorId && !r.assignedDesignerId && (
-                                  <div className="flex gap-1.5">
-                                    {r.requestType !== 'Interior Designer Help' && (
-                                      <button
-                                        onClick={() => setAssignVendorManualDesign(r.raw)}
-                                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors text-xs"
-                                      >
-                                        Assign Vendor
-                                      </button>
-                                    )}
-                                    {(r.requestType === 'Manual Design' || r.requestType === 'Interior Designer Help' || r.requestType === 'AI Generated') && (
-                                      <button
-                                        onClick={() => {
-                                          if (r.requestType === 'Interior Designer Help') {
-                                            setAssignDesignerRequestObj(r.raw);
-                                          } else {
-                                            setAssignDesignerManualDesign(r.raw);
-                                          }
-                                        }}
-                                        className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors text-xs"
-                                      >
-                                        Assign Designer
-                                      </button>
-                                    )}
-                                  </div>
-                                )}
-
                                 <button
                                   onClick={() => handleAdminUpdateStatus(r._id, 'Delete')}
                                   title="Delete Request"
