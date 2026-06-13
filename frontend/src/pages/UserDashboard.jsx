@@ -1684,13 +1684,7 @@ Thank you for shopping with Artisan Studio!
                       <option value="Living Room">Living Room</option>
                       <option value="Bedroom">Bedroom</option>
                       <option value="Kitchen">Kitchen</option>
-                      <option value="Dining Room">Dining Room</option>
                       <option value="Bathroom">Bathroom</option>
-                      <option value="Office Room">Office Room</option>
-                      <option value="Kids Room">Kids Room</option>
-                      <option value="Balcony">Balcony</option>
-                      <option value="Pooja Room">Pooja Room</option>
-                      <option value="Commercial Space">Commercial Space</option>
                     </select>
                   </div>
                   <div>
@@ -1885,13 +1879,7 @@ Thank you for shopping with Artisan Studio!
                     <option value="Living Room">Living Room</option>
                     <option value="Bedroom">Bedroom</option>
                     <option value="Kitchen">Kitchen</option>
-                    <option value="Dining Room">Dining Room</option>
                     <option value="Bathroom">Bathroom</option>
-                    <option value="Office Room">Office Room</option>
-                    <option value="Kids Room">Kids Room</option>
-                    <option value="Balcony">Balcony</option>
-                    <option value="Pooja Room">Pooja Room</option>
-                    <option value="Commercial Space">Commercial Space</option>
                   </select>
                 </div>
                 <div>
