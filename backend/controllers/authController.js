@@ -106,32 +106,7 @@ exports.login = async (req, res) => {
     const validRoles = ['user', 'vendor', 'admin', 'manufacturer', 'delivery', 'installation'];
     const prefix = email.split('@')[0];
     const isDemoEmail = email.endsWith('@example.com') && validRoles.includes(prefix);
-    if (isDemoEmail || global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      let userRole;
-      if (isDemoEmail) {
-        userRole = prefix;
-      } else {
-        try {
-          const user = await User.findOne({ email }).select('role');
-          userRole = user ? user.role : (validRoles.includes(prefix) ? prefix : 'user');
-        } catch {
-          userRole = validRoles.includes(prefix) ? prefix : 'user';
-        }
-      }
-      const token = generateToken('mock_user_id_' + userRole, userRole);
-
-      return res.status(200).json({
-        success: true,
-        token,
-        user: {
-          id: 'mock_user_id_' + userRole,
-          name: userRole.charAt(0).toUpperCase() + userRole.slice(1) + ' Demo',
-          email: email,
-          role: userRole,
-          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(userRole) ? '65c2b18a7c6b4b1c92949765' : null
-        }
-      });
-    }
+    // Removed Mock DB fallback to enforce real DB usage
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -173,12 +148,7 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    if (req.user.id.startsWith('mock_user_id') || global.MOCK_DB || mongoose.connection.readyState !== 1) {
-      return res.status(200).json({
-        success: true,
-        user: req.user
-      });
-    }
+    // Removed MOCK_DB check
 
     const user = await User.findById(req.user.id).select('-password');
     let vendorProfile = null;

@@ -10,56 +10,20 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       let decoded;
       
-      // Handle mock/null/undefined/empty tokens safely in mock environments
       if (!token || token === 'null' || token === 'undefined') {
-        if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-          decoded = { id: 'mock_user_id_user', role: 'user' };
-        } else {
-          return res.status(401).json({ success: false, message: 'Not authorized, token is null or undefined' });
-        }
-      } else if (token.startsWith('mock_token') || token.startsWith('mock_jwt_token_fallback_')) {
-        // Handle both 'mock_token_vendor' and 'mock_jwt_token_fallback_vendor' formats
-        const role = token.replace('mock_jwt_token_fallback_', '').split('_').pop();
-        decoded = { id: `mock_user_id_${role}`, role: role };
-      } else {
-        try {
-          decoded = jwt.verify(token, process.env.JWT_SECRET);
-        } catch (err) {
-          // If token verification fails but we are running in local mock database mode, fallback to a safe mock session
-          if (global.MOCK_DB || mongoose.connection.readyState !== 1) {
-            try {
-              const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-              decoded = { id: payload.id || 'mock_user_id_user', role: payload.role || 'user' };
-            } catch {
-              decoded = { id: 'mock_user_id_user', role: 'user' };
-            }
-          } else {
-            throw err; // bubble up to be caught by the outer try-catch as 401 Unauthorized
-          }
-        }
+        return res.status(401).json({ success: false, message: 'Not authorized, token is null or undefined' });
+      }
+      
+      try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+      } catch (err) {
+        return res.status(401).json({ success: false, message: 'Not authorized, token failed' });
       }
 
-      const isMockToken = token && (token.startsWith('mock_token') || (decoded && decoded.id && String(decoded.id).startsWith('mock_user_id')));
-
-      if (isMockToken || global.MOCK_DB || mongoose.connection.readyState !== 1) {
-        const isMockSuspended = decoded.id && decoded.id.includes('suspended');
-        const isMockBlocked = decoded.id && decoded.id.includes('blocked');
-        req.user = {
-          id: decoded.id || 'mock_user_id_user',
-          name: (decoded.role || 'user').charAt(0).toUpperCase() + (decoded.role || 'user').slice(1) + ' Demo',
-          email: (decoded.role || 'user') + '@example.com',
-          role: decoded.role || 'user',
-          status: isMockSuspended ? 'Suspended' : (isMockBlocked ? 'Blocked' : 'Active'),
-          suspensionReason: isMockSuspended ? 'Mock policy violation' : '',
-          vendorId: ['vendor', 'manufacturer', 'delivery', 'installation'].includes(decoded.role) ? '65c2b18a7c6b4b1c92949765' : null
-        };
-       } else {
-         req.user = await User.findById(decoded.id).select('-password');
-         // Override role with the one from the token to ensure consistency
-         if (req.user && decoded.role) {
-           req.user.role = decoded.role;
-         }
-       }
+      req.user = await User.findById(decoded.id).select('-password');
+      if (req.user && decoded.role) {
+        req.user.role = decoded.role;
+      }
 
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'User not found' });
