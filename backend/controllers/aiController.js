@@ -225,9 +225,9 @@ const generateImageWithAI = async ({ image, roomType, seed, variationPrompt }) =
   }
 };
 
-const generateOneImage = async ({ image, roomType, seed, existingSeeds = [] }) => {
+const generateOneImage = async ({ image, roomType, seed, existingSeeds = [], variationPromptOverride = null }) => {
   const actualSeed = seed || generateUniqueSeed(existingSeeds);
-  const variationPrompt = getVariationPrompt(roomType, actualSeed);
+  const variationPrompt = variationPromptOverride || getVariationPrompt(roomType, actualSeed);
   try {
     const result = await generateImageWithAI({ image, roomType, seed: actualSeed, variationPrompt });
     return { seed: actualSeed, imageUrl: result.imageUrl, prompt: result.prompt, variationPrompt, success: true };
@@ -237,13 +237,13 @@ const generateOneImage = async ({ image, roomType, seed, existingSeeds = [] }) =
   }
 };
 
-const generateMultipleImages = async ({ image, roomType, count = 5, existingSeeds = [] }) => {
+const generateMultipleImages = async ({ image, roomType, count = 5, existingSeeds = [], variationPromptOverride = null }) => {
   const seedsInUse = [...existingSeeds];
   const promises = [];
   for (let i = 0; i < count; i++) {
     const seed = generateUniqueSeed(seedsInUse);
     seedsInUse.push(seed);
-    promises.push(generateOneImage({ image, roomType, seed, existingSeeds: seedsInUse }));
+    promises.push(generateOneImage({ image, roomType, seed, existingSeeds: seedsInUse, variationPromptOverride }));
   }
   return Promise.all(promises);
 };

@@ -350,7 +350,7 @@ exports.createAIDesign = async (req, res) => {
       try {
         console.log(`Analyzing ${roomType} using Gemini Vision...`);
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
         
         const base64Data = originalImage.split(',')[1];
         const mimeType = originalImage.match(/data:([^;]+);/)[1];
@@ -368,7 +368,8 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
   },
   "recommendedFurniturePlacement": [
     { "location": "string", "items": ["string"] }
-  ]
+  ],
+  "imageGenerationPrompt": "A highly detailed, professional, photorealistic description to redesign this room, matching its exact layout structure (such as preserving window/door placement, wall layout, and floor orientation) but styled beautifully."
 }`;
         
         const result = await model.generateContent([
@@ -388,7 +389,7 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
     finalGeneratedImage = generatedImage;
     const datasetRooms = ['Bathroom', 'Bedroom', 'Kitchen', 'Living Room'];
 
-    if (datasetRooms.includes(roomType)) {
+    if (!originalImage && datasetRooms.includes(roomType)) {
       try {
         const randomImage = await DatasetImage.aggregate([
           { $match: { roomType } },
@@ -411,7 +412,8 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
             image: originalImage,
             roomType: roomType || 'Living Room',
             count: 5,
-            existingSeeds: []
+            existingSeeds: [],
+            variationPromptOverride: geminiAnalysis?.imageGenerationPrompt || null
           });
           finalGeneratedImage = initialVariations[0].imageUrl;
         } catch (err) {
