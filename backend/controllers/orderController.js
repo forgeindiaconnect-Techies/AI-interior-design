@@ -492,13 +492,6 @@ exports.updateOrderTracking = async (req, res) => {
       }
 
       const lastStage = order.orderStatus;
-      if (lastStage && lastStage !== 'Cancelled') {
-        const currentIdx = getStageIndex(lastStage);
-        if (newIdx < currentIdx) {
-          return res.status(400).json({ success: false, message: `Cannot move to "${status}" — already at or past this stage` });
-        }
-      }
-
       order.orderStatus = status;
       await order.save();
 
@@ -562,25 +555,33 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
-// Valid tracking workflow sequence (combining both design manufacturing and product delivery stages)
+// All possible order statuses across the system (design manufacturing + product delivery + admin flows)
 const TRACKING_STAGE_SEQUENCE = [
   'Pending Confirmation',
+  'Quotation Accepted',
+  'Manufacturer Assigned',
   'Awaiting Vendor Verification',
+  'Pending Manufacturing',
   'Production Started',
   'Manufacturing',
+  'Quality Check',
   'Ready for Delivery',
   'Order Confirmed',
   'Processing',
   'Pending Dispatch',
   'Dispatched',
+  'Picked Up',
+  'Delivery Assigned',
   'Shipped',
   'Out for Delivery',
   'Out For Delivery',
   'Delivered',
+  'Installation Assigned',
   'Installation Scheduled',
   'Installation In Progress',
   'Installation Completed',
-  'Completed'
+  'Completed',
+  'Cancelled'
 ];
 
 const getStageIndex = (status) => {

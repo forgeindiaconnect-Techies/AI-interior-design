@@ -1210,32 +1210,38 @@ const VendorDashboard = ({
   const handleTrackingUpdate = async (id, status, extra) => {
     setTrackingProcessing(prev => ({ ...prev, [id]: true }));
     try {
-      const payload = { status };
+      const payload = {};
+      if (status) payload.status = status;
       if (extra?.progressImage) payload.progressImage = extra.progressImage;
       if (extra?.deliveryDetails) payload.deliveryDetails = extra.deliveryDetails;
       if (extra?.installationDetails) payload.installationDetails = extra.installationDetails;
       if (extra?.expectedDeliveryDate) payload.expectedDeliveryDate = extra.expectedDeliveryDate;
       if (extra?.note) payload.note = extra.note;
 
-      await axios.post(`/orders/tracking/${id}/update`, payload);
+      const res = await axios.post(`/orders/tracking/${id}/update`, payload);
 
       // Optimistic local updates
-      setManufacturingOrders(prev => prev.map(o =>
-        o._id === id ? { ...o, status } : o
-      ));
-      setDeliveryOrders(prev => prev.map(o =>
-        o._id === id ? { ...o, status, ...(extra?.deliveryDetails && { deliveryDetails: extra.deliveryDetails }) } : o
-      ));
+      if (status) {
+        setManufacturingOrders(prev => prev.map(o =>
+          o._id === id ? { ...o, status } : o
+        ));
+        setDeliveryOrders(prev => prev.map(o =>
+          o._id === id ? { ...o, status, ...(extra?.deliveryDetails && { deliveryDetails: extra.deliveryDetails }) } : o
+        ));
+      }
 
       await fetchPartnerData();
       if (status === 'Installation Completed') {
         showToast('Installation completed! Order is now marked as Completed. Review & Rating enabled.');
-      } else {
+      } else if (status) {
         showToast(`Stage updated to "${status}"`);
+      } else {
+        showToast(res.data?.message || 'Tracking details saved successfully!');
       }
     } catch (err) {
       console.error('Tracking update failed:', err);
-      showToast(err.response?.data?.message || 'Tracking update failed. Please try again.');
+      const msg = err.response?.data?.message || 'Tracking update failed. Please try again.';
+      showToast(msg);
     } finally {
       setTrackingProcessing(prev => ({ ...prev, [id]: false }));
     }
@@ -1255,7 +1261,7 @@ const VendorDashboard = ({
         note: 'Delivery details updated'
       };
 
-      await axios.post(`/orders/tracking/${id}/update`, payload);
+      const res = await axios.post(`/orders/tracking/${id}/update`, payload);
 
       setDeliveryOrders(prev => prev.map(o =>
         o._id === id ? { ...o, deliveryDetails: payload.deliveryDetails } : o
@@ -1265,7 +1271,8 @@ const VendorDashboard = ({
       showToast('Delivery details saved successfully!');
     } catch (err) {
       console.error('Delivery details save failed:', err);
-      showToast(err.response?.data?.message || 'Failed to save delivery details.');
+      const msg = err.response?.data?.message || 'Failed to save delivery details.';
+      showToast(msg);
     } finally {
       setTrackingProcessing(prev => ({ ...prev, [id]: false }));
     }
