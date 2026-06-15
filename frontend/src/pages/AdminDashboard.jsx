@@ -176,6 +176,26 @@ const AdminDashboard = ({
   const [adminTrackingData, setAdminTrackingData] = useState({});
   const [expandedTrackingOrder, setExpandedTrackingOrder] = useState(null);
 
+  const handleOpenImage = (e, imgUrl) => {
+    e.preventDefault();
+    if (!imgUrl) return;
+    if (imgUrl.startsWith('data:')) {
+      const win = window.open();
+      if (win) {
+        win.document.write(`
+          <html>
+            <body style="margin:0; background:#111; display:flex; justify-content:center; align-items:center; height:100vh;">
+              <img src="${imgUrl}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+            </body>
+          </html>
+        `);
+        win.document.close();
+      }
+    } else {
+      window.open(imgUrl, '_blank');
+    }
+  };
+
   // System Notification State
 
   // Partner Assignment State
@@ -6104,7 +6124,7 @@ const AdminDashboard = ({
                       <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Product Gallery ({sub.images.length})</p>
                       <div className="flex gap-4 overflow-x-auto pb-2">
                         {sub.images.map((img, idx) => (
-                          <a key={idx} href={img} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-150 shrink-0">
+                          <a key={idx} href="#" onClick={(e) => handleOpenImage(e, img)} rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-150 shrink-0">
                             <img src={img} alt={`Product ${idx}`} className="w-48 h-32 object-cover group-hover:scale-105 transition-all duration-300" />
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all font-bold text-white text-xs">View Image</div>
                           </a>

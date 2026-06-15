@@ -772,7 +772,7 @@ exports.verifyPayment = async (req, res) => {
     const { orderId } = req.params;
 
     const vendor = await Vendor.findOne({ userId: req.user.id });
-    if (!vendor) {
+    if (!vendor && req.user.role !== 'admin') {
       return res.status(404).json({ success: false, message: 'Vendor profile not found' });
     }
 
@@ -781,8 +781,13 @@ exports.verifyPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.vendorId.toString() !== vendor._id.toString()) {
+    if (req.user.role !== 'admin' && vendor && order.vendorId.toString() !== vendor._id.toString()) {
       return res.status(403).json({ success: false, message: 'This order does not belong to your vendor account' });
+    }
+
+    const verifiedStatuses = ['Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Completed', 'Completed'];
+    if (verifiedStatuses.includes(order.orderStatus)) {
+      return res.status(200).json({ success: true, message: 'Payment already verified', data: order });
     }
 
     if (order.orderStatus !== 'Awaiting Vendor Verification') {
@@ -798,9 +803,9 @@ exports.verifyPayment = async (req, res) => {
       tracking = new OrderTracking({
         orderId: order._id,
         userId: order.userId,
-        vendorId: vendor._id,
+        vendorId: vendor?._id || order.vendorId,
         customerName: user?.name || 'Customer',
-        vendorName: vendor.companyName || 'Vendor',
+        vendorName: vendor?.companyName || 'Vendor',
         amount: order.totalAmount || order.quotationAmount || 0,
         paymentMethod: 'UPI',
         transactionId: 'TXN' + Date.now(),

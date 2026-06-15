@@ -56,6 +56,26 @@ const VendorDashboard = ({
   const [profile, setProfile] = useState(null);
   const [stats, setStats] = useState(null);
 
+  const handleOpenImage = (e, imgUrl) => {
+    e.preventDefault();
+    if (!imgUrl) return;
+    if (imgUrl.startsWith('data:')) {
+      const win = window.open();
+      if (win) {
+        win.document.write(`
+          <html>
+            <body style="margin:0; background:#111; display:flex; justify-content:center; align-items:center; height:100vh;">
+              <img src="${imgUrl}" style="max-width:100%; max-height:100%; object-fit:contain;" />
+            </body>
+          </html>
+        `);
+        win.document.close();
+      }
+    } else {
+      window.open(imgUrl, '_blank');
+    }
+  };
+
   // Vendor/Seller State
   const [products, setProducts] = useState([]);
   const filteredProducts = products.filter(p => 
@@ -2562,7 +2582,7 @@ const VendorDashboard = ({
                             <span className="text-emerald-600 text-[10px] font-bold uppercase block mb-2">Material Photos</span>
                             <div className="flex gap-3 overflow-x-auto pb-1">
                               {req.materialImages.map((img, i) => (
-                                <a key={i} href={img} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-emerald-200 rounded-xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                                <a key={i} href="#" onClick={(e) => handleOpenImage(e, img)} rel="noreferrer" className="block flex-shrink-0 border border-emerald-200 rounded-xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
                                   <img src={img} alt="Material" className="w-20 h-20 object-cover" />
                                 </a>
                               ))}
@@ -2576,7 +2596,7 @@ const VendorDashboard = ({
                       <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/30 flex flex-col sm:flex-row gap-6 mt-4">
                         <div className="flex gap-3 shrink-0">
                           <div className="relative">
-                            <a href={req.generatedImage || req.referenceImages?.[0]} target="_blank" rel="noreferrer">
+                            <a href="#" onClick={(e) => handleOpenImage(e, req.generatedImage || req.referenceImages?.[0])} rel="noreferrer">
                               <AiFallbackImage src={req.generatedImage || req.referenceImages?.[0]} roomType={req.roomType} alt="AI Generated" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-[#2A9D8F]/30" />
                             </a>
                             <span className="absolute bottom-2 left-2 bg-[#2A9D8F]/90 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">AI Generated</span>
@@ -2586,7 +2606,7 @@ const VendorDashboard = ({
                           </div>
                           {req.originalImage && (
                             <div className="relative">
-                              <a href={req.originalImage} target="_blank" rel="noreferrer">
+                              <a href="#" onClick={(e) => handleOpenImage(e, req.originalImage)} rel="noreferrer">
                                 <img src={req.originalImage} alt="Original" className="w-32 sm:w-40 h-32 object-cover rounded-2xl shadow-sm border border-gray-200 opacity-80 hover:opacity-100 transition-opacity" />
                               </a>
                               <span className="absolute bottom-2 left-2 bg-gray-800/80 text-white text-[10px] px-2 py-1 rounded font-bold shadow-sm">Original</span>
@@ -2626,7 +2646,7 @@ const VendorDashboard = ({
                             <h4 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Uploaded Reference Images</h4>
                             <div className="flex gap-4 overflow-x-auto pb-2">
                               {(req.referenceImages || req.images || [req._id === 'man_102' ? 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=600' : 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=600']).map((img, i) => (
-                                <a key={i} href={img} target="_blank" rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
+                                <a key={i} href="#" onClick={(e) => handleOpenImage(e, img)} rel="noreferrer" className="block flex-shrink-0 border border-gray-200 rounded-2xl overflow-hidden hover:opacity-90 transition-opacity shadow-sm">
                                   <img src={img} alt="Reference" className="w-32 h-32 object-cover" />
                                 </a>
                               ))}
