@@ -9,16 +9,6 @@ const OrderSchema = new mongoose.Schema({
   paymentStatus: { type: String, enum: ['pending', 'paid', 'failed'], default: 'pending' },
   orderStatus: { 
     type: String, 
-    enum: [
-      'Pending Confirmation',
-      'Processing', 
-      'Pending Dispatch',
-      'Dispatched',
-      'Out For Delivery', 
-      'Delivered', 
-      'Completed',
-      'Cancelled'
-    ], 
     default: 'Pending Confirmation' 
   },
   timeline: [{

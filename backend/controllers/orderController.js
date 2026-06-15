@@ -190,9 +190,12 @@ exports.createPaymentAndOrder = async (req, res) => {
       return res.status(400).json({ success: false, message: 'quotationId and paymentMethod are required' });
     }
 
-    let quotation = await Quotation.findById(quotationId);
-    if (!quotation) {
-      quotation = await Quotation.findOne({ designRequestId: quotationId });
+    let quotation = null;
+    if (mongoose.Types.ObjectId.isValid(quotationId)) {
+      quotation = await Quotation.findById(quotationId);
+      if (!quotation) {
+        quotation = await Quotation.findOne({ designRequestId: quotationId });
+      }
     }
 
     let vendor, amount, designType, designRequestId;
@@ -209,9 +212,12 @@ exports.createPaymentAndOrder = async (req, res) => {
       designRequestId = quotation.designRequestId;
     } else {
       // No Quotation doc found — look up design request directly
-      let designReq = await ManualDesignRequest.findById(quotationId);
-      if (!designReq) {
-        designReq = await AIDesignRequest.findById(quotationId);
+      let designReq = null;
+      if (mongoose.Types.ObjectId.isValid(quotationId)) {
+        designReq = await ManualDesignRequest.findById(quotationId);
+        if (!designReq) {
+          designReq = await AIDesignRequest.findById(quotationId);
+        }
       }
       if (!designReq) {
         return res.status(404).json({ success: false, message: 'Request not found. Please ensure a quotation has been sent by the vendor.' });
@@ -287,11 +293,13 @@ exports.createPaymentAndOrder = async (req, res) => {
       message: `Payment successful for Order #${shortId}! Awaiting vendor verification.`,
       type: 'success'
     });
-    await Notification.create({
-      userId: vendor.userId,
-      message: `Payment received for Order #${shortId}. Amount: ₹${quotation.budgetAmount}. Method: ${paymentMethod}. TXN: ${txnId}. Please verify payment.`,
-      type: 'info'
-    });
+    if (vendor && vendor.userId) {
+      await Notification.create({
+        userId: vendor.userId,
+        message: `Payment received for Order #${shortId}. Amount: ₹${quotation.budgetAmount}. Method: ${paymentMethod}. TXN: ${txnId}. Please verify payment.`,
+        type: 'info'
+      });
+    }
     await Notification.create({
       isAdmin: true,
       message: `Payment completed for Order #${shortId}. Amount: ₹${quotation.budgetAmount}. Commission: ₹${(quotation.budgetAmount * 0.15).toFixed(2)}`,
