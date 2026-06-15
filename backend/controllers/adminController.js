@@ -1250,14 +1250,15 @@ exports.getManagementData = async (req, res) => {
 
     const manualDesigns = [...controllerMockManualDesigns];
     dbManualDesigns.forEach(d => {
-      if (!manualDesigns.some(m => m._id.toString() === d._id.toString())) {
+          if (!manualDesigns.some(m => m._id.toString() === d._id.toString())) {
         manualDesigns.push(d);
       }
     });
 
     const quotationMap = {};
     quotations.forEach(q => {
-      quotationMap[q._id.toString()] = q.designType; // 'ai' or 'manual'
+      if (q._id) quotationMap[q._id.toString()] = q.designType;
+      if (q.designRequestId) quotationMap[q.designRequestId.toString()] = q.designType;
     });
 
     const trackingByOrderId = {};

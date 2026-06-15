@@ -1040,59 +1040,54 @@ const VendorDashboard = ({
 
   const handleSendAiOrderQuotation = async (e, order) => {
     e.preventDefault();
-    const localOrders = [];
-    const updated = localOrders.map(o =>
-      o._id === order._id
-        ? { ...o, orderStatus: 'quotation_sent', quotationAmount: quoteAmount, quotationMaterials: quoteMaterials, quotationTime: quoteTime, quotationUPI: quoteUPI, quotationQR: quoteQR, quotationPaymentMethod: selectedPaymentMethod, quotationBankHolder: quoteBankHolder, quotationBankAccount: quoteBankAccount, quotationBankIFSC: quoteBankIFSC, quotationBankName: quoteBankName, quotationPaymentGateway: quotePaymentGateway, quotationCashOnVisit: quoteCashOnVisit }
-        : o
-    );
-    
-    setAiDesignOrders(updated.filter(o => o.orderType === 'AI Design' && (o.vendorId?._id === (profile?._id) || o.vendorId === (profile?._id))));
-
-    const localUserNotifs = [];
-    
-
-    alert('Quotation sent to customer for AI Design order!');
-    setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+    try {
+      const res = await axios.post('/vendor/quotations', {
+         userId: order.userId?._id || order.userId,
+         designType: 'ai',
+         designRequestId: order.aiDesignData?._id || order.referenceId || order._id,
+         budgetAmount: quoteAmount,
+         materialsBreakdown: quoteMaterials,
+         estimatedTime: quoteTime
+      });
+      if (res.data.success) {
+         alert('Quotation sent to customer for AI Design order!');
+         if (typeof fetchOrders === 'function') await fetchOrders();
+         if (typeof fetchCustomRequests === 'function') await fetchCustomRequests();
+         setSelectedRequestId(null); setQuoteAmount(''); setQuoteMaterials(''); setQuoteTime(''); setQuoteUPI(''); setQuoteQR(''); resetPaymentFields();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error sending quotation.');
+    }
   };
 
   const handleAcceptAiOrder = async (orderId) => {
-    const localOrders = [];
-    const updated = localOrders.map(o =>
-      o._id === orderId ? { ...o, orderStatus: 'Accepted' } : o
-    );
-    
-    const vendorId = profile?._id;
-    setAiDesignOrders(
-      updated.filter(o =>
-        o.orderType === 'AI Design' &&
-        (o.vendorId?._id === vendorId || o.vendorId === vendorId)
-      )
-    );
-    const localUserNotifs = [];
-    
-    alert('✅ AI Design request accepted! You can now review details and send a quotation.');
+    try {
+      const res = await axios.post(`/vendor/requests/${orderId}/accept`);
+      if (res.data.success) {
+         alert('✅ AI Design request accepted! You can now review details and send a quotation.');
+         if (typeof fetchOrders === 'function') await fetchOrders();
+         if (typeof fetchCustomRequests === 'function') await fetchCustomRequests();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error accepting AI design request.');
+    }
   };
 
   const handleRejectAiOrder = async (orderId) => {
     if (!confirm('Are you sure you want to reject this AI Design request?')) return;
-    const localOrders = [];
-    const updated = localOrders.map(o =>
-      o._id === orderId ? { ...o, orderStatus: 'Rejected' } : o
-    );
-    
-    const vendorId = profile?._id;
-    setAiDesignOrders(
-      updated.filter(o =>
-        o.orderType === 'AI Design' &&
-        (o.vendorId?._id === vendorId || o.vendorId === vendorId)
-      )
-    );
-
-    const localAdminNotifs = [];
-    
-
-    alert('❌ AI Design request rejected.');
+    try {
+      const res = await axios.post(`/vendor/requests/${orderId}/reject`);
+      if (res.data.success) {
+         alert('❌ AI Design request rejected.');
+         if (typeof fetchOrders === 'function') await fetchOrders();
+         if (typeof fetchCustomRequests === 'function') await fetchCustomRequests();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error rejecting AI design request.');
+    }
   };
 
   const handleContactCustomer = (req) => {

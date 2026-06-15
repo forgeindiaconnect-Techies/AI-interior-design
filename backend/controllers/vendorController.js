@@ -1,6 +1,7 @@
 const Vendor = require('../models/Vendor');
 const User = require('../models/User');
 const ManualDesignRequest = require('../models/ManualDesignRequest');
+const AIDesignRequest = require('../models/AIDesignRequest');
 const Quotation = require('../models/Quotation');
 const Order = require('../models/Order');
 const ManufacturingOrder = require('../models/ManufacturingOrder');
@@ -94,7 +95,31 @@ exports.getVendorProfile = async (req, res) => {
 exports.getCustomRequests = async (req, res) => {
   try {
     const requests = await ManualDesignRequest.find({}).populate('userId', 'name email phone').sort('-createdAt').lean();
-    res.status(200).json({ success: true, data: requests });
+    
+    // Fetch AI design requests that are sent for execution
+    const aiRequests = await AIDesignRequest.find({ status: 'execution' }).populate('userId', 'name email phone').sort('-createdAt').lean();
+    
+    const formattedAiRequests = aiRequests.map(r => ({
+      _id: r._id,
+      userId: r.userId,
+      roomType: r.roomType,
+      style: r.stylePreference || 'Modern Minimalist',
+      budget: r.aiSuggestion?.budgetEstimate ? `₹${r.aiSuggestion.budgetEstimate}` : '₹3,000 - ₹5,000',
+      size: 'N/A',
+      requirements: r.aiSuggestion?.furniture?.length > 0 ? `Furniture: ${r.aiSuggestion.furniture.join(', ')}` : 'AI Suggestions',
+      referenceImages: r.generatedImage ? [r.generatedImage] : [],
+      status: 'Submitted', // Display as Submitted to the vendor so they can accept/quote it
+      requestType: 'AI Generated',
+      generatedImage: r.generatedImage,
+      originalImage: r.originalImage,
+      assignedVendorId: r.assignedVendor,
+      createdAt: r.createdAt
+    }));
+
+    const combined = [...requests, ...formattedAiRequests];
+    combined.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({ success: true, data: combined });
   } catch (error) {
     console.error('getCustomRequests error:', error);
     // Self-healing: if it's a CastError due to bad mock data, delete it and retry
@@ -131,12 +156,17 @@ exports.sendQuotation = async (req, res) => {
         quotationTime: estimatedTime,
         assignedVendorId: vendor._id
       }, { returnDocument: 'after' });
+    } else if (designType === 'ai') {
+      design = await AIDesignRequest.findByIdAndUpdate(designRequestId, {
+        status: 'accepted',
+        assignedVendor: vendor._id
+      }, { returnDocument: 'after' });
     }
 
     const detailInfo = design ? {
       roomType: design.roomType,
-      style: design.style,
-      budget: design.budget,
+      style: design.style || design.stylePreference,
+      budget: design.budget || (design.aiSuggestion?.budgetEstimate ? `₹${design.aiSuggestion.budgetEstimate}` : ''),
       status: 'Quotation Sent'
     } : {};
 
@@ -145,7 +175,7 @@ exports.sendQuotation = async (req, res) => {
       title: 'Quotation Received',
       message: `Vendor ${vendor.companyName} shared a budget quotation for your design request.\nAmount: ${budgetAmount} | Time: ${estimatedTime}`,
       relatedId: designRequestId,
-      relatedModel: 'ManualDesignRequest',
+      relatedModel: designType === 'ai' ? 'AIDesignRequest' : 'ManualDesignRequest',
       details: detailInfo
     });
     await Notification.create({
@@ -153,7 +183,7 @@ exports.sendQuotation = async (req, res) => {
       title: 'Quotation Sent by Vendor',
       message: `Quotation sent to user by vendor ${vendor.companyName}.\nAmount: ${budgetAmount}`,
       relatedId: designRequestId,
-      relatedModel: 'ManualDesignRequest',
+      relatedModel: designType === 'ai' ? 'AIDesignRequest' : 'ManualDesignRequest',
       details: detailInfo
     });
 
@@ -209,22 +239,22 @@ exports.forwardToManufacturer = async (req, res) => {
   }
 };
 
-// @desc    Accept design request
-// @route   POST /api/vendor/requests/:id/accept
-// @access  Private (Vendor)
 exports.acceptRequest = async (req, res) => {
   try {
-
-
-    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Accepted' }, { returnDocument: 'after' });
+    let request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Accepted' }, { returnDocument: 'after' });
+    let isAi = false;
+    if (!request) {
+      request = await AIDesignRequest.findByIdAndUpdate(req.params.id, { status: 'accepted' }, { returnDocument: 'after' });
+      isAi = true;
+    }
     if (request) {
       await Notification.create({
         userId: request.userId,
         title: 'Request Accepted',
-        message: `Vendor accepted your design request and will provide a quotation.\nRoom: ${request.roomType} | Style: ${request.style}`,
+        message: `Vendor accepted your design request and will provide a quotation.\nRoom: ${request.roomType} | Style: ${request.style || request.stylePreference || 'Modern'}`,
         relatedId: request._id,
-        relatedModel: 'ManualDesignRequest',
-        details: { roomType: request.roomType, style: request.style, budget: request.budget, status: 'Accepted' }
+        relatedModel: isAi ? 'AIDesignRequest' : 'ManualDesignRequest',
+        details: { roomType: request.roomType, style: request.style || request.stylePreference || 'Modern', budget: request.budget || (request.aiSuggestion?.budgetEstimate ? `₹${request.aiSuggestion.budgetEstimate}` : ''), status: 'Accepted' }
       });
     }
     res.status(200).json({ success: true, message: 'Request accepted successfully', data: request });
@@ -238,17 +268,20 @@ exports.acceptRequest = async (req, res) => {
 // @access  Private (Vendor)
 exports.rejectRequest = async (req, res) => {
   try {
-
-
-    const request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { returnDocument: 'after' });
+    let request = await ManualDesignRequest.findByIdAndUpdate(req.params.id, { status: 'Rejected' }, { returnDocument: 'after' });
+    let isAi = false;
+    if (!request) {
+      request = await AIDesignRequest.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { returnDocument: 'after' });
+      isAi = true;
+    }
     if (request) {
       await Notification.create({
         userId: request.userId,
         title: 'Request Rejected',
-        message: `Vendor rejected your design request.\nRoom: ${request.roomType} | Style: ${request.style}`,
+        message: `Vendor rejected your design request.\nRoom: ${request.roomType} | Style: ${request.style || request.stylePreference || 'Modern'}`,
         relatedId: request._id,
-        relatedModel: 'ManualDesignRequest',
-        details: { roomType: request.roomType, style: request.style, budget: request.budget, status: 'Rejected' }
+        relatedModel: isAi ? 'AIDesignRequest' : 'ManualDesignRequest',
+        details: { roomType: request.roomType, style: request.style || request.stylePreference || 'Modern', budget: request.budget || (request.aiSuggestion?.budgetEstimate ? `₹${request.aiSuggestion.budgetEstimate}` : ''), status: 'Rejected' }
       });
     }
     res.status(200).json({ success: true, message: 'Request rejected', data: request });
@@ -385,6 +418,7 @@ exports.getVendorOrders = async (req, res) => {
     let standardOrders = [];
     let marketplaceOrders = [];
     let vendorInfo = { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' };
+    let vendorId = '65c2b18a7c6b4b1c92949765';
 
     if (String(req.user.id).startsWith('mock_')) {
       // For demo mode, return all orders so the dashboard is not empty
@@ -398,6 +432,7 @@ exports.getVendorOrders = async (req, res) => {
       const vendor = await findOrCreateVendorHelper(req.user.id);
       if (!vendor) return res.status(404).json({ success: false, message: 'Vendor not found' });
       vendorInfo = { _id: vendor._id, companyName: vendor.companyName };
+      vendorId = vendor._id;
       
       // Custom/design orders
       standardOrders = await Order.find({ vendorId: vendor._id }).populate('userId', 'name email phone').sort('-createdAt');
@@ -417,10 +452,109 @@ exports.getVendorOrders = async (req, res) => {
       if (t.orderId) trackingMap[t.orderId.toString()] = t; 
     });
 
-    const stdData = standardOrders.map(o => ({
-      ...(o.toObject ? o.toObject() : o),
-      tracking: o._id ? (trackingMap[o._id.toString()] || null) : null
-    }));
+    // Fetch AI Design requests sent for execution
+    const aiReqs = await AIDesignRequest.find({
+      $or: [
+        { assignedVendor: vendorId },
+        { assignedVendor: null }
+      ],
+      status: 'execution'
+    }).populate('userId', 'name email phone').lean();
+
+    // Fetch all quotations for this vendor
+    const quotations = await Quotation.find({ vendorId, designType: 'ai' }).populate('userId', 'name email phone').lean();
+
+    const aiReqMap = {};
+    aiReqs.forEach(r => { aiReqMap[r._id.toString()] = r; });
+
+    const quoteMap = {};
+    quotations.forEach(q => { quoteMap[q.designRequestId.toString()] = q; });
+    const quoteIdMap = {};
+    quotations.forEach(q => { quoteIdMap[q._id.toString()] = q; });
+
+    // Fetch all AI requests to resolve references in completed orders
+    const allAiReqs = await AIDesignRequest.find({}).populate('userId', 'name email phone').lean();
+    const allAiReqMap = {};
+    allAiReqs.forEach(r => { allAiReqMap[r._id.toString()] = r; });
+
+    const stdData = [];
+    for (const o of standardOrders) {
+      const oObj = o.toObject ? o.toObject() : o;
+      oObj.tracking = o._id ? (trackingMap[o._id.toString()] || null) : null;
+
+      let aiReq = allAiReqMap[o.referenceId.toString()];
+      if (!aiReq) {
+        const quote = quoteIdMap[o.referenceId.toString()];
+        if (quote && quote.designType === 'ai') {
+          aiReq = allAiReqMap[quote.designRequestId.toString()];
+        }
+      }
+
+      if (aiReq) {
+        oObj.orderType = 'AI Design';
+        oObj.aiDesignData = {
+          roomType: aiReq.roomType,
+          originalImage: aiReq.originalImage,
+          generatedImage: aiReq.generatedImage,
+          style: 'AI Generated (' + (aiReq.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+          furniture: aiReq.aiSuggestion?.furniture || [],
+          materials: aiReq.aiSuggestion?.materials || [],
+          colorPalette: aiReq.aiSuggestion?.colorPalette || [],
+          budgetEstimate: aiReq.aiSuggestion?.budgetEstimate || 0,
+          requirements: 'AI Suggestions: Furniture (' + (aiReq.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (aiReq.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+        };
+      }
+      stdData.push(oObj);
+    }
+
+    // Inject virtual order objects for pending AI requests
+    for (const aiReq of aiReqs) {
+      const q = quoteMap[aiReq._id.toString()];
+      const orderExists = standardOrders.some(o => o.referenceId.toString() === aiReq._id.toString() || (q && o.referenceId.toString() === q._id.toString()));
+
+      if (orderExists) continue;
+
+      const aiData = {
+        roomType: aiReq.roomType,
+        originalImage: aiReq.originalImage,
+        generatedImage: aiReq.generatedImage,
+        style: 'AI Generated (' + (aiReq.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+        furniture: aiReq.aiSuggestion?.furniture || [],
+        materials: aiReq.aiSuggestion?.materials || [],
+        colorPalette: aiReq.aiSuggestion?.colorPalette || [],
+        budgetEstimate: aiReq.aiSuggestion?.budgetEstimate || 0,
+        requirements: 'AI Suggestions: Furniture (' + (aiReq.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (aiReq.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+      };
+
+      if (q) {
+        stdData.push({
+          _id: q._id,
+          orderType: 'AI Design',
+          orderStatus: 'quotation_sent',
+          userId: aiReq.userId || { _id: q.userId?._id || q.userId, name: 'Customer', email: 'user@example.com' },
+          vendorId: vendorInfo,
+          totalAmount: q.budgetAmount,
+          quotationAmount: q.budgetAmount,
+          quotationMaterials: q.materialsBreakdown,
+          quotationTime: q.estimatedTime,
+          paymentStatus: 'pending',
+          aiDesignData: aiData,
+          createdAt: q.createdAt
+        });
+      } else {
+        stdData.push({
+          _id: aiReq._id,
+          orderType: 'AI Design',
+          orderStatus: 'quotation_pending',
+          userId: aiReq.userId || { name: 'Customer', email: 'user@example.com' },
+          vendorId: vendorInfo,
+          totalAmount: aiReq.aiSuggestion?.budgetEstimate || 0,
+          paymentStatus: 'pending',
+          aiDesignData: aiData,
+          createdAt: aiReq.createdAt
+        });
+      }
+    }
 
     const mktData = marketplaceOrders.map(o => ({
       _id: o._id,

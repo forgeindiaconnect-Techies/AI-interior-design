@@ -23,7 +23,7 @@ const AIDesignRequestSchema = new mongoose.Schema({
   analysis: { type: mongoose.Schema.Types.Mixed },
   status: { 
     type: String, 
-    enum: ['pending', 'generated', 'accepted', 'rejected'], 
+    enum: ['pending', 'generated', 'accepted', 'rejected', 'execution'], 
     default: 'pending' 
   },
   isBookmarked: { type: Boolean, default: false },

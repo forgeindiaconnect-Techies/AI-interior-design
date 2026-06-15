@@ -801,53 +801,18 @@ Thank you for shopping with Artisan Studio!
   };
 
   const handleProceedToExecution = (design) => {
-    const localOrders = JSON.parse(localStorage.getItem('mockOrders') || '[]');
-    const newOrder = {
-      _id: 'ord_ai_' + Date.now(),
-      orderType: 'AI Design',
-      orderStatus: 'quotation_pending',
-      userId: { _id: user?._id || 'u_local', name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com', phone: user?.phone || '' },
-      vendorId: { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
-      totalAmount: design.aiSuggestion?.budgetEstimate || 0,
-      paymentStatus: 'pending',
-      aiDesignData: {
-        roomType: design.roomType,
-        originalImage: design.originalImage,
-        generatedImage: design.generatedImage,
-        style: 'AI Generated (' + (design.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
-        furniture: design.aiSuggestion?.furniture || [],
-        materials: design.aiSuggestion?.materials || [],
-        colorPalette: design.aiSuggestion?.colorPalette || [],
-        budgetEstimate: design.aiSuggestion?.budgetEstimate || 0,
-        requirements: 'AI Suggestions: Furniture (' + (design.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (design.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
-      },
-      createdAt: new Date().toISOString()
-    };
-    const updatedOrders = [newOrder, ...localOrders];
-    
-    setOrders(updatedOrders);
-    localStorage.setItem('mockOrders', JSON.stringify(updatedOrders));
-    window.dispatchEvent(new Event('mockOrdersUpdated'));
-    
     axios.put(`/designs/ai/${design._id}`, { status: 'execution' })
       .then(res => {
         if(res.data.success) {
           setAiDesigns(aiDesigns.map(d => d._id === design._id ? res.data.data : d));
+          fetchUserData();
+          alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
         }
       })
-      .catch(err => console.error('Failed to update design execution status', err));
-    
-    const localVendorNotifs = JSON.parse(localStorage.getItem('mockVendorNotifications') || '[]');
-    localVendorNotifs.unshift({
-      _id: `notif_${Date.now()}`,
-      message: `New AI Design Execution Request for ${design.roomType}`,
-      type: 'order',
-      createdAt: new Date().toISOString(),
-      read: false
-    });
-    localStorage.setItem('mockVendorNotifications', JSON.stringify(localVendorNotifs));
-    
-    alert('AI Design sent to execution! Vendor will review and provide a quotation shortly.');
+      .catch(err => {
+        console.error('Failed to update design execution status', err);
+        alert('Failed to send design to execution. Please try again.');
+      });
   };
 
   // Manual Design Actions
@@ -1044,8 +1009,7 @@ Thank you for shopping with Artisan Studio!
   // ── AI Design Quotation Actions ──
 
   const handleAcceptAiQuotation = (orderId) => {
-    const localOrders = [];
-    const order = localOrders.find(o => o._id === orderId);
+    const order = orders.find(o => o._id === orderId);
     if (order) {
       setAiQuotationPayment(order);
       const pm = order.quotationPaymentMethod || 'upi';
@@ -1059,65 +1023,28 @@ Thank you for shopping with Artisan Studio!
     setAiQuotationProcessing(true);
 
     const orderId = aiQuotationPayment._id;
-    const localOrders = [];
-    const updated = localOrders.map(o =>
-      o._id === orderId
-        ? { ...o, orderStatus: 'Accepted', paymentStatus: 'paid' }
-        : o
-    );
-    
-    setOrders(updated);
+    try {
+      const res = await axios.post('/orders/accept-and-pay', {
+        quotationId: orderId,
+        paymentMethod: quotationPaymentMethod || 'UPI',
+        shippingAddress: 'Address on file'
+      });
 
-    const orderAmount = aiQuotationPayment.quotationAmount || aiQuotationPayment.totalAmount || 0;
-
-    const newTransaction = {
-      _id: 'txn_ai_' + Date.now(),
-      orderId: orderId,
-      userId: { name: user?.name || 'Customer Demo', email: user?.email || 'user@example.com' },
-      vendorId: { companyName: aiQuotationPayment.vendorId?.companyName || 'Artisan Workshop' },
-      amount: orderAmount,
-      commissionAmount: Math.round(orderAmount * 0.15 * 100) / 100,
-      netPayout: Math.round(orderAmount * 0.85 * 100) / 100,
-      paymentMethod: quotationPaymentMethod,
-      status: 'Paid',
-      type: 'Customer Payment',
-      createdAt: new Date().toISOString()
-    };
-    const localTxns = [];
-    
-
-    const triggerNotif = (recipient, message, type = 'success') => {
-      const notifObj = {
-        _id: `notif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-        message,
-        type,
-        createdAt: new Date().toISOString(),
-        read: false
-      };
-      const key = recipient === 'vendor' ? 'mockVendorNotifications' : recipient === 'admin' ? 'mockAdminNotifications' : 'mockUserNotifications';
-      const existing = JSON.parse(localStorage.getItem(key) || '[]');
-      
-    };
-
-    const shortOrderId = orderId.slice(-6);
-    const payMethod = (quotationPaymentMethod || 'Paytm UPI').toUpperCase().includes('UPI') ? 'Paytm UPI' : (quotationPaymentMethod || 'Paytm UPI');
-    const txnId = 'PTM' + Math.floor(10000000 + Math.random() * 90000000);
-    const optionsDate = { day: 'numeric', month: 'short', year: 'numeric' };
-    const optionsTime = { hour: 'numeric', minute: '2-digit', hour12: true };
-    const formattedDate = new Date().toLocaleDateString('en-GB', optionsDate);
-    const formattedTime = new Date().toLocaleTimeString('en-US', optionsTime);
-    const paidOnStr = `${formattedDate} | ${formattedTime}`;
-
-    const vendorMsg = `Payment received successfully\n\nOrder ID: #${shortOrderId}\nCustomer: ${user?.name || 'Customer'}\nAmount Paid: ₹${orderAmount.toLocaleString('en-IN')}\nPayment Method: ${payMethod}\nTransaction ID: ${txnId}\nPaid On: ${paidOnStr}\n\nPlease verify the payment and start production.`;
-
-    triggerNotif('vendor', vendorMsg, 'info');
-    triggerNotif('admin', `Payment success for AI Design order: #${shortOrderId}.`, 'success');
-    triggerNotif('user', 'Payment success! Awaiting vendor verification. Your order will enter production once confirmed.', 'success');
-
-    setAiQuotationProcessing(false);
-    setAiQuotationPayment(null);
-    showToast('Payment successful! AI Design order confirmed.');
-    if (setActiveTab) setActiveTab('orders');
+      if (res.data.success) {
+        await fetchUserData();
+        setAiQuotationPayment(null);
+        setAiQuotationProcessing(false);
+        showToast('Payment successful! AI Design order confirmed.');
+        if (setActiveTab) setActiveTab('orders');
+      } else {
+        showToast(res.data.message || 'Payment processing failed.', 'error');
+        setAiQuotationProcessing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.response?.data?.message || 'Payment confirmation failed.', 'error');
+      setAiQuotationProcessing(false);
+    }
   };
 
   const handleRejectAiQuotation = async (orderId) => {

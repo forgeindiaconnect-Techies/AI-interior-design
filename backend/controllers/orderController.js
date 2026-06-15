@@ -38,8 +38,6 @@ exports.createOrder = async (req, res) => {
 // @access  Private
 exports.getUserOrders = async (req, res) => {
   try {
-
-
     const orders = await Order.find({ userId: req.user.id }).populate('vendorId', 'companyName').sort('-createdAt');
 
     const orderIds = orders.map(o => o._id);
@@ -47,12 +45,119 @@ exports.getUserOrders = async (req, res) => {
     const trackings = await OrderTracking.find({ orderId: { $in: orderIds } });
     trackings.forEach(t => { trackingMap[t.orderId.toString()] = t; });
 
-    const data = orders.map(o => ({
-      ...o.toObject(),
-      tracking: trackingMap[o._id.toString()] || null
-    }));
+    // Fetch AI Design Requests for this user that are in 'execution' status
+    const AIDesignRequest = require('../models/AIDesignRequest');
+    const aiReqs = await AIDesignRequest.find({ userId: req.user.id, status: 'execution' }).sort('-createdAt');
 
-    res.status(200).json({ success: true, data });
+    // Fetch all Quotations for this user where designType is 'ai'
+    const Quotation = require('../models/Quotation');
+    const quotations = await Quotation.find({ userId: req.user.id, designType: 'ai' }).populate('vendorId', 'companyName').sort('-createdAt');
+
+    const aiReqMap = {};
+    aiReqs.forEach(r => { aiReqMap[r._id.toString()] = r; });
+
+    const quoteMap = {};
+    quotations.forEach(q => { quoteMap[q.designRequestId.toString()] = q; });
+    const quoteIdMap = {};
+    quotations.forEach(q => { quoteIdMap[q._id.toString()] = q; });
+
+    // Fetch all AI requests (to resolve references in completed orders)
+    const allAiRequests = await AIDesignRequest.find({ userId: req.user.id });
+    const allAiReqMap = {};
+    allAiRequests.forEach(r => { allAiReqMap[r._id.toString()] = r; });
+
+    const decoratedOrders = [];
+
+    // First, add all actual orders from the database
+    for (const o of orders) {
+      const oObj = o.toObject();
+      oObj.tracking = trackingMap[o._id.toString()] || null;
+
+      let aiReq = allAiReqMap[o.referenceId.toString()];
+      if (!aiReq) {
+        const quote = quoteIdMap[o.referenceId.toString()];
+        if (quote && quote.designType === 'ai') {
+          aiReq = allAiReqMap[quote.designRequestId.toString()];
+        }
+      }
+
+      if (aiReq) {
+        oObj.orderType = 'AI Design';
+        oObj.aiDesignData = {
+          roomType: aiReq.roomType,
+          originalImage: aiReq.originalImage,
+          generatedImage: aiReq.generatedImage,
+          style: 'AI Generated (' + (aiReq.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+          furniture: aiReq.aiSuggestion?.furniture || [],
+          materials: aiReq.aiSuggestion?.materials || [],
+          colorPalette: aiReq.aiSuggestion?.colorPalette || [],
+          budgetEstimate: aiReq.aiSuggestion?.budgetEstimate || 0,
+          requirements: 'AI Suggestions: Furniture (' + (aiReq.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (aiReq.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+        };
+      }
+      decoratedOrders.push(oObj);
+    }
+
+    // Next, add virtual/mock order objects for pending AI design execution requests
+    for (const aiReq of aiReqs) {
+      const q = quoteMap[aiReq._id.toString()];
+      const orderExists = orders.some(o => o.referenceId.toString() === aiReq._id.toString() || (q && o.referenceId.toString() === q._id.toString()));
+
+      if (orderExists) continue;
+
+      if (q) {
+        decoratedOrders.push({
+          _id: q._id,
+          orderType: 'AI Design',
+          orderStatus: 'quotation_sent',
+          userId: { _id: req.user.id, name: req.user.name, email: req.user.email },
+          vendorId: q.vendorId || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+          totalAmount: q.budgetAmount,
+          quotationAmount: q.budgetAmount,
+          quotationMaterials: q.materialsBreakdown,
+          quotationTime: q.estimatedTime,
+          paymentStatus: 'pending',
+          aiDesignData: {
+            roomType: aiReq.roomType,
+            originalImage: aiReq.originalImage,
+            generatedImage: aiReq.generatedImage,
+            style: 'AI Generated (' + (aiReq.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+            furniture: aiReq.aiSuggestion?.furniture || [],
+            materials: aiReq.aiSuggestion?.materials || [],
+            colorPalette: aiReq.aiSuggestion?.colorPalette || [],
+            budgetEstimate: aiReq.aiSuggestion?.budgetEstimate || 0,
+            requirements: 'AI Suggestions: Furniture (' + (aiReq.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (aiReq.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+          },
+          createdAt: q.createdAt
+        });
+      } else {
+        decoratedOrders.push({
+          _id: aiReq._id,
+          orderType: 'AI Design',
+          orderStatus: 'quotation_pending',
+          userId: { _id: req.user.id, name: req.user.name, email: req.user.email },
+          vendorId: aiReq.assignedVendor || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' },
+          totalAmount: aiReq.aiSuggestion?.budgetEstimate || 0,
+          paymentStatus: 'pending',
+          aiDesignData: {
+            roomType: aiReq.roomType,
+            originalImage: aiReq.originalImage,
+            generatedImage: aiReq.generatedImage,
+            style: 'AI Generated (' + (aiReq.aiSuggestion?.colorPalette?.[0] || 'Modern') + ')',
+            furniture: aiReq.aiSuggestion?.furniture || [],
+            materials: aiReq.aiSuggestion?.materials || [],
+            colorPalette: aiReq.aiSuggestion?.colorPalette || [],
+            budgetEstimate: aiReq.aiSuggestion?.budgetEstimate || 0,
+            requirements: 'AI Suggestions: Furniture (' + (aiReq.aiSuggestion?.furniture?.join(', ') || 'Standard') + '). Materials (' + (aiReq.aiSuggestion?.materials?.join(', ') || 'Standard') + ').'
+          },
+          createdAt: aiReq.createdAt
+        });
+      }
+    }
+
+    decoratedOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    res.status(200).json({ success: true, data: decoratedOrders });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
