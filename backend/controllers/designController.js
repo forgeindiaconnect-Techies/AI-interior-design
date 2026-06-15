@@ -589,7 +589,7 @@ exports.createAIDesign = async (req, res) => {
       return options[Math.floor(Math.random() * options.length)];
     };
 
-    let finalGeneratedImage = originalImage || generatedImage || getFallbackImage(roomType);
+    let finalGeneratedImage = generatedImage || getFallbackImage(roomType);
 
     let geminiAnalysis = null;
     if (process.env.GEMINI_API_KEY && originalImage) {
@@ -681,7 +681,7 @@ Note: "boundingBox" must be an array of 4 floating point numbers [ymin, xmin, ym
       }
     }
 
-    finalGeneratedImage = originalImage || generatedImage;
+    finalGeneratedImage = generatedImage;
     const datasetRooms = ['Bathroom', 'Bedroom', 'Kitchen', 'Living Room'];
 
     if (!originalImage && datasetRooms.includes(roomType)) {
