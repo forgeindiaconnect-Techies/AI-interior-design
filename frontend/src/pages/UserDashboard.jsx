@@ -3120,16 +3120,29 @@ Thank you for shopping with Artisan Studio!
 
         const currentMsg = getStatusMessage();
 
+        let globalStages = [];
         let normalizedStatus = status;
-        if (['Pending Confirmation', 'Submitted'].includes(status)) normalizedStatus = 'Order Confirmed';
-        else if (['Pending Dispatch', 'Ready for Delivery'].includes(status)) normalizedStatus = 'Processing';
-        else if (['Dispatched'].includes(status)) normalizedStatus = 'Shipped';
-        else if (['Out For Delivery'].includes(status)) normalizedStatus = 'Out for Delivery';
-        else if (['Completed'].includes(status)) normalizedStatus = 'Installation Completed';
 
-        const globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+        if (activeOrder?.orderType === 'custom_design') {
+          globalStages = ['Awaiting Vendor Verification', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+          // Add fallback normalization for custom designs just in case
+          if (['Pending Confirmation', 'Submitted'].includes(status)) normalizedStatus = 'Awaiting Vendor Verification';
+          else if (['Completed'].includes(status)) normalizedStatus = 'Installation Completed';
+        } else {
+          globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+          if (['Pending Confirmation', 'Submitted'].includes(status)) normalizedStatus = 'Order Confirmed';
+          else if (['Pending Dispatch'].includes(status)) normalizedStatus = 'Processing';
+          else if (['Dispatched'].includes(status)) normalizedStatus = 'Shipped';
+          else if (['Out For Delivery'].includes(status)) normalizedStatus = 'Out for Delivery';
+          else if (['Completed'].includes(status)) normalizedStatus = 'Installation Completed';
+        }
+
         let currentIdx = globalStages.indexOf(normalizedStatus);
-        if (currentIdx === -1) currentIdx = 0;
+        if (currentIdx === -1) {
+          // Attempt fallback search
+          currentIdx = globalStages.findIndex(s => s.toLowerCase() === normalizedStatus.toLowerCase());
+          if (currentIdx === -1) currentIdx = 0;
+        }
 
         const handleReturnRequest = (e) => {
           e.preventDefault();

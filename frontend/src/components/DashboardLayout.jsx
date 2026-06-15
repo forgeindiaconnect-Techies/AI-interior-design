@@ -74,10 +74,19 @@ const DashboardLayout = ({ children }) => {
       if (res.data && res.data.success) {
         // Map backend isRead to frontend read
         const mapped = res.data.data.map(n => ({ ...n, read: n.isRead }));
-        setNotifications(mapped);
+        
+        // Include mock notifications from localStorage
+        const localKey = getNotifKey();
+        const localNotifs = JSON.parse(localStorage.getItem(localKey) || '[]');
+        
+        setNotifications([...localNotifs, ...mapped]);
       }
     } catch (err) {
       console.warn("API notifications fetch failed:", err);
+      // Fallback to only mock notifications
+      const localKey = getNotifKey();
+      const localNotifs = JSON.parse(localStorage.getItem(localKey) || '[]');
+      setNotifications(localNotifs);
     }
   };
 

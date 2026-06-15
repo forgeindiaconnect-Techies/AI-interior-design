@@ -597,15 +597,21 @@ const AdminDashboard = ({
 
   // Scroll to and highlight the request from notification
   useEffect(() => {
-    if (managementData?.manualDesigns?.length > 0 && highlightRequestId) {
+    if (highlightRequestId && activeTab === 'custom_design_requests') {
       const timer = setTimeout(() => {
         const el = document.getElementById(`admin-request-${highlightRequestId}`);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('bg-blue-50', 'ring-2', 'ring-blue-300');
+          setTimeout(() => {
+            el.classList.remove('bg-blue-50', 'ring-2', 'ring-blue-300');
+          }, 3000);
+        }
         localStorage.removeItem('highlightRequestId');
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [managementData?.manualDesigns, highlightRequestId]);
+  }, [managementData, highlightRequestId, activeTab]);
 
   useEffect(() => {
     let verifInterval = null;
