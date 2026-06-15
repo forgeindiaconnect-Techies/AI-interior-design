@@ -25,9 +25,6 @@ const protect = async (req, res, next) => {
       }
 
       req.user = await User.findById(decoded.id).select('-password');
-      if (req.user && decoded.role) {
-        req.user.role = decoded.role;
-      }
 
       if (!req.user) {
         return res.status(401).json({ success: false, message: 'User not found' });
