@@ -171,7 +171,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           {openGroups.finance && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
               <NavItem name="Platform Commission" icon={BarChart2} tab="platform_commission" color="#14B8A6" />
-              <NavItem name="Refunds" icon={RefreshCw} tab="refunds" color="#F43F5E" />
             </div>
           )}
         </div>
