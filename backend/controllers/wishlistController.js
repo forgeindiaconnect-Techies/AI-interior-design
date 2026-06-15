@@ -1,4 +1,5 @@
 const Wishlist = require('../models/Wishlist');
+const Product = require('../models/Product');
 const mongoose = require('mongoose');
 
 // Mock Wishlist

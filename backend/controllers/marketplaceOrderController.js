@@ -4,6 +4,7 @@ const Payment = require('../models/Payment');
 const Notification = require('../models/Notification');
 const Vendor = require('../models/Vendor');
 const Product = require('../models/Product');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 
 // @desc    Create new marketplace order from cart
