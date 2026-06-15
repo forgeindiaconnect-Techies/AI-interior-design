@@ -184,6 +184,213 @@ let mockManualDesigns = [
 
 exports.mockManualDesigns = mockManualDesigns;
 
+const fallbackDesignerData = {
+  'Living Room': {
+    detectedElements: {
+      windows: ["Large picture window on north wall", "Small window near entryway"],
+      doors: ["Main entryway door", "Archway to dining area"],
+      existingObjects: ["Unfinished walls", "Bare concrete subfloor"],
+      emptyAreas: ["Center floor area", "East main accent wall", "South wall corner"]
+    },
+    designerReport: {
+      styleRationale: "A refined modern aesthetic combining soft neutral tones, natural wood grains, and brass accents to make the spacious living room feel warm, inviting, and architecturally complete.",
+      lightingAnalysis: "Ample natural light from the north picture window. Suggest adding layered artificial lighting including an elegant central brass chandelier and a warm dimmable floor lamp in the reading corner.",
+      materialPalette: [
+        { name: "Textured Bouclé Fabric", rationale: "For the primary sofa, providing tactile depth and soft comfort." },
+        { name: "Matte White Oak", rationale: "For the coffee table and console to introduce organic, light-toned wood elements." },
+        { name: "Brushed Brass", rationale: "For lighting fixtures and decor accents to add subtle modern luxury." }
+      ],
+      colorPalette: [
+        { hex: "#F4F1EA", name: "Warm Alabaster", use: "Main walls and ceiling" },
+        { hex: "#D4C5B9", name: "Soft Taupe", use: "Area rug and accent textiles" },
+        { hex: "#4A5343", name: "Olive Leaf", use: "Accent pillows and botanical decor" }
+      ],
+      executionChecklist: [
+        "Prep walls by patching and painting with a flat warm alabaster paint.",
+        "Lay down the large textured area rug to define the main seating zone.",
+        "Deliver and position the custom white oak media console along the east wall.",
+        "Assemble and arrange the modular bouclé sofa, centering it with the rug.",
+        "Install the central brushed brass chandelier and wire dimmable switches."
+      ]
+    },
+    interactiveDesignZones: [
+      {
+        id: "zone_1",
+        name: "Primary Seating Anchor",
+        item: "Modular Bouclé Sofa & Oak Coffee Table",
+        description: "Center the main seating group with the picture window. Use a low-profile coffee table to keep sightlines open and flow uninterrupted.",
+        boundingBox: [0.45, 0.15, 0.85, 0.85],
+        suggestedMarketplaceItems: ["sofa", "coffee table", "rug"]
+      },
+      {
+        id: "zone_2",
+        name: "Entertainment & Media Wall",
+        item: "White Oak Media Console",
+        description: "Install a floating white oak console along the east accent wall. Keep the design minimalist to complement the room's geometry.",
+        boundingBox: [0.35, 0.65, 0.75, 0.95],
+        suggestedMarketplaceItems: ["cabinet", "bookshelf", "tv console"]
+      },
+      {
+        id: "zone_3",
+        name: "Reading & Accent Corner",
+        item: "Lounge Chair & Brass Floor Lamp",
+        description: "Place a comfortable accent chair angled towards the room, flanked by a sleek floor lamp to create a cozy secondary zone.",
+        boundingBox: [0.3, 0.05, 0.7, 0.3],
+        suggestedMarketplaceItems: ["chair", "lamp", "side table"]
+      }
+    ]
+  },
+  'Bedroom': {
+    detectedElements: {
+      windows: ["Double casement windows on west wall"],
+      doors: ["Bedroom entrance door", "En-suite bathroom door"],
+      existingObjects: ["Bare concrete floor", "Plain drywall back wall"],
+      emptyAreas: ["Center back wall", "Left bedside wall", "Right bedside wall"]
+    },
+    designerReport: {
+      styleRationale: "A serene Scandinavian sanctuary focusing on minimalist lines, plush textiles, and walnut wood accents to cultivate a deeply relaxing sleeping environment.",
+      lightingAnalysis: "Soft afternoon sunlight from west windows. Layered ambient lighting via bedside sconces and an architectural paper pendant lamp is recommended.",
+      materialPalette: [
+        { name: "American Walnut Wood", rationale: "For bed frame and floating nightstands to anchor the layout with rich tones." },
+        { name: "Washed French Linen", rationale: "For bedding and curtains to introduce organic, relaxed textures." },
+        { name: "Woven Wool", rationale: "For a plush underfoot experience next to the bed." }
+      ],
+      colorPalette: [
+        { hex: "#ECEBE4", name: "Chalk Gray", use: "Main bedroom walls" },
+        { hex: "#8B7D71", name: "Walnut Brown", use: "Bed frame and main furniture" },
+        { hex: "#A2B5CD", name: "Muted Slate Blue", use: "Linen sheets and cushions" }
+      ],
+      executionChecklist: [
+        "Paint the room with two coats of chalk gray breathable matte paint.",
+        "Install the custom walnut bed frame centered against the back wall.",
+        "Mount the floating walnut nightstands at mattress level on both sides.",
+        "Install soft warm-toned bedside pendant lamps or wall sconces.",
+        "Drape the washed french linen bedding and lay down the bedside wool rug."
+      ]
+    },
+    interactiveDesignZones: [
+      {
+        id: "zone_1",
+        name: "Sleeping Anchor Zone",
+        item: "Walnut Platform Bed Frame",
+        description: "Center the queen platform bed frame against the main drywall back wall to anchor the room's layout symmetrically.",
+        boundingBox: [0.38, 0.22, 0.82, 0.78],
+        suggestedMarketplaceItems: ["bed", "bedsheet", "pillow"]
+      },
+      {
+        id: "zone_2",
+        name: "Left Nightstand & Sconce",
+        item: "Floating Walnut Bedside Table",
+        description: "Install a space-saving floating nightstand to keep the floor clear. Add a dimmable warm-toned wall sconce above.",
+        boundingBox: [0.48, 0.05, 0.72, 0.2],
+        suggestedMarketplaceItems: ["side table", "lamp"]
+      },
+      {
+        id: "zone_3",
+        name: "Right Nightstand & Sconce",
+        item: "Floating Walnut Bedside Table",
+        description: "Install matching floating nightstand on the right side of the bed to maintain architectural balance and symmetry.",
+        boundingBox: [0.48, 0.8, 0.72, 0.95],
+        suggestedMarketplaceItems: ["side table", "lamp"]
+      }
+    ]
+  },
+  'Kitchen': {
+    detectedElements: {
+      windows: ["Small window over the sink area"],
+      doors: ["Pantry door", "Access way to dining room"],
+      existingObjects: ["Rough plumbing outlets", "Exposed concrete back wall"],
+      emptyAreas: ["Back cabinet wall", "Center floor", "Sink plumbing area"]
+    },
+    designerReport: {
+      styleRationale: "An ultra-modern culinary space utilizing high-gloss panels, quartz countertops, and clean integrated appliances for professional utility and style.",
+      lightingAnalysis: "Direct workspace illumination via under-cabinet LED strips and pendant lights above the central island.",
+      materialPalette: [
+        { name: "Polished Calacatta Quartz", rationale: "For counter surface and full-height backsplash to offer luxurious, durable utility." },
+        { name: "Matte Charcoal Lacquer", rationale: "For main cabinetry to create a sleek, sophisticated visual contrast." },
+        { name: "Brushed Nickel", rationale: "For handles, faucets, and fixture details to add clean metallic accents." }
+      ],
+      colorPalette: [
+        { hex: "#FFFFFF", name: "Pure Quartz White", use: "Countertops and backsplash" },
+        { hex: "#2C3539", name: "Charcoal Black", use: "Lower and upper cabinets" },
+        { hex: "#DCDCDC", name: "Glistening Silver", use: "Fittings and light fixtures" }
+      ],
+      executionChecklist: [
+        "Fit custom lower and upper matte charcoal cabinets along the main wall.",
+        "Install plumbing fixtures and mount the quartz countertop with under-mount sink.",
+        "Adhere the matching quartz slab backsplash from counter to upper cabinets.",
+        "Fit high-efficiency LED strip lights beneath the upper cabinet run.",
+        "Connect and align built-in stainless steel oven and refrigerator."
+      ]
+    },
+    interactiveDesignZones: [
+      {
+        id: "zone_1",
+        name: "Main Cabinetry & Prep Counter",
+        item: "Matte Charcoal Cabinets & Quartz Countertop",
+        description: "Install full-run lower cabinets and quartz worktops along the main wall, optimizing workspace and storage.",
+        boundingBox: [0.4, 0.1, 0.9, 0.9],
+        suggestedMarketplaceItems: ["cabinet", "chair", "table"]
+      },
+      {
+        id: "zone_2",
+        name: "Sink & Faucet Hub",
+        item: "Under-mount Stainless Steel Sink & Brushed Nickel Faucet",
+        description: "Position the sink centered with the window. Install a premium pull-out spray faucet for maximum culinary versatility.",
+        boundingBox: [0.5, 0.4, 0.78, 0.65],
+        suggestedMarketplaceItems: ["chair", "cabinet"]
+      }
+    ]
+  },
+  'Bathroom': {
+    detectedElements: {
+      windows: ["Frosted privacy window on the rear wall"],
+      doors: ["Bathroom entrance door"],
+      existingObjects: ["Exposed pipe work", "Rough screed floor"],
+      emptyAreas: ["Vanity wall area", "Shower corner", "Toilet installation spot"]
+    },
+    designerReport: {
+      styleRationale: "A spa-like bathroom layout prioritizing wet-dry zoning, clean porcelain fixtures, and calm wood tones for a serene routine.",
+      lightingAnalysis: "Diffused light from the frosted window. Suggest back-lit LED mirror for functional grooming lighting.",
+      materialPalette: [
+        { name: "Terrazzo Tiles", rationale: "For walls and floor to establish a playful, durable moisture-resistant background." },
+        { name: "Teak Wood Veneer", rationale: "For the vanity cabinet to introduce a warm, moisture-resilient organic texture." },
+        { name: "Matte Black Metal", rationale: "For plumbing fittings to anchor the design with bold contrast details." }
+      ],
+      colorPalette: [
+        { hex: "#EAE6DF", name: "Warm Terrazzo Gray", use: "Wall and floor tiles" },
+        { hex: "#C29B70", name: "Warm Teak", use: "Vanity cabinet and shelving" },
+        { hex: "#121212", name: "Matte Black", use: "Faucets, shower frame, and hardware" }
+      ],
+      executionChecklist: [
+        "Waterproof the entire room and lay terrazzo tiles on floors and walls.",
+        "Install the custom teak floating vanity and connect basin plumbing.",
+        "Mount the circular back-lit LED smart mirror directly above the vanity.",
+        "Fit the matte black shower frame, mixer faucet, and rain shower head.",
+        "Mount black towel rails and install the high-efficiency smart toilet."
+      ]
+    },
+    interactiveDesignZones: [
+      {
+        id: "zone_1",
+        name: "Grooming Vanity Zone",
+        item: "Teak Floating Vanity & LED Mirror",
+        description: "Mount a floating teak vanity with ceramic basin. Add a smart LED vanity mirror with anti-fog functionality above.",
+        boundingBox: [0.3, 0.2, 0.8, 0.55],
+        suggestedMarketplaceItems: ["mirror", "cabinet"]
+      },
+      {
+        id: "zone_2",
+        name: "Shower & Wet Area",
+        item: "Frameless Glass Shower & Rain Shower Head",
+        description: "Enclose the corner shower area with frameless glass panels to maintain visual transparency. Install black matte shower fittings.",
+        boundingBox: [0.25, 0.6, 0.85, 0.95],
+        suggestedMarketplaceItems: ["chair", "cabinet"]
+      }
+    ]
+  }
+};
+
 // @desc    Upload room photo & generate AI Design
 // @route   POST /api/designs/ai
 // @access  Private
@@ -386,19 +593,61 @@ exports.createAIDesign = async (req, res) => {
 
     let geminiAnalysis = null;
     if (process.env.GEMINI_API_KEY && originalImage) {
+      const { GoogleGenerativeAI } = require("@google/generative-ai");
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+      // Helper function to call Gemini with retries and different models
+      const callGeminiWithRetry = async (prompt, inlineData) => {
+        const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash"];
+        let lastError = null;
+        for (const modelName of modelsToTry) {
+          let attempts = 2; // Try up to 2 times for each model
+          for (let attempt = 1; attempt <= attempts; attempt++) {
+            try {
+              console.log(`Attempt ${attempt} calling ${modelName}...`);
+              const model = genAI.getGenerativeModel({ model: modelName });
+              const result = await model.generateContent([prompt, inlineData]);
+              const text = result.response.text();
+              console.log(`Successfully received response from ${modelName}`);
+              return text;
+            } catch (err) {
+              lastError = err;
+              console.warn(`Error on ${modelName} (attempt ${attempt}): ${err.message}`);
+              if (attempt < attempts) {
+                console.log("Waiting 3 seconds before retry...");
+                await new Promise(resolve => setTimeout(resolve, 3000));
+              }
+            }
+          }
+        }
+        throw lastError || new Error("Failed after retries");
+      };
+
       try {
-        console.log(`Analyzing ${roomType} using Gemini Vision...`);
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        
+        console.log(`Analyzing ${roomType} using resilient Gemini Vision API...`);
         const base64Data = originalImage.split(',')[1];
         const mimeType = originalImage.match(/data:([^;]+);/)[1];
+        const inlineData = { inlineData: { data: base64Data, mimeType } };
         
-        const prompt = `Analyze this empty room image.
-Detect: Room type, Empty walls, Available floor space, Corners, Windows, Doors, Existing furniture.
-Provide a structured JSON response EXACTLY matching this format (no markdown blocks, just raw JSON):
+        const prompt = `You are a Senior Interior Designer. Analyze this room image and design a complete interior redesign. 
+You must NOT generate a new image; instead, analyze the existing room structure and propose specific, context-aware design additions (furniture placement, wall decor, lighting, color swatches) that overlay onto the original image.
+
+Provide a structured JSON response (return only valid JSON, no markdown wrap, no other text):
 {
   "roomType": "${roomType}",
+  "designerReport": {
+    "styleRationale": "A professional designer description of the chosen style concept and layout choice.",
+    "lightingAnalysis": "Analysis of the natural and artificial lighting.",
+    "materialPalette": [
+      { "name": "Solid Walnut Wood", "rationale": "For bed frame and side tables to add grounding warmth." }
+    ],
+    "colorPalette": [
+      { "hex": "#8B5E3C", "name": "Walnut Brown", "use": "Main furniture and accents" }
+    ],
+    "executionChecklist": [
+      "Step 1: Clear the back wall and prepare for bed frame alignment."
+    ]
+  },
   "detectedElements": {
     "windows": ["string"],
     "doors": ["string"],
@@ -408,20 +657,27 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
   "recommendedFurniturePlacement": [
     { "location": "string", "items": ["string"] }
   ],
-  "imageGenerationPrompt": "A highly detailed, professional, photorealistic description to redesign this room, matching its exact layout structure (such as preserving window/door placement, wall layout, and floor orientation) but styled beautifully."
-}`;
-        
-        const result = await model.generateContent([
-          prompt,
-          { inlineData: { data: base64Data, mimeType } }
-        ]);
-        
-        const responseText = result.response.text();
+  "interactiveDesignZones": [
+    {
+      "id": "zone_1",
+      "name": "Primary Bed Zone",
+      "item": "King size platform bed with custom headboard",
+      "description": "Center the bed against the back wall to anchor the room symmetrically. Use soft linen bedding for texture.",
+      "boundingBox": [0.4, 0.2, 0.8, 0.7],
+      "suggestedMarketplaceItems": ["bed", "pillow", "bedsheet"]
+    }
+  ],
+  "imageGenerationPrompt": "A highly detailed, professional photorealistic Stable Diffusion prompt that describes the redesigned room, matching the original room geometry and elements (window/door positions) but incorporating the new styling."
+}
+
+Note: "boundingBox" must be an array of 4 floating point numbers [ymin, xmin, ymax, xmax] between 0.0 and 1.0 representing the normalized coordinates on the image where this design element should be overlaid (e.g. [0.4, 0.2, 0.8, 0.7]). Be precise with the coordinates so they map to the correct walls/floor areas in the photo!`;
+
+        const responseText = await callGeminiWithRetry(prompt, inlineData);
         const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         geminiAnalysis = JSON.parse(jsonStr);
-        console.log("Successfully generated Gemini Room Analysis.");
+        console.log("Successfully parsed Gemini Room Analysis response.");
       } catch (err) {
-        console.error("Gemini Vision Error:", err.message);
+        console.error("Gemini Vision failed completely, falling back to deterministic designer engine:", err.message);
       }
     }
 
@@ -465,11 +721,13 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
 
     const savedOriginalImage = originalImage || 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&auto=format&fit=crop&q=60';
 
+    const fallbackData = fallbackDesignerData[roomType] || fallbackDesignerData['Living Room'];
+
     const finalAiSuggestion = aiSuggestion || {
-      furniture: currentRoom.furniture,
-      materials: currentRoom.materials,
-      colorPalette: currentRoom.palette,
-      budgetEstimate: Math.floor(Math.random() * 1000) + currentRoom.budget
+      furniture: geminiAnalysis?.interactiveDesignZones?.map(z => z.item) || fallbackData.interactiveDesignZones.map(z => z.item) || currentRoom.furniture,
+      materials: geminiAnalysis?.designerReport?.materialPalette?.map(m => m.name) || fallbackData.designerReport.materialPalette.map(m => m.name) || currentRoom.materials,
+      colorPalette: geminiAnalysis?.designerReport?.colorPalette?.map(c => c.name) || fallbackData.designerReport.colorPalette.map(c => c.name) || currentRoom.palette,
+      budgetEstimate: geminiAnalysis?.designerReport?.budgetEstimate || Math.floor(Math.random() * 1000) + currentRoom.budget
     };
 
     // Build the structured design plan from spatial analysis
@@ -485,22 +743,19 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
 
     const finalAnalysis = analysis || {
       detectedRoomType: geminiAnalysis?.roomType || roomType,
-      detectedElements: geminiAnalysis?.detectedElements || {
-        windows: currentRoom.spatialFeatures?.windows || [],
-        doors: currentRoom.spatialFeatures?.doors || [],
-        existingObjects: currentRoom.detectedItems || [],
-        emptyAreas: currentRoom.spatialFeatures?.walls || []
-      },
+      detectedElements: geminiAnalysis?.detectedElements || fallbackData.detectedElements,
       recommendedFurniturePlacement: geminiAnalysis?.recommendedFurniturePlacement || 
         (currentRoom.furnitureLayout || []).map(f => ({ location: f.position, items: [f.item] })),
       detectedItems: currentRoom.detectedItems,
-      lightingAnalysis: currentRoom.analysis,
-      colorProfile: currentRoom.palette,
+      lightingAnalysis: geminiAnalysis?.designerReport?.lightingAnalysis || fallbackData.designerReport.lightingAnalysis || currentRoom.analysis,
+      colorProfile: geminiAnalysis?.designerReport?.colorPalette?.map(c => c.name) || fallbackData.designerReport.colorPalette.map(c => c.name) || currentRoom.palette,
       spaceUtilization: 'Optimized space flow based on modern design principles.',
       recommendations: currentRoom.recs,
       spatialFeatures: currentRoom.spatialFeatures || {},
       furnitureLayout: currentRoom.furnitureLayout || [],
-      designPlan: designPlan
+      designPlan: designPlan,
+      designerReport: geminiAnalysis?.designerReport || fallbackData.designerReport,
+      interactiveDesignZones: geminiAnalysis?.interactiveDesignZones || fallbackData.interactiveDesignZones
     };
 
     const aiDesign = await AIDesignRequest.create({

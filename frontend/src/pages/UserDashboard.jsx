@@ -5,7 +5,8 @@ import axios from 'axios';
 import { 
   Wand2, UploadCloud, CheckCircle, RefreshCw, XCircle, ShoppingBag, 
   HelpCircle, Hammer, DollarSign, Clock, Star, MessageSquare, AlertCircle, Eye, Check,
-  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, ArrowLeft, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2
+  LayoutDashboard, ShoppingCart, Truck, CreditCard, User as UserIcon, Bookmark, Bell, ArrowRight, ArrowLeft, Activity, Package, AlertTriangle, FileText, PlayCircle, Smartphone, Bot, Building2,
+  X, Plus, CheckSquare
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 import AiFallbackImage from '../components/AiFallbackImage';
@@ -60,6 +61,8 @@ const UserDashboard = ({
   const [aiAnalysisLogs, setAiAnalysisLogs] = useState([]);
   const [activeAnalysisResult, setActiveAnalysisResult] = useState(null);
   const [expandedAnalysisId, setExpandedAnalysisId] = useState(null);
+  const [activeZone, setActiveZone] = useState(null);
+  const [checkedChecklistItems, setCheckedChecklistItems] = useState({});
 
 
   // Manual Design State
@@ -550,7 +553,7 @@ const UserDashboard = ({
     e.preventDefault();
 
     setLoadingAi(true);
-    setAiAnalysisStep('generating');
+    setAiAnalysisStep('analyzing');
     setAiAnalysisProgress(0);
     setAiAnalysisLogs([]);
     setActiveAnalysisResult(null);
@@ -567,22 +570,25 @@ const UserDashboard = ({
         addLog(`Target Room Space: ${roomType}`);
         await delay(500);
         setAiAnalysisProgress(20);
-        addLog("Detecting spatial geometry...");
+        addLog("Scanning spatial geometry, detecting boundaries...");
         await delay(500);
-        setAiAnalysisProgress(45);
-        addLog("Analyzing lighting structure and color temperature...");
+        setAiAnalysisProgress(40);
+        addLog("Consulting Senior Interior Designer Knowledgebase...");
         await delay(500);
-        setAiAnalysisProgress(60);
-        addLog(`Item Detection: Processing ${roomType} layouts...`);
+        setAiAnalysisProgress(55);
+        addLog("Mapping coordinates for interactive design zones...");
+        
+        // Transition to generating
         await delay(500);
-        setAiAnalysisProgress(80);
-        addLog("Analyzing spatial features and generating optimal furniture placement map...");
+        setAiAnalysisStep('generating');
+        setAiAnalysisProgress(70);
+        addLog("Synthesizing custom interior textures & lighting parameters...");
         await delay(500);
-        setAiAnalysisProgress(90);
-        addLog("Synthesizing modern architectural texture coordinates...");
+        setAiAnalysisProgress(85);
+        addLog("Rendering high-fidelity preview variations...");
         await delay(500);
-        setAiAnalysisProgress(90);
-        addLog("Waiting for Hugging Face Inference API response...");
+        setAiAnalysisProgress(95);
+        addLog("Waiting for AI Engine design synthesis response...");
       };
 
       simulateProgress();
@@ -1563,49 +1569,249 @@ Thank you for shopping with Artisan Studio!
                   </div>
 
                   {/* Bottom Section: AI Design Image Display */}
-                    <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                  <div className="w-full bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Wand2 className="w-5 h-5 text-[#8B5E3C]" />
                         <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">AI Generated Design</h3>
                       </div>
-                      <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
-                          <AiFallbackImage
-                            src={latestDesign.generatedImage}
-                            roomType={latestDesign.roomType}
-                            alt="AI Design Output"
-                            className="w-full h-full object-cover"
-                          />
+                      <span className="bg-[#8B5E3C]/10 text-[#8B5E3C] text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                        Click Pulse Rings to Shop
+                      </span>
+                    </div>
+                    <div className="relative rounded-2xl overflow-hidden shadow-inner border border-gray-100 aspect-[4/3] sm:aspect-video bg-gray-900 flex items-center justify-center">
+                        <AiFallbackImage
+                          src={latestDesign.generatedImage}
+                          roomType={latestDesign.roomType}
+                          alt="AI Design Output"
+                          className="w-full h-full object-cover"
+                        />
+                        
+                        {/* Interactive Hotspots Overlay */}
+                        {latestDesign.analysis?.interactiveDesignZones?.map((zone) => {
+                          if (!zone.boundingBox || zone.boundingBox.length < 4) return null;
+                          const [ymin, xmin, ymax, xmax] = zone.boundingBox;
+                          const top = `${ymin * 100}%`;
+                          const left = `${xmin * 100}%`;
+                          const width = `${(xmax - xmin) * 100}%`;
+                          const height = `${(ymax - ymin) * 100}%`;
+
+                          return (
+                            <button
+                              key={zone.id}
+                              type="button"
+                              onClick={() => setActiveZone(zone)}
+                              className="absolute border border-dashed border-[#D4A373] hover:border-solid hover:bg-[#8B5E3C]/20 transition-all rounded group flex items-center justify-center"
+                              style={{ top, left, width, height }}
+                              title={zone.name}
+                            >
+                              <span className="relative flex h-6 w-6">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8B5E3C] opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-6 w-6 bg-[#8B5E3C] items-center justify-center text-white text-[11px] font-bold shadow-md hover:scale-110 transition-transform">+</span>
+                              </span>
+                              <span className="absolute bottom-full mb-2 bg-[#1F2937]/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-30 shadow-md">
+                                {zone.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+
+                  {/* Hotspot Popover Detail Modal */}
+                  {activeZone && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn">
+                      <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-lg w-full border border-[#D4A373]/30 shadow-2xl relative space-y-6">
+                        <button 
+                          type="button"
+                          onClick={() => setActiveZone(null)} 
+                          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                        >
+                          <X className="w-6 h-6" />
+                        </button>
+                        
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Interactive Room Hotspot</span>
+                          <h4 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] mt-1">{activeZone.name}</h4>
+                        </div>
+
+                        <div className="space-y-2 bg-[#F8F5F0]/50 p-4 rounded-2xl border border-[#D4A373]/10">
+                          <p className="text-[10px] font-bold text-[#8B5E3C] uppercase tracking-wider">Suggested Upgrade</p>
+                          <p className="text-sm font-bold text-[#1F2937]">{activeZone.item}</p>
+                          <p className="text-xs text-gray-600 leading-relaxed font-medium mt-1">{activeZone.description}</p>
+                        </div>
+
+                        {/* Matching Marketplace Items */}
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 border-b border-gray-100 pb-2">
+                            <ShoppingBag className="w-4.5 h-4.5 text-[#2A9D8F]" />
+                            <h5 className="text-xs font-bold text-[#1F2937] uppercase tracking-wider">Shop the Look (Marketplace Matches)</h5>
+                          </div>
+                          
+                          {(() => {
+                            const tags = activeZone.suggestedMarketplaceItems || [];
+                            const matchingProds = products.filter(p => {
+                              const titleMatch = tags.some(tag => p.title?.toLowerCase().includes(tag.toLowerCase()));
+                              const catMatch = tags.some(tag => p.category?.toLowerCase().includes(tag.toLowerCase()));
+                              return titleMatch || catMatch;
+                            });
+
+                            if (matchingProds.length === 0) {
+                              return (
+                                <div className="text-center py-4">
+                                  <p className="text-xs text-gray-400 italic">No exact catalog matches found. View our full Marketplace to search similar items.</p>
+                                </div>
+                              );
+                            }
+
+                              return (
+                                <div className="grid grid-cols-2 gap-4 max-h-64 overflow-y-auto pr-1">
+                                  {matchingProds.map(prod => (
+                                    <div key={prod._id} className="border border-gray-100 rounded-2xl p-3 flex flex-col gap-2 hover:shadow-md transition-all bg-[#F8F5F0]/30 hover:bg-white">
+                                      <img src={prod.images?.[0] || 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=300'} alt={prod.title} className="w-full h-24 object-cover rounded-xl shadow-inner bg-gray-50" />
+                                      <div className="flex-1 min-w-0">
+                                        <h6 className="font-bold text-xs text-[#1F2937] truncate">{prod.title}</h6>
+                                        <p className="text-xs text-[#8B5E3C] font-extrabold mt-0.5">${prod.price}</p>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={async () => {
+                                          try {
+                                            const res = await axios.post('/cart', { productId: prod._id, quantity: 1 });
+                                            if (res.data.success) {
+                                              showToast(`✨ Added ${prod.title} to cart!`);
+                                              window.dispatchEvent(new Event('cartUpdated'));
+                                            }
+                                          } catch (err) {
+                                            console.error('Failed to add to cart', err);
+                                            showToast('Failed to add to cart.', 'error');
+                                          }
+                                        }}
+                                        className="w-full py-2 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1 shadow-sm"
+                                      >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span>Add to Cart</span>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Senior Designer Consultation Report */}
+                    {latestDesign.analysis?.designerReport && (
+                      <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                        <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
+                          <CheckSquare className="w-5 h-5 text-[#8B5E3C]" />
+                          <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Senior Designer Consultation</h3>
+                        </div>
+
+                        {/* Rationale & Lighting */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                          <div className="space-y-2">
+                            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Style Rationale</span>
+                            <p className="text-gray-700 leading-relaxed font-semibold">{latestDesign.analysis.designerReport.styleRationale}</p>
+                          </div>
+                          <div className="space-y-2">
+                            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Lighting Diagnostics</span>
+                            <p className="text-gray-700 leading-relaxed font-semibold">{latestDesign.analysis.designerReport.lightingAnalysis}</p>
+                          </div>
+                        </div>
+
+                        {/* Color & Material Palette */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                          {/* Color Palette */}
+                          <div className="space-y-3">
+                            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Palette Swatches</span>
+                            <div className="flex flex-wrap gap-4">
+                              {latestDesign.analysis.designerReport.colorPalette?.map((color, index) => (
+                                <div 
+                                  key={index} 
+                                  className="flex items-center gap-2 group cursor-pointer" 
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(color.hex);
+                                    showToast(`Copied Hex code ${color.hex}!`);
+                                  }}
+                                >
+                                  <div className="w-9 h-9 rounded-full shadow-md border border-gray-200 transition-transform group-hover:scale-110" style={{ backgroundColor: color.hex }}></div>
+                                  <div className="text-xs">
+                                    <p className="font-bold text-gray-800">{color.name}</p>
+                                    <p className="text-gray-400 text-[10px] font-medium">{color.hex} (click to copy)</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Material Palette */}
+                          <div className="space-y-3">
+                            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Proposed Materials</span>
+                            <div className="flex flex-wrap gap-2">
+                              {latestDesign.analysis.designerReport.materialPalette?.map((mat, index) => (
+                                <div 
+                                  key={index} 
+                                  className="bg-[#F8F5F0] border border-[#D4A373]/20 px-3.5 py-2 rounded-xl text-xs font-bold text-[#8B5E3C]" 
+                                  title={mat.rationale}
+                                >
+                                  {mat.name}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Interactive Checklist */}
+                        {latestDesign.analysis.designerReport.executionChecklist && (
+                          <div className="border-t border-gray-100 pt-6 space-y-3">
+                            <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block">Redesign Execution Checklist</span>
+                            <div className="space-y-2">
+                              {latestDesign.analysis.designerReport.executionChecklist.map((step, index) => {
+                                const stepKey = `${latestDesign._id}_step_${index}`;
+                                const isChecked = !!checkedChecklistItems[stepKey];
+                                return (
+                                  <label key={index} className="flex items-start gap-3 p-3.5 rounded-2xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100 bg-gray-50/30">
+                                    <input
+                                      type="checkbox"
+                                      checked={isChecked}
+                                      onChange={() => setCheckedChecklistItems(prev => ({ ...prev, [stepKey]: !isChecked }))}
+                                      className="mt-1 rounded text-[#2A9D8F] focus:ring-[#2A9D8F] border-gray-300 h-4.5 w-4.5"
+                                    />
+                                    <span className={`text-xs font-semibold ${isChecked ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                      {step}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Suggestions Box / Action footer */}
+                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Project Budget</span>
+                          <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C] mt-1">${latestDesign.aiSuggestion?.budgetEstimate || '4,500'}</p>
+                        </div>
+
+                        <div className="flex gap-2">
+                          {latestDesign.status !== 'accepted' && latestDesign.status !== 'execution' && (
+                            <>
+                              <button type="button" onClick={() => handleAiStatus(latestDesign._id, 'accepted')} className="px-5 py-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm flex items-center gap-1.5 font-bold text-xs" title="Accept & Order"><CheckCircle className="w-4 h-4" /> Accept Design</button>
+                              <button type="button" onClick={() => handleAiStatus(latestDesign._id, 'regenerated')} className="px-4 py-3 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm font-bold text-xs" title="Regenerate"><RefreshCw className="w-4 h-4" /> Regenerate Style</button>
+                              <button type="button" onClick={() => handleAiStatus(latestDesign._id, 'rejected')} className="px-4 py-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm font-bold text-xs" title="Reject"><XCircle className="w-4 h-4" /> Reject</button>
+                            </>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Suggestions Box */}
-                    <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-6">
-                      <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Artisan Styling Recommendations</h3>
-
-                      <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4 text-xs text-[#6B7280]">
-                          <div><strong className="text-[#1F2937] block mb-1">Recommended Furniture:</strong> {latestDesign.aiSuggestion?.furniture?.join(', ')}</div>
-                          <div><strong className="text-[#1F2937] block mb-1">Proposed Materials:</strong> {latestDesign.aiSuggestion?.materials?.join(', ')}</div>
-                        </div>
-
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                          <div>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Estimated Project Budget</span>
-                            <p className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C] mt-1">${latestDesign.aiSuggestion?.budgetEstimate || '4,500'}</p>
-                          </div>
-
-                          <div className="flex gap-2">
-                            {latestDesign.status !== 'accepted' && latestDesign.status !== 'execution' && (
-                              <>
-                                <button onClick={() => handleAiStatus(latestDesign._id, 'accepted')} className="p-3 bg-[#2A9D8F] hover:bg-[#2A9D8F]/90 text-white rounded-xl shadow-sm flex items-center gap-1.5 font-bold text-xs" title="Accept & Order"><CheckCircle className="w-4 h-4" /> Accept Design</button>
-                                <button onClick={() => handleAiStatus(latestDesign._id, 'regenerated')} className="p-3 bg-[#E9C46A] hover:bg-[#E9C46A]/90 text-[#1F2937] rounded-xl shadow-sm font-bold text-xs" title="Regenerate"><RefreshCw className="w-4 h-4" /></button>
-                                <button onClick={() => handleAiStatus(latestDesign._id, 'rejected')} className="p-3 bg-[#E76F51] hover:bg-[#E76F51]/90 text-white rounded-xl shadow-sm font-bold text-xs" title="Reject"><XCircle className="w-4 h-4" /></button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                  </div>
                  </div>
                 </div>
             );
