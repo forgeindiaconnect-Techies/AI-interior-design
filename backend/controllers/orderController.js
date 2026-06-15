@@ -562,18 +562,31 @@ exports.updateOrderTracking = async (req, res) => {
   }
 };
 
-// Valid 7-stage tracking workflow sequence
+// Valid tracking workflow sequence (combining both design manufacturing and product delivery stages)
 const TRACKING_STAGE_SEQUENCE = [
   'Pending Confirmation',
+  'Awaiting Vendor Verification',
+  'Production Started',
+  'Manufacturing',
+  'Ready for Delivery',
+  'Order Confirmed',
   'Processing',
   'Pending Dispatch',
   'Dispatched',
+  'Shipped',
+  'Out for Delivery',
   'Out For Delivery',
   'Delivered',
+  'Installation Scheduled',
+  'Installation In Progress',
+  'Installation Completed',
   'Completed'
 ];
 
-const getStageIndex = (status) => TRACKING_STAGE_SEQUENCE.indexOf(status);
+const getStageIndex = (status) => {
+  if (!status) return -1;
+  return TRACKING_STAGE_SEQUENCE.findIndex(s => s.toLowerCase() === status.toLowerCase());
+};
 
 // @desc    Get unified order tracking — returns Order + OrderTracking together
 // @route   GET /api/orders/tracking/:orderId
