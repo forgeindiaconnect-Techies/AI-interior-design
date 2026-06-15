@@ -454,12 +454,20 @@ const LandingPage = () => {
                     <span className="font-['Playfair_Display'] font-extrabold text-2xl text-[#8B5E3C]">
                       ₹{product.price}
                     </span>
-                    <button 
-                      onClick={() => navigate('/login')}
-                      className="bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white px-5 py-2.5 rounded-full font-semibold text-sm transition-all border border-[#8B5E3C]/30 shadow-sm"
-                    >
-                      Order Now
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => navigate(`/marketplace/product/${product._id}`)}
+                        className="bg-[#F8F5F0] hover:bg-[#8B5E3C]/10 text-[#8B5E3C] px-4 py-2 rounded-full font-semibold text-xs transition-all border border-[#8B5E3C]/20 shadow-sm"
+                      >
+                        View Details
+                      </button>
+                      <button 
+                        onClick={() => navigate('/login')}
+                        className="bg-[#8B5E3C] hover:bg-[#8B5E3C]/90 text-white px-4 py-2 rounded-full font-semibold text-xs transition-all border border-[#8B5E3C]/30 shadow-sm"
+                      >
+                        Order Now
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

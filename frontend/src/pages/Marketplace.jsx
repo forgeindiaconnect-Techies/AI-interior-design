@@ -56,7 +56,11 @@ const ProductCard = React.memo(({ product, onAddToCart, onSaveItem, onNavigate }
         <button onClick={(e) => onAddToCart(e, product._id)} className="flex-1 bg-[#1F2937] hover:bg-black text-white py-3 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2">
           <ShoppingCart className="w-4 h-4" /> Add to Cart
         </button>
-        <button className="px-4 py-3 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl transition-colors shadow-inner flex items-center justify-center">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onNavigate(product._id); }}
+          title="View Details"
+          className="px-4 py-3 bg-[#F8F5F0] hover:bg-[#8B5E3C] text-[#8B5E3C] hover:text-white rounded-xl transition-colors shadow-inner flex items-center justify-center"
+        >
           <Eye className="w-5 h-5" />
         </button>
       </div>
