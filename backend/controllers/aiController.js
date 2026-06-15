@@ -87,16 +87,57 @@ const FURNITURE_VARIATIONS = {
   ]
 };
 
-const FALLBACK_IMAGES = [
-  'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
-  'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
-  'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
-  'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
-  'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
-  'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
-  'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
-  'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80'
-];
+const FALLBACK_IMAGES_BY_ROOM = {
+  'Living Room': [
+    'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
+    'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80',
+    'https://images.unsplash.com/photo-1583847268964-b28ce8f52859?w=800&q=80',
+    'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800&q=80',
+    'https://images.unsplash.com/photo-1598928506311-c55dd5802589?w=800&q=80',
+    'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1567016432779-094069958ea5?w=800&q=80',
+    'https://images.unsplash.com/photo-1593696140826-c58b021acf8b?w=800&q=80',
+    'https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=800&q=80',
+    'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&q=80',
+    'https://images.unsplash.com/photo-1616137466211-f939a420be84?w=800&q=80',
+    'https://images.unsplash.com/photo-1616593969747-4797dc75033e?w=800&q=80',
+    'https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=800&q=80',
+    'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80',
+    'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80'
+  ],
+  'Bedroom': [
+    'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&q=80',
+    'https://images.unsplash.com/photo-1540518614846-7eded433c457?w=800&q=80',
+    'https://images.unsplash.com/photo-1505693314120-0d443867891c?w=800&q=80',
+    'https://images.unsplash.com/photo-1522771731535-62bbacf240b9?w=800&q=80',
+    'https://images.unsplash.com/photo-1531835551805-16d8e487eb28?w=800&q=80',
+    'https://images.unsplash.com/photo-1595514535133-c15112f453cb?w=800&q=80',
+    'https://images.unsplash.com/photo-1585128719715-46776b56a0fb?w=800&q=80',
+    'https://images.unsplash.com/photo-1582582621959-48d27397dc69?w=800&q=80',
+    'https://images.unsplash.com/photo-1574871796859-99c687e6717a?w=800&q=80',
+    'https://images.unsplash.com/photo-1617325247661-675ab0340793?w=800&q=80'
+  ],
+  'Kitchen': [
+    'https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&q=80',
+    'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800&q=80',
+    'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&q=80',
+    'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=800&q=80',
+    'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80',
+    'https://images.unsplash.com/photo-1524813686514-a57563d77965?w=800&q=80',
+    'https://images.unsplash.com/photo-1507089947368-19c1da9775ae?w=800&q=80',
+    'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&q=80',
+    'https://images.unsplash.com/photo-1600607686527-6fb886090705?w=800&q=80'
+  ],
+  'Bathroom': [
+    'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=800&q=80',
+    'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&q=80',
+    'https://images.unsplash.com/photo-1604014237800-1c9102c219da?w=800&q=80',
+    'https://images.unsplash.com/photo-1564540574859-0dfb63985953?w=800&q=80',
+    'https://images.unsplash.com/photo-1584622781564-1d987f7333c1?w=800&q=80'
+  ]
+};
+
+const FALLBACK_IMAGES = FALLBACK_IMAGES_BY_ROOM['Living Room'];
 
 const HF_MODELS = [
   'stabilityai/stable-diffusion-2-1',
@@ -233,7 +274,8 @@ const generateOneImage = async ({ image, roomType, seed, existingSeeds = [], var
     return { seed: actualSeed, imageUrl: result.imageUrl, prompt: result.prompt, variationPrompt, success: true };
   } catch (err) {
     console.warn('Image generation failed, using fallback:', err.message);
-    return { seed: actualSeed, imageUrl: FALLBACK_IMAGES[actualSeed % FALLBACK_IMAGES.length], prompt: `Fallback: ${variationPrompt}`, variationPrompt, success: false };
+    const roomFallbackList = FALLBACK_IMAGES_BY_ROOM[roomType] || FALLBACK_IMAGES_BY_ROOM['Living Room'];
+    return { seed: actualSeed, imageUrl: roomFallbackList[actualSeed % roomFallbackList.length], prompt: `Fallback: ${variationPrompt}`, variationPrompt, success: false };
   }
 };
 
