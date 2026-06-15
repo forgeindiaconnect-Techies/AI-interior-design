@@ -733,7 +733,7 @@ exports.getStats = async (req, res) => {
     const totalInstallation = await Vendor.countDocuments({ businessType: 'installation' });
     const totalOrders = await Order.countDocuments() + await MarketplaceOrder.countDocuments();
     
-    const payments = await Payment.find({ status: 'success' });
+    const payments = await Payment.find({ status: 'success' }).lean();
     const totalRevenue = payments.reduce((acc, p) => acc + p.amount, 0);
 
     const marketplaceRevenue = await MarketplaceOrder.aggregate([
@@ -1214,38 +1214,41 @@ exports.getManagementData = async (req, res) => {
       marketplaceOrders,
       manufacturingOrders
     ] = await Promise.all([
-      User.find({}).select('-password').sort('-createdAt'),
-      Vendor.find({}).populate('userId', 'name email phone').sort('-createdAt'),
-      Product.find({}).populate('vendorId', 'companyName').sort('-createdAt'),
+      User.find({}).select('-password').sort('-createdAt').lean(),
+      Vendor.find({}).populate('userId', 'name email phone').sort('-createdAt').lean(),
+      Product.find({}).populate('vendorId', 'companyName').sort('-createdAt').lean(),
       AIDesignRequest.find({})
         .populate('userId', 'name email')
         .populate('assignedVendor')
         .populate('additionalVendors')
         .populate('orderId')
-        .sort('-createdAt'),
+        .sort('-createdAt')
+        .lean(),
       ManualDesignRequest.find({})
         .populate('userId', 'name email')
         .populate('assignedVendorId', 'companyName')
         .populate('assignedDesignerId', 'companyName')
         .sort('-createdAt')
         .lean(),
-      InteriorDesignerRequest.find({}).populate('userId', 'name email').sort('-createdAt'),
-      Quotation.find({}),
+      InteriorDesignerRequest.find({}).populate('userId', 'name email').sort('-createdAt').lean(),
+      Quotation.find({}).lean(),
       Order.find({})
         .populate('userId', 'name email')
         .populate('vendorId', 'companyName')
         .populate('manufacturerId', 'companyName')
         .populate('deliveryPartnerId', 'companyName')
         .populate('installationPartnerId', 'companyName')
-        .sort('-createdAt'),
+        .sort('-createdAt')
+        .lean(),
       OrderTracking.find({}).lean(),
       MarketplaceOrder.find({})
         .populate('userId', 'name email')
         .populate('deliveryPartnerId', 'companyName')
         .populate('installationPartnerId', 'companyName')
         .populate('items.vendorId', 'companyName')
-        .sort('-createdAt'),
-      ManufacturingOrder.find({})
+        .sort('-createdAt')
+        .lean(),
+      ManufacturingOrder.find({}).lean()
     ]);
 
     const manualDesigns = [...controllerMockManualDesigns];
@@ -1352,7 +1355,7 @@ exports.getManagementData = async (req, res) => {
       if (v.businessType === 'manufacturer') {
         const activeOrdersCount = manufacturingOrders.filter(mo => mo.manufacturerId && mo.manufacturerId.toString() === v._id.toString() && mo.status !== 'Ready for Delivery').length;
         return {
-          ...v.toObject(),
+          ...v,
           activeOrders: activeOrdersCount,
           workloadLevel: calculateWorkload(activeOrdersCount, v.monthlyCapacity || 50)
         };
@@ -1377,8 +1380,8 @@ exports.getManagementData = async (req, res) => {
     let dbDeliveryOrders = [];
     let dbInstallationOrders = [];
     try {
-      dbDeliveryOrders = await DeliveryOrder.find({}).populate('deliveryPartnerId').sort('-createdAt');
-      dbInstallationOrders = await InstallationOrder.find({}).populate('installationPartnerId').sort('-createdAt');
+      dbDeliveryOrders = await DeliveryOrder.find({}).populate('deliveryPartnerId').sort('-createdAt').lean();
+      dbInstallationOrders = await InstallationOrder.find({}).populate('installationPartnerId').sort('-createdAt').lean();
     } catch (e) {
       console.warn("Logistics tables not fully setup, returning empty logs.", e);
     }
