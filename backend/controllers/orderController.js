@@ -296,10 +296,38 @@ exports.createPaymentAndOrder = async (req, res) => {
     }
 
     let quotation = null;
+    let designReq = null;
     if (mongoose.Types.ObjectId.isValid(quotationId)) {
+      // 1. Try finding by direct Quotation ID first
       quotation = await Quotation.findById(quotationId);
+      
+      // 2. If not found, quotationId might be a designRequestId.
       if (!quotation) {
-        quotation = await Quotation.findOne({ designRequestId: quotationId });
+        designReq = await ManualDesignRequest.findById(quotationId);
+        let vendorId = null;
+        if (designReq) {
+          vendorId = designReq.assignedVendorId;
+        } else {
+          designReq = await AIDesignRequest.findById(quotationId);
+          if (designReq) {
+            vendorId = designReq.assignedVendor;
+          }
+        }
+        
+        if (vendorId) {
+          // Find the quotation matching this design request and assigned vendor
+          quotation = await Quotation.findOne({ designRequestId: quotationId, vendorId });
+        }
+        
+        // Fallback: search for a pending quotation matching this design request
+        if (!quotation) {
+          quotation = await Quotation.findOne({ designRequestId: quotationId, status: 'pending' });
+        }
+        
+        // Absolute fallback: search for any quotation matching this design request
+        if (!quotation) {
+          quotation = await Quotation.findOne({ designRequestId: quotationId });
+        }
       }
     }
 
@@ -317,8 +345,7 @@ exports.createPaymentAndOrder = async (req, res) => {
       designRequestId = quotation.designRequestId;
     } else {
       // No Quotation doc found — look up design request directly
-      let designReq = null;
-      if (mongoose.Types.ObjectId.isValid(quotationId)) {
+      if (!designReq && mongoose.Types.ObjectId.isValid(quotationId)) {
         designReq = await ManualDesignRequest.findById(quotationId);
         if (!designReq) {
           designReq = await AIDesignRequest.findById(quotationId);
@@ -327,7 +354,8 @@ exports.createPaymentAndOrder = async (req, res) => {
       if (!designReq) {
         return res.status(404).json({ success: false, message: 'Request not found. Please ensure a quotation has been sent by the vendor.' });
       }
-      vendor = await Vendor.findById(designReq.assignedVendorId);
+      const vendorId = designReq.assignedVendorId || designReq.assignedVendor;
+      vendor = await Vendor.findById(vendorId);
       amount = Number(designReq.quotationAmount) || 0;
       designType = designReq.requestType === 'AI Generated' ? 'ai' : 'manual';
       designRequestId = designReq._id;
