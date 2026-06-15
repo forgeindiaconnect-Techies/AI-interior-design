@@ -592,7 +592,7 @@ exports.createAIDesign = async (req, res) => {
     let finalGeneratedImage = generatedImage || getFallbackImage(roomType);
 
     let geminiAnalysis = null;
-    if (process.env.GEMINI_API_KEY && originalImage) {
+    if (process.env.GEMINI_API_KEY) {
       const { GoogleGenerativeAI } = require("@google/generative-ai");
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -606,7 +606,8 @@ exports.createAIDesign = async (req, res) => {
             try {
               console.log(`Attempt ${attempt} calling ${modelName}...`);
               const model = genAI.getGenerativeModel({ model: modelName });
-              const result = await model.generateContent([prompt, inlineData]);
+              const parts = inlineData ? [prompt, inlineData] : [prompt];
+              const result = await model.generateContent(parts);
               const text = result.response.text();
               console.log(`Successfully received response from ${modelName}`);
               return text;
@@ -624,12 +625,16 @@ exports.createAIDesign = async (req, res) => {
       };
 
       try {
-        console.log(`Analyzing ${roomType} using resilient Gemini Vision API...`);
-        const base64Data = originalImage.split(',')[1];
-        const mimeType = originalImage.match(/data:([^;]+);/)[1];
-        const inlineData = { inlineData: { data: base64Data, mimeType } };
-        
-        const prompt = `You are a Senior Interior Designer. Analyze this room image and design a complete interior redesign. 
+        let inlineData = undefined;
+        let prompt;
+
+        if (originalImage) {
+          console.log(`Analyzing ${roomType} using resilient Gemini Vision API...`);
+          const base64Data = originalImage.split(',')[1];
+          const mimeType = originalImage.match(/data:([^;]+);/)[1];
+          inlineData = { inlineData: { data: base64Data, mimeType } };
+          
+          prompt = `You are a Senior Interior Designer. Analyze this room image and design a complete interior redesign. 
 You must NOT generate a new image; instead, analyze the existing room structure and propose specific, context-aware design additions (furniture placement, wall decor, lighting, color swatches) that overlay onto the original image.
 
 Provide a structured JSON response (return only valid JSON, no markdown wrap, no other text):
@@ -671,13 +676,58 @@ Provide a structured JSON response (return only valid JSON, no markdown wrap, no
 }
 
 Note: "boundingBox" must be an array of 4 floating point numbers [ymin, xmin, ymax, xmax] between 0.0 and 1.0 representing the normalized coordinates on the image where this design element should be overlaid (e.g. [0.4, 0.2, 0.8, 0.7]). Be precise with the coordinates so they map to the correct walls/floor areas in the photo!`;
+        } else {
+          console.log(`Analyzing conceptual ${roomType} using Gemini Text API...`);
+          prompt = `You are a Senior Interior Designer. Create a complete, highly detailed interior redesign plan for a brand new, empty ${roomType}. 
+Since the user did not upload a starting photo, assume a standard modern layout for a ${roomType}. Propose specific, context-aware design additions (furniture placement, lighting, color swatches) that overlay onto a standard ${roomType} layout.
+
+Provide a structured JSON response (return only valid JSON, no markdown wrap, no other text):
+{
+  "roomType": "${roomType}",
+  "designerReport": {
+    "styleRationale": "A professional designer description of the chosen style concept and layout choice.",
+    "lightingAnalysis": "Analysis of the lighting plan for this room.",
+    "materialPalette": [
+      { "name": "Solid Walnut Wood", "rationale": "For grounding warmth." }
+    ],
+    "colorPalette": [
+      { "hex": "#8B5E3C", "name": "Walnut Brown", "use": "Main furniture and accents" }
+    ],
+    "executionChecklist": [
+      "Step 1: Install the primary flooring."
+    ]
+  },
+  "detectedElements": {
+    "windows": ["Standard window on the main wall"],
+    "doors": ["Entrance door"],
+    "existingObjects": [],
+    "emptyAreas": ["Center floor"]
+  },
+  "recommendedFurniturePlacement": [
+    { "location": "Center", "items": ["Primary furniture item"] }
+  ],
+  "interactiveDesignZones": [
+    {
+      "id": "zone_1",
+      "name": "Primary Zone",
+      "item": "Modular Sofa / Bed / Vanity",
+      "description": "Place this in the center of the room to anchor the layout.",
+      "boundingBox": [0.4, 0.2, 0.8, 0.7],
+      "suggestedMarketplaceItems": ["sofa", "pillow"]
+    }
+  ],
+  "imageGenerationPrompt": "A highly detailed, professional photorealistic Stable Diffusion prompt that describes a beautiful redesigned ${roomType} incorporating the new styling, layout, color palette, and premium materials."
+}
+
+Note: "boundingBox" must be an array of 4 floating point numbers [ymin, xmin, ymax, xmax] between 0.0 and 1.0 representing the normalized coordinates on the image where this design element should be overlaid (e.g. [0.4, 0.2, 0.8, 0.7]).`;
+        }
 
         const responseText = await callGeminiWithRetry(prompt, inlineData);
         const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
         geminiAnalysis = JSON.parse(jsonStr);
         console.log("Successfully parsed Gemini Room Analysis response.");
       } catch (err) {
-        console.error("Gemini Vision failed completely, falling back to deterministic designer engine:", err.message);
+        console.error("Gemini Vision/Text failed completely, falling back to deterministic designer engine:", err.message);
       }
     }
 
@@ -700,21 +750,21 @@ Note: "boundingBox" must be an array of 4 floating point numbers [ymin, xmin, ym
 
     let initialVariations = [];
     if (!finalGeneratedImage) {
-      if (originalImage) {
-        try {
-          initialVariations = await generateMultipleImages({
-            image: originalImage,
-            roomType: roomType || 'Living Room',
-            count: 5,
-            existingSeeds: [],
-            variationPromptOverride: geminiAnalysis?.imageGenerationPrompt || null
-          });
+      try {
+        initialVariations = await generateMultipleImages({
+          image: originalImage || null,
+          roomType: roomType || 'Living Room',
+          count: 5,
+          existingSeeds: [],
+          variationPromptOverride: geminiAnalysis?.imageGenerationPrompt || null
+        });
+        if (initialVariations && initialVariations.length > 0 && initialVariations[0].imageUrl) {
           finalGeneratedImage = initialVariations[0].imageUrl;
-        } catch (err) {
-          console.warn('AI Generation failed, using fallback:', err.message);
+        } else {
           finalGeneratedImage = getFallbackImage(roomType);
         }
-      } else {
+      } catch (err) {
+        console.warn('AI Generation failed, using fallback:', err.message);
         finalGeneratedImage = getFallbackImage(roomType);
       }
     }
