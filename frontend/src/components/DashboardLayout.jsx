@@ -193,7 +193,6 @@ const DashboardLayout = ({ children }) => {
     { tab: 'users',              label: 'User Management',             icon: Users,         desc: 'Manage all platform users',                 roles: ['admin'] },
     { tab: 'vendors',            label: 'Vendor Management',           icon: Store,         desc: 'Approve, manage and suspend vendors',       roles: ['admin'] },
     { tab: 'manufacturers',      label: 'Manufacturer Management',     icon: Hammer,        desc: 'Manufacturing partner oversight',           roles: ['admin'] },
-    { tab: 'delivery',           label: 'Logistics Partners',          icon: Truck,         desc: 'Delivery partner management',               roles: ['admin'] },
     { tab: 'orders',             label: 'Orders & Workflow',           icon: Package,       desc: 'Full order pipeline and assignment',        roles: ['admin'] },
     { tab: 'custom_design_requests', label: 'Custom Design Requests',   icon: FileText,      desc: 'Centralized custom design request queue',   roles: ['admin'] },
     { tab: 'verifications',      label: 'Vendor Verifications',        icon: ShieldCheck,   desc: 'KYC and document approvals',                roles: ['admin'] },

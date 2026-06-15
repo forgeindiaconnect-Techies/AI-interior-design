@@ -149,7 +149,6 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
               <NavItem name="Orders" icon={ShoppingBag} tab="orders" color="#10B981" />
               <NavItem name="Manufacturing" icon={Factory} tab="manufacturing" color="#EC4899" />
-              <NavItem name="Delivery" icon={Truck} tab="delivery" color="#F97316" />
               <NavItem name="Installation" icon={Wrench} tab="installation" color="#06B6D4" />
             </div>
           )}
