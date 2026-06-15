@@ -31,7 +31,7 @@ router.route('/test-error').get(async (req, res) => {
 router.use(protect);
 router.route('/').post(createOrder);
 router.route('/myorders').get(getMyOrders);
-router.route('/vendor').get(authorize('vendor', 'delivery', 'installation'), getVendorOrders);
+router.route('/vendor').get(authorize('vendor', 'delivery', 'installation', 'admin'), getVendorOrders);
 router.route('/all').get(authorize('admin'), getAllOrders);
 router.route('/:id').get(getOrderById);
 router.route('/:id/status').put(authorize('vendor', 'delivery', 'installation', 'admin'), updateOrderStatus);

@@ -21,7 +21,7 @@ const {
 const { protect, authorize } = require('../middleware/authMiddleware');
 
 router.use(protect);
-router.use(authorize('vendor', 'manufacturer', 'delivery', 'installation'));
+router.use(authorize('vendor', 'manufacturer', 'delivery', 'installation', 'admin'));
 
 router.get('/profile', getVendorProfile);
 router.get('/requests', getCustomRequests);

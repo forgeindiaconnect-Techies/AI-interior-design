@@ -112,7 +112,21 @@ exports.getOrderById = async (req, res) => {
 // @access  Private (Vendor)
 exports.getVendorOrders = async (req, res) => {
   try {
-    const vendor = await Vendor.findOne({ userId: req.user.id });
+    let vendor = await Vendor.findOne({ userId: req.user.id });
+    if (!vendor && req.user.role === 'admin') {
+      const User = require('../models/User');
+      const dbUser = await User.findById(req.user.id);
+      vendor = await Vendor.create({
+        userId: req.user.id,
+        companyName: dbUser?.name ? `${dbUser.name}'s Store` : 'Admin Store',
+        businessType: 'seller',
+        isVerified: true,
+        accountActivationStatus: 'Active',
+        verificationStatus: 'Approved',
+        storeSetupStatus: 'Approved',
+        isActive: true,
+      });
+    }
     if (!vendor) {
       return res.status(404).json({ success: false, message: 'Vendor not found' });
     }
