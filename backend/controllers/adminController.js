@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Vendor = require('../models/Vendor');
 const Product = require('../models/Product');
 const AIDesignRequest = require('../models/AIDesignRequest');
+const { normalizeDesign } = require('./designController');
 const ManualDesignRequest = require('../models/ManualDesignRequest');
 const InteriorDesignerRequest = require('../models/InteriorDesignerRequest');
 const Order = require('../models/Order');
@@ -1416,7 +1417,7 @@ exports.getManagementData = async (req, res) => {
           pendingInstallation: dbPendingInstallationCount
         },
         products, 
-        aiDesigns, 
+        aiDesigns: aiDesigns.map(d => normalizeDesign(d, req)), 
         manualDesigns, 
         designerRequests, 
         orders: unifiedOrders 

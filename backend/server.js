@@ -8,6 +8,7 @@ const connectDB = require('./config/db');
 connectDB();
 
 const app = express();
+app.set('trust proxy', true);
 
 // Init Middleware
 app.use(express.json({ limit: '50mb' }));

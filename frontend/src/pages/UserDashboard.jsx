@@ -635,7 +635,12 @@ const UserDashboard = ({
         }
       } catch (err) {
         console.error('Failed to regenerate AI design', err);
-        showToast('Failed to regenerate design. Please try again.', 'error');
+        if (err.response && err.response.status === 404) {
+          showToast('Design not found. It may have been deleted.', 'error');
+          setAiDesigns(prev => prev.filter(d => d._id !== id));
+        } else {
+          showToast('Failed to regenerate design. Please try again.', 'error');
+        }
         setAiAnalysisStep('completed');
       } finally {
         setLoadingAi(false);
@@ -711,7 +716,12 @@ const UserDashboard = ({
       }
     } catch (err) {
       console.error('Failed to update AI design status', err);
-      showToast('Failed to update design status.', 'error');
+      if (err.response && err.response.status === 404) {
+        showToast('Design not found. It may have been deleted.', 'error');
+        setAiDesigns(prev => prev.filter(d => d._id !== id));
+      } else {
+        showToast('Failed to update design status.', 'error');
+      }
     }
   };
 
@@ -755,6 +765,12 @@ const UserDashboard = ({
       }
     } catch (err) {
       console.error('Failed to bookmark AI design', err);
+      if (err.response && err.response.status === 404) {
+        showToast('Design not found. It may have been deleted.', 'error');
+        setAiDesigns(prev => prev.filter(d => d._id !== id));
+      } else {
+        showToast('Failed to bookmark design. Please try again.', 'error');
+      }
     }
   };
 

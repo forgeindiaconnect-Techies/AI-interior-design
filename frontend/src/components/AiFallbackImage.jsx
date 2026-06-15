@@ -1,13 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { loadManifest, anyImageForRoom, getRoomSlug } from '../utils/roomImages';
 
+const resolveImageUrl = (url) => {
+  if (!url) return url;
+  const apiBase = import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api';
+  const backendBase = apiBase.replace(/\/api\/?$/, '');
+  let resolved = url;
+  if (resolved.startsWith('/')) {
+    resolved = `${backendBase}${resolved}`;
+  }
+  if (resolved.includes('localhost:5000')) {
+    resolved = resolved.replace(/https?:\/\/localhost:5000/g, backendBase);
+  }
+  return resolved;
+};
+
 export default function AiFallbackImage({ src, roomType, className = '', alt = 'AI Design', ...imgProps }) {
-  const [imgSrc, setImgSrc] = useState(src);
+  const [imgSrc, setImgSrc] = useState(resolveImageUrl(src));
   const [fallbackReady, setFallbackReady] = useState(false);
   const fallbackRef = useRef(null);
 
   useEffect(() => {
-    setImgSrc(src);
+    setImgSrc(resolveImageUrl(src));
     setFallbackReady(false);
   }, [src]);
 

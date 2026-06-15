@@ -9,6 +9,45 @@ const mongoose = require('mongoose');
 const Replicate = require('replicate');
 const axios = require('axios');
 
+const normalizeUrl = (url, req) => {
+  if (!url) return url;
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  if (url.includes('localhost:5000')) {
+    return url.replace(/https?:\/\/localhost:5000/g, baseUrl);
+  }
+  if (url.startsWith('/')) {
+    return `${baseUrl}${url}`;
+  }
+  return url;
+};
+
+const normalizeDesign = (design, req) => {
+  if (!design) return design;
+  const doc = design.toObject ? design.toObject() : design;
+  if (doc.generatedImage) {
+    doc.generatedImage = normalizeUrl(doc.generatedImage, req);
+  }
+  if (doc.originalImage) {
+    doc.originalImage = normalizeUrl(doc.originalImage, req);
+  }
+  if (doc.generations && Array.isArray(doc.generations)) {
+    doc.generations = doc.generations.map(gen => {
+      if (gen && typeof gen === 'object') {
+        const genDoc = gen.toObject ? gen.toObject() : gen;
+        if (genDoc.imageUrl) {
+          genDoc.imageUrl = normalizeUrl(genDoc.imageUrl, req);
+        }
+        return genDoc;
+      }
+      return gen;
+    });
+  }
+  return doc;
+};
+
+exports.normalizeUrl = normalizeUrl;
+exports.normalizeDesign = normalizeDesign;
+
 const mockFallbackImages = {
   'Living Room': [
     'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80',
@@ -396,8 +435,7 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
           { $sample: { size: 1 } }
         ]);
         if (randomImage && randomImage.length > 0) {
-          const baseUrl = `${req.protocol}://${req.get('host')}`;
-          finalGeneratedImage = baseUrl + randomImage[0].url;
+          finalGeneratedImage = randomImage[0].url;
         }
       } catch (err) {
         console.error('Error fetching dataset image:', err);
@@ -503,7 +541,7 @@ Provide a structured JSON response EXACTLY matching this format (no markdown blo
     // Populate generations for the response
     await aiDesign.populate('generations');
 
-    res.status(201).json({ success: true, data: aiDesign });
+    res.status(201).json({ success: true, data: normalizeDesign(aiDesign, req) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -517,7 +555,8 @@ exports.getUserAIDesigns = async (req, res) => {
 
 
     const designs = await AIDesignRequest.find({ userId: req.user.id }).populate('generations').sort('-createdAt');
-    res.status(200).json({ success: true, data: designs });
+    const normalizedDesigns = designs.map(d => normalizeDesign(d, req));
+    res.status(200).json({ success: true, data: normalizedDesigns });
   } catch (error) {
     console.error('getUserAIDesigns error:', error);
     if (error.name === 'CastError' || error.message.includes('Cast to ObjectId failed')) {
@@ -537,6 +576,10 @@ exports.getUserAIDesigns = async (req, res) => {
 // @access  Private
 exports.updateAIDesignStatus = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid design ID format' });
+    }
+
     const { status, isBookmarked } = req.body;
 
 
@@ -562,8 +605,7 @@ exports.updateAIDesignStatus = async (req, res) => {
           const images = await DatasetImage.find(query);
           if (images.length > 0) {
             const randomPick = images[Math.floor(Math.random() * images.length)];
-            const baseUrl = `${req.protocol}://${req.get('host')}`;
-            nextImage = baseUrl + randomPick.url;
+            nextImage = randomPick.url;
           }
         }
 
@@ -584,7 +626,7 @@ exports.updateAIDesignStatus = async (req, res) => {
         await design.save();
         await design.populate('generations');
 
-        return res.status(200).json({ success: true, data: design });
+        return res.status(200).json({ success: true, data: normalizeDesign(design, req) });
       } catch (err) {
         console.error('Regeneration failed:', err.message);
         return res.status(500).json({ success: false, message: 'Regeneration failed: ' + err.message });
@@ -598,7 +640,7 @@ exports.updateAIDesignStatus = async (req, res) => {
     if (status === 'accepted') {
       await Notification.create({ isAdmin: true, message: `User ${req.user.name} accepted AI design.` });
     }
-    res.status(200).json({ success: true, data: design });
+    res.status(200).json({ success: true, data: normalizeDesign(design, req) });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -609,6 +651,9 @@ exports.updateAIDesignStatus = async (req, res) => {
 // @access  Private
 exports.deleteAIDesign = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid design ID format' });
+    }
     await AIDesignRequest.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, data: {} });
   } catch (error) {
@@ -717,12 +762,22 @@ exports.createDesignerRequest = async (req, res) => {
 // @access  Private
 exports.getAIDesignGenerations = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid design ID format' });
+    }
     const design = await AIDesignRequest.findById(req.params.id).populate('generations');
     if (!design) return res.status(404).json({ success: false, message: 'Design not found' });
     if (design.userId.toString() !== req.user.id) {
       return res.status(403).json({ success: false, message: 'Not authorized' });
     }
-    res.status(200).json({ success: true, data: design.generations });
+    const normalizedGenerations = design.generations.map(gen => {
+      const genDoc = gen.toObject ? gen.toObject() : gen;
+      if (genDoc.imageUrl) {
+        genDoc.imageUrl = normalizeUrl(genDoc.imageUrl, req);
+      }
+      return genDoc;
+    });
+    res.status(200).json({ success: true, data: normalizedGenerations });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
