@@ -536,7 +536,9 @@ const DashboardLayout = ({ children }) => {
                     <button 
                       onClick={() => {
                         // Redirect to active settings page depending on role
-                        setActiveTab(isAdmin ? 'roles' : 'profile');
+                        if (isAdmin) setActiveTab('roles');
+                        else if (isVendor) setActiveTab('store_setup');
+                        else setActiveTab('profile');
                         setShowProfileDropdown(false);
                       }} 
                       className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-gray-600 hover:bg-[#8B5E3C]/5 hover:text-[#8B5E3C] transition-colors"
