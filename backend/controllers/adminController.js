@@ -2651,7 +2651,6 @@ exports.rejectVendorRegistration = async (req, res) => {
     user.rejectedReason = reason || 'Your registration does not meet our requirements at this time.';
     await user.save();
 
-    const vendor = await Vendor.findOne({ userId: user._id });
     if (vendor) {
       vendor.documentVerificationStatus = 'Rejected';
       await vendor.save();
