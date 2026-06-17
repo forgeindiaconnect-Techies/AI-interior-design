@@ -3588,6 +3588,177 @@ const AdminDashboard = ({
       })()}
 
       {/* ======================================================== */}
+      {/* TAB 5: DELIVERY & LOGISTICS PARTNERS */}
+      {/* ======================================================== */}
+      {activeTab === 'delivery' && (() => {
+        const deliveryPartners = managementData?.vendors?.filter(v => v.businessType === 'delivery') || [];
+        const stats = {
+          total: deliveryPartners.length,
+          active: deliveryPartners.filter(v => v.isActive).length,
+          pending: deliveryPartners.filter(v => v.verificationStatus === 'Pending' || v.verificationStatus === 'Submitted').length
+        };
+
+        const filteredPartners = deliveryPartners.filter(p => {
+          const keyword = deliverySearch.toLowerCase();
+          const matchesSearch = 
+            (p.companyName || '').toLowerCase().includes(keyword) ||
+            (p.userId?.name || '').toLowerCase().includes(keyword) ||
+            (p.userId?.email || '').toLowerCase().includes(keyword) ||
+            (p.userId?.phone || '').toLowerCase().includes(keyword);
+
+          const matchesStatus = deliveryStatusFilter === 'all' || 
+            (deliveryStatusFilter === 'active' && p.isActive) || 
+            (deliveryStatusFilter === 'suspended' && !p.isActive);
+
+          return matchesSearch && matchesStatus;
+        });
+
+        return (
+          <div className="space-y-8 animate-fadeIn">
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Logistics & Delivery Partners</h2>
+              <p className="text-sm text-[#8B5E3C] mt-1 font-medium">Manage delivery agents, logistics companies, and track their active shipments.</p>
+            </div>
+
+            {/* Top Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Partners</span>
+                  <p className="text-3xl font-extrabold text-[#1F2937]">{stats.total}</p>
+                </div>
+                <div className="p-3 bg-blue-50 text-blue-500 rounded-xl">
+                  <Truck size={24} />
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Active</span>
+                  <p className="text-3xl font-extrabold text-green-500">{stats.active}</p>
+                </div>
+                <div className="p-3 bg-green-50 text-green-500 rounded-xl">
+                  <CheckCircle size={24} />
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between">
+                <div className="space-y-1">
+                  <span className="text-xs text-gray-400 font-bold uppercase tracking-wider">Pending Verification</span>
+                  <p className="text-3xl font-extrabold text-orange-500">{stats.pending}</p>
+                </div>
+                <div className="p-3 bg-orange-50 text-orange-500 rounded-xl">
+                  <AlertCircle size={24} />
+                </div>
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+              <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50/50">
+                <div className="relative w-full md:w-96">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search partners by name, email, or phone..."
+                    value={deliverySearch}
+                    onChange={(e) => setDeliverySearch(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#8B5E3C] focus:ring-1 focus:ring-[#8B5E3C] transition-all"
+                  />
+                </div>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <select 
+                    value={deliveryStatusFilter} 
+                    onChange={e => setDeliveryStatusFilter(e.target.value)}
+                    className="px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 outline-none hover:border-gray-300 transition-colors"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active Only</option>
+                    <option value="suspended">Suspended Only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider text-gray-500">
+                      <th className="p-4 font-bold">Partner Details</th>
+                      <th className="p-4 font-bold">Contact</th>
+                      <th className="p-4 font-bold">Verification</th>
+                      <th className="p-4 font-bold">Status</th>
+                      <th className="p-4 font-bold">Service Areas</th>
+                      <th className="p-4 font-bold text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50 text-sm">
+                    {filteredPartners.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="p-12 text-center text-gray-400">
+                          <Truck className="w-8 h-8 mx-auto mb-3 opacity-20" />
+                          <p>No delivery partners found.</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredPartners.map(partner => (
+                        <tr key={partner._id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="p-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0">
+                                {(partner.companyName || partner.userId?.name || 'D').charAt(0)}
+                              </div>
+                              <div>
+                                <p className="font-bold text-[#1F2937]">{partner.companyName || partner.userId?.name}</p>
+                                <p className="text-[10px] text-gray-400 mt-0.5">Joined {new Date(partner.createdAt).toLocaleDateString()}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="p-4">
+                            <p className="font-medium text-[#1F2937]">{partner.userId?.email || partner.email}</p>
+                            <p className="text-[10px] text-gray-500">{partner.userId?.phone || partner.phone || 'N/A'}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold ${
+                              partner.verificationStatus === 'Approved' ? 'bg-green-50 text-green-600 border border-green-100' : 
+                              (partner.verificationStatus === 'Pending' || partner.verificationStatus === 'Submitted') ? 'bg-orange-50 text-orange-600 border border-orange-100' : 
+                              'bg-red-50 text-red-600 border border-red-100'
+                            }`}>
+                              {partner.verificationStatus || 'Not Submitted'}
+                            </span>
+                          </td>
+                          <td className="p-4">
+                            <span className={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold ${
+                              partner.isActive ? 'bg-[#2A9D8F]/10 text-[#2A9D8F] border border-[#2A9D8F]/20' : 
+                              'bg-[#E76F51]/10 text-[#E76F51] border border-[#E76F51]/20'
+                            }`}>
+                              {partner.isActive ? 'Active' : 'Suspended'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-xs text-gray-500">
+                            {partner.serviceAreas?.join(', ') || 'N/A'}
+                          </td>
+                          <td className="p-4 text-right space-x-2">
+                            <button 
+                              onClick={() => {
+                                setSelectedVendor(partner);
+                                setShowViewVendorModal(true);
+                              }}
+                              className="p-2 text-gray-400 hover:text-[#8B5E3C] hover:bg-[#8B5E3C]/10 rounded-lg transition-colors"
+                              title="View Details"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ======================================================== */}
       {/* TAB 6: AI DESIGN REQUESTS */}
       {/* ======================================================== */}
             {activeTab === 'custom_design_requests' && (() => {
