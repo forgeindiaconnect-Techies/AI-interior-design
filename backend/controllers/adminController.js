@@ -2651,6 +2651,12 @@ exports.rejectVendorRegistration = async (req, res) => {
     user.rejectedReason = reason || 'Your registration does not meet our requirements at this time.';
     await user.save();
 
+    const vendor = await Vendor.findOne({ userId: user._id });
+    if (vendor) {
+      vendor.documentVerificationStatus = 'Rejected';
+      await vendor.save();
+    }
+
     await Notification.create({
       userId: user._id,
       message: 'Your vendor registration has been rejected. Please contact support or update your details.',
@@ -2668,7 +2674,7 @@ exports.rejectVendorRegistration = async (req, res) => {
 // @access  Private (Admin)
 exports.addVendor = async (req, res) => {
   try {
-    const { name, companyName, email, phone, address, category, password, status } = req.body;
+    const { name, companyName, email, phone, address, category, password, status, businessCategory, yearsOfExperience, websiteUrl, socialMediaUrl } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -2685,14 +2691,33 @@ exports.addVendor = async (req, res) => {
       status: status || 'Active'
     });
 
+    let documents = {};
+    if (req.files) {
+      if (req.files.registrationCert) documents.registrationCert = `/uploads/vendor-docs/${req.files.registrationCert[0].filename}`;
+      if (req.files.idProof) documents.idProof = `/uploads/vendor-docs/${req.files.idProof[0].filename}`;
+      if (req.files.profilePhoto) documents.profilePhoto = `/uploads/vendor-docs/${req.files.profilePhoto[0].filename}`;
+      if (req.files.gstCert) documents.gstCert = `/uploads/vendor-docs/${req.files.gstCert[0].filename}`;
+      if (req.files.companyLogo) documents.companyLogo = `/uploads/vendor-docs/${req.files.companyLogo[0].filename}`;
+      if (req.files.bankVerification) documents.bankVerification = `/uploads/vendor-docs/${req.files.bankVerification[0].filename}`;
+      if (req.files.portfolioImages) {
+        documents.portfolioImages = req.files.portfolioImages.map(f => `/uploads/vendor-docs/${f.filename}`);
+      }
+    }
+
     const vendor = await Vendor.create({
       userId: user._id,
       companyName: companyName || `${name}'s Business`,
       businessType: category || 'seller',
+      businessCategory: businessCategory || undefined,
+      yearsOfExperience: yearsOfExperience || undefined,
+      websiteUrl: websiteUrl || undefined,
+      socialMediaUrl: socialMediaUrl || undefined,
+      documents: Object.keys(documents).length > 0 ? documents : undefined,
       isActive: status === 'Active',
       accountActivationStatus: status === 'Active' ? 'Active' : 'Pending Verification',
       verificationStatus: status === 'Active' ? 'Approved' : 'Pending',
-      storeSetupStatus: 'Pending'
+      storeSetupStatus: 'Pending',
+      documentVerificationStatus: 'Pending Verification'
     });
 
     await Notification.create({
@@ -2857,6 +2882,7 @@ exports.approveVendor = async (req, res) => {
     vendor.isActive = true;
     vendor.accountActivationStatus = 'Active';
     vendor.verificationStatus = 'Approved';
+    vendor.documentVerificationStatus = 'Approved';
     await vendor.save();
 
     await Notification.create({

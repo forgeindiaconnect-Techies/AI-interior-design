@@ -66,7 +66,81 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
           <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Address</label>
           <textarea rows={2} value={vendorForm.address} onChange={e => setVendorForm({...vendorForm, address: e.target.value})} placeholder="123 Business St, City" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all resize-none" />
         </div>
-        <div>
+        <div className="pt-4 border-t border-gray-100">
+          <h4 className="font-bold text-sm text-[#1F2937] mb-3">Additional Information</h4>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Business Type</label>
+              <select value={vendorForm.businessCategory} onChange={e => setVendorForm({...vendorForm, businessCategory: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
+                <option value="">Select Category</option>
+                <option value="Furniture">Furniture</option>
+                <option value="Decor">Decor</option>
+                <option value="Lighting">Lighting</option>
+                <option value="Interior Design">Interior Design</option>
+                <option value="Modular Kitchen">Modular Kitchen</option>
+                <option value="Custom Furniture">Custom Furniture</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Years of Experience</label>
+              <input type="number" value={vendorForm.yearsOfExperience} onChange={e => setVendorForm({...vendorForm, yearsOfExperience: e.target.value})} placeholder="e.g. 5" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Website URL</label>
+              <input type="url" value={vendorForm.websiteUrl} onChange={e => setVendorForm({...vendorForm, websiteUrl: e.target.value})} placeholder="https://" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Instagram / Social Link</label>
+              <input type="url" value={vendorForm.socialMediaUrl} onChange={e => setVendorForm({...vendorForm, socialMediaUrl: e.target.value})} placeholder="https://" className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all" />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100">
+          <h4 className="font-bold text-sm text-[#1F2937] mb-3">Vendor Documents</h4>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Business Registration Cert (PDF/JPG/PNG) <span className="text-red-400">*</span></label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, registrationCert: e.target.files[0]}})} className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 transition-all ${vendorFormErrors.registrationCert ? 'border border-red-300 p-2 rounded-xl bg-red-50' : ''}`} />
+                {vendorFormErrors.registrationCert && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.registrationCert}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Government ID Proof (Aadhaar, PAN, etc.) <span className="text-red-400">*</span></label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, idProof: e.target.files[0]}})} className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 transition-all ${vendorFormErrors.idProof ? 'border border-red-300 p-2 rounded-xl bg-red-50' : ''}`} />
+                {vendorFormErrors.idProof && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.idProof}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Vendor Profile Photo <span className="text-red-400">*</span></label>
+                <input type="file" accept=".jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, profilePhoto: e.target.files[0]}})} className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 transition-all ${vendorFormErrors.profilePhoto ? 'border border-red-300 p-2 rounded-xl bg-red-50' : ''}`} />
+                {vendorFormErrors.profilePhoto && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.profilePhoto}</p>}
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">GST Certificate (Optional)</label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, gstCert: e.target.files[0]}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Company Logo (Optional)</label>
+                <input type="file" accept=".jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, companyLogo: e.target.files[0]}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Bank Verification Document (Optional)</label>
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, bankVerification: e.target.files[0]}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Portfolio Images (Optional, Multiple)</label>
+              <input type="file" multiple accept=".jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, portfolioImages: e.target.files}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
+            </div>
+          </div>
+        </div>
+
+<div>
           <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Status</label>
           <select value={vendorForm.status} onChange={e => setVendorForm({...vendorForm, status: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
             <option value="Active">Active</option>
@@ -84,10 +158,10 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
   </div>
 );
 
-const ViewVendorModal = ({ selectedVendor, onClose }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
-      <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+const ViewVendorModal = ({ selectedVendor, onClose, onApprove, onReject }) => (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto" onClick={onClose}>
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-auto my-8" onClick={e => e.stopPropagation()}>
+      <div className="p-6 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white rounded-t-3xl z-10">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
             <Store className="w-5 h-5 text-blue-500" />
@@ -99,7 +173,7 @@ const ViewVendorModal = ({ selectedVendor, onClose }) => (
         </button>
       </div>
       {selectedVendor && (
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
             <div className="flex items-center gap-4 pb-4 border-b border-gray-100">
             <div className="w-16 h-16 rounded-2xl bg-[#2A9D8F] text-white flex items-center justify-center font-bold text-2xl shadow-md">
               {(selectedVendor.companyName || selectedVendor.userId?.name || selectedVendor.name || 'V').charAt(0)}
@@ -112,11 +186,23 @@ const ViewVendorModal = ({ selectedVendor, onClose }) => (
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="p-4 rounded-2xl bg-gray-50">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Category</p>
-              <p className="font-semibold text-[#1F2937]">{selectedVendor.category || 'General'}</p>
+              <p className="font-semibold text-[#1F2937]">{selectedVendor.businessCategory || selectedVendor.category || 'General'}</p>
             </div>
             <div className="p-4 rounded-2xl bg-gray-50">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Business Type</p>
               <p className="font-semibold text-[#1F2937] capitalize">{selectedVendor.businessType || 'vendor'}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Experience</p>
+              <p className="font-semibold text-[#1F2937] capitalize">{selectedVendor.yearsOfExperience ? `${selectedVendor.yearsOfExperience} Years` : 'N/A'}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-gray-50">
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Links</p>
+              <div className="flex gap-2">
+                {selectedVendor.websiteUrl && <a href={selectedVendor.websiteUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Website</a>}
+                {selectedVendor.socialMediaUrl && <a href={selectedVendor.socialMediaUrl} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Social</a>}
+                {!selectedVendor.websiteUrl && !selectedVendor.socialMediaUrl && <span className="font-semibold text-[#1F2937]">N/A</span>}
+              </div>
             </div>
             <div className="p-4 rounded-2xl bg-gray-50 col-span-2">
               <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Address</p>
@@ -129,12 +215,57 @@ const ViewVendorModal = ({ selectedVendor, onClose }) => (
               </span>
             </div>
             <div className="p-4 rounded-2xl bg-gray-50">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered</p>
-              <p className="font-semibold text-[#1F2937]">{selectedVendor.createdAt ? new Date(selectedVendor.createdAt).toLocaleDateString() : 'N/A'}</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Doc Status</p>
+              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${selectedVendor.documentVerificationStatus === 'Approved' ? 'bg-[#2A9D8F]/10 text-[#2A9D8F]' : selectedVendor.documentVerificationStatus === 'Rejected' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'}`}>
+                {selectedVendor.documentVerificationStatus || 'Pending Verification'}
+              </span>
             </div>
           </div>
-          <div className="flex justify-end pt-2">
-            <button onClick={onClose} className="px-6 py-3 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-all">Close</button>
+
+          {selectedVendor.documents && Object.keys(selectedVendor.documents).length > 0 && (
+            <div className="pt-4 border-t border-gray-100">
+              <h4 className="font-bold text-sm text-[#1F2937] mb-3">Uploaded Documents</h4>
+              <div className="grid grid-cols-2 gap-3">
+                {selectedVendor.documents.registrationCert && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.registrationCert}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">Registration Cert</span>
+                  </a>
+                )}
+                {selectedVendor.documents.idProof && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.idProof}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">ID Proof</span>
+                  </a>
+                )}
+                {selectedVendor.documents.profilePhoto && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.profilePhoto}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">Profile Photo</span>
+                  </a>
+                )}
+                {selectedVendor.documents.gstCert && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.gstCert}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">GST Cert</span>
+                  </a>
+                )}
+                {selectedVendor.documents.companyLogo && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.companyLogo}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">Company Logo</span>
+                  </a>
+                )}
+                {selectedVendor.documents.bankVerification && (
+                  <a href={`http://localhost:5000${selectedVendor.documents.bankVerification}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-3 rounded-xl border border-gray-200 hover:border-[#2A9D8F] transition-all">
+                    <span className="text-sm font-semibold text-gray-700 truncate">Bank Verification</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex justify-between pt-4 border-t border-gray-100 sticky bottom-0 bg-white z-10">
+            <div className="flex gap-2">
+              <button onClick={onApprove} className="px-5 py-2.5 rounded-xl bg-green-500 text-white font-bold text-sm hover:bg-green-600 transition-all shadow-sm">Approve Docs</button>
+              <button onClick={onReject} className="px-5 py-2.5 rounded-xl bg-red-500 text-white font-bold text-sm hover:bg-red-600 transition-all shadow-sm">Reject Docs</button>
+            </div>
+            <button onClick={onClose} className="px-6 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-bold text-sm hover:bg-gray-200 transition-all">Close</button>
           </div>
         </div>
       )}
@@ -549,10 +680,7 @@ const AdminDashboard = ({
   const [showViewVendorModal, setShowViewVendorModal] = useState(false);
   const [selectedVendor, setSelectedVendor] = useState(null);
   const [deleteConfirmVendor, setDeleteConfirmVendor] = useState(null);
-  const [vendorForm, setVendorForm] = useState({
-    name: '', companyName: '', email: '', phone: '', password: '',
-    address: '', businessType: 'vendor', category: '', status: 'Active'
-  });
+  const [vendorForm, setVendorForm] = useState({ name: '', companyName: '', email: '', phone: '', password: '', address: '', businessType: 'vendor', category: '', status: 'Active', businessCategory: '', yearsOfExperience: '', websiteUrl: '', socialMediaUrl: '', documents: { registrationCert: null, idProof: null, profilePhoto: null, gstCert: null, companyLogo: null, bankVerification: null, portfolioImages: [] } });
   const [vendorFormErrors, setVendorFormErrors] = useState({});
   const [vendorActionLoading, setVendorActionLoading] = useState(false);
 
@@ -1870,16 +1998,40 @@ const AdminDashboard = ({
     if (!vendorForm.email.trim()) errors.email = 'Email is required';
     if (!vendorForm.password) errors.password = 'Password is required';
     if (!vendorForm.phone.trim()) errors.phone = 'Contact number is required';
+    if (!vendorForm.documents.registrationCert) errors.registrationCert = 'Registration Certificate is required';
+    if (!vendorForm.documents.idProof) errors.idProof = 'ID Proof is required';
+    if (!vendorForm.documents.profilePhoto) errors.profilePhoto = 'Profile Photo is required';
+
     if (Object.keys(errors).length > 0) { setVendorFormErrors(errors); return; }
     setVendorActionLoading(true);
     try {
-      await axios.post('/admin/vendors', vendorForm);
+      const formData = new FormData();
+      ['name', 'companyName', 'email', 'phone', 'password', 'address', 'category', 'status', 'businessCategory', 'yearsOfExperience', 'websiteUrl', 'socialMediaUrl'].forEach(key => {
+        if (vendorForm[key]) formData.append(key, vendorForm[key]);
+      });
+      
+      if (vendorForm.documents.registrationCert) formData.append('registrationCert', vendorForm.documents.registrationCert);
+      if (vendorForm.documents.idProof) formData.append('idProof', vendorForm.documents.idProof);
+      if (vendorForm.documents.profilePhoto) formData.append('profilePhoto', vendorForm.documents.profilePhoto);
+      if (vendorForm.documents.gstCert) formData.append('gstCert', vendorForm.documents.gstCert);
+      if (vendorForm.documents.companyLogo) formData.append('companyLogo', vendorForm.documents.companyLogo);
+      if (vendorForm.documents.bankVerification) formData.append('bankVerification', vendorForm.documents.bankVerification);
+      
+      if (vendorForm.documents.portfolioImages && vendorForm.documents.portfolioImages.length > 0) {
+        Array.from(vendorForm.documents.portfolioImages).forEach(file => {
+          formData.append('portfolioImages', file);
+        });
+      }
+
+      await axios.post('/admin/vendors', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       alert('Vendor added successfully');
       setShowAddVendorModal(false);
       resetVendorForm();
       fetchVendors(false);
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to add vendor');
+      alert(err?.response?.data?.message || 'Failed to add vendor');
     } finally {
       setVendorActionLoading(false);
     }
@@ -3220,6 +3372,22 @@ const AdminDashboard = ({
             <ViewVendorModal
               selectedVendor={selectedVendor}
               onClose={() => { setShowViewVendorModal(false); setSelectedVendor(null); }}
+              onApprove={async () => {
+                try {
+                  await axios.put(`/admin/vendors/${selectedVendor._id}/approve`);
+                  alert('Vendor approved successfully');
+                  fetchVendors(false);
+                  setShowViewVendorModal(false);
+                } catch(e) { alert(e?.response?.data?.message || 'Error'); }
+              }}
+              onReject={async () => {
+                try {
+                  await axios.put(`/admin/vendors/${selectedVendor._id}/reject`);
+                  alert('Vendor rejected successfully');
+                  fetchVendors(false);
+                  setShowViewVendorModal(false);
+                } catch(e) { alert(e?.response?.data?.message || 'Error'); }
+              }}
             />
           )}
           {deleteConfirmVendor && (

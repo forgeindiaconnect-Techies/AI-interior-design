@@ -64,6 +64,7 @@ const {
   rejectVendor
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const upload = require('../middleware/uploadMiddleware');
 
 router.use(protect);
 router.use(authorize('admin'));
@@ -153,7 +154,15 @@ router.delete('/reviews/:id', deleteReview);
 
 // Vendor CRUD Routes
 router.get('/vendors', getAllVendors);
-router.post('/vendors', addVendor);
+router.post('/vendors', upload.fields([
+  { name: 'registrationCert', maxCount: 1 },
+  { name: 'idProof', maxCount: 1 },
+  { name: 'profilePhoto', maxCount: 1 },
+  { name: 'gstCert', maxCount: 1 },
+  { name: 'companyLogo', maxCount: 1 },
+  { name: 'portfolioImages', maxCount: 10 },
+  { name: 'bankVerification', maxCount: 1 }
+]), addVendor);
 router.get('/vendors/:id', getVendorDetails);
 router.put('/vendors/:id', editVendor);
 router.delete('/vendors/:id', deleteVendor);

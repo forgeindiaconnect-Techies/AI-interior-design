@@ -32,6 +32,27 @@ const VendorSchema = new mongoose.Schema({
     enum: ['Low', 'Medium', 'High', 'Maxed Out'], 
     default: 'Medium' 
   },
+  businessCategory: {
+    type: String,
+    enum: ['Furniture', 'Decor', 'Lighting', 'Interior Design', 'Modular Kitchen', 'Custom Furniture', 'Other']
+  },
+  yearsOfExperience: { type: Number },
+  websiteUrl: { type: String },
+  socialMediaUrl: { type: String },
+  documents: {
+    registrationCert: { type: String },
+    idProof: { type: String },
+    profilePhoto: { type: String },
+    gstCert: { type: String },
+    companyLogo: { type: String },
+    portfolioImages: [{ type: String }],
+    bankVerification: { type: String }
+  },
+  documentVerificationStatus: {
+    type: String,
+    enum: ['Pending Verification', 'Approved', 'Rejected'],
+    default: 'Pending Verification'
+  },
   createdAt: { type: Date, default: Date.now }
 });
 

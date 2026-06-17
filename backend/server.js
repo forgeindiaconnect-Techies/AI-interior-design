@@ -49,6 +49,9 @@ app.use('/api/ai', aiRoutes);
   app.use(`/dataset/${dir}`, express.static(path.join(__dirname, `../${dir}`)));
 });
 
+// Serve uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 app.get('/', (req, res) => res.send('AI Interior Marketplace API Running'));
 
 // Health check endpoints
