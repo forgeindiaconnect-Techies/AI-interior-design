@@ -1207,25 +1207,26 @@ Thank you for shopping with Artisan Studio!
                   <span className="bg-[#2A9D8F]/10 text-[#2A9D8F] px-3 py-1 rounded-full text-xs font-bold uppercase">In Production</span>
                 </div>
                 
-                <div className="relative pt-4 pb-2">
-                  <div className="absolute top-1/2 left-0 w-full h-1 bg-gray-100 -translate-y-1/2 rounded-full"></div>
-                  <div className="absolute top-1/2 left-0 w-1/2 h-1 bg-[#2A9D8F] -translate-y-1/2 rounded-full"></div>
-                  
-                  <div className="relative flex justify-between">
+                <div className="bg-[#F8F5F0] p-6 rounded-2xl border border-[#D4A373]/20 mt-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                     {[
                       { step: 'Requested', done: true },
                       { step: 'Quoted', done: true },
                       { step: 'Manufacturing', done: true, current: true },
                       { step: 'Quality Check', done: false },
                       { step: 'Delivery', done: false }
-                    ].map((s, i) => (
-                      <div key={i} className="flex flex-col items-center gap-2">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold z-10 border-4 border-white shadow-sm ${s.done ? 'bg-[#2A9D8F] text-white' : 'bg-gray-100 text-gray-400'} ${s.current ? 'ring-4 ring-[#2A9D8F]/20' : ''}`}>
-                          {s.done ? '✓' : i + 1}
+                    ].map((s, i) => {
+                      const isActive = s.current;
+                      const isPast = s.done && !s.current;
+                      return (
+                        <div key={i} className={`text-center p-2 rounded-xl transition-all ${isActive ? 'bg-[#2A9D8F] text-white scale-105 shadow-md' : isPast ? 'bg-emerald-50 text-emerald-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                          <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center font-bold text-xs mb-1 ${isActive ? 'bg-white text-[#2A9D8F]' : isPast ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                            {isPast ? '✓' : i + 1}
+                          </div>
+                          <p className="text-[10px] font-bold leading-tight">{s.step}</p>
                         </div>
-                        <span className={`text-[10px] font-bold ${s.current ? 'text-[#2A9D8F]' : 'text-gray-500'}`}>{s.step}</span>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
                 <div className="mt-8 bg-[#F8F5F0] p-4 rounded-2xl flex items-center justify-between">
