@@ -487,6 +487,7 @@ const AdminDashboard = ({
 
   const [assignDeliveryDetails, setAssignDeliveryDetails] = useState({ orderId: '' });
   const [assignInstallationDetails, setAssignInstallationDetails] = useState({ orderId: '', scheduledDate: '', notes: '' });
+  const [liveTrackingOrderId, setLiveTrackingOrderId] = useState('');
 
   // AI Design Requests States
   const [selectedAIDesign, setSelectedAIDesign] = useState(null);
@@ -3650,6 +3651,142 @@ const AdminDashboard = ({
                 </div>
               </div>
             </div>
+
+            {/* Live Order Tracking UI */}
+            {(() => {
+              const trackingId = liveTrackingOrderId || localStorage.getItem('adminActiveTrackingOrderId');
+              const trackableOrders = (managementData?.orders || []).filter(o => o.paymentStatus === 'paid' || o.orderType === 'Marketplace Product' || o.orderType === 'Custom Design');
+              
+              if (trackableOrders.length === 0) return null;
+              
+              const activeOrder = trackableOrders.find(o => o._id === trackingId) || trackableOrders[0];
+              const activeTracking = adminTrackingData[activeOrder?._id] || {};
+              const orderTracking = activeTracking.tracking || {};
+              
+              const status = activeOrder.orderStatus || 'Pending';
+              const expectedDate = orderTracking.expectedDeliveryDate ? new Date(orderTracking.expectedDeliveryDate).toLocaleDateString() : (activeOrder.expectedDeliveryDate ? new Date(activeOrder.expectedDeliveryDate).toLocaleDateString() : '7 Days from purchase');
+              const delDetails = orderTracking.deliveryDetails || {};
+              const installDetails = orderTracking.installationDetails || {};
+
+              const getStatusMessage = () => {
+                switch (status) {
+                  case 'Pending Confirmation': return { title: 'Pending Confirmation', desc: 'Order is pending confirmation from the vendor.' };
+                  case 'Order Confirmed': return { title: 'Order Confirmed', desc: 'Order has been confirmed and accepted by the vendor.' };
+                  case 'Processing': return { title: 'Processing', desc: 'Order is being processed by the vendor.' };
+                  case 'Pending Dispatch': return { title: 'Pending Dispatch', desc: 'Order is packed and awaiting courier pickup.' };
+                  case 'Dispatched': return { title: 'Dispatched', desc: 'Order has been handed over to the courier partner.' };
+                  case 'Shipped': return { title: 'Shipped', desc: 'Order has been shipped and is on its way.' };
+                  case 'Out for Delivery':
+                  case 'Out For Delivery': return { title: 'Out for Delivery', desc: 'Order is out for delivery and will arrive soon.' };
+                  case 'Delivered': return { title: 'Delivered', desc: 'Order has been successfully delivered.' };
+                  case 'Completed': return { title: 'Completed', desc: 'Order is fully completed.' };
+                  case 'Installation Scheduled': return { title: 'Installation Scheduled', desc: 'An installation technician is scheduled.' };
+                  case 'Installation In Progress': return { title: 'Installation In Progress', desc: 'Installation work is currently in progress.' };
+                  case 'Installation Completed': return { title: 'Installation Completed', desc: 'The order lifecycle is completed.' };
+                  case 'Cancelled': return { title: 'Cancelled', desc: 'This order was cancelled.' };
+                  default: return { title: status, desc: 'Current order status is updated.' };
+                }
+              };
+
+              const currentMsg = getStatusMessage();
+              let globalStages = [];
+              let normalizedStatus = status;
+
+              if (activeOrder?.orderType === 'custom_design') {
+                globalStages = ['Awaiting Vendor Verification', 'Production Started', 'Manufacturing', 'Ready for Delivery', 'Delivered', 'Installation Scheduled', 'Installation Completed'];
+                if (['Pending Confirmation', 'Submitted'].includes(status)) normalizedStatus = 'Awaiting Vendor Verification';
+                else if (['Completed'].includes(status)) normalizedStatus = 'Installation Completed';
+              } else {
+                globalStages = ['Order Confirmed', 'Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Installation Scheduled', 'Installation In Progress', 'Installation Completed'];
+                if (['Pending Confirmation', 'Submitted', 'Request Submitted'].includes(status)) normalizedStatus = 'Order Confirmed';
+                else if (['Pending Dispatch'].includes(status)) normalizedStatus = 'Processing';
+                else if (['Dispatched', 'Delivery Assigned'].includes(status)) normalizedStatus = 'Shipped';
+                else if (['Out For Delivery'].includes(status)) normalizedStatus = 'Out for Delivery';
+                else if (['Completed', 'Order Completed'].includes(status)) normalizedStatus = 'Installation Completed';
+              }
+
+              let currentIdx = globalStages.indexOf(normalizedStatus);
+              if (currentIdx === -1) {
+                currentIdx = globalStages.findIndex(s => s.toLowerCase() === normalizedStatus.toLowerCase());
+                if (currentIdx === -1) currentIdx = 0;
+              }
+
+              return (
+                <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-200 mt-8 space-y-8">
+                  {/* Quick Switch Dropdown */}
+                  {trackableOrders.length > 1 && (
+                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-between gap-4 mb-6">
+                      <span className="text-xs font-bold text-gray-500 uppercase">Track Order Lifecycle:</span>
+                      <select 
+                        value={activeOrder._id}
+                        onChange={(e) => {
+                          localStorage.setItem('adminActiveTrackingOrderId', e.target.value);
+                          setLiveTrackingOrderId(e.target.value);
+                          fetchOrderTrackingAdmin(e.target.value);
+                        }}
+                        className="text-xs p-2.5 bg-white rounded-xl border border-gray-200 focus:outline-none focus:border-[#1D3557] font-medium min-w-[250px]"
+                      >
+                        {trackableOrders.map(o => (
+                          <option key={o._id} value={o._id}>
+                            {o.productDetails?.title || (o.orderType === 'AI Design' ? `AI Design - ${o.aiDesignData?.roomType || 'Custom'}` : 'Custom Furniture Request')} (#{o._id.slice(-6)}) - {o.orderStatus}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-gray-100 pb-6">
+                    <div>
+                      <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937] flex items-center gap-2"><Truck className="w-6 h-6 text-[#1D3557]"/> Live Order Tracking</h2>
+                      <p className="text-xs text-gray-400 mt-1">Order #<strong>{activeOrder._id?.slice(-6)}</strong> • Type: <strong>{activeOrder.orderType}</strong> • Vendor: <strong>{activeOrder.vendorId?.companyName || activeTracking.tracking?.vendorName || 'N/A'}</strong></p>
+                      <p className="text-xs text-gray-400 mt-0.5">Delivery Status: <strong className={status === 'Delivered' ? 'text-green-600' : 'text-[#E76F51]'}>{status}</strong> • Installation Status: <strong className={installDetails.installationStatus === 'Completed' ? 'text-green-600' : installDetails.installationStatus ? 'text-[#E76F51]' : 'text-gray-400'}>{installDetails.installationStatus || 'Not Scheduled'}</strong></p>
+                    </div>
+                    <div className="px-4 py-2 bg-[#1D3557]/10 text-[#1D3557] font-bold rounded-lg text-xs border border-[#1D3557]/20">
+                      Expected: {expectedDate}
+                    </div>
+                  </div>
+
+                  {/* 8-Stage Timeline */}
+                  <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100 mb-8 mt-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+                      {globalStages.map((stage, idx) => {
+                        const isActive = idx === currentIdx;
+                        const isPast = idx < currentIdx;
+                        return (
+                          <div key={stage} className={`text-center p-2 rounded-xl ${isActive ? 'bg-[#1D3557] text-white scale-105 shadow-md transition-all' : isPast ? 'bg-green-50 text-green-700' : 'bg-white text-gray-400 border border-gray-200'}`}>
+                            <div className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center font-bold text-xs mb-1 ${isActive ? 'bg-white text-[#1D3557]' : isPast ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                              {isPast ? '✓' : idx + 1}
+                            </div>
+                            <p className="text-[10px] font-bold leading-tight">{stage}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Status Details Bar */}
+                  <div className="bg-gray-50 p-6 rounded-2xl flex items-center gap-4 border border-gray-100">
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center text-xl text-[#1D3557] border border-gray-100"><Truck size={20}/></div>
+                    <div>
+                      <h4 className="font-bold text-sm text-[#1F2937]">{currentMsg.title}</h4>
+                      <p className="text-xs text-gray-500 mt-1">{currentMsg.desc}</p>
+                    </div>
+                  </div>
+                  
+                  {/* Delivery Details */}
+                  {delDetails.partner && (
+                    <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-200 mt-6 space-y-3">
+                      <h4 className="font-bold text-sm text-blue-800 uppercase tracking-wider">Delivery Logistics Info</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div><span className="text-gray-500">Partner:</span><p className="font-bold text-[#1F2937]">{delDetails.partner}</p></div>
+                        {delDetails.contact && <div><span className="text-gray-500">Contact:</span><p className="font-bold text-[#1F2937]">{delDetails.contact}</p></div>}
+                        {delDetails.trackingId && <div><span className="text-gray-500">Tracking ID:</span><p className="font-bold text-[#1F2937]">{delDetails.trackingId}</p></div>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* List */}
             <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
