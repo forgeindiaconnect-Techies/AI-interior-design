@@ -479,9 +479,10 @@ const VendorDashboard = ({
       axios.get('/vendor/requests'),
       axios.get('/vendor/orders'),
       vendorId ? axios.get('/products?vendorId=' + vendorId) : Promise.resolve(null),
+      axios.get('/vendor/quotations')
     ]);
 
-    const [profileRes, verifRes, storeRes, reqRes, ordersRes, prodRes] = results;
+    const [profileRes, verifRes, storeRes, reqRes, ordersRes, prodRes, quotRes] = results;
 
     if (profileRes.status === 'fulfilled' && profileRes.value.data.success) {
       setProfile(profileRes.value.data.data.vendor);
@@ -522,6 +523,12 @@ const VendorDashboard = ({
       setCustomRequests(reqRes.value.data.data);
     } else {
       setCustomRequests([]);
+    }
+
+    if (quotRes && quotRes.status === 'fulfilled' && quotRes.value.data.success) {
+      setVendorQuotations(quotRes.value.data.data);
+    } else {
+      setVendorQuotations([]);
     }
 
     if (ordersRes.status === 'fulfilled' && ordersRes.value.data.success) {
