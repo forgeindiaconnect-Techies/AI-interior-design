@@ -879,10 +879,10 @@ exports.deleteVendorOrder = async (req, res) => {
 // @access  Private (Vendor)
 exports.createPayoutRequest = async (req, res) => {
   try {
-    const { amount, bankName, accountNumber, ifscCode, accountHolderName } = req.body;
+    const { amount, paymentMethod, paymentDetails } = req.body;
     
-    if (!amount || !bankName || !accountNumber || !ifscCode || !accountHolderName) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+    if (!amount || !paymentMethod) {
+      return res.status(400).json({ success: false, message: 'Amount and payment method are required' });
     }
 
     const PayoutRequest = require('../models/PayoutRequest');
@@ -891,12 +891,8 @@ exports.createPayoutRequest = async (req, res) => {
     const newRequest = new PayoutRequest({
       vendorId: req.user._id,
       amount,
-      bankDetails: {
-        bankName,
-        accountNumber,
-        ifscCode,
-        accountHolderName
-      }
+      paymentMethod,
+      paymentDetails: paymentDetails || {}
     });
 
     await newRequest.save();

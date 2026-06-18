@@ -4061,39 +4061,26 @@ const VendorDashboard = ({
         const pending = Math.round(totalEarnings * 0.18);
         const processing = Math.round(totalEarnings * 0.10);
 
-        const handlePayoutRequest = (e) => {
+                const handlePayoutRequest = async (e) => {
           e.preventDefault();
-          const newPayout = {
-            id: Date.now(),
-            date: new Date().toLocaleString(),
-            amount: Number(reqAmount),
-            method: reqMethod,
-            account: reqAccount,
-            note: reqNote,
-            status: 'Processing'
-          };
-          const updated = [newPayout, ...payoutHistory];
-          setPayoutHistory(updated);
-          
-          setReqAmount(''); setReqAccount(''); setReqNote('');
-          setSubmitted(true);
-          setTimeout(() => setSubmitted(false), 3000);
-
-          // Persist to localStorage for admin to read
-          const vendorPayouts = JSON.parse(localStorage.getItem('mockVendorPayouts') || '[]');
-          vendorPayouts.push({ ...newPayout, vendorName: profile?.companyName || 'Vendor', vendorEmail: user?.email || '' });
-          localStorage.setItem('mockVendorPayouts', JSON.stringify(vendorPayouts));
-
-          // Send notification to admin
-          const notifObj = {
-            _id: `pnotif_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-            message: `💰 New payout request from ${profile?.companyName || 'Vendor'}: ₹${Number(reqAmount).toLocaleString()} via ${reqMethod}`,
-            type: 'info',
-            createdAt: new Date().toISOString(),
-            read: false
-          };
-          const adminNotifs = JSON.parse(localStorage.getItem('mockAdminNotifications') || '[]');
-          localStorage.setItem('mockAdminNotifications', JSON.stringify([notifObj, ...adminNotifs]));
+          try {
+            const paymentDetails = reqMethod === 'UPI' ? { upiId: reqAccount } : { accountNumber: reqAccount };
+            const res = await axios.post('/api/vendor/payout', {
+              amount: Number(reqAmount),
+              paymentMethod: reqMethod,
+              paymentDetails
+            }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
+            
+            if (res.data.success) {
+              setReqAmount(''); setReqAccount(''); setReqNote('');
+              setSubmitted(true);
+              setTimeout(() => setSubmitted(false), 3000);
+              fetchPayouts(); // refresh list
+            }
+          } catch (err) {
+            console.error('Error submitting payout', err);
+            alert(err.response?.data?.message || 'Error submitting payout request');
+          }
         };
 
         return (
