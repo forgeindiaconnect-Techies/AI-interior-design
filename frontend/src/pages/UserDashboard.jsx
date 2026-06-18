@@ -3901,6 +3901,52 @@ Thank you for shopping with Artisan Studio!
         </div>
       )}
 
+      {/* TAB: SETTINGS */}
+      {activeTab === 'settings' && (
+        <div className="max-w-3xl bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8 animate-fadeIn">
+          <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
+            <div className="w-16 h-16 rounded-full bg-gray-100 text-[#1F2937] flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/20 कच्चे HTML.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Account Settings</h2>
+              <p className="text-gray-500 text-sm">Manage your security and preferences.</p>
+            </div>
+          </div>
+          
+          <div className="space-y-6">
+            <div className="border border-gray-100 rounded-2xl p-6 bg-gray-50/50">
+              <h3 className="font-bold text-[#1F2937] mb-1">Change Password</h3>
+              <p className="text-xs text-gray-500 mb-4">Update your password to keep your account secure.</p>
+              <form onSubmit={(e) => { e.preventDefault(); showToast('Password updated!', 'success'); }} className="space-y-4">
+                <input type="password" placeholder="Current Password" required className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+                <input type="password" placeholder="New Password" required className="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:border-[#8B5E3C] text-sm" />
+                <button type="submit" className="py-3 px-6 bg-[#1F2937] hover:bg-black text-white rounded-xl font-bold shadow-sm transition-all text-sm">Update Password</button>
+              </form>
+            </div>
+
+            <div className="border border-gray-100 rounded-2xl p-6 bg-gray-50/50">
+              <h3 className="font-bold text-[#1F2937] mb-1">Notification Preferences</h3>
+              <p className="text-xs text-gray-500 mb-4">Choose what alerts you want to receive.</p>
+              <div className="space-y-3">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-[#8B5E3C] focus:ring-[#8B5E3C]" />
+                  <span className="text-sm font-medium text-gray-700">Order Updates (Delivery & Tracking)</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="w-4 h-4 rounded text-[#8B5E3C] focus:ring-[#8B5E3C]" />
+                  <span className="text-sm font-medium text-gray-700">Vendor Messages & Quotes</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 rounded text-[#8B5E3C] focus:ring-[#8B5E3C]" />
+                  <span className="text-sm font-medium text-gray-700">Marketing & Promotional Emails</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* TAB 11: PROFILE */}
       {activeTab === 'profile' && (
         <div className="max-w-3xl bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8">
