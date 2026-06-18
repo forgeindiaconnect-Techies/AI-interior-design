@@ -272,7 +272,7 @@ const VendorDashboard = ({
   const [editImage, setEditImage] = useState('');
   const [editStock, setEditStock] = useState(10);
 
-  const [payoutHistory, setPayoutHistory] = useState([]);
+  
   const [reqAmount, setReqAmount] = useState('');
   const [reqMethod, setReqMethod] = useState('Bank Transfer');
   const [reqAccount, setReqAccount] = useState('');
@@ -4167,7 +4167,7 @@ const VendorDashboard = ({
                   <div className="p-2 bg-gray-100 rounded-xl"><Activity className="w-5 h-5 text-gray-600" /></div>
                   <h3 className="font-['Playfair_Display'] font-bold text-xl text-[#1F2937]">Transaction History</h3>
                 </div>
-                {payoutHistory.length === 0 ? (
+                {payoutsList.length === 0 ? (
                   <div className="py-12 text-center space-y-3">
                     <DollarSign className="w-12 h-12 text-gray-200 mx-auto" />
                     <p className="text-sm font-medium text-gray-400">No payout requests yet.</p>
@@ -4175,18 +4175,20 @@ const VendorDashboard = ({
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                    {payoutHistory.map(p => {
-                      const statusStyle = p.status === 'Completed' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                        {payoutsList.map(p => {
+                      const statusStyle = p.status === 'Approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                         : p.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-200'
                         : 'bg-amber-50 text-amber-700 border-amber-200';
+                      const accountStr = p.paymentDetails?.upiId || p.paymentDetails?.accountNumber || 'N/A';
                       return (
-                        <div key={p.id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-between gap-4">
+                        <div key={p._id} className="p-4 bg-gray-50 rounded-2xl border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                           <div>
-                            <p className="font-bold text-sm text-[#1F2937]">₹{p.amount?.toLocaleString()}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{p.method} · {p.account}</p>
-                            <p className="text-[10px] text-gray-300 mt-0.5">{p.date}</p>
+                            <p className="font-bold text-sm text-[#1F2937]">${p.amount?.toLocaleString()}</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">${p.paymentMethod} - ${accountStr}</p>
+                            <p className="text-[10px] text-gray-300 mt-0.5">{new Date(p.createdAt).toLocaleDateString()}</p>
+                            {p.adminRemarks && <p className="text-[10px] text-red-500 mt-1 italic">Remarks: ${p.adminRemarks}</p>}
                           </div>
-                          <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold border rounded-full uppercase tracking-wider ${statusStyle}`}>{p.status}</span>
+                          <span className={`inline-flex px-2.5 py-1 text-[10px] font-bold border rounded-full uppercase tracking-wider w-fit ${statusStyle}`}>{p.status}</span>
                         </div>
                       );
                     })}

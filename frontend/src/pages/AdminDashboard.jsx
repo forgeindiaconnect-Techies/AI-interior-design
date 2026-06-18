@@ -6665,10 +6665,25 @@ const AdminDashboard = ({
                         </td>
                         <td className="p-4 font-bold text-[#2A9D8F]">${req.amount}</td>
                         <td className="p-4 text-xs text-gray-600">
-                          <p><strong>Bank:</strong> {req.bankDetails?.bankName}</p>
-                          <p><strong>A/C:</strong> {req.bankDetails?.accountNumber}</p>
-                          <p><strong>IFSC:</strong> {req.bankDetails?.ifscCode}</p>
-                          <p><strong>Name:</strong> {req.bankDetails?.accountHolderName}</p>
+                          <p className="font-bold text-[#1F2937] mb-1">{req.paymentMethod}</p>
+                          {req.paymentMethod === 'UPI' ? (
+                            <p><strong>UPI ID:</strong> {req.paymentDetails?.upiId}</p>
+                          ) : (
+                            <>
+                              {req.paymentDetails?.bankName && <p><strong>Bank:</strong> {req.paymentDetails?.bankName}</p>}
+                              <p><strong>Account:</strong> {req.paymentDetails?.accountNumber || 'N/A'}</p>
+                              {req.paymentDetails?.ifscCode && <p><strong>IFSC:</strong> {req.paymentDetails?.ifscCode}</p>}
+                              {req.paymentDetails?.accountHolderName && <p><strong>Name:</strong> {req.paymentDetails?.accountHolderName}</p>}
+                            </>
+                          )}
+                          {/* Fallback for old records */}
+                          {req.bankDetails?.bankName && !req.paymentMethod && (
+                            <>
+                              <p><strong>Bank:</strong> {req.bankDetails?.bankName}</p>
+                              <p><strong>A/C:</strong> {req.bankDetails?.accountNumber}</p>
+                              <p><strong>IFSC:</strong> {req.bankDetails?.ifscCode}</p>
+                            </>
+                          )}
                         </td>
                         <td className="p-4">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${req.status === 'Approved' ? 'bg-emerald-100 text-emerald-700' : req.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>

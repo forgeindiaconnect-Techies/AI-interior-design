@@ -3,11 +3,13 @@ const mongoose = require('mongoose');
 const PayoutRequestSchema = new mongoose.Schema({
   vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
   amount: { type: Number, required: true },
-  bankDetails: {
-    bankName: { type: String, required: true },
-    accountNumber: { type: String, required: true },
-    ifscCode: { type: String, required: true },
-    accountHolderName: { type: String, required: true }
+  paymentMethod: { type: String, required: true, enum: ['Bank Transfer', 'UPI', 'Cheque'], default: 'Bank Transfer' },
+  paymentDetails: {
+    bankName: { type: String },
+    accountNumber: { type: String },
+    ifscCode: { type: String },
+    accountHolderName: { type: String },
+    upiId: { type: String }
   },
   status: { type: String, enum: ['Pending', 'Approved', 'Rejected'], default: 'Pending' },
   adminRemarks: { type: String, default: '' },
