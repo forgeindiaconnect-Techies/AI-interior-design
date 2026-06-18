@@ -2999,8 +2999,8 @@ exports.updatePayoutStatus = async (req, res) => {
     // Create notification for vendor
     await Notification.create({
       userId: payout.vendorId,
-      title: \`Payout Request \${status}\`,
-      message: \`Your payout request for $\${payout.amount} has been \${status.toLowerCase()}.\${adminRemarks ? ' Remarks: ' + adminRemarks : ''}\`,
+      title: `Payout Request ${status}`,
+      message: `Your payout request for $${payout.amount} has been ${status.toLowerCase()}.${adminRemarks ? ' Remarks: ' + adminRemarks : ''}`,
       type: status === 'Approved' ? 'success' : 'error',
       relatedId: payout._id,
       relatedModel: 'PayoutRequest'
@@ -3008,10 +3008,10 @@ exports.updatePayoutStatus = async (req, res) => {
 
     await AdminLog.create({
       adminId: req.user.id,
-      action: \`\${status} payout request for $\${payout.amount} (ID: \${payout._id})\`
+      action: `${status} payout request for $${payout.amount} (ID: ${payout._id})`
     });
 
-    res.status(200).json({ success: true, message: \`Payout request \${status.toLowerCase()} successfully\`, data: payout });
+    res.status(200).json({ success: true, message: `Payout request ${status.toLowerCase()} successfully`, data: payout });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
