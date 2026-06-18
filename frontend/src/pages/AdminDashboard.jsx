@@ -815,8 +815,6 @@ const AdminDashboard = ({
     }
   }, [activeTab, managementData]);
 
-
-
   const handleDeleteReview = async (id) => {
     if (!window.confirm('Are you sure you want to delete this review?')) return;
     try {
@@ -1654,7 +1652,6 @@ const AdminDashboard = ({
     }
   };
 
-
   // Reactivate User Action
   const handleReactivateUser = async (userId) => {
     try {
@@ -1911,8 +1908,7 @@ const AdminDashboard = ({
       // Sync back to localStorage so vendor sees the updated status
       const localVer = [];
       const updatedLocalVer = localVer.map(k => k._id === id ? { ...k, status, adminRemarks: currentRemarks } : k);
-      
-      
+
       // Send notification to vendor dashboard
       const sub = updatedSubs.find(k => k._id === id);
       const vendorEmail = sub?.email || 'vendor@example.com';
@@ -1930,8 +1926,7 @@ const AdminDashboard = ({
         read: false
       };
       const existingVendorNotifs = [];
-      
-      
+
       alert(`✅ Business Verification status set to ${status} successfully! Vendor has been notified.`);
     } catch (error) {
       alert('Error updating Business Verification status');
@@ -2326,7 +2321,6 @@ const AdminDashboard = ({
         createdAt: new Date().toISOString()
       };
       const existingOrders = [];
-      
 
       // Create a notification for the vendor
       const vendorNotif = {
@@ -2358,7 +2352,6 @@ const AdminDashboard = ({
           : { assignedVendor: vendorObj, additionalVendors: d.additionalVendors || [] }
         )
       } : d);
-      
 
       // Update state immediately
       setManagementData(prev => {
@@ -2402,7 +2395,6 @@ const AdminDashboard = ({
         orderStatus: 'Pending Manufacturing',
         assignedVendor: d.assignedVendor || { _id: '65c2b18a7c6b4b1c92949765', companyName: 'Artisan Workshop' }
       } : d);
-      
 
       const newOrder = {
         _id: 'ord_ai_' + Date.now(),
@@ -2421,7 +2413,6 @@ const AdminDashboard = ({
       };
 
       const localOrders = [];
-      
 
       // Update state immediately
       setManagementData(prev => {
@@ -2677,7 +2668,7 @@ const AdminDashboard = ({
           { label: 'Total Users', value: stats?.totalUsers || 240, trend: '+12%', trendUp: true, sub: 'vs last month', icon: <Users className="w-5 h-5" />, color: 'bg-indigo-50 text-indigo-600', tab: 'users' },
           { label: 'Total Vendors', value: stats?.totalVendors || 35, trend: '+4%', trendUp: true, sub: 'verified partners', icon: <Store className="w-5 h-5" />, color: 'bg-amber-50 text-amber-600', tab: 'vendors' },
           { label: 'Total Orders', value: stats?.totalOrders || 128, trend: '+8%', trendUp: true, sub: 'active this month', icon: <ShoppingBag className="w-5 h-5" />, color: 'bg-emerald-50 text-emerald-600', tab: 'orders' },
-          { label: 'Total Revenue', value: `₹${(stats?.totalRevenue || 45200).toLocaleString()}`, trend: '+19%', trendUp: true, sub: 'platform earnings', icon: <DollarSign className="w-5 h-5" />, color: 'bg-teal-50 text-teal-600', tab: 'payments' },
+          { label: 'Total Revenue', value: `$${(stats?.totalRevenue || 45200).toLocaleString()}`, trend: '+19%', trendUp: true, sub: 'platform earnings', icon: <DollarSign className="w-5 h-5" />, color: 'bg-teal-50 text-teal-600', tab: 'payments' },
           { label: 'Sub-Admins', value: subAdmins?.length || 2, trend: 'Active', trendUp: true, sub: 'with ACL roles', icon: <ShieldCheck className="w-5 h-5" />, color: 'bg-purple-50 text-purple-600', tab: 'roles' },
           { label: 'Open Tickets', value: openTickets, trend: openTickets > 0 ? 'Needs attention' : 'All clear', trendUp: openTickets === 0, sub: 'support tickets', icon: <HelpCircle className="w-5 h-5" />, color: 'bg-rose-50 text-rose-600', tab: 'tickets' },
         ];
@@ -3054,7 +3045,7 @@ const AdminDashboard = ({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-3 md:w-auto w-full">
+              <div className="grid grid-cols-2 gap-3 md:w-auto w-full">
                 <div className="flex items-center gap-1.5 bg-white border border-[#D4A373]/30 px-3 py-2 rounded-xl">
                   <Filter className="text-gray-400 w-3.5 h-3.5" />
                   <select
@@ -4103,7 +4094,7 @@ const AdminDashboard = ({
             customerPhone: req.userId?.phone || 'N/A',
             roomType: 'Consultation',
             style: 'Interior Design Consultation',
-            budget: req.budget ? `₹${req.budget}` : 'N/A',
+            budget: req.budget ? `$${req.budget}` : 'N/A',
             status: req.status || 'Submitted',
             date: req.createdAt || new Date().toISOString(),
             requestType: 'Interior Designer Help',
@@ -4124,7 +4115,7 @@ const AdminDashboard = ({
               customerPhone: order.userId?.phone || 'N/A',
               roomType: order.aiDesignData?.roomType || 'Living Room',
               style: order.aiDesignData?.style || 'AI Generated',
-              budget: order.totalAmount ? `₹${order.totalAmount}` : 'N/A',
+              budget: order.totalAmount ? `$${order.totalAmount}` : 'N/A',
               status: order.orderStatus || 'Submitted',
               date: order.createdAt || new Date().toISOString(),
               requestType: 'AI Generated',
@@ -5577,7 +5568,7 @@ const AdminDashboard = ({
                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Average Order Value</span>
                 <div className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg"><Activity size={14} /></div>
               </div>
-              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">₹2,450.00</h4>
+              <h4 className="font-['Playfair_Display'] font-extrabold text-2xl text-gray-800">$2,450.00</h4>
               <p className="text-[10px] text-green-500 font-bold">↑ 8.2% from last quarter</p>
             </div>
 
@@ -5662,12 +5653,12 @@ const AdminDashboard = ({
 
                 {/* X-Axis labels */}
                 <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold px-1 mt-2">
-                  <span>Jan (₹5k)</span>
-                  <span>Feb (₹12k)</span>
-                  <span>Mar (₹18k)</span>
-                  <span>Apr (₹15k)</span>
-                  <span>May (₹32k)</span>
-                  <span>Jun (₹45.2k)</span>
+                  <span>Jan ($5k)</span>
+                  <span>Feb ($12k)</span>
+                  <span>Mar ($18k)</span>
+                  <span>Apr ($15k)</span>
+                  <span>May ($32k)</span>
+                  <span>Jun ($45.2k)</span>
                 </div>
               </div>
             </div>
@@ -5683,7 +5674,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>AI Studio Designs</span>
-                    <span>45% (₹24,500)</span>
+                    <span>45% ($24,500)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#8B5E3C] h-full rounded-full" style={{ width: '45%' }}></div>
@@ -5693,7 +5684,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Premium Design Consultations</span>
-                    <span>32% (₹18,200)</span>
+                    <span>32% ($18,200)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#E76F51] h-full rounded-full" style={{ width: '32%' }}></div>
@@ -5703,7 +5694,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Custom Workshop Furniture</span>
-                    <span>18% (₹12,100)</span>
+                    <span>18% ($12,100)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#2A9D8F] h-full rounded-full" style={{ width: '18%' }}></div>
@@ -5713,7 +5704,7 @@ const AdminDashboard = ({
                 <div className="space-y-1">
                   <div className="flex justify-between items-center text-xs font-bold text-gray-700">
                     <span>Logistics & Logistics Add-ons</span>
-                    <span>5% (₹3,200)</span>
+                    <span>5% ($3,200)</span>
                   </div>
                   <div className="w-full bg-gray-150 h-2 rounded-full overflow-hidden">
                     <div className="bg-[#1E293B] h-full rounded-full" style={{ width: '5%' }}></div>
@@ -5746,25 +5737,25 @@ const AdminDashboard = ({
                     <td className="p-4 pl-6 font-bold text-gray-800">Artisan Workshop</td>
                     <td className="p-4">Furniture Vendor</td>
                     <td className="p-4 text-center font-bold text-green-600">4.8 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹12,500.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹1,875.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹10,625.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$12,500.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$1,875.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$10,625.00</td>
                   </tr>
                   <tr className="border-b border-gray-100 hover:bg-[#FDFBF7] transition-all">
                     <td className="p-4 pl-6 font-bold text-gray-800">Elite Woodworks</td>
                     <td className="p-4">Manufacturer</td>
                     <td className="p-4 text-center font-bold text-green-600">4.6 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹8,500.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹1,275.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹7,225.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$8,500.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$1,275.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$7,225.00</td>
                   </tr>
                   <tr className="border-b border-gray-100 hover:bg-[#FDFBF7] transition-all">
                     <td className="p-4 pl-6 font-bold text-gray-800">Swift Logistics Solutions</td>
                     <td className="p-4">Logistics Partner</td>
                     <td className="p-4 text-center font-bold text-green-600">4.9 / 5.0</td>
-                    <td className="p-4 text-right font-bold text-gray-700 font-mono">₹2,400.00</td>
-                    <td className="p-4 text-right font-medium text-amber-600 font-mono">₹360.00</td>
-                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">₹2,040.00</td>
+                    <td className="p-4 text-right font-bold text-gray-700 font-mono">$2,400.00</td>
+                    <td className="p-4 text-right font-medium text-amber-600 font-mono">$360.00</td>
+                    <td className="p-4 pr-6 text-right font-bold text-emerald-600 font-mono">$2,040.00</td>
                   </tr>
                 </tbody>
               </table>
@@ -6601,8 +6592,6 @@ const AdminDashboard = ({
           </div>
         );
       })()}
-
-
 
       {/* MODAL 1: VIEW PROFILE */}
       {selectedUser && (
@@ -8339,7 +8328,7 @@ const AdminDashboard = ({
                 </div>
                 <div>
                   <p className="font-bold text-gray-400 uppercase">Payment & Workflow</p>
-                  <p className="font-bold text-gray-800 mt-1 uppercase text-[10px]">{viewOrder.paymentStatus} / {viewOrder.orderStatus}</p>
+                  <p className="font-bold text-gray-800 mt-1 uppercase text-[10px]">{viewOrder.paymentStatus?.toUpperCase() === 'PAID' ? 'PAID' : `${viewOrder.paymentStatus} / ${viewOrder.orderStatus}`}</p>
                 </div>
               </div>
 
@@ -8348,31 +8337,7 @@ const AdminDashboard = ({
                 <div className="text-xs space-y-1">
                   <p><strong>Name:</strong> {viewOrder.userId?.name || 'Customer'}</p>
                   <p><strong>Email:</strong> {viewOrder.userId?.email || 'N/A'}</p>
-                  <p><strong>Shipping Address:</strong> {viewOrder.shippingAddress || 'Not Provided'}</p>
-                </div>
-              </div>
 
-              <div>
-                <h4 className="font-bold text-sm text-gray-800 mb-2 border-b pb-1">Workflow Partner Team</h4>
-                <div className="text-xs space-y-2">
-                  <div className="flex justify-between border-b py-1">
-                    <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Vendor Partner:</span>
-                    <span className="font-bold text-gray-700">{viewOrder.vendorId?.companyName || 'Not Assigned'}</span>
-                  </div>
-                  {viewOrder.orderType !== 'Marketplace Product' && (
-                    <div className="flex justify-between border-b py-1">
-                      <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Manufacturing Partner:</span>
-                      <span className="font-bold text-gray-700">{viewOrder.manufacturerId?.companyName || 'Not Assigned'}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between border-b py-1">
-                    <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Logistics Partner:</span>
-                    <span className="font-bold text-gray-700">{viewOrder.deliveryPartnerId?.companyName || 'Not Assigned'}</span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-gray-400 font-bold uppercase text-[9px] tracking-wider">Installation Expert:</span>
-                    <span className="font-bold text-gray-700">{viewOrder.installationPartnerId?.companyName || 'Not Assigned'}</span>
-                  </div>
                 </div>
               </div>
 
