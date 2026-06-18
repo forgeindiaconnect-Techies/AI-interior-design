@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
 
 // Set base URL for all axios calls (frontend knows where API lives)
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'https://ai-interior-design-xnmc.onrender.com/api';
+axios.defaults.baseURL = 'https://ai-interior-design-xnmc.onrender.com/api'; // Hardcoded to bypass old Vercel env variable
 
 // Attach token on every request if present
 axios.interceptors.request.use(
