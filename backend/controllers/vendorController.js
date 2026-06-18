@@ -193,6 +193,26 @@ exports.sendQuotation = async (req, res) => {
   }
 };
 
+// @desc    Get vendor's sent quotations
+// @route   GET /api/vendor/quotations
+// @access  Private (Vendor)
+exports.getVendorQuotations = async (req, res) => {
+  try {
+    const vendor = await findOrCreateVendorHelper(req.user.id);
+    if (!vendor) return res.status(404).json({ success: false, message: 'Vendor profile not found' });
+    
+    // We fetch quotations for this vendor.
+    // We populate designRequestId so the frontend can display the name of the request.
+    const quotations = await Quotation.find({ vendorId: vendor._id })
+      .populate('designRequestId')
+      .sort({ createdAt: -1 });
+      
+    res.status(200).json({ success: true, count: quotations.length, data: quotations });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // @desc    Suggest another vendor
 // @route   POST /api/vendor/suggest-vendor
 // @access  Private (Vendor)

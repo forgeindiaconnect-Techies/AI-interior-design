@@ -27,6 +27,7 @@ router.get('/profile', getVendorProfile);
 router.get('/requests', getCustomRequests);
 router.post('/requests/:id/accept', acceptRequest);
 router.post('/requests/:id/reject', rejectRequest);
+router.get('/quotations', require('../controllers/vendorController').getVendorQuotations);
 router.post('/quotations', sendQuotation);
 router.post('/suggest-vendor', suggestVendor);
 router.post('/forward-manufacturer', forwardToManufacturer);

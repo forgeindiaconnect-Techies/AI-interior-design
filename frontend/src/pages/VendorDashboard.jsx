@@ -86,6 +86,7 @@ const VendorDashboard = ({
     p.material?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   const [customRequests, setCustomRequests] = useState([]);
+  const [vendorQuotations, setVendorQuotations] = useState([]);
   const [customRequestFilter, setCustomRequestFilter] = useState('All');
   const [aiDesignOrders, setAiDesignOrders] = useState([]);
   const [newTitle, setNewTitle] = useState('');
@@ -2834,26 +2835,41 @@ const VendorDashboard = ({
         <div className="space-y-8">
           <h2 className="font-['Playfair_Display'] font-bold text-3xl text-[#1F2937]">Sent Quotations & Bids</h2>
           <div className="bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
-                  <th className="p-4 rounded-tl-xl">Bid ID</th>
-                  <th className="p-4">Customer Request</th>
-                  <th className="p-4">Proposed Amount</th>
-                  <th className="p-4">Status</th>
-                  <th className="p-4 rounded-tr-xl">Action</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                <tr className="border-b border-gray-50">
-                  <td className="p-4 font-bold text-[#1F2937]">#BID-8812</td>
-                  <td className="p-4">Custom Living Room Set</td>
-                  <td className="p-4 font-bold text-[#2A9D8F]">₹4,850.00</td>
-                  <td className="p-4"><span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-md text-xs font-bold">Pending Approval</span></td>
-                  <td className="p-4"><button className="text-[#2A9D8F] font-bold text-xs hover:underline">View</button></td>
-                </tr>
-              </tbody>
-            </table>
+            {vendorQuotations.length === 0 ? (
+              <div className="text-center py-12 text-gray-400 text-sm">No quotations found.</div>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                    <th className="p-4 rounded-tl-xl">Bid ID</th>
+                    <th className="p-4">Customer Request</th>
+                    <th className="p-4">Proposed Amount</th>
+                    <th className="p-4">Status</th>
+                    <th className="p-4 rounded-tr-xl">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {vendorQuotations.map((quotation) => (
+                    <tr key={quotation._id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                      <td className="p-4 font-bold text-[#1F2937]">#{quotation._id.toString().substring(quotation._id.length - 6).toUpperCase()}</td>
+                      <td className="p-4">{quotation.designRequestId?.roomType ? `${quotation.designRequestId.roomType} (${quotation.designType})` : 'Custom Design'}</td>
+                      <td className="p-4 font-bold text-[#2A9D8F]">₹{quotation.budgetAmount}</td>
+                      <td className="p-4">
+                        <span className={`px-2 py-1 rounded-md text-xs font-bold ${
+                          quotation.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          quotation.status === 'accepted' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {quotation.status === 'pending' ? 'Pending Approval' : 
+                           quotation.status === 'accepted' ? 'Accepted' : 'Rejected'}
+                        </span>
+                      </td>
+                      <td className="p-4"><button className="text-[#2A9D8F] font-bold text-xs hover:underline" onClick={() => setActiveTab('messages')}>Message</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
