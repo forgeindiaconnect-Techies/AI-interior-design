@@ -17,9 +17,8 @@ const PayoutRequestSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-PayoutRequestSchema.pre('save', function(next) {
+PayoutRequestSchema.pre('save', function() {
   this.updatedAt = Date.now();
-  next();
 });
 
 module.exports = mongoose.model('PayoutRequest', PayoutRequestSchema);
