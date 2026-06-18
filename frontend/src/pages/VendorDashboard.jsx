@@ -170,7 +170,7 @@ const VendorDashboard = ({
 
   const fetchPayouts = async () => {
     try {
-      const res = await axios.get('/api/vendor/payout', {
+      const res = await axios.get('/vendor/payout', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       if (res.data.success) setPayoutsList(res.data.data);
@@ -183,7 +183,7 @@ const VendorDashboard = ({
     e.preventDefault();
     setPayoutLoading(true);
     try {
-      const res = await axios.post('/api/vendor/payout', {
+      const res = await axios.post('/vendor/payout', {
         amount: Number(payoutAmount),
         bankName: payoutBankName,
         accountNumber: payoutAccNo,
@@ -4065,7 +4065,7 @@ const VendorDashboard = ({
           e.preventDefault();
           try {
             const paymentDetails = reqMethod === 'UPI' ? { upiId: reqAccount } : { accountNumber: reqAccount };
-            const res = await axios.post('/api/vendor/payout', {
+            const res = await axios.post('/vendor/payout', {
               amount: Number(reqAmount),
               paymentMethod: reqMethod,
               paymentDetails

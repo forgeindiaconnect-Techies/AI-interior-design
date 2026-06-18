@@ -317,7 +317,7 @@ const AdminDashboard = ({
 
   const fetchAdminPayouts = async () => {
     try {
-      const res = await axios.get('/api/admin/payouts', {
+      const res = await axios.get('/admin/payouts', {
         headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
       });
       if (res.data.success) {
@@ -332,7 +332,7 @@ const AdminDashboard = ({
     if (!window.confirm(`Are you sure you want to mark this payout request as ${status}?`)) return;
     try {
       const remarks = payoutAdminRemarks[id] || '';
-      const res = await axios.put(`/api/admin/payouts/${id}`, { status, adminRemarks: remarks }, {
+      const res = await axios.put(`/admin/payouts/${id}`, { status, adminRemarks: remarks }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
       });
       if (res.data.success) {
