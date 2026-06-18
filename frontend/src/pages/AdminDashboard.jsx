@@ -2971,6 +2971,38 @@ const AdminDashboard = ({
         );
       })()}
 
+      {/* TAB: PROFILE */}
+      {activeTab === 'profile' && (
+        <div className="max-w-3xl bg-white p-8 rounded-3xl shadow-sm border border-[#D4A373]/30 space-y-8 animate-fadeIn">
+          <div className="flex items-center gap-4 border-b border-gray-100 pb-6">
+            <div className="w-16 h-16 rounded-2xl bg-[#1D3557] text-white flex items-center justify-center font-bold text-2xl shadow-md uppercase">
+              {(user?.name || 'A').charAt(0)}
+            </div>
+            <div>
+              <h2 className="font-['Playfair_Display'] font-bold text-2xl text-[#1F2937]">Admin Profile</h2>
+              <p className="text-gray-500 text-sm">View your admin account details.</p>
+            </div>
+          </div>
+          <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); alert('Profile Updated Successfully'); }}>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Full Name</label>
+                <input type="text" defaultValue={user?.name || 'Admin'} className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:border-[#1D3557] text-sm bg-gray-50" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Email Address</label>
+                <input type="email" defaultValue={user?.email || 'admin@example.com'} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm cursor-not-allowed" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Role</label>
+              <input type="text" defaultValue="Super Admin" disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm cursor-not-allowed" />
+            </div>
+            <button type="submit" className="py-4 px-8 bg-[#1D3557] hover:bg-[#2A4B7C] text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all w-full">Save Changes</button>
+          </form>
+        </div>
+      )}
+
       {/* TAB 2: USER MANAGEMENT */}
       {activeTab === 'users' && (() => {
         // Calculate filtered users
