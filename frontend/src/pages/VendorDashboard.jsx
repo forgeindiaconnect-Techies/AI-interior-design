@@ -153,6 +153,61 @@ const VendorDashboard = ({
   const [installNotes, setInstallNotes] = useState({});
   const [expectedDelDate, setExpectedDelDate] = useState({});
   const [isPayoutRequested, setIsPayoutRequested] = useState(false);
+  // --- Payout Management States ---
+  const [payoutsList, setPayoutsList] = useState([]);
+  const [payoutAmount, setPayoutAmount] = useState('');
+  const [payoutBankName, setPayoutBankName] = useState('');
+  const [payoutAccNo, setPayoutAccNo] = useState('');
+  const [payoutIfsc, setPayoutIfsc] = useState('');
+  const [payoutHolder, setPayoutHolder] = useState('');
+  const [payoutLoading, setPayoutLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === 'payouts') {
+      fetchPayouts();
+    }
+  }, [activeTab]);
+
+  const fetchPayouts = async () => {
+    try {
+      const res = await axios.get('/api/vendor/payout', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.data.success) setPayoutsList(res.data.data);
+    } catch (err) {
+      console.error('Error fetching payouts', err);
+    }
+  };
+
+  const handleManualPayoutSubmit = async (e) => {
+    e.preventDefault();
+    setPayoutLoading(true);
+    try {
+      const res = await axios.post('/api/vendor/payout', {
+        amount: Number(payoutAmount),
+        bankName: payoutBankName,
+        accountNumber: payoutAccNo,
+        ifscCode: payoutIfsc,
+        accountHolderName: payoutHolder
+      }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (res.data.success) {
+        alert('Payout request submitted successfully!');
+        setPayoutAmount('');
+        setPayoutBankName('');
+        setPayoutAccNo('');
+        setPayoutIfsc('');
+        setPayoutHolder('');
+        fetchPayouts();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Error submitting payout request');
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
 
   // Ready-made Orders Workflow States
   const [readyMadeOrders, setReadyMadeOrders] = useState([]);

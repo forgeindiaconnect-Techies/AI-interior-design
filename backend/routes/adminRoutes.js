@@ -142,6 +142,10 @@ router.get('/transactions', getTransactions);
 router.put('/commission-rate', updateCommissionRate);
 router.post('/transactions/disburse', disbursePayout);
 
+// Payout Management Routes
+router.get('/payouts', require('../controllers/adminController').getAllPayouts);
+router.put('/payouts/:id', require('../controllers/adminController').updatePayoutStatus);
+
 // Roles & Permissions Scope Control Routes
 router.get('/permissions', getSubAdmins);
 router.post('/permissions', addSubAdmin);

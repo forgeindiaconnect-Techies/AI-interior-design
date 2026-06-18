@@ -165,7 +165,15 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           )}
         </div>
 
-
+        {/* Collapsible: FINANCE */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <SectionLabel label="Finance" group="finance" />
+          {openGroups.finance && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <NavItem name="Payout Management" icon={BarChart2} tab="payout_management" color="#059669" />
+            </div>
+          )}
+        </div>
 
         {/* Collapsible: SUPPORT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>

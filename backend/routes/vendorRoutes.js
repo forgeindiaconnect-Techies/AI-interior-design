@@ -49,4 +49,8 @@ router.post('/verify-payment/:orderId', verifyPayment);
 
 router.get('/reviews', require('../controllers/vendorController').getVendorReviews);
 
+// Payout routes
+router.post('/payout', require('../controllers/vendorController').createPayoutRequest);
+router.get('/payout', require('../controllers/vendorController').getVendorPayouts);
+
 module.exports = router;

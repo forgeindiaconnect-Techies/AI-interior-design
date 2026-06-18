@@ -2955,3 +2955,65 @@ exports.rejectVendor = async (req, res) => {
   }
 };
 
+// @desc    Get all vendor payout requests
+// @route   GET /api/admin/payouts
+// @access  Private (Admin)
+exports.getAllPayouts = async (req, res) => {
+  try {
+    const PayoutRequest = require('../models/PayoutRequest');
+    const payouts = await PayoutRequest.find()
+      .populate('vendorId', 'name email phone companyName')
+      .sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: payouts.length, data: payouts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Update payout request status (Approve/Reject)
+// @route   PUT /api/admin/payouts/:id
+// @access  Private (Admin)
+exports.updatePayoutStatus = async (req, res) => {
+  try {
+    const { status, adminRemarks } = req.body;
+    
+    if (!['Approved', 'Rejected'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const PayoutRequest = require('../models/PayoutRequest');
+    const Notification = require('../models/Notification');
+    const AdminLog = require('../models/AdminLog');
+
+    const payout = await PayoutRequest.findById(req.params.id);
+    if (!payout) {
+      return res.status(404).json({ success: false, message: 'Payout request not found' });
+    }
+
+    payout.status = status;
+    if (adminRemarks) {
+      payout.adminRemarks = adminRemarks;
+    }
+    await payout.save();
+
+    // Create notification for vendor
+    await Notification.create({
+      userId: payout.vendorId,
+      title: \`Payout Request \${status}\`,
+      message: \`Your payout request for $\${payout.amount} has been \${status.toLowerCase()}.\${adminRemarks ? ' Remarks: ' + adminRemarks : ''}\`,
+      type: status === 'Approved' ? 'success' : 'error',
+      relatedId: payout._id,
+      relatedModel: 'PayoutRequest'
+    });
+
+    await AdminLog.create({
+      adminId: req.user.id,
+      action: \`\${status} payout request for $\${payout.amount} (ID: \${payout._id})\`
+    });
+
+    res.status(200).json({ success: true, message: \`Payout request \${status.toLowerCase()} successfully\`, data: payout });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+

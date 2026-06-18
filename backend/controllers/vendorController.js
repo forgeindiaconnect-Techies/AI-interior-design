@@ -873,3 +873,59 @@ exports.deleteVendorOrder = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// @desc    Submit a payout request
+// @route   POST /api/vendor/payout
+// @access  Private (Vendor)
+exports.createPayoutRequest = async (req, res) => {
+  try {
+    const { amount, bankName, accountNumber, ifscCode, accountHolderName } = req.body;
+    
+    if (!amount || !bankName || !accountNumber || !ifscCode || !accountHolderName) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    const PayoutRequest = require('../models/PayoutRequest');
+    const Notification = require('../models/Notification');
+
+    const newRequest = new PayoutRequest({
+      vendorId: req.user._id,
+      amount,
+      bankDetails: {
+        bankName,
+        accountNumber,
+        ifscCode,
+        accountHolderName
+      }
+    });
+
+    await newRequest.save();
+
+    // Create notification for admin
+    await Notification.create({
+      isAdmin: true,
+      title: 'New Payout Request',
+      message: `${req.user.name || 'A vendor'} has requested a payout of $${amount}.`,
+      type: 'info',
+      relatedId: newRequest._id,
+      relatedModel: 'PayoutRequest'
+    });
+
+    res.status(201).json({ success: true, message: 'Payout request submitted successfully', data: newRequest });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get vendor's payout requests
+// @route   GET /api/vendor/payout
+// @access  Private (Vendor)
+exports.getVendorPayouts = async (req, res) => {
+  try {
+    const PayoutRequest = require('../models/PayoutRequest');
+    const payouts = await PayoutRequest.find({ vendorId: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, count: payouts.length, data: payouts });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
