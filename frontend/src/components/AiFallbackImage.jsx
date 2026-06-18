@@ -3,7 +3,7 @@ import { loadManifest, anyImageForRoom, getRoomSlug } from '../utils/roomImages'
 
 const resolveImageUrl = (url) => {
   if (!url) return url;
-  const apiBase = import.meta.env.VITE_API_URL || 'https://ai-interior-final-project.onrender.com/api';
+  const apiBase = import.meta.env.VITE_API_URL || 'https://ai-interior-design-xnmc.onrender.com/api';
   const backendBase = apiBase.replace(/\/api\/?$/, '');
   let resolved = url;
   if (resolved.startsWith('/')) {
