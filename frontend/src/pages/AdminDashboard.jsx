@@ -14,7 +14,7 @@ import AdminContactMessages from './admin/AdminContactMessages';
 // ── Vendor Modal Components ──
 const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, onClose, onSubmit, vendorActionLoading }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
-    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
       <div className="p-6 border-b border-gray-100 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-[#2A9D8F]/10 flex items-center justify-center">
@@ -26,8 +26,8 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
           <X className="w-4 h-4 text-gray-400" />
         </button>
       </div>
-      <form onSubmit={onSubmit} className="p-6 space-y-5">
-        <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={onSubmit} className="p-6 space-y-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Full Name <span className="text-red-400">*</span></label>
             <input type="text" value={vendorForm.name} onChange={e => setVendorForm({...vendorForm, name: e.target.value})} placeholder="John Doe" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
@@ -39,7 +39,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
             {vendorFormErrors.companyName && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.companyName}</p>}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div>
             <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Email <span className="text-red-400">*</span></label>
             <input type="email" value={vendorForm.email} onChange={e => setVendorForm({...vendorForm, email: e.target.value})} placeholder="vendor@example.com" className={`w-full px-4 py-3 rounded-xl border ${vendorFormErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-200'} text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all`} />
@@ -68,7 +68,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
         </div>
         <div className="pt-4 border-t border-gray-100">
           <h4 className="font-bold text-sm text-[#1F2937] mb-3">Additional Information</h4>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
               <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Business Type</label>
               <select value={vendorForm.businessCategory} onChange={e => setVendorForm({...vendorForm, businessCategory: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
@@ -98,9 +98,9 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
         </div>
 
         <div className="pt-4 border-t border-gray-100">
-          <h4 className="font-bold text-sm text-[#1F2937] mb-3">Vendor Documents</h4>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <h4 className="font-bold text-sm text-[#1F2937] mb-4">Vendor Documents</h4>
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Business Registration Cert (PDF/JPG/PNG) <span className="text-red-400">*</span></label>
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, registrationCert: e.target.files[0]}})} className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 transition-all ${vendorFormErrors.registrationCert ? 'border border-red-300 p-2 rounded-xl bg-red-50' : ''}`} />
@@ -112,7 +112,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
                 {vendorFormErrors.idProof && <p className="text-xs text-red-500 mt-1">{vendorFormErrors.idProof}</p>}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Vendor Profile Photo <span className="text-red-400">*</span></label>
                 <input type="file" accept=".jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, profilePhoto: e.target.files[0]}})} className={`w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-[#2A9D8F]/10 file:text-[#2A9D8F] hover:file:bg-[#2A9D8F]/20 transition-all ${vendorFormErrors.profilePhoto ? 'border border-red-300 p-2 rounded-xl bg-red-50' : ''}`} />
@@ -123,7 +123,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, gstCert: e.target.files[0]}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Company Logo (Optional)</label>
                 <input type="file" accept=".jpg,.jpeg,.png" onChange={e => setVendorForm({...vendorForm, documents: {...vendorForm.documents, companyLogo: e.target.files[0]}})} className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200 transition-all" />
@@ -140,7 +140,7 @@ const VendorFormModal = ({ isEdit, vendorForm, setVendorForm, vendorFormErrors, 
           </div>
         </div>
 
-<div>
+        <div className="pt-2">
           <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5">Status</label>
           <select value={vendorForm.status} onChange={e => setVendorForm({...vendorForm, status: e.target.value})} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#2A9D8F]/30 focus:border-[#2A9D8F] transition-all">
             <option value="Active">Active</option>
