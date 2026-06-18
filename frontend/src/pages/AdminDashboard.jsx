@@ -2994,10 +2994,7 @@ const AdminDashboard = ({
                 <input type="email" defaultValue={user?.email || 'admin@example.com'} disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm cursor-not-allowed" />
               </div>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-[#1F2937] uppercase tracking-wider mb-2">Role</label>
-              <input type="text" defaultValue="Super Admin" disabled className="w-full p-4 rounded-xl border border-gray-200 bg-gray-100 text-gray-500 text-sm cursor-not-allowed" />
-            </div>
+
             <button type="submit" className="py-4 px-8 bg-[#1D3557] hover:bg-[#2A4B7C] text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all w-full">Save Changes</button>
           </form>
         </div>
