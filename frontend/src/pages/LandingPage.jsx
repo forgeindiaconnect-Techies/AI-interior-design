@@ -544,10 +544,7 @@ const LandingPage = () => {
               <p className="text-gray-300 text-sm leading-relaxed">
                 List products, manage inventory, receive custom design requests, suggest matching items, and send competitive budget quotations instantly.
               </p>
-              <Link to="/register?role=vendor" className="inline-flex items-center gap-2 text-white font-bold hover:text-[#D4A373] transition-colors pt-4">
-                <span>Join as Vendor</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+
             </div>
 
             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md space-y-6 hover:bg-white/10 transition-all group">
@@ -558,10 +555,7 @@ const LandingPage = () => {
               <p className="text-gray-300 text-sm leading-relaxed">
                 Dedicated delivery partners receive assigned orders, manage dispatch logistics, and update real-time transit status directly to the customer.
               </p>
-              <Link to="/register?role=delivery" className="inline-flex items-center gap-2 text-white font-bold hover:text-[#D4A373] transition-colors pt-4">
-                <span>Join as Delivery Partner</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+
             </div>
 
             <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md space-y-6 hover:bg-white/10 transition-all group">
@@ -572,10 +566,7 @@ const LandingPage = () => {
               <p className="text-gray-300 text-sm leading-relaxed">
                 Professional installation teams schedule visits, execute flawless white-glove setup, and upload photographic proof upon completion.
               </p>
-              <Link to="/register?role=installation" className="inline-flex items-center gap-2 text-white font-bold hover:text-[#D4A373] transition-colors pt-4">
-                <span>Join as Installer</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+
             </div>
           </div>
         </div>
