@@ -317,14 +317,12 @@ const AdminDashboard = ({
 
   const fetchAdminPayouts = async () => {
     try {
-      const res = await axios.get('/admin/payouts', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
+      const res = await axios.get('/admin/payouts');
       if (res.data.success) {
         setAdminPayouts(res.data.data);
       }
     } catch (err) {
-      console.error('Error fetching admin payouts', err);
+      // Silently ignore — admin may not be authenticated yet
     }
   };
 
@@ -332,9 +330,7 @@ const AdminDashboard = ({
     if (!window.confirm(`Are you sure you want to mark this payout request as ${status}?`)) return;
     try {
       const remarks = payoutAdminRemarks[id] || '';
-      const res = await axios.put(`/admin/payouts/${id}`, { status, adminRemarks: remarks }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
-      });
+      const res = await axios.put(`/admin/payouts/${id}`, { status, adminRemarks: remarks });
       if (res.data.success) {
         alert(`Payout ${status} successfully`);
         fetchAdminPayouts();

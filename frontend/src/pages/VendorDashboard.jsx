@@ -170,12 +170,10 @@ const VendorDashboard = ({
 
   const fetchPayouts = async () => {
     try {
-      const res = await axios.get('/vendor/payout', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await axios.get('/vendor/payout');
       if (res.data.success) setPayoutsList(res.data.data);
     } catch (err) {
-      console.error('Error fetching payouts', err);
+      // Silently ignore — user may not be logged in yet
     }
   };
 
@@ -185,12 +183,13 @@ const VendorDashboard = ({
     try {
       const res = await axios.post('/vendor/payout', {
         amount: Number(payoutAmount),
-        bankName: payoutBankName,
-        accountNumber: payoutAccNo,
-        ifscCode: payoutIfsc,
-        accountHolderName: payoutHolder
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        paymentMethod: 'Bank Transfer',
+        paymentDetails: {
+          bankName: payoutBankName,
+          accountNumber: payoutAccNo,
+          ifscCode: payoutIfsc,
+          accountHolderName: payoutHolder
+        }
       });
       if (res.data.success) {
         alert('Payout request submitted successfully!');
@@ -4061,7 +4060,7 @@ const VendorDashboard = ({
         const pending = Math.round(totalEarnings * 0.18);
         const processing = Math.round(totalEarnings * 0.10);
 
-                const handlePayoutRequest = async (e) => {
+        const handlePayoutRequest = async (e) => {
           e.preventDefault();
           try {
             const paymentDetails = reqMethod === 'UPI' ? { upiId: reqAccount } : { accountNumber: reqAccount };
@@ -4069,16 +4068,14 @@ const VendorDashboard = ({
               amount: Number(reqAmount),
               paymentMethod: reqMethod,
               paymentDetails
-            }, { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }});
-            
+            });
             if (res.data.success) {
               setReqAmount(''); setReqAccount(''); setReqNote('');
               setSubmitted(true);
               setTimeout(() => setSubmitted(false), 3000);
-              fetchPayouts(); // refresh list
+              fetchPayouts();
             }
           } catch (err) {
-            console.error('Error submitting payout', err);
             alert(err.response?.data?.message || 'Error submitting payout request');
           }
         };
