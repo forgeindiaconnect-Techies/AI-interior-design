@@ -165,15 +165,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onLogout, unreadNotifCount = 0 
           )}
         </div>
 
-        {/* Collapsible: FINANCE */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <SectionLabel label="Finance" group="finance" />
-          {openGroups.finance && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
-              <NavItem name="Platform Commission" icon={BarChart2} tab="platform_commission" color="#14B8A6" />
-            </div>
-          )}
-        </div>
+
 
         {/* Collapsible: SUPPORT */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
