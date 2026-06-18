@@ -170,7 +170,9 @@ const VendorDashboard = ({
 
   const fetchPayouts = async () => {
     try {
-      const res = await axios.get('/vendor/payout');
+      const token = localStorage.getItem('token');
+      if (!token) return; // Prevent 404/401 when no token is present
+      const res = await axios.get(`/vendor/payout?t=${new Date().getTime()}`);
       if (res.data.success) setPayoutsList(res.data.data);
     } catch (err) {
       // Silently ignore — user may not be logged in yet

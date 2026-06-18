@@ -317,7 +317,9 @@ const AdminDashboard = ({
 
   const fetchAdminPayouts = async () => {
     try {
-      const res = await axios.get('/admin/payouts');
+      const token = localStorage.getItem('adminToken');
+      if (!token) return;
+      const res = await axios.get(`/admin/payouts?t=${new Date().getTime()}`);
       if (res.data.success) {
         setAdminPayouts(res.data.data);
       }
